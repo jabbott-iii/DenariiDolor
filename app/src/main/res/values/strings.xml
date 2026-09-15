@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Denarii Dolor</string>
+    <string name="dashboard_income">Income: $%.2f</string>
+    <string name="dashboard_expense">Expense: $%.2f</string>
+    <string name="dashboard_net">Net: $%.2f</string>
+    <string name="report_summary">Month: %1$s\nIncome: $%2$.2f\nExpense: $%3$.2f\nNet: $%4$.2f</string>
 </resources>
