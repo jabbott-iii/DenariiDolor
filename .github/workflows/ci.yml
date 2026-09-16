@@ -25,11 +25,8 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '21'
         cache: gradle
-
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
 
     - name: Make Gradle wrapper executable
       run: chmod +x ./gradlew
@@ -104,7 +101,7 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '21'
         cache: gradle
 
     - name: Make Gradle wrapper executable
@@ -142,7 +139,7 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '21'
         cache: gradle
 
     - name: Make Gradle wrapper executable
@@ -176,7 +173,7 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '21'
         cache: gradle
 
     - name: Make Gradle wrapper executable
