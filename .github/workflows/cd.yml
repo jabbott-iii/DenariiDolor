@@ -2,8 +2,11 @@ name: CD
 
 on:
   push:
-    branches: [ main ]
     tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-release:
