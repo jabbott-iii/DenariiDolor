@@ -11,6 +11,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.denariidolor.R
 import com.denariidolor.databinding.FragmentAddTransactionBinding
 import com.denariidolor.presentation.ui.common.BaseFragment
+import com.denariidolor.util.Constants
 import com.denariidolor.util.DateUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -35,9 +36,9 @@ class AddTransactionFragment : BaseFragment(R.layout.fragment_add_transaction) {
             val amount = binding.etAmount.text?.toString()?.toDoubleOrNull() ?: 0.0
             val selectedType = binding.spinnerTransactionType.selectedItem?.toString().orEmpty()
             val categoryId = binding.etCategoryId.text?.toString()?.toLongOrNull() ?: defaultCategoryId(selectedType)
-            val accountId = binding.etAccountId.text?.toString()?.toLongOrNull() ?: 1L
+            val accountId = binding.etAccountId.text?.toString()?.toLongOrNull() ?: Constants.DEFAULT_CASH_ACCOUNT_ID
             val transferAccountId = binding.etTransferAccountId.text?.toString()?.toLongOrNull()
-                ?: if (selectedType == "TRANSFER") 2L else null
+                ?: if (selectedType == "TRANSFER") Constants.DEFAULT_SAVINGS_ACCOUNT_ID else null
             val dateText = binding.etTransactionDate.text?.toString().orEmpty()
             val dateEpochMillis = if (dateText.isBlank()) {
                 System.currentTimeMillis()
@@ -76,9 +77,9 @@ class AddTransactionFragment : BaseFragment(R.layout.fragment_add_transaction) {
 
     private fun defaultCategoryId(type: String): Long {
         return when (type) {
-            "INCOME" -> 2L
-            "TRANSFER" -> 3L
-            else -> 1L
+            "INCOME" -> Constants.DEFAULT_INCOME_CATEGORY_ID
+            "TRANSFER" -> Constants.DEFAULT_TRANSFER_CATEGORY_ID
+            else -> Constants.DEFAULT_EXPENSE_CATEGORY_ID
         }
     }
 }

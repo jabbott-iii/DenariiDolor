@@ -26,11 +26,18 @@ object DatabaseModule {
             .addCallback(object : androidx.room.RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
-                    db.execSQL("INSERT OR IGNORE INTO accounts (id, name, balance) VALUES (1, 'Cash', 0)")
-                    db.execSQL("INSERT OR IGNORE INTO accounts (id, name, balance) VALUES (2, 'Savings', 0)")
-                    db.execSQL("INSERT OR IGNORE INTO categories (id, name, iconName) VALUES (1, 'General Expense', 'ic_category_default')")
-                    db.execSQL("INSERT OR IGNORE INTO categories (id, name, iconName) VALUES (2, 'General Income', 'ic_category_default')")
-                    db.execSQL("INSERT OR IGNORE INTO categories (id, name, iconName) VALUES (3, 'Transfer', 'ic_category_default')")
+                    Constants.DEFAULT_ACCOUNTS.forEach { account ->
+                        db.execSQL(
+                            "INSERT OR IGNORE INTO accounts (id, name, balance) VALUES (?, ?, ?)",
+                            arrayOf(account.id, account.name, account.balance)
+                        )
+                    }
+                    Constants.DEFAULT_CATEGORIES.forEach { category ->
+                        db.execSQL(
+                            "INSERT OR IGNORE INTO categories (id, name, iconName) VALUES (?, ?, ?)",
+                            arrayOf(category.id, category.name, category.iconName)
+                        )
+                    }
                 }
             })
             .fallbackToDestructiveMigration()

@@ -52,10 +52,8 @@ class SearchFragment : BaseFragment(R.layout.fragment_search) {
     }
 
     private fun buildFilters(): SearchFilters? {
-        val startDateText = binding.etSearchStartDate.text?.toString().orEmpty()
-        val endDateText = binding.etSearchEndDate.text?.toString().orEmpty()
-        val startDate = parseDate(startDateText, isEndOfDay = false) ?: return null
-        val endDate = parseDate(endDateText, isEndOfDay = true) ?: return null
+        val startDate = parseStartDate(binding.etSearchStartDate.text?.toString().orEmpty()) ?: return null
+        val endDate = parseEndDate(binding.etSearchEndDate.text?.toString().orEmpty()) ?: return null
         return SearchFilters(
             description = binding.etSearchDescription.text?.toString()?.trim()?.takeIf { it.isNotEmpty() },
             categoryId = binding.etSearchCategoryId.text?.toString()?.toLongOrNull(),
@@ -66,14 +64,20 @@ class SearchFragment : BaseFragment(R.layout.fragment_search) {
         )
     }
 
-    private fun parseDate(value: String, isEndOfDay: Boolean): Long? {
+    private fun parseStartDate(value: String): Long? {
         if (value.isBlank()) return null
         return runCatching {
-            if (isEndOfDay) {
-                DateUtils.parseIsoDateToEndOfDayEpochMillis(value)
-            } else {
-                DateUtils.parseIsoDateToStartOfDayEpochMillis(value)
-            }
+            DateUtils.parseIsoDateToStartOfDayEpochMillis(value)
+        }.getOrElse {
+            Toast.makeText(requireContext(), getString(R.string.invalid_date_message), Toast.LENGTH_SHORT).show()
+            return null
+        }
+    }
+
+    private fun parseEndDate(value: String): Long? {
+        if (value.isBlank()) return null
+        return runCatching {
+            DateUtils.parseIsoDateToEndOfDayEpochMillis(value)
         }.getOrElse {
             Toast.makeText(requireContext(), getString(R.string.invalid_date_message), Toast.LENGTH_SHORT).show()
             return null

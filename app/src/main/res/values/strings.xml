@@ -8,6 +8,7 @@
     <string name="sign_in_with_biometrics">Sign In with Biometrics</string>
     <string name="biometric_sign_in_title">Unlock Denarii Dolor</string>
     <string name="biometric_sign_in_subtitle">Use biometrics or device credentials to continue</string>
+    <string name="biometric_sign_in_failed">Biometric authentication failed. Try again or use your PIN.</string>
     <string name="transaction_description_hint">Description</string>
     <string name="transaction_amount_hint">Amount</string>
     <string name="transaction_category_id_hint">Category ID (1 expense, 2 income, 3 transfer)</string>

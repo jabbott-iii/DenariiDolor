@@ -9,6 +9,7 @@ import com.denariidolor.databinding.FragmentSettingsBinding
 import com.denariidolor.presentation.ui.auth.LoginActivity
 import com.denariidolor.presentation.ui.common.BaseFragment
 import com.denariidolor.util.Constants
+import com.denariidolor.util.SessionManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -19,6 +20,9 @@ class SettingsFragment : BaseFragment(R.layout.fragment_settings) {
 
     @Inject
     lateinit var encryptedPreferencesManager: EncryptedPreferencesManager
+
+    @Inject
+    lateinit var sessionManager: SessionManager
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -47,6 +51,7 @@ class SettingsFragment : BaseFragment(R.layout.fragment_settings) {
         if (clearPin) {
             encryptedPreferencesManager.clearPin()
         }
+        sessionManager.invalidate()
         val activity = requireActivity()
         activity.startActivity(Intent(activity, LoginActivity::class.java))
         activity.finish()

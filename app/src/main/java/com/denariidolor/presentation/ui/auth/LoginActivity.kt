@@ -32,6 +32,8 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val hasStoredPin = encryptedPreferencesManager.getPin() != null
+
         binding.btnLogin.setOnClickListener {
             val pin = binding.etPin.text?.toString().orEmpty()
             if (pin.length < 4) {
@@ -50,10 +52,10 @@ class LoginActivity : AppCompatActivity() {
             openMain()
         }
 
-        if (biometricAuthManager.canAuthenticate(this)) {
+        if (hasStoredPin && biometricAuthManager.canAuthenticate(this)) {
             binding.btnBiometricLogin.setOnClickListener { promptForBiometricSignIn() }
         } else {
-            binding.btnBiometricLogin.isEnabled = false
+            binding.btnBiometricLogin.visibility = android.view.View.GONE
         }
     }
 
@@ -72,6 +74,11 @@ class LoginActivity : AppCompatActivity() {
                     if (errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON && errorCode != BiometricPrompt.ERROR_USER_CANCELED) {
                         Toast.makeText(this@LoginActivity, errString, Toast.LENGTH_SHORT).show()
                     }
+                }
+
+                override fun onAuthenticationFailed() {
+                    super.onAuthenticationFailed()
+                    Toast.makeText(this@LoginActivity, getString(R.string.biometric_sign_in_failed), Toast.LENGTH_SHORT).show()
                 }
             }
         )
