@@ -64,7 +64,8 @@ class TransactionViewModel @Inject constructor(
                 amount = amount,
                 categoryId = categoryId,
                 accountId = accountId,
-                transferAccountId = transferAccountId,
+                transferAccountId = transferAccountId
+                    ?: throw IllegalArgumentException("Transfer destination is required"),
                 dateEpochMillis = dateEpochMillis
             )
             "EXPENSE" -> Expense(description = description, amount = amount, categoryId = categoryId, accountId = accountId, dateEpochMillis = dateEpochMillis)

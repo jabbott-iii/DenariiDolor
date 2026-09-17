@@ -6,12 +6,17 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.denariidolor.MainActivity
 import com.denariidolor.R
+import com.denariidolor.data.local.db.DefaultDataInitializer
 import com.denariidolor.data.local.preferences.EncryptedPreferencesManager
 import com.denariidolor.databinding.ActivityLoginBinding
 import com.denariidolor.util.SessionManager
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -27,13 +32,26 @@ class LoginActivity : AppCompatActivity() {
     @Inject
     lateinit var sessionManager: SessionManager
 
+    @Inject
+    lateinit var defaultDataInitializer: DefaultDataInitializer
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setSignInEnabled(false)
 
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                defaultDataInitializer.seedDefaults()
+            }
+            setSignInEnabled(true)
+            bindAuthActions()
+        }
+    }
+
+    private fun bindAuthActions() {
         val hasStoredPin = encryptedPreferencesManager.getPin() != null
-
         binding.btnLogin.setOnClickListener {
             val pin = binding.etPin.text?.toString().orEmpty()
             if (pin.length < 4) {
@@ -57,6 +75,12 @@ class LoginActivity : AppCompatActivity() {
         } else {
             binding.btnBiometricLogin.visibility = android.view.View.GONE
         }
+    }
+
+    private fun setSignInEnabled(enabled: Boolean) {
+        binding.etPin.isEnabled = enabled
+        binding.btnLogin.isEnabled = enabled
+        binding.btnBiometricLogin.isEnabled = enabled
     }
 
     private fun promptForBiometricSignIn() {

@@ -67,6 +67,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun redirectToLogin() {
+        sessionManager.invalidate()
         startActivity(
             Intent(this, LoginActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

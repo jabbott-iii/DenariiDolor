@@ -6,7 +6,7 @@ data class Transfer(
     override val amount: Double,
     override val categoryId: Long,
     override val accountId: Long,
-    val transferAccountId: Long?,
+    val transferAccountId: Long,
     override val dateEpochMillis: Long
 ) : Transaction(id, description, amount, categoryId, accountId, dateEpochMillis) {
     override fun balanceImpact(): Double = 0.0

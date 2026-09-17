@@ -24,6 +24,7 @@ class AddTransactionFragment : BaseFragment(R.layout.fragment_add_transaction) {
     private var _binding: FragmentAddTransactionBinding? = null
     private val binding get() = _binding!!
     private val viewModel by viewModels<TransactionViewModel>()
+    private var lastAutoCategoryId: String? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -112,7 +113,12 @@ class AddTransactionFragment : BaseFragment(R.layout.fragment_add_transaction) {
 
     private fun applyDefaultIdsForSelectedType() {
         val selectedType = binding.spinnerTransactionType.selectedItem?.toString().orEmpty()
-        binding.etCategoryId.setText(defaultCategoryId(selectedType).toString())
+        val nextDefaultCategoryId = defaultCategoryId(selectedType).toString()
+        val currentCategoryId = binding.etCategoryId.text?.toString().orEmpty()
+        if (currentCategoryId.isBlank() || currentCategoryId == lastAutoCategoryId) {
+            binding.etCategoryId.setText(nextDefaultCategoryId)
+        }
+        lastAutoCategoryId = nextDefaultCategoryId
         if (binding.etAccountId.text.isNullOrBlank()) {
             binding.etAccountId.setText(Constants.DEFAULT_CASH_ACCOUNT_ID.toString())
         }
