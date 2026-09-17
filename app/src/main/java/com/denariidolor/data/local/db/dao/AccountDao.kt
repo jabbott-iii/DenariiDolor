@@ -14,4 +14,7 @@ interface AccountDao {
 
     @Query("SELECT * FROM accounts ORDER BY name ASC")
     fun getAll(): Flow<List<AccountEntity>>
+
+    @Query("SELECT COUNT(*) FROM accounts")
+    suspend fun count(): Int
 }

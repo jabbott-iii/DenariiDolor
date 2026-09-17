@@ -27,6 +27,9 @@ object SearchFilterParser {
         ) {
             throw IllegalArgumentException("Start date must be on or before the end date")
         }
+        if (filters.minAmount != null && filters.maxAmount != null && filters.minAmount > filters.maxAmount) {
+            throw IllegalArgumentException("Minimum amount must be less than or equal to the maximum amount")
+        }
         return filters
     }
 

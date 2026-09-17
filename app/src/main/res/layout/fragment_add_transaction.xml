@@ -49,16 +49,12 @@
         android:hint="@string/transaction_transfer_account_id_hint"
         android:inputType="number" />
 
-    <EditText
-        android:id="@+id/et_transaction_date"
+    <Button
+        android:id="@+id/btn_transaction_date"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:clickable="true"
-        android:focusable="false"
-        android:hint="@string/date_hint"
-        android:importantForAutofill="no"
-        android:inputType="date" />
+        android:text="@string/date_hint" />
 
     <Button
         android:id="@+id/btn_save_transaction"

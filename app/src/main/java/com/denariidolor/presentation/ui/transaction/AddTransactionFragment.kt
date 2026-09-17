@@ -3,6 +3,7 @@ package com.denariidolor.presentation.ui.transaction
 import android.app.DatePickerDialog
 import android.os.Bundle
 import android.view.View
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.fragment.app.viewModels
@@ -32,7 +33,15 @@ class AddTransactionFragment : BaseFragment(R.layout.fragment_add_transaction) {
             android.R.layout.simple_spinner_dropdown_item,
             resources.getStringArray(R.array.transaction_types)
         )
+        binding.spinnerTransactionType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                updateTransferAccountVisibility()
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+        }
         setupDatePicker()
+        updateTransferAccountVisibility()
 
         binding.btnSaveTransaction.setOnClickListener {
             val description = binding.etDescription.text?.toString().orEmpty()
@@ -42,7 +51,7 @@ class AddTransactionFragment : BaseFragment(R.layout.fragment_add_transaction) {
             val accountId = binding.etAccountId.text?.toString()?.toLongOrNull() ?: Constants.DEFAULT_CASH_ACCOUNT_ID
             val transferAccountId = binding.etTransferAccountId.text?.toString()?.toLongOrNull()
                 ?: if (selectedType == "TRANSFER") Constants.DEFAULT_SAVINGS_ACCOUNT_ID else null
-            val dateText = binding.etTransactionDate.text?.toString().orEmpty()
+            val dateText = binding.btnTransactionDate.text.toString().takeUnless { it == getString(R.string.date_hint) }.orEmpty()
             val dateEpochMillis = if (dateText.isBlank()) {
                 System.currentTimeMillis()
             } else {
@@ -73,7 +82,7 @@ class AddTransactionFragment : BaseFragment(R.layout.fragment_add_transaction) {
                             binding.etCategoryId.text?.clear()
                             binding.etAccountId.text?.clear()
                             binding.etTransferAccountId.text?.clear()
-                            binding.etTransactionDate.text?.clear()
+                            binding.btnTransactionDate.text = getString(R.string.date_hint)
                         }
                     }
                 }
@@ -95,16 +104,17 @@ class AddTransactionFragment : BaseFragment(R.layout.fragment_add_transaction) {
     }
 
     private fun setupDatePicker() {
-        binding.etTransactionDate.setOnClickListener { showDatePicker { binding.etTransactionDate.setText(it) } }
-        binding.etTransactionDate.setOnFocusChangeListener { _, hasFocus ->
+        binding.btnTransactionDate.setOnClickListener { showDatePicker { binding.btnTransactionDate.text = it } }
+        binding.btnTransactionDate.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
-                showDatePicker { binding.etTransactionDate.setText(it) }
+                showDatePicker { binding.btnTransactionDate.text = it }
             }
         }
     }
 
     private fun showDatePicker(onDateSelected: (String) -> Unit) {
-        val selectedDate = binding.etTransactionDate.text?.toString()?.takeIf { it.isNotBlank() }?.let {
+        val placeholder = getString(R.string.date_hint)
+        val selectedDate = binding.btnTransactionDate.text?.toString()?.takeIf { it.isNotBlank() && it != placeholder }?.let {
             runCatching { LocalDate.parse(it) }.getOrNull()
         } ?: LocalDate.now()
         DatePickerDialog(
@@ -116,5 +126,11 @@ class AddTransactionFragment : BaseFragment(R.layout.fragment_add_transaction) {
             selectedDate.monthValue - 1,
             selectedDate.dayOfMonth
         ).show()
+    }
+
+    private fun updateTransferAccountVisibility() {
+        val isTransfer = binding.spinnerTransactionType.selectedItem?.toString() == "TRANSFER"
+        binding.etTransferAccountId.visibility = if (isTransfer) View.VISIBLE else View.GONE
+        binding.etTransferAccountId.isEnabled = isTransfer
     }
 }

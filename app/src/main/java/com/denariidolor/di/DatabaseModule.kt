@@ -13,7 +13,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import androidx.sqlite.db.SupportSQLiteDatabase
 import javax.inject.Singleton
 
 @Module
@@ -23,23 +22,6 @@ object DatabaseModule {
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
         return Room.databaseBuilder(context, AppDatabase::class.java, Constants.APP_DB_NAME)
-            .addCallback(object : androidx.room.RoomDatabase.Callback() {
-                override fun onCreate(db: SupportSQLiteDatabase) {
-                    super.onCreate(db)
-                    Constants.DEFAULT_ACCOUNTS.forEach { account ->
-                        db.execSQL(
-                            "INSERT OR IGNORE INTO accounts (id, name, balance) VALUES (?, ?, ?)",
-                            arrayOf(account.id, account.name, account.balance)
-                        )
-                    }
-                    Constants.DEFAULT_CATEGORIES.forEach { category ->
-                        db.execSQL(
-                            "INSERT OR IGNORE INTO categories (id, name, iconName) VALUES (?, ?, ?)",
-                            arrayOf(category.id, category.name, category.iconName)
-                        )
-                    }
-                }
-            })
             .fallbackToDestructiveMigration()
             .build()
     }

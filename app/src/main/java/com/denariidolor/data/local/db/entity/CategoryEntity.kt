@@ -2,7 +2,6 @@ package com.denariidolor.data.local.db.entity
 
 import androidx.room.Entity
 import androidx.room.Index
-import androidx.room.ColumnInfo
 import androidx.room.PrimaryKey
 
 @Entity(
@@ -12,5 +11,5 @@ import androidx.room.PrimaryKey
 data class CategoryEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
-    @ColumnInfo(name = "iconName") val iconName: String = "ic_category_default"
+    val iconName: String = "ic_category_default"
 )

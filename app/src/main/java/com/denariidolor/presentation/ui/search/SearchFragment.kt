@@ -13,7 +13,6 @@ import com.denariidolor.R
 import com.denariidolor.databinding.FragmentSearchBinding
 import com.denariidolor.domain.model.SearchFilters
 import com.denariidolor.presentation.ui.common.BaseFragment
-import com.denariidolor.util.Validators
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -34,10 +33,6 @@ class SearchFragment : BaseFragment(R.layout.fragment_search) {
 
         binding.btnSearch.setOnClickListener {
             val filters = buildFilters() ?: return@setOnClickListener
-            if (!Validators.isValidSearchRange(filters)) {
-                Toast.makeText(requireContext(), getString(R.string.invalid_search_range_message), Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
             viewModel.search(filters)
         }
 
@@ -54,14 +49,16 @@ class SearchFragment : BaseFragment(R.layout.fragment_search) {
     }
 
     private fun buildFilters(): SearchFilters? {
+        val startDate = binding.btnSearchStartDate.text.toString().takeUnless { it == getString(R.string.search_start_date_hint) }.orEmpty()
+        val endDate = binding.btnSearchEndDate.text.toString().takeUnless { it == getString(R.string.search_end_date_hint) }.orEmpty()
         return runCatching {
             SearchFilterParser.parse(
                 description = binding.etSearchDescription.text?.toString().orEmpty(),
                 categoryId = binding.etSearchCategoryId.text?.toString().orEmpty(),
                 minAmount = binding.etSearchMinAmount.text?.toString().orEmpty(),
                 maxAmount = binding.etSearchMaxAmount.text?.toString().orEmpty(),
-                startDate = binding.etSearchStartDate.text?.toString().orEmpty(),
-                endDate = binding.etSearchEndDate.text?.toString().orEmpty()
+                startDate = startDate,
+                endDate = endDate
             )
         }.getOrElse {
             Toast.makeText(requireContext(), getString(R.string.invalid_search_filters_message), Toast.LENGTH_SHORT).show()
@@ -70,18 +67,19 @@ class SearchFragment : BaseFragment(R.layout.fragment_search) {
     }
 
     private fun setupDatePickers() {
-        binding.etSearchStartDate.setOnClickListener { showDatePicker(binding.etSearchStartDate) }
-        binding.etSearchEndDate.setOnClickListener { showDatePicker(binding.etSearchEndDate) }
-        binding.etSearchStartDate.setOnFocusChangeListener { _, hasFocus ->
-            if (hasFocus) showDatePicker(binding.etSearchStartDate)
+        binding.btnSearchStartDate.setOnClickListener { showDatePicker(binding.btnSearchStartDate, R.string.search_start_date_hint) }
+        binding.btnSearchEndDate.setOnClickListener { showDatePicker(binding.btnSearchEndDate, R.string.search_end_date_hint) }
+        binding.btnSearchStartDate.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) showDatePicker(binding.btnSearchStartDate, R.string.search_start_date_hint)
         }
-        binding.etSearchEndDate.setOnFocusChangeListener { _, hasFocus ->
-            if (hasFocus) showDatePicker(binding.etSearchEndDate)
+        binding.btnSearchEndDate.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) showDatePicker(binding.btnSearchEndDate, R.string.search_end_date_hint)
         }
     }
 
-    private fun showDatePicker(target: android.widget.EditText) {
-        val selectedDate = target.text?.toString()?.takeIf { it.isNotBlank() }?.let {
+    private fun showDatePicker(target: android.widget.Button, placeholderTextRes: Int) {
+        val placeholder = getString(placeholderTextRes)
+        val selectedDate = target.text?.toString()?.takeIf { it.isNotBlank() && it != placeholder }?.let {
             runCatching { LocalDate.parse(it) }.getOrNull()
         } ?: LocalDate.now()
         DatePickerDialog(
