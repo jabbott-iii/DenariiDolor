@@ -30,9 +30,9 @@ class TransactionViewModel @Inject constructor(
         dateEpochMillis: Long
     ) {
         viewModelScope.launch {
-            val result = addTransactionUseCase(
+            val result = runCatching {
                 buildTransaction(
-                    type = type,
+                    type = type.trim().uppercase(),
                     description = description,
                     amount = amount,
                     categoryId = categoryId,
@@ -40,6 +40,9 @@ class TransactionViewModel @Inject constructor(
                     transferAccountId = transferAccountId,
                     dateEpochMillis = dateEpochMillis
                 )
+            }.fold(
+                onSuccess = { transaction -> addTransactionUseCase(transaction) },
+                onFailure = { Result.failure(it) }
             )
             _status.value = if (result.isSuccess) "Saved" else (result.exceptionOrNull()?.message ?: "Error")
         }
@@ -64,7 +67,8 @@ class TransactionViewModel @Inject constructor(
                 transferAccountId = transferAccountId,
                 dateEpochMillis = dateEpochMillis
             )
-            else -> Expense(description = description, amount = amount, categoryId = categoryId, accountId = accountId, dateEpochMillis = dateEpochMillis)
+            "EXPENSE" -> Expense(description = description, amount = amount, categoryId = categoryId, accountId = accountId, dateEpochMillis = dateEpochMillis)
+            else -> throw IllegalArgumentException("Unsupported transaction type")
         }
     }
 }

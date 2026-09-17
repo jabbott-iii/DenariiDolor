@@ -96,7 +96,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun openMain() {
-        sessionManager.touch()
+        sessionManager.markAuthenticated()
         startActivity(Intent(this, MainActivity::class.java))
         finish()
     }

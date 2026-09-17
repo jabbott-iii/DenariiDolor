@@ -10,13 +10,7 @@ pluginManagement {
         }
     }
     repositories {
-        maven("https://maven.google.com") {
-            content {
-                includeGroupByRegex("com\\.android.*")
-                includeGroupByRegex("com\\.google.*")
-                includeGroupByRegex("androidx.*")
-            }
-        }
+        maven("https://maven.google.com")
         mavenCentral()
         gradlePluginPortal()
     }

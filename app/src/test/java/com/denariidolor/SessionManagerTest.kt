@@ -10,11 +10,20 @@ class SessionManagerTest {
     @Test
     fun invalidateMarksSessionAsTimedOut() {
         val sessionManager = SessionManager()
-        sessionManager.touch(now = 1_000L)
+        sessionManager.markAuthenticated(now = 1_000L)
 
         assertFalse(sessionManager.isSessionTimedOut(now = 1_000L + Constants.SESSION_TIMEOUT_MILLIS - 1))
 
         sessionManager.invalidate()
+
+        assertTrue(sessionManager.isSessionTimedOut(now = 1_000L))
+    }
+
+    @Test
+    fun touchDoesNotAuthenticateByItself() {
+        val sessionManager = SessionManager()
+
+        sessionManager.touch(now = 1_000L)
 
         assertTrue(sessionManager.isSessionTimedOut(now = 1_000L))
     }

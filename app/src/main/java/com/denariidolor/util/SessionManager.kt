@@ -9,6 +9,12 @@ class SessionManager @Inject constructor() {
     private var authenticated: Boolean = false
 
     fun touch(now: Long = System.currentTimeMillis()) {
+        if (authenticated) {
+            lastActiveAt = now
+        }
+    }
+
+    fun markAuthenticated(now: Long = System.currentTimeMillis()) {
         authenticated = true
         lastActiveAt = now
     }

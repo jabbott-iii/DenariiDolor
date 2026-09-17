@@ -43,14 +43,53 @@ class SearchFilterParserTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun parseRejectsInvalidNumericFilters() {
+    fun parseRejectsInvalidCategoryFilter() {
         SearchFilterParser.parse(
             description = "",
             categoryId = "abc",
+            minAmount = "",
+            maxAmount = "",
+            startDate = "",
+            endDate = "",
+            zoneId = zoneId
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun parseRejectsInvalidMinimumAmount() {
+        SearchFilterParser.parse(
+            description = "",
+            categoryId = "",
             minAmount = "1.2.3",
             maxAmount = "",
             startDate = "",
             endDate = "",
+            zoneId = zoneId
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun parseRejectsInvalidMaximumAmount() {
+        SearchFilterParser.parse(
+            description = "",
+            categoryId = "",
+            minAmount = "",
+            maxAmount = "4.5.6",
+            startDate = "",
+            endDate = "",
+            zoneId = zoneId
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun parseRejectsInvertedDateRange() {
+        SearchFilterParser.parse(
+            description = "",
+            categoryId = "",
+            minAmount = "",
+            maxAmount = "",
+            startDate = "2024-09-30",
+            endDate = "2024-09-01",
             zoneId = zoneId
         )
     }
