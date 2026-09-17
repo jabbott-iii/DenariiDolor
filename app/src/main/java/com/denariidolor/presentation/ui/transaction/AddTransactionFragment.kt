@@ -36,6 +36,7 @@ class AddTransactionFragment : BaseFragment(R.layout.fragment_add_transaction) {
         binding.spinnerTransactionType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 updateTransferAccountVisibility()
+                applyDefaultIdsForSelectedType()
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) = Unit
@@ -47,10 +48,16 @@ class AddTransactionFragment : BaseFragment(R.layout.fragment_add_transaction) {
             val description = binding.etDescription.text?.toString().orEmpty()
             val amount = binding.etAmount.text?.toString()?.toDoubleOrNull() ?: 0.0
             val selectedType = binding.spinnerTransactionType.selectedItem?.toString().orEmpty()
-            val categoryId = binding.etCategoryId.text?.toString()?.toLongOrNull() ?: defaultCategoryId(selectedType)
-            val accountId = binding.etAccountId.text?.toString()?.toLongOrNull() ?: Constants.DEFAULT_CASH_ACCOUNT_ID
-            val transferAccountId = binding.etTransferAccountId.text?.toString()?.toLongOrNull()
-                ?: if (selectedType == "TRANSFER") Constants.DEFAULT_SAVINGS_ACCOUNT_ID else null
+            val categoryId = binding.etCategoryId.text?.toString()?.toLongOrNull()
+                ?: return@setOnClickListener showReferenceError()
+            val accountId = binding.etAccountId.text?.toString()?.toLongOrNull()
+                ?: return@setOnClickListener showReferenceError()
+            val transferAccountId = if (selectedType == "TRANSFER") {
+                binding.etTransferAccountId.text?.toString()?.toLongOrNull()
+                    ?: return@setOnClickListener showReferenceError()
+            } else {
+                null
+            }
             val dateText = binding.btnTransactionDate.text.toString().takeUnless { it == getString(R.string.date_hint) }.orEmpty()
             val dateEpochMillis = if (dateText.isBlank()) {
                 System.currentTimeMillis()
@@ -103,6 +110,19 @@ class AddTransactionFragment : BaseFragment(R.layout.fragment_add_transaction) {
         }
     }
 
+    private fun applyDefaultIdsForSelectedType() {
+        val selectedType = binding.spinnerTransactionType.selectedItem?.toString().orEmpty()
+        binding.etCategoryId.setText(defaultCategoryId(selectedType).toString())
+        if (binding.etAccountId.text.isNullOrBlank()) {
+            binding.etAccountId.setText(Constants.DEFAULT_CASH_ACCOUNT_ID.toString())
+        }
+        if (selectedType == "TRANSFER") {
+            binding.etTransferAccountId.setText(Constants.DEFAULT_SAVINGS_ACCOUNT_ID.toString())
+        } else {
+            binding.etTransferAccountId.text?.clear()
+        }
+    }
+
     private fun setupDatePicker() {
         binding.btnTransactionDate.setOnClickListener { showDatePicker { binding.btnTransactionDate.text = it } }
         binding.btnTransactionDate.setOnFocusChangeListener { _, hasFocus ->
@@ -132,5 +152,9 @@ class AddTransactionFragment : BaseFragment(R.layout.fragment_add_transaction) {
         val isTransfer = binding.spinnerTransactionType.selectedItem?.toString() == "TRANSFER"
         binding.etTransferAccountId.visibility = if (isTransfer) View.VISIBLE else View.GONE
         binding.etTransferAccountId.isEnabled = isTransfer
+    }
+
+    private fun showReferenceError() {
+        Toast.makeText(requireContext(), getString(R.string.transaction_reference_required_message), Toast.LENGTH_SHORT).show()
     }
 }

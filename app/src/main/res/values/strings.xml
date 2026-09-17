@@ -17,6 +17,7 @@
     <string name="transaction_category_id_hint">Category ID (1 expense, 2 income, 3 transfer)</string>
     <string name="transaction_account_id_hint">Account ID (default 1 = Cash)</string>
     <string name="transaction_transfer_account_id_hint">Transfer account ID (default 2 = Savings)</string>
+    <string name="transaction_reference_required_message">Review the account and category IDs before saving this transaction.</string>
     <string name="date_hint">Date (YYYY-MM-DD)</string>
     <string name="save_transaction">Save Transaction</string>
     <string-array name="transaction_types">

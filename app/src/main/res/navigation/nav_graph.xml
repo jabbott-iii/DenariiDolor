@@ -22,7 +22,7 @@
     <fragment
         android:id="@+id/settingsFragment"
         android:name="com.denariidolor.presentation.ui.settings.SettingsFragment"
-        android:label="Settings" />
+        android:label="@string/settings" />
 
     <fragment
         android:id="@+id/addTransactionFragment"
