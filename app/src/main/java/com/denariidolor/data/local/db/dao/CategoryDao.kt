@@ -12,9 +12,15 @@ interface CategoryDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(category: CategoryEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertOrIgnore(category: CategoryEntity): Long
+
     @Query("SELECT * FROM categories ORDER BY name ASC")
     fun getAll(): Flow<List<CategoryEntity>>
 
     @Query("SELECT COUNT(*) FROM categories WHERE LOWER(name) = LOWER(:name)")
     suspend fun countByName(name: String): Int
+
+    @Query("SELECT COUNT(*) FROM categories")
+    suspend fun count(): Int
 }

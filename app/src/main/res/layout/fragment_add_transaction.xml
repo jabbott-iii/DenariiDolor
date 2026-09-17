@@ -9,20 +9,58 @@
         android:id="@+id/et_description"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Description" />
+        android:hint="@string/transaction_description_hint" />
+
+    <Spinner
+        android:id="@+id/spinner_transaction_type"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" />
 
     <EditText
         android:id="@+id/et_amount"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Amount"
+        android:layout_marginTop="8dp"
+        android:hint="@string/transaction_amount_hint"
         android:inputType="numberDecimal" />
+
+    <EditText
+        android:id="@+id/et_category_id"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="@string/transaction_category_id_hint"
+        android:inputType="number" />
+
+    <EditText
+        android:id="@+id/et_account_id"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="@string/transaction_account_id_hint"
+        android:inputType="number" />
+
+    <EditText
+        android:id="@+id/et_transfer_account_id"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="@string/transaction_transfer_account_id_hint"
+        android:inputType="number" />
+
+    <Button
+        android:id="@+id/btn_transaction_date"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/date_hint" />
 
     <Button
         android:id="@+id/btn_save_transaction"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="Save Transaction" />
+        android:text="@string/save_transaction" />
 
 </LinearLayout>

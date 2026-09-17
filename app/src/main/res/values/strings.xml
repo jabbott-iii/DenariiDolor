@@ -4,4 +4,42 @@
     <string name="dashboard_expense">Expense: $%.2f</string>
     <string name="dashboard_net">Net: $%.2f</string>
     <string name="report_summary">Month: %1$s\nIncome: $%2$.2f\nExpense: $%3$.2f\nNet: $%4$.2f</string>
+    <string name="sign_in">Sign In</string>
+    <string name="sign_in_with_biometrics">Sign In with Biometrics</string>
+    <string name="biometric_sign_in_accessibility_label">Sign in with biometrics</string>
+    <string name="biometric_sign_in_title">Unlock Denarii Dolor</string>
+    <string name="biometric_sign_in_subtitle">Use your enrolled biometrics to continue</string>
+    <string name="biometric_sign_in_failed">Biometric authentication failed. Try again or use your PIN.</string>
+    <string name="biometric_sign_in_error">Biometric sign-in is currently unavailable. Use your PIN instead.</string>
+    <string name="use_pin_instead">Use PIN instead</string>
+    <string name="transaction_description_hint">Description</string>
+    <string name="transaction_amount_hint">Amount</string>
+    <string name="transaction_category_id_hint">Category ID (1 expense, 2 income, 3 transfer)</string>
+    <string name="transaction_account_id_hint">Account ID (default 1 = Cash)</string>
+    <string name="transaction_transfer_account_id_hint">Transfer account ID (default 2 = Savings)</string>
+    <string name="transaction_reference_required_message">Review the account and category IDs before saving this transaction.</string>
+    <string name="date_hint">Date (YYYY-MM-DD)</string>
+    <string name="save_transaction">Save Transaction</string>
+    <string-array name="transaction_types">
+        <item>EXPENSE</item>
+        <item>INCOME</item>
+        <item>TRANSFER</item>
+    </string-array>
+    <string name="search_description_hint">Description</string>
+    <string name="search_category_id_hint">Category ID</string>
+    <string name="search_min_amount_hint">Min amount</string>
+    <string name="search_max_amount_hint">Max amount</string>
+    <string name="search_start_date_hint">Start date (YYYY-MM-DD)</string>
+    <string name="search_end_date_hint">End date (YYYY-MM-DD)</string>
+    <string name="search">Search</string>
+    <string name="invalid_date_message">Use the YYYY-MM-DD date format.</string>
+    <string name="invalid_search_filters_message">Check your search dates and numeric filters, then try again.</string>
+    <string name="invalid_search_range_message">Enter a valid amount and date range.</string>
+    <string name="reports">Reports</string>
+    <string name="settings">Settings</string>
+    <string name="settings_session_timeout">Session timeout: %d minutes of inactivity</string>
+    <string name="settings_pin_configured">PIN is configured for quick sign-in.</string>
+    <string name="settings_pin_not_configured">No PIN is configured yet.</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="reset_pin">Reset PIN</string>
 </resources>

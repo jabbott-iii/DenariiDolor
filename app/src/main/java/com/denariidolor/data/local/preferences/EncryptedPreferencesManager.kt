@@ -25,6 +25,10 @@ class EncryptedPreferencesManager @Inject constructor(
 
     fun getPin(): String? = sharedPreferences.getString(KEY_PIN, null)
 
+    fun clearPin() {
+        sharedPreferences.edit().remove(KEY_PIN).apply()
+    }
+
     companion object {
         private const val KEY_PIN = "key_pin"
     }

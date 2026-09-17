@@ -20,6 +20,11 @@
         android:label="Report" />
 
     <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.denariidolor.presentation.ui.settings.SettingsFragment"
+        android:label="@string/settings" />
+
+    <fragment
         android:id="@+id/addTransactionFragment"
         android:name="com.denariidolor.presentation.ui.transaction.AddTransactionFragment"
         android:label="Add Transaction" />

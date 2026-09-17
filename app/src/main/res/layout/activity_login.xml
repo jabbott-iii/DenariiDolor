@@ -18,6 +18,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="Sign In" />
+        android:text="@string/sign_in" />
+
+    <Button
+        android:id="@+id/btn_biometric_login"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:contentDescription="@string/biometric_sign_in_accessibility_label"
+        android:text="@string/sign_in_with_biometrics" />
 
 </LinearLayout>

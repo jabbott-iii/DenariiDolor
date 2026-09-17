@@ -1,6 +1,7 @@
 package com.denariidolor.util
 
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.YearMonth
 
@@ -13,4 +14,14 @@ object DateUtils {
     }
 
     fun formatIso(epochMillis: Long): String = Instant.ofEpochMilli(epochMillis).toString()
+
+    fun parseIsoDateToStartOfDayEpochMillis(
+        value: String,
+        zoneId: ZoneId = ZoneId.systemDefault()
+    ): Long = LocalDate.parse(value).atStartOfDay(zoneId).toInstant().toEpochMilli()
+
+    fun parseIsoDateToEndOfDayEpochMillis(
+        value: String,
+        zoneId: ZoneId = ZoneId.systemDefault()
+    ): Long = LocalDate.parse(value).plusDays(1).atStartOfDay(zoneId).toInstant().toEpochMilli() - 1
 }

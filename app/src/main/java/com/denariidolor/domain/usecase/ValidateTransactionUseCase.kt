@@ -17,6 +17,15 @@ class ValidateTransactionUseCase @Inject constructor(
         if (!Validators.isValidAmount(transaction.amount)) return Result.failure(IllegalArgumentException("Invalid amount"))
         if (!Validators.isValidDescription(transaction.description)) return Result.failure(IllegalArgumentException("Description cannot be blank"))
         if (!Validators.isValidDateEpoch(transaction.dateEpochMillis)) return Result.failure(IllegalArgumentException("Invalid date"))
+        if (transaction.accountId <= 0L) return Result.failure(IllegalArgumentException("Invalid account"))
+        if (transaction.categoryId <= 0L) return Result.failure(IllegalArgumentException("Invalid category"))
+        if (transaction.type == "TRANSFER") {
+            val transferAccountId = transaction.transferAccountId
+                ?: return Result.failure(IllegalArgumentException("Transfer destination is required"))
+            if (transferAccountId == transaction.accountId) {
+                return Result.failure(IllegalArgumentException("Transfer destination must be different"))
+            }
+        }
 
         if (transaction.type == "EXPENSE") {
             val budget = budgetRepository.getByCategoryId(transaction.categoryId)

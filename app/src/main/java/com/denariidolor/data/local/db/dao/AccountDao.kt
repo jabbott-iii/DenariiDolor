@@ -12,6 +12,12 @@ interface AccountDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(account: AccountEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertOrIgnore(account: AccountEntity): Long
+
     @Query("SELECT * FROM accounts ORDER BY name ASC")
     fun getAll(): Flow<List<AccountEntity>>
+
+    @Query("SELECT COUNT(*) FROM accounts")
+    suspend fun count(): Int
 }

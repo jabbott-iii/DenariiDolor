@@ -3,6 +3,7 @@ package com.denariidolor.domain.usecase
 import com.denariidolor.data.repository.TransactionRepository
 import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.domain.model.ReportRow
+import com.denariidolor.domain.model.toDomainTransaction
 import com.denariidolor.util.DateUtils
 import java.time.YearMonth
 import javax.inject.Inject
@@ -24,6 +25,7 @@ class GenerateReportUseCase @Inject constructor(
         }
         val income = rows.filter { it.type == "INCOME" }.sumOf { it.amount }
         val expense = rows.filter { it.type == "EXPENSE" }.sumOf { it.amount }
+        val net = transactions.sumOf { it.toDomainTransaction().balanceImpact() }
         val generatedAt = System.currentTimeMillis()
         val csv = buildString {
             appendLine("generated_at,${DateUtils.formatIso(generatedAt)}")
@@ -38,7 +40,7 @@ class GenerateReportUseCase @Inject constructor(
             generatedAtEpochMillis = generatedAt,
             totalIncome = income,
             totalExpense = expense,
-            net = income - expense,
+            net = net,
             rows = rows,
             csv = csv
         )
