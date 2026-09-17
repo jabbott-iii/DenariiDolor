@@ -4,9 +4,13 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
 import com.denariidolor.MainActivity
+import com.denariidolor.R
 import com.denariidolor.data.local.preferences.EncryptedPreferencesManager
 import com.denariidolor.databinding.ActivityLoginBinding
+import com.denariidolor.util.SessionManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -16,6 +20,12 @@ class LoginActivity : AppCompatActivity() {
 
     @Inject
     lateinit var encryptedPreferencesManager: EncryptedPreferencesManager
+
+    @Inject
+    lateinit var biometricAuthManager: BiometricAuthManager
+
+    @Inject
+    lateinit var sessionManager: SessionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,8 +47,49 @@ class LoginActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
+            openMain()
         }
+
+        if (biometricAuthManager.canAuthenticate(this)) {
+            binding.btnBiometricLogin.setOnClickListener { promptForBiometricSignIn() }
+        } else {
+            binding.btnBiometricLogin.isEnabled = false
+        }
+    }
+
+    private fun promptForBiometricSignIn() {
+        val prompt = BiometricPrompt(
+            this,
+            ContextCompat.getMainExecutor(this),
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    openMain()
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    super.onAuthenticationError(errorCode, errString)
+                    if (errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON && errorCode != BiometricPrompt.ERROR_USER_CANCELED) {
+                        Toast.makeText(this@LoginActivity, errString, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        )
+        prompt.authenticate(
+            BiometricPrompt.PromptInfo.Builder()
+                .setTitle(getString(R.string.biometric_sign_in_title))
+                .setSubtitle(getString(R.string.biometric_sign_in_subtitle))
+                .setAllowedAuthenticators(
+                    androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                        androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                )
+                .build()
+        )
+    }
+
+    private fun openMain() {
+        sessionManager.touch()
+        startActivity(Intent(this, MainActivity::class.java))
+        finish()
     }
 }

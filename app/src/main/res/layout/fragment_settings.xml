@@ -2,29 +2,33 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
     android:orientation="vertical"
-    android:padding="24dp">
+    android:padding="16dp">
 
-    <EditText
-        android:id="@+id/et_pin"
+    <TextView
+        android:id="@+id/tv_session_timeout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="PIN"
-        android:inputType="numberPassword" />
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tv_pin_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp" />
 
     <Button
-        android:id="@+id/btn_login"
+        android:id="@+id/btn_sign_out"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="@string/sign_in" />
+        android:text="@string/sign_out" />
 
     <Button
-        android:id="@+id/btn_biometric_login"
+        android:id="@+id/btn_reset_pin"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="@string/sign_in_with_biometrics" />
+        android:layout_marginTop="8dp"
+        android:text="@string/reset_pin" />
 
 </LinearLayout>

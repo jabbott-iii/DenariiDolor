@@ -7,4 +7,6 @@ abstract class Transaction(
     open val categoryId: Long,
     open val accountId: Long,
     open val dateEpochMillis: Long
-)
+) {
+    abstract fun balanceImpact(): Double
+}

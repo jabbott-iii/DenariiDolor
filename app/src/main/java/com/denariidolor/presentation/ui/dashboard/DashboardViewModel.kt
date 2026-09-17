@@ -3,6 +3,7 @@ package com.denariidolor.presentation.ui.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.denariidolor.data.repository.TransactionRepository
+import com.denariidolor.domain.model.toDomainTransaction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
@@ -17,7 +18,8 @@ class DashboardViewModel @Inject constructor(
         .map { transactions ->
             val income = transactions.filter { it.type == "INCOME" }.sumOf { it.amount }
             val expense = transactions.filter { it.type == "EXPENSE" }.sumOf { it.amount }
-            DashboardSummary(income, expense, income - expense)
+            val net = transactions.sumOf { it.toDomainTransaction().balanceImpact() }
+            DashboardSummary(income, expense, net)
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardSummary())
 }

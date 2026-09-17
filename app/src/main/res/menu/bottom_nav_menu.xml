@@ -11,5 +11,9 @@
     <item
         android:id="@+id/reportFragment"
         android:icon="@android:drawable/ic_menu_info_details"
-        android:title="Reports" />
+        android:title="@string/reports" />
+    <item
+        android:id="@+id/settingsFragment"
+        android:icon="@android:drawable/ic_menu_preferences"
+        android:title="@string/settings" />
 </menu>
