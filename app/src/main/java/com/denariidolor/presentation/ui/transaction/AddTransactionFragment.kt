@@ -1,5 +1,6 @@
 package com.denariidolor.presentation.ui.transaction
 
+import android.app.DatePickerDialog
 import android.os.Bundle
 import android.view.View
 import android.widget.ArrayAdapter
@@ -15,6 +16,7 @@ import com.denariidolor.util.Constants
 import com.denariidolor.util.DateUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 @AndroidEntryPoint
 class AddTransactionFragment : BaseFragment(R.layout.fragment_add_transaction) {
@@ -30,6 +32,7 @@ class AddTransactionFragment : BaseFragment(R.layout.fragment_add_transaction) {
             android.R.layout.simple_spinner_dropdown_item,
             resources.getStringArray(R.array.transaction_types)
         )
+        setupDatePicker()
 
         binding.btnSaveTransaction.setOnClickListener {
             val description = binding.etDescription.text?.toString().orEmpty()
@@ -64,6 +67,14 @@ class AddTransactionFragment : BaseFragment(R.layout.fragment_add_transaction) {
                 viewModel.status.collect {
                     if (!it.isNullOrBlank()) {
                         Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
+                        if (it == "Saved") {
+                            binding.etDescription.text?.clear()
+                            binding.etAmount.text?.clear()
+                            binding.etCategoryId.text?.clear()
+                            binding.etAccountId.text?.clear()
+                            binding.etTransferAccountId.text?.clear()
+                            binding.etTransactionDate.text?.clear()
+                        }
                     }
                 }
             }
@@ -81,5 +92,29 @@ class AddTransactionFragment : BaseFragment(R.layout.fragment_add_transaction) {
             "TRANSFER" -> Constants.DEFAULT_TRANSFER_CATEGORY_ID
             else -> Constants.DEFAULT_EXPENSE_CATEGORY_ID
         }
+    }
+
+    private fun setupDatePicker() {
+        binding.etTransactionDate.setOnClickListener { showDatePicker { binding.etTransactionDate.setText(it) } }
+        binding.etTransactionDate.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                showDatePicker { binding.etTransactionDate.setText(it) }
+            }
+        }
+    }
+
+    private fun showDatePicker(onDateSelected: (String) -> Unit) {
+        val selectedDate = binding.etTransactionDate.text?.toString()?.takeIf { it.isNotBlank() }?.let {
+            runCatching { LocalDate.parse(it) }.getOrNull()
+        } ?: LocalDate.now()
+        DatePickerDialog(
+            requireContext(),
+            { _, year, month, dayOfMonth ->
+                onDateSelected(LocalDate.of(year, month + 1, dayOfMonth).toString())
+            },
+            selectedDate.year,
+            selectedDate.monthValue - 1,
+            selectedDate.dayOfMonth
+        ).show()
     }
 }

@@ -1,5 +1,6 @@
 package com.denariidolor.presentation.ui.search
 
+import android.app.DatePickerDialog
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
@@ -15,6 +16,7 @@ import com.denariidolor.presentation.ui.common.BaseFragment
 import com.denariidolor.util.Validators
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 @AndroidEntryPoint
 class SearchFragment : BaseFragment(R.layout.fragment_search) {
@@ -28,6 +30,7 @@ class SearchFragment : BaseFragment(R.layout.fragment_search) {
         _binding = FragmentSearchBinding.bind(view)
         binding.rvSearchResults.layoutManager = LinearLayoutManager(requireContext())
         binding.rvSearchResults.adapter = adapter
+        setupDatePickers()
 
         binding.btnSearch.setOnClickListener {
             val filters = buildFilters() ?: return@setOnClickListener
@@ -64,5 +67,31 @@ class SearchFragment : BaseFragment(R.layout.fragment_search) {
             Toast.makeText(requireContext(), getString(R.string.invalid_search_filters_message), Toast.LENGTH_SHORT).show()
             return null
         }
+    }
+
+    private fun setupDatePickers() {
+        binding.etSearchStartDate.setOnClickListener { showDatePicker(binding.etSearchStartDate) }
+        binding.etSearchEndDate.setOnClickListener { showDatePicker(binding.etSearchEndDate) }
+        binding.etSearchStartDate.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) showDatePicker(binding.etSearchStartDate)
+        }
+        binding.etSearchEndDate.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) showDatePicker(binding.etSearchEndDate)
+        }
+    }
+
+    private fun showDatePicker(target: android.widget.EditText) {
+        val selectedDate = target.text?.toString()?.takeIf { it.isNotBlank() }?.let {
+            runCatching { LocalDate.parse(it) }.getOrNull()
+        } ?: LocalDate.now()
+        DatePickerDialog(
+            requireContext(),
+            { _, year, month, dayOfMonth ->
+                target.setText(LocalDate.of(year, month + 1, dayOfMonth).toString())
+            },
+            selectedDate.year,
+            selectedDate.monthValue - 1,
+            selectedDate.dayOfMonth
+        ).show()
     }
 }
