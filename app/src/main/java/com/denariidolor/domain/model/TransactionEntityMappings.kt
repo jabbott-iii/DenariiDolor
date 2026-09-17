@@ -28,7 +28,7 @@ fun TransactionEntity.toDomainTransaction(): Transaction {
             amount = amount,
             categoryId = categoryId,
             accountId = accountId,
-            transferAccountId = transferAccountId ?: accountId,
+            transferAccountId = requireNotNull(transferAccountId) { "Transfer destination is required for transaction $id" },
             dateEpochMillis = dateEpochMillis
         )
 

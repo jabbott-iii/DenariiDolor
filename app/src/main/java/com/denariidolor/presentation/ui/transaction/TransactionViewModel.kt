@@ -61,7 +61,7 @@ class TransactionViewModel @Inject constructor(
                 amount = amount,
                 categoryId = categoryId,
                 accountId = accountId,
-                transferAccountId = transferAccountId ?: accountId,
+                transferAccountId = transferAccountId,
                 dateEpochMillis = dateEpochMillis
             )
             else -> Expense(description = description, amount = amount, categoryId = categoryId, accountId = accountId, dateEpochMillis = dateEpochMillis)

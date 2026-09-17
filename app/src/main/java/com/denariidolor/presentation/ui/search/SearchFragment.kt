@@ -12,7 +12,6 @@ import com.denariidolor.R
 import com.denariidolor.databinding.FragmentSearchBinding
 import com.denariidolor.domain.model.SearchFilters
 import com.denariidolor.presentation.ui.common.BaseFragment
-import com.denariidolor.util.DateUtils
 import com.denariidolor.util.Validators
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -52,32 +51,15 @@ class SearchFragment : BaseFragment(R.layout.fragment_search) {
     }
 
     private fun buildFilters(): SearchFilters? {
-        val startDate = parseStartDate(binding.etSearchStartDate.text?.toString().orEmpty()) ?: return null
-        val endDate = parseEndDate(binding.etSearchEndDate.text?.toString().orEmpty()) ?: return null
-        return SearchFilters(
-            description = binding.etSearchDescription.text?.toString()?.trim()?.takeIf { it.isNotEmpty() },
-            categoryId = binding.etSearchCategoryId.text?.toString()?.toLongOrNull(),
-            minAmount = binding.etSearchMinAmount.text?.toString()?.toDoubleOrNull(),
-            maxAmount = binding.etSearchMaxAmount.text?.toString()?.toDoubleOrNull(),
-            startDateEpochMillis = startDate,
-            endDateEpochMillis = endDate
-        )
-    }
-
-    private fun parseStartDate(value: String): Long? {
-        if (value.isBlank()) return null
         return runCatching {
-            DateUtils.parseIsoDateToStartOfDayEpochMillis(value)
-        }.getOrElse {
-            Toast.makeText(requireContext(), getString(R.string.invalid_date_message), Toast.LENGTH_SHORT).show()
-            return null
-        }
-    }
-
-    private fun parseEndDate(value: String): Long? {
-        if (value.isBlank()) return null
-        return runCatching {
-            DateUtils.parseIsoDateToEndOfDayEpochMillis(value)
+            SearchFilterParser.parse(
+                description = binding.etSearchDescription.text?.toString().orEmpty(),
+                categoryId = binding.etSearchCategoryId.text?.toString().orEmpty(),
+                minAmount = binding.etSearchMinAmount.text?.toString().orEmpty(),
+                maxAmount = binding.etSearchMaxAmount.text?.toString().orEmpty(),
+                startDate = binding.etSearchStartDate.text?.toString().orEmpty(),
+                endDate = binding.etSearchEndDate.text?.toString().orEmpty()
+            )
         }.getOrElse {
             Toast.makeText(requireContext(), getString(R.string.invalid_date_message), Toast.LENGTH_SHORT).show()
             return null

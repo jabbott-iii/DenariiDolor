@@ -37,9 +37,7 @@ class MainActivity : AppCompatActivity() {
         if (sessionManager.isSessionTimedOut()) {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
-            return
         }
-        sessionManager.touch()
     }
 
     override fun onUserInteraction() {

@@ -6,6 +6,7 @@
     <string name="report_summary">Month: %1$s\nIncome: $%2$.2f\nExpense: $%3$.2f\nNet: $%4$.2f</string>
     <string name="sign_in">Sign In</string>
     <string name="sign_in_with_biometrics">Sign In with Biometrics</string>
+    <string name="biometric_sign_in_accessibility_label">Sign in with biometrics or device credentials</string>
     <string name="biometric_sign_in_title">Unlock Denarii Dolor</string>
     <string name="biometric_sign_in_subtitle">Use biometrics or device credentials to continue</string>
     <string name="biometric_sign_in_failed">Biometric authentication failed. Try again or use your PIN.</string>
