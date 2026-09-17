@@ -16,11 +16,23 @@ object SearchFilterParser {
     ): SearchFilters {
         return SearchFilters(
             description = description.trim().takeIf { it.isNotEmpty() },
-            categoryId = categoryId.toLongOrNull(),
-            minAmount = minAmount.toDoubleOrNull(),
-            maxAmount = maxAmount.toDoubleOrNull(),
+            categoryId = parseOptionalLong(categoryId, "category"),
+            minAmount = parseOptionalDouble(minAmount, "minimum amount"),
+            maxAmount = parseOptionalDouble(maxAmount, "maximum amount"),
             startDateEpochMillis = startDate.trim().takeIf { it.isNotEmpty() }?.let { DateUtils.parseIsoDateToStartOfDayEpochMillis(it, zoneId) },
             endDateEpochMillis = endDate.trim().takeIf { it.isNotEmpty() }?.let { DateUtils.parseIsoDateToEndOfDayEpochMillis(it, zoneId) }
         )
+    }
+
+    private fun parseOptionalLong(value: String, fieldName: String): Long? {
+        val trimmed = value.trim()
+        if (trimmed.isEmpty()) return null
+        return trimmed.toLongOrNull() ?: throw IllegalArgumentException("Invalid $fieldName")
+    }
+
+    private fun parseOptionalDouble(value: String, fieldName: String): Double? {
+        val trimmed = value.trim()
+        if (trimmed.isEmpty()) return null
+        return trimmed.toDoubleOrNull() ?: throw IllegalArgumentException("Invalid $fieldName")
     }
 }

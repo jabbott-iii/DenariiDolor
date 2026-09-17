@@ -72,7 +72,11 @@ class LoginActivity : AppCompatActivity() {
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
                     if (errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON && errorCode != BiometricPrompt.ERROR_USER_CANCELED) {
-                        Toast.makeText(this@LoginActivity, errString, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this@LoginActivity,
+                            getString(R.string.biometric_sign_in_error),
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
 
@@ -86,10 +90,7 @@ class LoginActivity : AppCompatActivity() {
             BiometricPrompt.PromptInfo.Builder()
                 .setTitle(getString(R.string.biometric_sign_in_title))
                 .setSubtitle(getString(R.string.biometric_sign_in_subtitle))
-                .setAllowedAuthenticators(
-                    androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                        androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
-                )
+                .setNegativeButtonText(getString(R.string.use_pin_instead))
                 .build()
         )
     }

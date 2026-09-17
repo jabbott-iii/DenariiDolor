@@ -35,7 +35,11 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         if (sessionManager.isSessionTimedOut()) {
-            startActivity(Intent(this, LoginActivity::class.java))
+            startActivity(
+                Intent(this, LoginActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
+            )
             finish()
         }
     }

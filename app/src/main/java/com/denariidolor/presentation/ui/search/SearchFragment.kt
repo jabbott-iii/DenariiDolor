@@ -61,7 +61,7 @@ class SearchFragment : BaseFragment(R.layout.fragment_search) {
                 endDate = binding.etSearchEndDate.text?.toString().orEmpty()
             )
         }.getOrElse {
-            Toast.makeText(requireContext(), getString(R.string.invalid_date_message), Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.invalid_search_filters_message), Toast.LENGTH_SHORT).show()
             return null
         }
     }

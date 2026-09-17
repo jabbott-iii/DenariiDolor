@@ -42,6 +42,19 @@ class SearchFilterParserTest {
         )
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun parseRejectsInvalidNumericFilters() {
+        SearchFilterParser.parse(
+            description = "",
+            categoryId = "abc",
+            minAmount = "1.2.3",
+            maxAmount = "",
+            startDate = "",
+            endDate = "",
+            zoneId = zoneId
+        )
+    }
+
     @Test
     fun parseLeavesBlankInputsUnset() {
         val filters = SearchFilterParser.parse(
