@@ -178,7 +178,16 @@ class LoginActivity : AppCompatActivity() {
     private suspend fun wipeAllUserData() {
         appDatabase.clearAllTables()
         encryptedPreferencesManager.clearAll()
+        clearDirectory(applicationContext.filesDir)
+        clearDirectory(applicationContext.cacheDir)
+        defaultDataInitializer.seedDefaults()
         sessionManager.invalidate()
+    }
+
+    private fun clearDirectory(directory: java.io.File?) {
+        directory?.listFiles()?.forEach { child ->
+            child.deleteRecursively()
+        }
     }
 
     private fun promptForBiometricSignIn() {

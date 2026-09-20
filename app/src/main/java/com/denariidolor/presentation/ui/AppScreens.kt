@@ -402,11 +402,12 @@ fun LoginScreen(
                 }
                 if (showWipeConfirmation) {
                     AlertDialog(
-                        onDismissRequest = { showWipeConfirmation = false },
+                        onDismissRequest = { if (!isSubmitting) showWipeConfirmation = false },
                         title = { Text(stringResource(R.string.wipe_data_confirmation_title)) },
                         text = { Text(stringResource(R.string.wipe_data_confirmation_message)) },
                         confirmButton = {
                             TextButton(
+                                enabled = !isSubmitting,
                                 onClick = {
                                     showWipeConfirmation = false
                                     onWipeDataConfirmed()
@@ -416,7 +417,10 @@ fun LoginScreen(
                             }
                         },
                         dismissButton = {
-                            TextButton(onClick = { showWipeConfirmation = false }) {
+                            TextButton(
+                                enabled = !isSubmitting,
+                                onClick = { showWipeConfirmation = false }
+                            ) {
                                 Text(stringResource(R.string.cancel))
                             }
                         }
