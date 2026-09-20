@@ -240,39 +240,41 @@ class LoginActivity : AppCompatActivity() {
         signInEnabled = false
 
         lifecycleScope.launch {
-            var wipeSucceeded = false
-            try {
+            val (wipeSucceeded, reseedSucceeded) =
                 withContext(Dispatchers.IO) {
-                    appDatabase.clearAllTables()
-                    encryptedPreferencesManager.clearAllSecurityData()
-                    cacheDir.deleteRecursively()
-                    cacheDir.mkdirs()
+                    var wipeFailed = false
+                    runCatching { appDatabase.clearAllTables() }.onFailure { wipeFailed = true }
+                    runCatching { encryptedPreferencesManager.clearAllSecurityData() }.onFailure { wipeFailed = true }
+                    runCatching {
+                        cacheDir.deleteRecursively()
+                        cacheDir.mkdirs()
+                    }.onFailure { wipeFailed = true }
+
+                    var reseedFailed = false
+                    if (!wipeFailed) {
+                        runCatching { defaultDataInitializer.seedDefaults() }.onFailure { reseedFailed = true }
+                    }
+                    (!wipeFailed) to (!reseedFailed)
                 }
-                wipeSucceeded = true
+
+            if (wipeSucceeded) {
                 sessionManager.invalidate()
                 clearInputs()
                 securityQuestion = ""
                 securityAnswer = ""
                 recoveryQuestion = null
                 refreshLoginState(preserveRecoveryMode = false)
-                withContext(Dispatchers.IO) {
-                    defaultDataInitializer.seedDefaults()
-                }
-                feedbackMessage = getString(R.string.wipe_data_success)
-            } catch (_: Exception) {
-                if (wipeSucceeded) {
-                    refreshLoginState(preserveRecoveryMode = false)
-                }
-                feedbackMessage =
-                    if (wipeSucceeded) {
-                        getString(R.string.wipe_data_reseed_error)
-                    } else {
-                        getString(R.string.wipe_data_error)
-                    }
-            } finally {
-                actionInProgress = false
-                signInEnabled = true
             }
+
+            feedbackMessage =
+                when {
+                    !wipeSucceeded -> getString(R.string.wipe_data_error)
+                    reseedSucceeded -> getString(R.string.wipe_data_success)
+                    else -> getString(R.string.wipe_data_reseed_error)
+                }
+
+            actionInProgress = false
+            signInEnabled = true
         }
     }
 

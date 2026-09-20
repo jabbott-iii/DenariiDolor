@@ -29,6 +29,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
@@ -199,6 +200,7 @@ fun LoginScreen(
     onConfirmWipeData: () -> Unit
 ) {
     val biometricContentDescription = stringResource(R.string.biometric_sign_in_accessibility_label)
+    val wipeActionContentDescription = stringResource(R.string.wipe_all_data_destructive_label)
     val primaryButtonLabel =
         when (mode) {
             LoginScreenMode.SIGN_IN -> stringResource(R.string.sign_in)
@@ -355,9 +357,16 @@ fun LoginScreen(
             TextButton(
                 onClick = onRequestWipeData,
                 enabled = signInEnabled,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        contentDescription = wipeActionContentDescription
+                    }
             ) {
-                Text(stringResource(R.string.wipe_all_data))
+                Text(
+                    text = stringResource(R.string.wipe_all_data),
+                    color = MaterialTheme.colorScheme.error
+                )
             }
         }
     }
