@@ -235,6 +235,42 @@ class ComposeScreensTest {
     }
 
     @Test
+    fun loginScreenPinVisibilityToggleSwitchesLabel() {
+        composeRule.setContent {
+            DenariiDolorTheme {
+                LoginScreen(
+                    mode = LoginScreenMode.SIGN_IN,
+                    pin = "1234",
+                    pinConfirmation = "",
+                    securityQuestion = "",
+                    securityAnswer = "",
+                    recoveryQuestion = null,
+                    signInEnabled = true,
+                    biometricAvailable = false,
+                    showWipeConfirmation = false,
+                    feedbackMessage = null,
+                    onPinChange = {},
+                    onPinConfirmationChange = {},
+                    onSecurityQuestionChange = {},
+                    onSecurityAnswerChange = {},
+                    onPrimaryAction = {},
+                    onForgotPin = {},
+                    onBackToSignIn = {},
+                    onBiometricLogin = {},
+                    onRequestWipeData = {},
+                    onCancelWipeData = {},
+                    onConfirmWipeData = {}
+                )
+            }
+        }
+
+        val showLabel = composeRule.activity.getString(R.string.show_pin)
+        val hideLabel = composeRule.activity.getString(R.string.hide_pin)
+        composeRule.onNodeWithText(showLabel).assertIsDisplayed().performClick()
+        composeRule.onNodeWithText(hideLabel).assertIsDisplayed()
+    }
+
+    @Test
     fun loginScreenWipeDialogConfirmTriggersDestructiveActionOnly() {
         var cancelTriggered = false
         var confirmTriggered = false

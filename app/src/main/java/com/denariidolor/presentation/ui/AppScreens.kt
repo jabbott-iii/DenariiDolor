@@ -306,7 +306,21 @@ fun LoginScreen(
                     enabled = signInEnabled,
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                    visualTransformation = pinVisualTransformation
+                    visualTransformation = pinVisualTransformation,
+                    trailingIcon = {
+                        TextButton(onClick = { pinVisible = !pinVisible }) {
+                            Text(
+                                text =
+                                    stringResource(
+                                        if (pinVisible) {
+                                            R.string.hide_pin
+                                        } else {
+                                            R.string.show_pin
+                                        }
+                                    )
+                            )
+                        }
+                    }
                 )
             }
             if (mode == LoginScreenMode.SETUP) {
