@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -308,7 +307,7 @@ private fun SearchRoute(viewModel: SearchViewModel = hiltViewModel()) {
         Spacer(modifier = Modifier.height(8.dp))
         Row(modifier = Modifier.fillMaxWidth()) {
             DateSelectorButton(
-                text = if (startDate.isBlank()) startDatePlaceholder else startDate,
+                text = startDate.ifBlank { startDatePlaceholder },
                 onClick = {
                     launchDatePicker(context, startDate) { startDate = it }
                 },
@@ -316,7 +315,7 @@ private fun SearchRoute(viewModel: SearchViewModel = hiltViewModel()) {
             )
             Spacer(modifier = Modifier.width(8.dp))
             DateSelectorButton(
-                text = if (endDate.isBlank()) endDatePlaceholder else endDate,
+                text = endDate.ifBlank { endDatePlaceholder },
                 onClick = {
                     launchDatePicker(context, endDate) { endDate = it }
                 },
@@ -600,7 +599,7 @@ fun AddTransactionScreen(
         }
         Spacer(modifier = Modifier.height(8.dp))
         DateSelectorButton(
-            text = if (dateText.isBlank()) datePlaceholder else dateText,
+            text = dateText.ifBlank { datePlaceholder },
             onClick = { launchDatePicker(context, dateText) { dateText = it } },
             modifier = Modifier.fillMaxWidth()
         )
@@ -694,10 +693,8 @@ internal fun applyTransactionTypeDefaults(
             currentCategoryId
         },
         lastAutoCategoryId = nextDefaultCategoryId,
-        accountId = if (accountId.isBlank()) {
+        accountId = accountId.ifBlank {
             Constants.DEFAULT_CASH_ACCOUNT_ID.toString()
-        } else {
-            accountId
         },
         transferAccountId = if (selectedType == "TRANSFER") {
             Constants.DEFAULT_SAVINGS_ACCOUNT_ID.toString()

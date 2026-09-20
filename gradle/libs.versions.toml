@@ -1,7 +1,12 @@
 [versions]
+activityComposeVersion = "1.13.0"
 agp = "8.5.2"
 activityCompose = "1.9.2"
 activityKtx = "1.9.2"
+androidxActivityActivityCompose = "1.10.0"
+androidxActivityActivityCompose2 = "1.9.0"
+androidxActivityCompose = "1.12.0"
+androidxActivityComposeVersion = "1.11.0"
 appcompat = "1.7.0"
 biometric = "1.1.0"
 composeBom = "2024.09.03"
@@ -25,6 +30,11 @@ securityCrypto = "1.1.0-alpha06"
 
 [libraries]
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-activity-compose-v1100 = { module = "androidx.activity:activity-compose", version.ref = "androidxActivityActivityCompose" }
+androidx-activity-compose-v1110 = { module = "androidx.activity:activity-compose", version.ref = "androidxActivityComposeVersion" }
+androidx-activity-compose-v1120 = { module = "androidx.activity:activity-compose", version.ref = "androidxActivityCompose" }
+androidx-activity-compose-v1130 = { module = "androidx.activity:activity-compose", version.ref = "activityComposeVersion" }
+androidx-activity-compose-v190 = { module = "androidx.activity:activity-compose", version.ref = "androidxActivityActivityCompose2" }
 androidx-activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activityKtx" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }

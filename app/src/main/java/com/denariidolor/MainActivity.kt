@@ -19,6 +19,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -45,7 +46,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 while (isActive) {
-                    delay(30_000)
+                    delay(30_000.milliseconds)
                     if (sessionManager.isSessionTimedOut()) {
                         redirectToLogin(clearPin = false)
                         break

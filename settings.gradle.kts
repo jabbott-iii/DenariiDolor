@@ -23,6 +23,7 @@ dependencyResolutionManagement {
     repositories {
         maven("https://maven.google.com")
         mavenCentral()
+        google()
     }
 }
 
