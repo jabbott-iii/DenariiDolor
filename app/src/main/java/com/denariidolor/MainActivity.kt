@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity() {
                 MainActivityContent(
                     settingsState = SettingsScreenState(
                         sessionTimeoutMinutes = Constants.SESSION_TIMEOUT_MILLIS / 60_000,
-                        pinConfigured = encryptedPreferencesManager.getPin() != null
+                        pinConfigured = encryptedPreferencesManager.isProfileConfigured()
                     ),
                     onSettingsAction = ::redirectToLogin
                 )
@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity() {
                 while (isActive) {
                     delay(30_000.milliseconds)
                     if (sessionManager.isSessionTimedOut()) {
-                        redirectToLogin(clearPin = false)
+                        redirectToLogin(startPinRecovery = false)
                         break
                     }
                 }
@@ -59,27 +59,25 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         if (sessionManager.isSessionTimedOut()) {
-            redirectToLogin(clearPin = false)
+            redirectToLogin(startPinRecovery = false)
         }
     }
 
     override fun onUserInteraction() {
         super.onUserInteraction()
         if (sessionManager.isSessionTimedOut()) {
-            redirectToLogin(clearPin = false)
+            redirectToLogin(startPinRecovery = false)
         } else {
             sessionManager.touch()
         }
     }
 
-    private fun redirectToLogin(clearPin: Boolean) {
-        if (clearPin) {
-            encryptedPreferencesManager.clearPin()
-        }
+    private fun redirectToLogin(startPinRecovery: Boolean) {
         sessionManager.invalidate()
         startActivity(
             Intent(this, LoginActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                putExtra(LoginActivity.EXTRA_START_RECOVERY, startPinRecovery)
             }
         )
         finish()
