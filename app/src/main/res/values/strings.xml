@@ -14,6 +14,8 @@
     <string name="biometric_sign_in_error">Biometric sign-in is currently unavailable. Use your PIN instead.</string>
     <string name="use_pin_instead">Use PIN instead</string>
     <string name="pin_hint">PIN</string>
+    <string name="show_pin">Show</string>
+    <string name="hide_pin">Hide</string>
     <string name="new_pin_hint">New PIN</string>
     <string name="confirm_pin_hint">Confirm PIN</string>
     <string name="security_question_hint">Security question</string>

@@ -57,6 +57,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -203,6 +204,13 @@ fun LoginScreen(
     val biometricContentDescription = stringResource(R.string.biometric_sign_in_accessibility_label)
     val wipeActionContentDescription = stringResource(R.string.wipe_all_data_destructive_label)
     val wipeConfirmContentDescription = stringResource(R.string.wipe_data_confirm_destructive_label)
+    var pinVisible by rememberSaveable { mutableStateOf(false) }
+    val pinVisualTransformation =
+        if (pinVisible) {
+            VisualTransformation.None
+        } else {
+            PasswordVisualTransformation()
+        }
     val primaryButtonLabel =
         when (mode) {
             LoginScreenMode.SIGN_IN -> stringResource(R.string.sign_in)
@@ -271,7 +279,21 @@ fun LoginScreen(
                     keyboardType = KeyboardType.NumberPassword,
                     imeAction = ImeAction.Done
                 ),
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = pinVisualTransformation,
+                trailingIcon = {
+                    TextButton(onClick = { pinVisible = !pinVisible }) {
+                        Text(
+                            text =
+                                stringResource(
+                                    if (pinVisible) {
+                                        R.string.hide_pin
+                                    } else {
+                                        R.string.show_pin
+                                    }
+                                )
+                        )
+                    }
+                },
                 keyboardActions = KeyboardActions(onDone = { if (signInEnabled) onPrimaryAction() })
             )
             if (mode != LoginScreenMode.SIGN_IN) {
@@ -284,7 +306,7 @@ fun LoginScreen(
                     enabled = signInEnabled,
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                    visualTransformation = PasswordVisualTransformation()
+                    visualTransformation = pinVisualTransformation
                 )
             }
             if (mode == LoginScreenMode.SETUP) {
