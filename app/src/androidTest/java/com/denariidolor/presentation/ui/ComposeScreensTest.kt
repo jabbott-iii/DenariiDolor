@@ -1,6 +1,10 @@
 package com.denariidolor.presentation.ui
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -273,6 +277,7 @@ class ComposeScreensTest {
         var cancelTriggered = false
 
         composeRule.setContent {
+            var showDialog by rememberSaveable { mutableStateOf(true) }
             DenariiDolorTheme {
                 LoginScreen(
                     mode = LoginScreenMode.SIGN_IN,
@@ -283,7 +288,7 @@ class ComposeScreensTest {
                     recoveryQuestion = null,
                     signInEnabled = true,
                     biometricAvailable = false,
-                    showWipeConfirmation = true,
+                    showWipeConfirmation = showDialog,
                     feedbackMessage = null,
                     onPinChange = {},
                     onPinConfirmationChange = {},
@@ -294,7 +299,10 @@ class ComposeScreensTest {
                     onBackToSignIn = {},
                     onBiometricLogin = {},
                     onRequestWipeData = {},
-                    onCancelWipeData = { cancelTriggered = true },
+                    onCancelWipeData = {
+                        cancelTriggered = true
+                        showDialog = false
+                    },
                     onConfirmWipeData = {}
                 )
             }
@@ -306,5 +314,6 @@ class ComposeScreensTest {
         composeRule.runOnIdle {
             assertTrue(cancelTriggered)
         }
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.wipe_data_confirm)).assertDoesNotExist()
     }
 }
