@@ -176,10 +176,10 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private suspend fun wipeAllUserData() {
-        sessionManager.invalidate()
         appDatabase.clearAllTables()
         encryptedPreferencesManager.clearAll()
         defaultDataInitializer.seedDefaults()
+        sessionManager.invalidate()
     }
 
     private fun promptForBiometricSignIn() {

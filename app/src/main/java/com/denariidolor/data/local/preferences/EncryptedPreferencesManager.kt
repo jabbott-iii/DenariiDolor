@@ -63,12 +63,14 @@ class EncryptedPreferencesManager @Inject constructor(
     }
 
     override fun resetPin(pin: String): Boolean {
-        if (!isPinConfigured()) return false
-        val pinSalt = generateSalt()
-        return sharedPreferences.edit()
-            .putString(KEY_PIN_HASH, hashSecret(pin, pinSalt))
-            .putString(KEY_PIN_SALT, Base64.encodeToString(pinSalt, Base64.NO_WRAP))
-            .commit()
+        synchronized(sharedPreferences) {
+            if (!isPinConfigured()) return false
+            val pinSalt = generateSalt()
+            return sharedPreferences.edit()
+                .putString(KEY_PIN_HASH, hashSecret(pin, pinSalt))
+                .putString(KEY_PIN_SALT, Base64.encodeToString(pinSalt, Base64.NO_WRAP))
+                .commit()
+        }
     }
 
     override fun clearPin() {

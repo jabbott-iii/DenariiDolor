@@ -194,6 +194,15 @@ fun LoginScreen(
     var recoveryPinConfirm by rememberSaveable { mutableStateOf("") }
     var showWipeConfirmation by rememberSaveable { mutableStateOf(false) }
     val actionsEnabled = signInEnabled && !isSubmitting
+    val submitRecovery = {
+        val success = onRecoverPin(recoveryAnswer, recoveryPin, recoveryPinConfirm)
+        if (success) {
+            recoveryAnswer = ""
+            recoveryPin = ""
+            recoveryPinConfirm = ""
+            showRecovery = false
+        }
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -324,7 +333,10 @@ fun LoginScreen(
                     enabled = actionsEnabled,
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword)
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.NumberPassword,
+                        imeAction = ImeAction.Next
+                    )
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
@@ -335,19 +347,17 @@ fun LoginScreen(
                     enabled = actionsEnabled,
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword)
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.NumberPassword,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = { if (actionsEnabled) submitRecovery() }
+                    )
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
-                    onClick = {
-                        val success = onRecoverPin(recoveryAnswer, recoveryPin, recoveryPinConfirm)
-                        if (success) {
-                            recoveryAnswer = ""
-                            recoveryPin = ""
-                            recoveryPinConfirm = ""
-                            showRecovery = false
-                        }
-                    },
+                    onClick = submitRecovery,
                     enabled = actionsEnabled,
                     modifier = Modifier.fillMaxWidth()
                 ) {
