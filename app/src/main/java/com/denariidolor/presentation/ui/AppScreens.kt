@@ -174,6 +174,7 @@ fun LoginScreen(
     onLogin: () -> Unit,
     onBiometricLogin: () -> Unit
 ) {
+    val biometricContentDescription = stringResource(R.string.biometric_sign_in_accessibility_label)
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -218,7 +219,7 @@ fun LoginScreen(
                     enabled = signInEnabled,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .semantics { contentDescription = stringResource(R.string.biometric_sign_in_accessibility_label) }
+                        .semantics { contentDescription = biometricContentDescription }
                         .testTag(BiometricButtonTag)
                 ) {
                     Text(stringResource(R.string.sign_in_with_biometrics))
@@ -258,6 +259,8 @@ private fun SearchRoute(viewModel: SearchViewModel = hiltViewModel()) {
     var startDate by rememberSaveable { mutableStateOf("") }
     var endDate by rememberSaveable { mutableStateOf("") }
     val invalidFiltersMessage = stringResource(R.string.invalid_search_filters_message)
+    val startDatePlaceholder = stringResource(R.string.search_start_date_hint)
+    val endDatePlaceholder = stringResource(R.string.search_end_date_hint)
 
     Column(
         modifier = Modifier
@@ -303,7 +306,7 @@ private fun SearchRoute(viewModel: SearchViewModel = hiltViewModel()) {
         Spacer(modifier = Modifier.height(8.dp))
         Row(modifier = Modifier.fillMaxWidth()) {
             DateSelectorButton(
-                text = startDate.ifBlank { stringResource(R.string.search_start_date_hint) },
+                text = if (startDate.isBlank()) startDatePlaceholder else startDate,
                 onClick = {
                     launchDatePicker(context, startDate) { startDate = it }
                 },
@@ -311,7 +314,7 @@ private fun SearchRoute(viewModel: SearchViewModel = hiltViewModel()) {
             )
             Spacer(modifier = Modifier.width(8.dp))
             DateSelectorButton(
-                text = endDate.ifBlank { stringResource(R.string.search_end_date_hint) },
+                text = if (endDate.isBlank()) endDatePlaceholder else endDate,
                 onClick = {
                     launchDatePicker(context, endDate) { endDate = it }
                 },
@@ -474,6 +477,7 @@ fun AddTransactionScreen(
     var dropdownExpanded by rememberSaveable { mutableStateOf(false) }
     val invalidDateMessage = stringResource(R.string.invalid_date_message)
     val referenceRequiredMessage = stringResource(R.string.transaction_reference_required_message)
+    val datePlaceholder = stringResource(R.string.date_hint)
 
     LaunchedEffect(statusMessage) {
         if (!statusMessage.isNullOrBlank()) {
@@ -594,7 +598,7 @@ fun AddTransactionScreen(
         }
         Spacer(modifier = Modifier.height(8.dp))
         DateSelectorButton(
-            text = dateText.ifBlank { stringResource(R.string.date_hint) },
+            text = if (dateText.isBlank()) datePlaceholder else dateText,
             onClick = { launchDatePicker(context, dateText) { dateText = it } },
             modifier = Modifier.fillMaxWidth()
         )
