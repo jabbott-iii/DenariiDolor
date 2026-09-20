@@ -133,13 +133,15 @@ fun MainActivityContent(
             }
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { navController.navigate(MainDestination.AddTransaction.route) { launchSingleTop = true } }
-            ) {
-                Icon(
-                    painter = painterResource(MainDestination.AddTransaction.iconRes),
-                    contentDescription = stringResource(MainDestination.AddTransaction.titleRes)
-                )
+            if (currentRoute != MainDestination.AddTransaction.route) {
+                FloatingActionButton(
+                    onClick = { navController.navigate(MainDestination.AddTransaction.route) { launchSingleTop = true } }
+                ) {
+                    Icon(
+                        painter = painterResource(MainDestination.AddTransaction.iconRes),
+                        contentDescription = stringResource(MainDestination.AddTransaction.titleRes)
+                    )
+                }
             }
         }
     ) { innerPadding ->
@@ -482,7 +484,7 @@ fun AddTransactionScreen(
     LaunchedEffect(statusMessage) {
         if (!statusMessage.isNullOrBlank()) {
             onShowMessage(statusMessage)
-            if (statusMessage == "Saved") {
+            if (statusMessage == TransactionViewModel.STATUS_SAVED) {
                 description = ""
                 amount = ""
                 dateText = ""
@@ -698,7 +700,7 @@ internal fun applyTransactionTypeDefaults(
             accountId
         },
         transferAccountId = if (selectedType == "TRANSFER") {
-            Constants.DEFAULT_SAVINGS_ACCOUNT_ID.toString()
+            transferAccountId.ifBlank { Constants.DEFAULT_SAVINGS_ACCOUNT_ID.toString() }
         } else {
             ""
         }
