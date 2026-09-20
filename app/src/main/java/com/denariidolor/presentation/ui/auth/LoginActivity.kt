@@ -298,7 +298,7 @@ class LoginActivity : AppCompatActivity() {
 
             refreshLoginState(preserveRecoveryMode = false)
             actionInProgress = false
-            signInEnabled = true
+            signInEnabled = wipeSucceeded && reseedSucceeded
         }
     }
 

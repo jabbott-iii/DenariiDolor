@@ -109,7 +109,7 @@ private val bottomDestinations = listOf(
 @Composable
 fun MainActivityContent(
     settingsState: SettingsScreenState,
-    onSettingsAction: (resetSignInPin: Boolean) -> Unit
+    onSettingsAction: (startPinRecovery: Boolean) -> Unit
 ) {
     val navController = rememberNavController()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -574,7 +574,7 @@ fun SettingsScreen(
         }
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = onResetSecurityProfile, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.reset_security_profile))
+            Text(stringResource(R.string.settings_recover_pin))
         }
     }
 }
