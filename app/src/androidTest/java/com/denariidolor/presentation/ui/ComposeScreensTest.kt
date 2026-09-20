@@ -26,9 +26,15 @@ class ComposeScreensTest {
                     pin = "",
                     signInEnabled = false,
                     biometricAvailable = false,
+                    isFirstTimeSetup = false,
+                    securityQuestionPrompt = null,
+                    isSubmitting = false,
                     onPinChange = {},
-                    onLogin = {},
-                    onBiometricLogin = {}
+                    onSignIn = {},
+                    onSetup = { _, _, _ -> },
+                    onBiometricLogin = {},
+                    onRecoverPin = { _, _, _ -> },
+                    onWipeDataConfirmed = {}
                 )
             }
         }

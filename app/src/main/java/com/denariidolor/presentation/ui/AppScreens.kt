@@ -23,6 +23,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -33,6 +34,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -171,11 +173,26 @@ fun LoginScreen(
     pin: String,
     signInEnabled: Boolean,
     biometricAvailable: Boolean,
+    isFirstTimeSetup: Boolean,
+    securityQuestionPrompt: String?,
+    isSubmitting: Boolean,
     onPinChange: (String) -> Unit,
-    onLogin: () -> Unit,
-    onBiometricLogin: () -> Unit
+    onSignIn: () -> Unit,
+    onSetup: (confirmPin: String, securityQuestion: String, securityAnswer: String) -> Unit,
+    onBiometricLogin: () -> Unit,
+    onRecoverPin: (securityAnswer: String, newPin: String, confirmNewPin: String) -> Unit,
+    onWipeDataConfirmed: () -> Unit
 ) {
     val biometricContentDescription = stringResource(R.string.biometric_sign_in_accessibility_label)
+    var confirmPin by rememberSaveable { mutableStateOf("") }
+    var securityQuestion by rememberSaveable { mutableStateOf("") }
+    var securityAnswer by rememberSaveable { mutableStateOf("") }
+    var showRecovery by rememberSaveable { mutableStateOf(false) }
+    var recoveryAnswer by rememberSaveable { mutableStateOf("") }
+    var recoveryPin by rememberSaveable { mutableStateOf("") }
+    var recoveryPinConfirm by rememberSaveable { mutableStateOf("") }
+    var showWipeConfirmation by rememberSaveable { mutableStateOf(false) }
+    val actionsEnabled = signInEnabled && !isSubmitting
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -194,30 +211,140 @@ fun LoginScreen(
                 value = pin,
                 onValueChange = onPinChange,
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.pin_hint)) },
-                enabled = signInEnabled,
+                label = { Text(stringResource(if (isFirstTimeSetup) R.string.pin_create_hint else R.string.pin_hint)) },
+                enabled = actionsEnabled,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.NumberPassword,
                     imeAction = ImeAction.Done
                 ),
-                keyboardActions = KeyboardActions(onDone = { if (signInEnabled) onLogin() })
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        if (actionsEnabled) {
+                            if (isFirstTimeSetup) {
+                                onSetup(confirmPin, securityQuestion, securityAnswer)
+                            } else {
+                                onSignIn()
+                            }
+                        }
+                    }
+                )
             )
+            if (isFirstTimeSetup) {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = confirmPin,
+                    onValueChange = { confirmPin = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.confirm_pin_hint)) },
+                    enabled = actionsEnabled,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.NumberPassword,
+                        imeAction = ImeAction.Next
+                    )
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = securityQuestion,
+                    onValueChange = { securityQuestion = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.security_question_hint)) },
+                    enabled = actionsEnabled,
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = securityAnswer,
+                    onValueChange = { securityAnswer = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.security_answer_hint)) },
+                    enabled = actionsEnabled,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    )
+                )
+            }
             Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = onLogin,
-                enabled = signInEnabled,
+                onClick = {
+                    if (isFirstTimeSetup) {
+                        onSetup(confirmPin, securityQuestion, securityAnswer)
+                    } else {
+                        onSignIn()
+                    }
+                },
+                enabled = actionsEnabled,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag(LoginButtonTag)
             ) {
-                Text(stringResource(R.string.sign_in))
+                Text(stringResource(if (isFirstTimeSetup) R.string.create_pin else R.string.sign_in))
             }
-            if (biometricAvailable) {
+            if (!isFirstTimeSetup) {
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(
+                    onClick = { showRecovery = !showRecovery },
+                    enabled = actionsEnabled,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.recover_pin))
+                }
+            }
+            if (showRecovery && !isFirstTimeSetup) {
+                securityQuestionPrompt?.let {
+                    Text(text = stringResource(R.string.security_question_prompt, it))
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+                OutlinedTextField(
+                    value = recoveryAnswer,
+                    onValueChange = { recoveryAnswer = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.security_answer_hint)) },
+                    enabled = actionsEnabled,
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = recoveryPin,
+                    onValueChange = { recoveryPin = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.new_pin_hint)) },
+                    enabled = actionsEnabled,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = recoveryPinConfirm,
+                    onValueChange = { recoveryPinConfirm = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.confirm_pin_hint)) },
+                    enabled = actionsEnabled,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = {
+                        onRecoverPin(recoveryAnswer, recoveryPin, recoveryPinConfirm)
+                        recoveryAnswer = ""
+                        recoveryPin = ""
+                        recoveryPinConfirm = ""
+                    },
+                    enabled = actionsEnabled,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.reset_pin))
+                }
+            }
+            if (biometricAvailable && !isFirstTimeSetup) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Button(
                     onClick = onBiometricLogin,
-                    enabled = signInEnabled,
+                    enabled = actionsEnabled,
                     modifier = Modifier
                         .fillMaxWidth()
                         .semantics { contentDescription = biometricContentDescription }
@@ -225,6 +352,36 @@ fun LoginScreen(
                 ) {
                     Text(stringResource(R.string.sign_in_with_biometrics))
                 }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            TextButton(
+                onClick = { showWipeConfirmation = true },
+                enabled = actionsEnabled,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.wipe_all_data))
+            }
+            if (showWipeConfirmation) {
+                AlertDialog(
+                    onDismissRequest = { showWipeConfirmation = false },
+                    title = { Text(stringResource(R.string.wipe_data_confirmation_title)) },
+                    text = { Text(stringResource(R.string.wipe_data_confirmation_message)) },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showWipeConfirmation = false
+                                onWipeDataConfirmed()
+                            }
+                        ) {
+                            Text(stringResource(R.string.confirm_delete))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showWipeConfirmation = false }) {
+                            Text(stringResource(R.string.cancel))
+                        }
+                    }
+                )
             }
         }
     }

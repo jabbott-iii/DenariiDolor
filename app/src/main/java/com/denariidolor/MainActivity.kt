@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity() {
                 MainActivityContent(
                     settingsState = SettingsScreenState(
                         sessionTimeoutMinutes = Constants.SESSION_TIMEOUT_MILLIS / 60_000,
-                        pinConfigured = encryptedPreferencesManager.getPin() != null
+                        pinConfigured = encryptedPreferencesManager.isPinConfigured()
                     ),
                     onSettingsAction = ::redirectToLogin
                 )

@@ -8,14 +8,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.denariidolor.MainActivity
 import com.denariidolor.R
+import com.denariidolor.data.local.db.AppDatabase
 import com.denariidolor.data.local.db.DefaultDataInitializer
 import com.denariidolor.data.local.preferences.EncryptedPreferencesManager
+import com.denariidolor.domain.usecase.InitialLoginResult
+import com.denariidolor.domain.usecase.InitialLoginUseCase
 import com.denariidolor.presentation.ui.LoginScreen
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
 import com.denariidolor.util.SessionManager
@@ -39,21 +41,42 @@ class LoginActivity : AppCompatActivity() {
     @Inject
     lateinit var defaultDataInitializer: DefaultDataInitializer
 
+    @Inject
+    lateinit var appDatabase: AppDatabase
+
     private var signInEnabled by mutableStateOf(false)
     private var biometricAvailable by mutableStateOf(false)
+    private var isFirstTimeSetup by mutableStateOf(true)
+    private var recoveryQuestion by mutableStateOf<String?>(null)
+    private var isSubmitting by mutableStateOf(false)
+    private var pinInput by mutableStateOf("")
+    private lateinit var initialLoginUseCase: InitialLoginUseCase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        initialLoginUseCase = InitialLoginUseCase(
+            pinSecurityStore = encryptedPreferencesManager,
+            wipeAllData = ::wipeAllUserData
+        )
         setContent {
-            var pin by rememberSaveable { mutableStateOf("") }
             DenariiDolorTheme {
                 LoginScreen(
-                    pin = pin,
+                    pin = pinInput,
                     signInEnabled = signInEnabled,
                     biometricAvailable = biometricAvailable,
-                    onPinChange = { pin = it },
-                    onLogin = { handlePinLogin(pin) },
-                    onBiometricLogin = ::promptForBiometricSignIn
+                    isFirstTimeSetup = isFirstTimeSetup,
+                    securityQuestionPrompt = recoveryQuestion,
+                    isSubmitting = isSubmitting,
+                    onPinChange = { pinInput = it },
+                    onSignIn = { handleSignIn(pinInput) },
+                    onSetup = { confirmPin, securityQuestion, securityAnswer ->
+                        handleSetup(pinInput, confirmPin, securityQuestion, securityAnswer)
+                    },
+                    onBiometricLogin = ::promptForBiometricSignIn,
+                    onRecoverPin = { answer, newPin, confirmNewPin ->
+                        handlePinRecovery(answer, newPin, confirmNewPin)
+                    },
+                    onWipeDataConfirmed = ::handleConfirmedDataWipe
                 )
             }
         }
@@ -64,28 +87,108 @@ class LoginActivity : AppCompatActivity() {
                 defaultDataInitializer.seedDefaults()
             }
             signInEnabled = true
-            biometricAvailable = encryptedPreferencesManager.getPin() != null && biometricAuthManager.canAuthenticate(this@LoginActivity)
+            refreshLoginState()
         }
     }
 
-    private fun handlePinLogin(pin: String) {
-        if (pin.length < 4) {
-            Toast.makeText(this, "PIN must be at least 4 digits", Toast.LENGTH_SHORT).show()
-            return
-        }
+    private fun handleSignIn(pin: String) {
+        if (!signInEnabled || isSubmitting || isFirstTimeSetup) return
+        isSubmitting = true
+        when (val result = initialLoginUseCase.authenticate(pin)) {
+            InitialLoginResult.Success -> {
+                pinInput = ""
+                openMain()
+            }
 
-        val stored = encryptedPreferencesManager.getPin()
-        if (stored == null) {
-            encryptedPreferencesManager.savePin(pin)
-        } else if (stored != pin) {
-            Toast.makeText(this, "Invalid PIN", Toast.LENGTH_SHORT).show()
-            return
+            is InitialLoginResult.Error -> {
+                Toast.makeText(this, result.message, Toast.LENGTH_SHORT).show()
+            }
         }
+        isSubmitting = false
+    }
 
-        openMain()
+    private fun handleSetup(pin: String, confirmPin: String, securityQuestion: String, securityAnswer: String) {
+        if (!signInEnabled || isSubmitting || !isFirstTimeSetup) return
+        isSubmitting = true
+        when (val result = initialLoginUseCase.setup(pin, confirmPin, securityQuestion, securityAnswer)) {
+            InitialLoginResult.Success -> {
+                pinInput = ""
+                refreshLoginState()
+                openMain()
+            }
+
+            is InitialLoginResult.Error -> {
+                Toast.makeText(this, result.message, Toast.LENGTH_SHORT).show()
+            }
+        }
+        isSubmitting = false
+    }
+
+    private fun handlePinRecovery(answer: String, newPin: String, confirmNewPin: String) {
+        if (!signInEnabled || isSubmitting || isFirstTimeSetup) return
+        isSubmitting = true
+        when (val result = initialLoginUseCase.recoverPin(answer, newPin, confirmNewPin)) {
+            InitialLoginResult.Success -> {
+                Toast.makeText(this, "PIN reset successful. Sign in with your new PIN.", Toast.LENGTH_SHORT).show()
+                pinInput = ""
+            }
+
+            is InitialLoginResult.Error -> {
+                Toast.makeText(this, result.message, Toast.LENGTH_SHORT).show()
+            }
+        }
+        isSubmitting = false
+    }
+
+    private fun handleConfirmedDataWipe() {
+        if (!signInEnabled || isSubmitting) return
+        isSubmitting = true
+        lifecycleScope.launch {
+            when (val result = withContext(Dispatchers.IO) {
+                initialLoginUseCase.wipeData(confirm = true)
+            }) {
+                InitialLoginResult.Success -> {
+                    pinInput = ""
+                    refreshLoginState()
+                    Toast.makeText(this@LoginActivity, "All app data has been deleted.", Toast.LENGTH_SHORT).show()
+                }
+
+                is InitialLoginResult.Error -> {
+                    Toast.makeText(this@LoginActivity, result.message, Toast.LENGTH_SHORT).show()
+                }
+            }
+            isSubmitting = false
+        }
+    }
+
+    private fun refreshLoginState() {
+        isFirstTimeSetup = initialLoginUseCase.isFirstTimeSetup()
+        recoveryQuestion = initialLoginUseCase.securityQuestion()
+        biometricAvailable = !isFirstTimeSetup && biometricAuthManager.canAuthenticate(this)
+    }
+
+    private suspend fun wipeAllUserData() {
+        appDatabase.clearAllTables()
+        encryptedPreferencesManager.clearAll()
+        clearDirectory(applicationContext.filesDir)
+        clearDirectory(applicationContext.cacheDir)
+        defaultDataInitializer.seedDefaults()
+    }
+
+    private fun clearDirectory(directory: java.io.File?) {
+        directory?.listFiles()?.forEach { child ->
+            if (child.isDirectory) {
+                child.deleteRecursively()
+            } else {
+                child.delete()
+            }
+        }
     }
 
     private fun promptForBiometricSignIn() {
+        if (isSubmitting || isFirstTimeSetup) {
+            return
+        }
         val prompt = BiometricPrompt(
             this,
             ContextCompat.getMainExecutor(this),
