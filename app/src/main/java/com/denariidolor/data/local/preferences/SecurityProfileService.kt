@@ -2,9 +2,10 @@ package com.denariidolor.data.local.preferences
 
 import java.security.MessageDigest
 import java.security.SecureRandom
-import java.util.Base64
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 interface SecurityProfileStore {
     fun getString(key: String): String?
@@ -185,16 +186,18 @@ class SecurityProfileService(
         store.edit { clear() }
     }
 
+    @OptIn(ExperimentalEncodingApi::class)
     private fun hashSecret(secret: String): HashedSecret {
         val saltBytes = ByteArray(SALT_LENGTH_BYTES).also { secureRandom.nextBytes(it) }
         val hashBytes = derivePbkdf2(secret, saltBytes, DEFAULT_ITERATIONS)
         return HashedSecret(
-            hash = Base64.getEncoder().encodeToString(hashBytes),
-            salt = Base64.getEncoder().encodeToString(saltBytes),
+            hash = Base64.Default.encode(hashBytes),
+            salt = Base64.Default.encode(saltBytes),
             iterations = DEFAULT_ITERATIONS
         )
     }
 
+    @OptIn(ExperimentalEncodingApi::class)
     private fun verifyHashedSecret(secret: String, hash: String?, salt: String?, iterations: Int): Boolean {
         if (hash.isNullOrBlank() || salt.isNullOrBlank()) {
             return false
@@ -203,8 +206,8 @@ class SecurityProfileService(
             return false
         }
 
-        val expectedHash = runCatching { Base64.getDecoder().decode(hash) }.getOrNull() ?: return false
-        val saltBytes = runCatching { Base64.getDecoder().decode(salt) }.getOrNull() ?: return false
+        val expectedHash = runCatching { Base64.Default.decode(hash) }.getOrNull() ?: return false
+        val saltBytes = runCatching { Base64.Default.decode(salt) }.getOrNull() ?: return false
         val candidateHash = derivePbkdf2(secret, saltBytes, iterations)
         return MessageDigest.isEqual(expectedHash, candidateHash)
     }

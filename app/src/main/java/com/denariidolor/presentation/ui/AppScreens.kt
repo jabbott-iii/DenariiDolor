@@ -56,6 +56,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -270,6 +271,7 @@ fun LoginScreen(
                     keyboardType = KeyboardType.NumberPassword,
                     imeAction = ImeAction.Done
                 ),
+                visualTransformation = PasswordVisualTransformation(),
                 keyboardActions = KeyboardActions(onDone = { if (signInEnabled) onPrimaryAction() })
             )
             if (mode != LoginScreenMode.SIGN_IN) {
@@ -281,7 +283,8 @@ fun LoginScreen(
                     label = { Text(stringResource(R.string.confirm_pin_hint)) },
                     enabled = signInEnabled,
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    visualTransformation = PasswordVisualTransformation()
                 )
             }
             if (mode == LoginScreenMode.SETUP) {
@@ -314,7 +317,8 @@ fun LoginScreen(
                     },
                     enabled = signInEnabled,
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    visualTransformation = PasswordVisualTransformation()
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
