@@ -182,6 +182,7 @@ class LoginActivity : AppCompatActivity() {
         appDatabase.clearAllTables()
         encryptedPreferencesManager.clearAll()
         clearDirectory(applicationContext.cacheDir)
+        defaultDataInitializer.seedDefaults()
         sessionManager.invalidate()
     }
 

@@ -108,9 +108,11 @@ class EncryptedPreferencesManager @Inject constructor(
     }
 
     private fun constantTimeEquals(expected: String, actual: String): Boolean {
+        val expectedBytes = decodeSalt(expected) ?: return false
+        val actualBytes = decodeSalt(actual) ?: return false
         return MessageDigest.isEqual(
-            expected.toByteArray(Charsets.UTF_8),
-            actual.toByteArray(Charsets.UTF_8)
+            expectedBytes,
+            actualBytes
         )
     }
 

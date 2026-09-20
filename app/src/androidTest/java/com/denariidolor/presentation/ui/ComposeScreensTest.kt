@@ -5,10 +5,14 @@ import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
 import com.denariidolor.util.Constants
 import org.junit.Rule
@@ -111,7 +115,16 @@ class ComposeScreensTest {
         }
 
         composeRule.onNodeWithText("Recover PIN").performClick()
+        composeRule.onNodeWithText("Hide PIN Recovery")
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.StateDescription,
+                    "PIN recovery options expanded"
+                )
+            )
         composeRule.onNodeWithText("New PIN").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Warning: permanently delete all app data")
+            .assertIsDisplayed()
         composeRule.onNodeWithText("Wipe All Data").performClick()
         composeRule.onNodeWithText("Delete all app data?").assertIsDisplayed()
     }
