@@ -178,7 +178,6 @@ class LoginActivity : AppCompatActivity() {
     private suspend fun wipeAllUserData() {
         appDatabase.clearAllTables()
         encryptedPreferencesManager.clearAll()
-        defaultDataInitializer.seedDefaults()
         sessionManager.invalidate()
     }
 

@@ -89,7 +89,13 @@ class EncryptedPreferencesManager @Inject constructor(
 
     private fun generateSalt(): ByteArray = ByteArray(SALT_BYTES).also { secureRandom.nextBytes(it) }
 
-    private fun decodeSalt(value: String): ByteArray = Base64.decode(value, Base64.NO_WRAP)
+    private fun decodeSalt(value: String): ByteArray? {
+        return try {
+            Base64.decode(value, Base64.NO_WRAP)
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+    }
 
     private fun hashSecret(secret: String, salt: ByteArray): String {
         val keySpec = PBEKeySpec(secret.toCharArray(), salt, HASH_ITERATIONS, KEY_LENGTH_BITS)
