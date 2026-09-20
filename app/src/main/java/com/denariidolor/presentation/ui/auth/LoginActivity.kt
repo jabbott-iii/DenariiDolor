@@ -290,6 +290,7 @@ class LoginActivity : AppCompatActivity() {
                     else -> getString(R.string.wipe_data_reseed_error)
                 }
 
+            refreshLoginState(preserveRecoveryMode = false)
             actionInProgress = false
             signInEnabled = true
         }

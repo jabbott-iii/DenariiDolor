@@ -317,8 +317,7 @@ fun LoginScreen(
                     },
                     enabled = signInEnabled,
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    visualTransformation = PasswordVisualTransformation()
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
