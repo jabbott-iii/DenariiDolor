@@ -138,6 +138,15 @@ class EncryptedPreferencesManagerTest {
         assertFalse(manager.resetPin("9999"))
     }
 
+    @Test
+    fun resetPinUpdatesCredentialToNewPin() {
+        manager.createPinSecurity(pin = "1234", securityQuestion = "City?", securityAnswer = "Rome")
+
+        assertTrue(manager.resetPin("9999"))
+        assertFalse(manager.verifyPin("1234"))
+        assertTrue(manager.verifyPin("9999"))
+    }
+
     private fun encryptedPrefs() = EncryptedSharedPreferences.create(
         context,
         PREFS_NAME,
