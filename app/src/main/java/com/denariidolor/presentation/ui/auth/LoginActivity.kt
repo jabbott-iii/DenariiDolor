@@ -57,13 +57,13 @@ class LoginActivity : AppCompatActivity() {
                 )
             }
         }
-        setSignInEnabled(false)
+        signInEnabled = false
 
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 defaultDataInitializer.seedDefaults()
             }
-            setSignInEnabled(true)
+            signInEnabled = true
             biometricAvailable = encryptedPreferencesManager.getPin() != null && biometricAuthManager.canAuthenticate(this@LoginActivity)
         }
     }
@@ -83,10 +83,6 @@ class LoginActivity : AppCompatActivity() {
         }
 
         openMain()
-    }
-
-    private fun setSignInEnabled(enabled: Boolean) {
-        signInEnabled = enabled
     }
 
     private fun promptForBiometricSignIn() {
