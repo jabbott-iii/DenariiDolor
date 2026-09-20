@@ -141,10 +141,13 @@ class EncryptedPreferencesManagerTest {
     @Test
     fun resetPinUpdatesCredentialToNewPin() {
         manager.createPinSecurity(pin = "1234", securityQuestion = "City?", securityAnswer = "Rome")
+        val oldSalt = encryptedPrefs().getString(KEY_PIN_SALT, null)
 
         assertTrue(manager.resetPin("9999"))
+        val newSalt = encryptedPrefs().getString(KEY_PIN_SALT, null)
         assertFalse(manager.verifyPin("1234"))
         assertTrue(manager.verifyPin("9999"))
+        assertTrue(oldSalt != null && oldSalt != newSalt)
     }
 
     private fun encryptedPrefs() = EncryptedSharedPreferences.create(

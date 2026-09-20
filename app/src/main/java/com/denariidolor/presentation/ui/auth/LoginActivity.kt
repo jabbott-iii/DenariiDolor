@@ -140,7 +140,7 @@ class LoginActivity : AppCompatActivity() {
         return try {
             when (val result = initialLoginUseCase.recoverPin(answer, newPin, confirmNewPin)) {
                 InitialLoginResult.Success -> {
-                    Toast.makeText(this, "PIN reset successful. Sign in with your new PIN.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.pin_reset_success), Toast.LENGTH_SHORT).show()
                     pinInput = ""
                     true
                 }
@@ -165,7 +165,7 @@ class LoginActivity : AppCompatActivity() {
                         pinInput = ""
                         loginFormStateVersion += 1
                         refreshLoginState()
-                        Toast.makeText(this@LoginActivity, "All app data has been deleted.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@LoginActivity, getString(R.string.wipe_data_success), Toast.LENGTH_SHORT).show()
                     }
 
                     is InitialLoginResult.Error -> {
@@ -189,7 +189,6 @@ class LoginActivity : AppCompatActivity() {
             appDatabase.clearAllTables()
             sessionManager.invalidate()
             encryptedPreferencesManager.clearAll()
-            clearDirectory(applicationContext.filesDir)
             clearDirectory(applicationContext.cacheDir)
         }
     }
