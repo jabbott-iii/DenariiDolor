@@ -52,6 +52,7 @@ import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -185,6 +186,9 @@ fun LoginScreen(
     onWipeDataConfirmed: () -> Unit
 ) {
     val biometricContentDescription = stringResource(R.string.biometric_sign_in_accessibility_label)
+    val recoveryExpandedState = stringResource(R.string.pin_recovery_expanded)
+    val recoveryCollapsedState = stringResource(R.string.pin_recovery_collapsed)
+    val wipeWarningDescription = stringResource(R.string.wipe_all_data_warning_label)
     var confirmPin by rememberSaveable { mutableStateOf("") }
     var securityQuestion by rememberSaveable { mutableStateOf("") }
     var securityAnswer by rememberSaveable { mutableStateOf("") }
@@ -301,9 +305,17 @@ fun LoginScreen(
                 TextButton(
                     onClick = { showRecovery = !showRecovery },
                     enabled = actionsEnabled,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics {
+                            stateDescription = if (showRecovery) {
+                                recoveryExpandedState
+                            } else {
+                                recoveryCollapsedState
+                            }
+                        }
                 ) {
-                    Text(stringResource(R.string.recover_pin))
+                    Text(stringResource(if (showRecovery) R.string.hide_recovery else R.string.recover_pin))
                 }
             }
             if (showRecovery && !isFirstTimeSetup) {
@@ -382,7 +394,9 @@ fun LoginScreen(
                 TextButton(
                     onClick = { showWipeConfirmation = true },
                     enabled = actionsEnabled,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics { contentDescription = wipeWarningDescription }
                 ) {
                     Text(stringResource(R.string.wipe_all_data))
                 }

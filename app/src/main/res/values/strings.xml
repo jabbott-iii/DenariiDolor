@@ -21,8 +21,12 @@
     <string name="security_answer_hint">Security answer</string>
     <string name="security_question_prompt">Security question: %1$s</string>
     <string name="recover_pin">Recover PIN</string>
+    <string name="hide_recovery">Hide PIN Recovery</string>
+    <string name="pin_recovery_expanded">PIN recovery options expanded</string>
+    <string name="pin_recovery_collapsed">PIN recovery options collapsed</string>
     <string name="new_pin_hint">New PIN</string>
     <string name="wipe_all_data">Wipe All Data</string>
+    <string name="wipe_all_data_warning_label">Warning: permanently delete all app data</string>
     <string name="wipe_data_confirmation_title">Delete all app data?</string>
     <string name="wipe_data_confirmation_message">This will permanently delete all stored app data, including PIN setup and financial records. This action cannot be undone.</string>
     <string name="confirm_delete">Delete Everything</string>

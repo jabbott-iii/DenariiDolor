@@ -26,11 +26,11 @@ class EncryptedPreferencesManager @Inject constructor(
     )
 
     override fun isPinConfigured(): Boolean {
-        return sharedPreferences.getString(KEY_PIN_HASH, null) != null &&
-            sharedPreferences.getString(KEY_PIN_SALT, null) != null &&
-            sharedPreferences.getString(KEY_SECURITY_QUESTION, null) != null &&
-            sharedPreferences.getString(KEY_SECURITY_ANSWER_HASH, null) != null &&
-            sharedPreferences.getString(KEY_SECURITY_ANSWER_SALT, null) != null
+        return !sharedPreferences.getString(KEY_PIN_HASH, null).isNullOrBlank() &&
+            !sharedPreferences.getString(KEY_PIN_SALT, null).isNullOrBlank() &&
+            !sharedPreferences.getString(KEY_SECURITY_QUESTION, null).isNullOrBlank() &&
+            !sharedPreferences.getString(KEY_SECURITY_ANSWER_HASH, null).isNullOrBlank() &&
+            !sharedPreferences.getString(KEY_SECURITY_ANSWER_SALT, null).isNullOrBlank()
     }
 
     override fun createPinSecurity(pin: String, securityQuestion: String, securityAnswer: String): Boolean {
@@ -80,7 +80,7 @@ class EncryptedPreferencesManager @Inject constructor(
             .remove(KEY_SECURITY_QUESTION)
             .remove(KEY_SECURITY_ANSWER_HASH)
             .remove(KEY_SECURITY_ANSWER_SALT)
-            .apply()
+            .commit()
     }
 
     fun clearAll() {

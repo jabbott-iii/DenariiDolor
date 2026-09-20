@@ -40,6 +40,26 @@ class EncryptedPreferencesManagerTest {
     }
 
     @Test
+    fun isPinConfiguredFalseWhenSecurityQuestionBlank() {
+        manager.createPinSecurity(pin = "1234", securityQuestion = "City?", securityAnswer = "Rome")
+        encryptedPrefs().edit()
+            .putString(KEY_SECURITY_QUESTION, "")
+            .commit()
+
+        assertFalse(manager.isPinConfigured())
+    }
+
+    @Test
+    fun isPinConfiguredFalseWhenPinHashBlank() {
+        manager.createPinSecurity(pin = "1234", securityQuestion = "City?", securityAnswer = "Rome")
+        encryptedPrefs().edit()
+            .putString(KEY_PIN_HASH, "")
+            .commit()
+
+        assertFalse(manager.isPinConfigured())
+    }
+
+    @Test
     fun verifyPinFailsWhenPinSaltMissing() {
         manager.createPinSecurity(pin = "1234", securityQuestion = "City?", securityAnswer = "Rome")
         encryptedPrefs().edit()
@@ -89,6 +109,7 @@ class EncryptedPreferencesManagerTest {
 
     companion object {
         private const val PREFS_NAME = "secure_prefs"
+        private const val KEY_PIN_HASH = "key_pin_hash"
         private const val KEY_PIN_SALT = "key_pin_salt"
         private const val KEY_SECURITY_QUESTION = "key_security_question"
         private const val KEY_SECURITY_ANSWER_HASH = "key_security_answer_hash"
