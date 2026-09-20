@@ -246,8 +246,12 @@ class LoginActivity : AppCompatActivity() {
                     runCatching { appDatabase.clearAllTables() }.onFailure { wipeFailed = true }
                     runCatching { encryptedPreferencesManager.clearAllSecurityData() }.onFailure { wipeFailed = true }
                     runCatching {
-                        cacheDir.deleteRecursively()
-                        cacheDir.mkdirs()
+                        if (cacheDir.exists() && !cacheDir.deleteRecursively()) {
+                            wipeFailed = true
+                        }
+                        if (!cacheDir.exists() && !cacheDir.mkdirs()) {
+                            wipeFailed = true
+                        }
                     }.onFailure { wipeFailed = true }
 
                     var reseedFailed = false

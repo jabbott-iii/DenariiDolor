@@ -201,6 +201,7 @@ fun LoginScreen(
 ) {
     val biometricContentDescription = stringResource(R.string.biometric_sign_in_accessibility_label)
     val wipeActionContentDescription = stringResource(R.string.wipe_all_data_destructive_label)
+    val wipeConfirmContentDescription = stringResource(R.string.wipe_data_confirm_destructive_label)
     val primaryButtonLabel =
         when (mode) {
             LoginScreenMode.SIGN_IN -> stringResource(R.string.sign_in)
@@ -219,7 +220,12 @@ fun LoginScreen(
             title = { Text(stringResource(R.string.wipe_data_title)) },
             text = { Text(stringResource(R.string.wipe_data_warning)) },
             confirmButton = {
-                TextButton(onClick = onConfirmWipeData) {
+                TextButton(
+                    onClick = onConfirmWipeData,
+                    modifier = Modifier.semantics {
+                        contentDescription = wipeConfirmContentDescription
+                    }
+                ) {
                     Text(stringResource(R.string.wipe_data_confirm))
                 }
             },

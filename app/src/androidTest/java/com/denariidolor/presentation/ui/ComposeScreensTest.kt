@@ -114,4 +114,44 @@ class ComposeScreensTest {
             assertFalse(confirmTriggered)
         }
     }
+
+    @Test
+    fun loginScreenWipeDialogConfirmTriggersDestructiveActionOnly() {
+        var cancelTriggered = false
+        var confirmTriggered = false
+
+        composeRule.setContent {
+            DenariiDolorTheme {
+                LoginScreen(
+                    mode = LoginScreenMode.SIGN_IN,
+                    pin = "",
+                    pinConfirmation = "",
+                    securityQuestion = "",
+                    securityAnswer = "",
+                    recoveryQuestion = null,
+                    signInEnabled = true,
+                    biometricAvailable = false,
+                    showWipeConfirmation = true,
+                    feedbackMessage = null,
+                    onPinChange = {},
+                    onPinConfirmationChange = {},
+                    onSecurityQuestionChange = {},
+                    onSecurityAnswerChange = {},
+                    onPrimaryAction = {},
+                    onForgotPin = {},
+                    onBackToSignIn = {},
+                    onBiometricLogin = {},
+                    onRequestWipeData = {},
+                    onCancelWipeData = { cancelTriggered = true },
+                    onConfirmWipeData = { confirmTriggered = true }
+                )
+            }
+        }
+
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.wipe_data_confirm)).performClick()
+        composeRule.runOnIdle {
+            assertTrue(confirmTriggered)
+            assertFalse(cancelTriggered)
+        }
+    }
 }

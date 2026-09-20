@@ -27,6 +27,7 @@
     <string name="wipe_data_title">Delete all app data?</string>
     <string name="wipe_data_warning">This permanently deletes all app data, financial records, PIN, and recovery settings. This cannot be undone.</string>
     <string name="wipe_data_confirm">Delete Everything</string>
+    <string name="wipe_data_confirm_destructive_label">Destructive confirmation: delete all app data permanently</string>
     <string name="wipe_data_cancel">Cancel</string>
     <string name="pin_format_error">PIN must be 4 to 12 digits.</string>
     <string name="invalid_pin">Invalid PIN.</string>
