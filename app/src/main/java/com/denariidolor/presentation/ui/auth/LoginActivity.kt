@@ -98,53 +98,61 @@ class LoginActivity : AppCompatActivity() {
     private fun handleSignIn(pin: String) {
         if (!signInEnabled || isSubmitting || isFirstTimeSetup) return
         isSubmitting = true
-        when (val result = initialLoginUseCase.authenticate(pin)) {
-            InitialLoginResult.Success -> {
-                pinInput = ""
-                openMain()
-            }
+        try {
+            when (val result = initialLoginUseCase.authenticate(pin)) {
+                InitialLoginResult.Success -> {
+                    pinInput = ""
+                    openMain()
+                }
 
-            is InitialLoginResult.Error -> {
-                Toast.makeText(this, result.message, Toast.LENGTH_SHORT).show()
+                is InitialLoginResult.Error -> {
+                    Toast.makeText(this, result.message, Toast.LENGTH_SHORT).show()
+                }
             }
+        } finally {
+            isSubmitting = false
         }
-        isSubmitting = false
     }
 
     private fun handleSetup(pin: String, confirmPin: String, securityQuestion: String, securityAnswer: String) {
         if (!signInEnabled || isSubmitting || !isFirstTimeSetup) return
         isSubmitting = true
-        when (val result = initialLoginUseCase.setup(pin, confirmPin, securityQuestion, securityAnswer)) {
-            InitialLoginResult.Success -> {
-                pinInput = ""
-                refreshLoginState()
-                openMain()
-            }
+        try {
+            when (val result = initialLoginUseCase.setup(pin, confirmPin, securityQuestion, securityAnswer)) {
+                InitialLoginResult.Success -> {
+                    pinInput = ""
+                    refreshLoginState()
+                    openMain()
+                }
 
-            is InitialLoginResult.Error -> {
-                Toast.makeText(this, result.message, Toast.LENGTH_SHORT).show()
+                is InitialLoginResult.Error -> {
+                    Toast.makeText(this, result.message, Toast.LENGTH_SHORT).show()
+                }
             }
+        } finally {
+            isSubmitting = false
         }
-        isSubmitting = false
     }
 
     private fun handlePinRecovery(answer: String, newPin: String, confirmNewPin: String): Boolean {
         if (!signInEnabled || isSubmitting || isFirstTimeSetup) return false
         isSubmitting = true
-        val successful = when (val result = initialLoginUseCase.recoverPin(answer, newPin, confirmNewPin)) {
-            InitialLoginResult.Success -> {
-                Toast.makeText(this, "PIN reset successful. Sign in with your new PIN.", Toast.LENGTH_SHORT).show()
-                pinInput = ""
-                true
-            }
+        return try {
+            when (val result = initialLoginUseCase.recoverPin(answer, newPin, confirmNewPin)) {
+                InitialLoginResult.Success -> {
+                    Toast.makeText(this, "PIN reset successful. Sign in with your new PIN.", Toast.LENGTH_SHORT).show()
+                    pinInput = ""
+                    true
+                }
 
-            is InitialLoginResult.Error -> {
-                Toast.makeText(this, result.message, Toast.LENGTH_SHORT).show()
-                false
+                is InitialLoginResult.Error -> {
+                    Toast.makeText(this, result.message, Toast.LENGTH_SHORT).show()
+                    false
+                }
             }
+        } finally {
+            isSubmitting = false
         }
-        isSubmitting = false
-        return successful
     }
 
     private fun handleConfirmedDataWipe() {
@@ -182,6 +190,7 @@ class LoginActivity : AppCompatActivity() {
             sessionManager.invalidate()
             encryptedPreferencesManager.clearAll()
             clearDirectory(applicationContext.cacheDir)
+            defaultDataInitializer.seedDefaults()
         }
     }
 
