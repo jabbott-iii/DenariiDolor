@@ -152,6 +152,7 @@ class ComposeScreensTest {
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.security_question_hint)).assertIsDisplayed()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.security_answer_hint)).assertIsDisplayed()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.forgot_pin)).assertDoesNotExist()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.wipe_all_data)).assertDoesNotExist()
     }
 
     @Test
@@ -188,6 +189,7 @@ class ComposeScreensTest {
         composeRule.onNodeWithText(recoveryPrompt).assertIsDisplayed()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.back_to_sign_in)).assertIsDisplayed()
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.forgot_pin)).assertDoesNotExist()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.wipe_all_data)).assertDoesNotExist()
     }
 
     @Test
