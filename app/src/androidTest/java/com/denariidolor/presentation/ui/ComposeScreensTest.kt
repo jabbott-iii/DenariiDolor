@@ -116,6 +116,77 @@ class ComposeScreensTest {
     }
 
     @Test
+    fun loginScreenSetupModeShowsSetupFieldsOnly() {
+        composeRule.setContent {
+            DenariiDolorTheme {
+                LoginScreen(
+                    mode = LoginScreenMode.SETUP,
+                    pin = "",
+                    pinConfirmation = "",
+                    securityQuestion = "",
+                    securityAnswer = "",
+                    recoveryQuestion = null,
+                    signInEnabled = true,
+                    biometricAvailable = false,
+                    showWipeConfirmation = false,
+                    feedbackMessage = null,
+                    onPinChange = {},
+                    onPinConfirmationChange = {},
+                    onSecurityQuestionChange = {},
+                    onSecurityAnswerChange = {},
+                    onPrimaryAction = {},
+                    onForgotPin = {},
+                    onBackToSignIn = {},
+                    onBiometricLogin = {},
+                    onRequestWipeData = {},
+                    onCancelWipeData = {},
+                    onConfirmWipeData = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.security_question_hint)).assertIsDisplayed()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.security_answer_hint)).assertIsDisplayed()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.forgot_pin)).assertDoesNotExist()
+    }
+
+    @Test
+    fun loginScreenRecoveryModeShowsQuestionAndBackAction() {
+        val recoveryPrompt = "What is your favorite color?"
+        composeRule.setContent {
+            DenariiDolorTheme {
+                LoginScreen(
+                    mode = LoginScreenMode.RECOVER_PIN,
+                    pin = "",
+                    pinConfirmation = "",
+                    securityQuestion = "",
+                    securityAnswer = "",
+                    recoveryQuestion = recoveryPrompt,
+                    signInEnabled = true,
+                    biometricAvailable = false,
+                    showWipeConfirmation = false,
+                    feedbackMessage = null,
+                    onPinChange = {},
+                    onPinConfirmationChange = {},
+                    onSecurityQuestionChange = {},
+                    onSecurityAnswerChange = {},
+                    onPrimaryAction = {},
+                    onForgotPin = {},
+                    onBackToSignIn = {},
+                    onBiometricLogin = {},
+                    onRequestWipeData = {},
+                    onCancelWipeData = {},
+                    onConfirmWipeData = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithText(recoveryPrompt).assertIsDisplayed()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.back_to_sign_in)).assertIsDisplayed()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.forgot_pin)).assertDoesNotExist()
+    }
+
+    @Test
     fun loginScreenWipeDialogConfirmTriggersDestructiveActionOnly() {
         var cancelTriggered = false
         var confirmTriggered = false

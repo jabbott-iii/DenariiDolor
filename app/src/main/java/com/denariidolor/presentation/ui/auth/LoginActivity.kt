@@ -100,17 +100,19 @@ class LoginActivity : AppCompatActivity() {
         signInEnabled = false
         actionInProgress = true
         lifecycleScope.launch {
+            var initialized = false
             try {
                 withContext(Dispatchers.IO) {
                     defaultDataInitializer.seedDefaults()
                 }
                 refreshLoginState(preserveRecoveryMode = false)
                 feedbackMessage = null
+                initialized = true
             } catch (_: Exception) {
                 feedbackMessage = getString(R.string.login_initialization_error)
             } finally {
                 actionInProgress = false
-                signInEnabled = true
+                signInEnabled = initialized
             }
         }
     }

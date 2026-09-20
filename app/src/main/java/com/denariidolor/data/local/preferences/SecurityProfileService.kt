@@ -169,12 +169,16 @@ class SecurityProfileService(
     }
 
     fun isProfileConfigured(): Boolean {
+        val pinIterations = store.getInt(KEY_PIN_ITERATIONS, 0)
+        val answerIterations = store.getInt(KEY_SECURITY_ANSWER_ITERATIONS, 0)
         return store.getBoolean(KEY_PROFILE_CONFIGURED, false) &&
             !store.getString(KEY_PIN_HASH).isNullOrBlank() &&
             !store.getString(KEY_PIN_SALT).isNullOrBlank() &&
             !store.getString(KEY_SECURITY_QUESTION).isNullOrBlank() &&
             !store.getString(KEY_SECURITY_ANSWER_HASH).isNullOrBlank() &&
-            !store.getString(KEY_SECURITY_ANSWER_SALT).isNullOrBlank()
+            !store.getString(KEY_SECURITY_ANSWER_SALT).isNullOrBlank() &&
+            pinIterations in MIN_ITERATIONS..MAX_ITERATIONS &&
+            answerIterations in MIN_ITERATIONS..MAX_ITERATIONS
     }
 
     fun wipeAll() {
