@@ -124,20 +124,23 @@ class LoginActivity : AppCompatActivity() {
         isSubmitting = false
     }
 
-    private fun handlePinRecovery(answer: String, newPin: String, confirmNewPin: String) {
-        if (!signInEnabled || isSubmitting || isFirstTimeSetup) return
+    private fun handlePinRecovery(answer: String, newPin: String, confirmNewPin: String): Boolean {
+        if (!signInEnabled || isSubmitting || isFirstTimeSetup) return false
         isSubmitting = true
-        when (val result = initialLoginUseCase.recoverPin(answer, newPin, confirmNewPin)) {
+        val successful = when (val result = initialLoginUseCase.recoverPin(answer, newPin, confirmNewPin)) {
             InitialLoginResult.Success -> {
                 Toast.makeText(this, "PIN reset successful. Sign in with your new PIN.", Toast.LENGTH_SHORT).show()
                 pinInput = ""
+                true
             }
 
             is InitialLoginResult.Error -> {
                 Toast.makeText(this, result.message, Toast.LENGTH_SHORT).show()
+                false
             }
         }
         isSubmitting = false
+        return successful
     }
 
     private fun handleConfirmedDataWipe() {

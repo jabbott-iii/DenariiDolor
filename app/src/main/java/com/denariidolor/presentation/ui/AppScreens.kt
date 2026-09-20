@@ -180,7 +180,7 @@ fun LoginScreen(
     onSignIn: () -> Unit,
     onSetup: (confirmPin: String, securityQuestion: String, securityAnswer: String) -> Unit,
     onBiometricLogin: () -> Unit,
-    onRecoverPin: (securityAnswer: String, newPin: String, confirmNewPin: String) -> Unit,
+    onRecoverPin: (securityAnswer: String, newPin: String, confirmNewPin: String) -> Boolean,
     onWipeDataConfirmed: () -> Unit
 ) {
     val biometricContentDescription = stringResource(R.string.biometric_sign_in_accessibility_label)
@@ -329,10 +329,13 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = {
-                        onRecoverPin(recoveryAnswer, recoveryPin, recoveryPinConfirm)
-                        recoveryAnswer = ""
-                        recoveryPin = ""
-                        recoveryPinConfirm = ""
+                        val success = onRecoverPin(recoveryAnswer, recoveryPin, recoveryPinConfirm)
+                        if (success) {
+                            recoveryAnswer = ""
+                            recoveryPin = ""
+                            recoveryPinConfirm = ""
+                            showRecovery = false
+                        }
                     },
                     enabled = actionsEnabled,
                     modifier = Modifier.fillMaxWidth()
@@ -353,35 +356,37 @@ fun LoginScreen(
                     Text(stringResource(R.string.sign_in_with_biometrics))
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
-            TextButton(
-                onClick = { showWipeConfirmation = true },
-                enabled = actionsEnabled,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.wipe_all_data))
-            }
-            if (showWipeConfirmation) {
-                AlertDialog(
-                    onDismissRequest = { showWipeConfirmation = false },
-                    title = { Text(stringResource(R.string.wipe_data_confirmation_title)) },
-                    text = { Text(stringResource(R.string.wipe_data_confirmation_message)) },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                showWipeConfirmation = false
-                                onWipeDataConfirmed()
+            if (!isFirstTimeSetup) {
+                Spacer(modifier = Modifier.height(12.dp))
+                TextButton(
+                    onClick = { showWipeConfirmation = true },
+                    enabled = actionsEnabled,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.wipe_all_data))
+                }
+                if (showWipeConfirmation) {
+                    AlertDialog(
+                        onDismissRequest = { showWipeConfirmation = false },
+                        title = { Text(stringResource(R.string.wipe_data_confirmation_title)) },
+                        text = { Text(stringResource(R.string.wipe_data_confirmation_message)) },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    showWipeConfirmation = false
+                                    onWipeDataConfirmed()
+                                }
+                            ) {
+                                Text(stringResource(R.string.confirm_delete))
                             }
-                        ) {
-                            Text(stringResource(R.string.confirm_delete))
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showWipeConfirmation = false }) {
+                                Text(stringResource(R.string.cancel))
+                            }
                         }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showWipeConfirmation = false }) {
-                            Text(stringResource(R.string.cancel))
-                        }
-                    }
-                )
+                    )
+                }
             }
         }
     }

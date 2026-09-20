@@ -33,7 +33,7 @@ class ComposeScreensTest {
                     onSignIn = {},
                     onSetup = { _, _, _ -> },
                     onBiometricLogin = {},
-                    onRecoverPin = { _, _, _ -> },
+                    onRecoverPin = { _, _, _ -> false },
                     onWipeDataConfirmed = {}
                 )
             }

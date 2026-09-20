@@ -34,17 +34,18 @@ class EncryptedPreferencesManager @Inject constructor(
     }
 
     override fun createPinSecurity(pin: String, securityQuestion: String, securityAnswer: String): Boolean {
-        if (isPinConfigured()) return false
-        val pinSalt = generateSalt()
-        val answerSalt = generateSalt()
-        sharedPreferences.edit()
-            .putString(KEY_PIN_HASH, hashSecret(pin, pinSalt))
-            .putString(KEY_PIN_SALT, Base64.encodeToString(pinSalt, Base64.NO_WRAP))
-            .putString(KEY_SECURITY_QUESTION, securityQuestion)
-            .putString(KEY_SECURITY_ANSWER_HASH, hashSecret(securityAnswer, answerSalt))
-            .putString(KEY_SECURITY_ANSWER_SALT, Base64.encodeToString(answerSalt, Base64.NO_WRAP))
-            .apply()
-        return true
+        synchronized(sharedPreferences) {
+            if (isPinConfigured()) return false
+            val pinSalt = generateSalt()
+            val answerSalt = generateSalt()
+            return sharedPreferences.edit()
+                .putString(KEY_PIN_HASH, hashSecret(pin, pinSalt))
+                .putString(KEY_PIN_SALT, Base64.encodeToString(pinSalt, Base64.NO_WRAP))
+                .putString(KEY_SECURITY_QUESTION, securityQuestion)
+                .putString(KEY_SECURITY_ANSWER_HASH, hashSecret(securityAnswer, answerSalt))
+                .putString(KEY_SECURITY_ANSWER_SALT, Base64.encodeToString(answerSalt, Base64.NO_WRAP))
+                .commit()
+        }
     }
 
     override fun verifyPin(pin: String): Boolean {
@@ -82,7 +83,7 @@ class EncryptedPreferencesManager @Inject constructor(
     }
 
     fun clearAll() {
-        sharedPreferences.edit().clear().apply()
+        sharedPreferences.edit().clear().commit()
     }
 
     private fun generateSalt(): ByteArray = ByteArray(SALT_BYTES).also { secureRandom.nextBytes(it) }
