@@ -41,7 +41,7 @@ class EncryptedPreferencesManager @Inject constructor(
             return sharedPreferences.edit()
                 .putString(KEY_PIN_HASH, hashSecret(pin, pinSalt))
                 .putString(KEY_PIN_SALT, Base64.encodeToString(pinSalt, Base64.NO_WRAP))
-                .putString(KEY_SECURITY_QUESTION, securityQuestion)
+                .putString(KEY_SECURITY_QUESTION, securityQuestion.trim())
                 .putString(KEY_SECURITY_ANSWER_HASH, hashSecret(securityAnswer, answerSalt))
                 .putString(KEY_SECURITY_ANSWER_SALT, Base64.encodeToString(answerSalt, Base64.NO_WRAP))
                 .commit()

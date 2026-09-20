@@ -90,6 +90,16 @@ class EncryptedPreferencesManagerTest {
     }
 
     @Test
+    fun verifySecurityAnswerFailsWhenAnswerSaltMalformed() {
+        manager.createPinSecurity(pin = "1234", securityQuestion = "City?", securityAnswer = "Rome")
+        encryptedPrefs().edit()
+            .putString(KEY_SECURITY_ANSWER_SALT, "not-a-valid-base64-value")
+            .commit()
+
+        assertFalse(manager.verifySecurityAnswer("Rome"))
+    }
+
+    @Test
     fun resetPinFailsWhenPersistedStateIncomplete() {
         manager.createPinSecurity(pin = "1234", securityQuestion = "City?", securityAnswer = "Rome")
         encryptedPrefs().edit()
