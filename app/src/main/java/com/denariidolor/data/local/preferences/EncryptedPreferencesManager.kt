@@ -95,8 +95,4 @@ class EncryptedPreferencesManager @Inject constructor(
     fun clearAllSecurityData() {
         securityProfileService.wipeAll()
     }
-
-    fun clearPinForSignInReset() {
-        securityProfileService.clearPinForSignInReset()
-    }
 }

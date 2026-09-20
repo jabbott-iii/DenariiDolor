@@ -187,6 +187,48 @@ class ComposeScreensTest {
     }
 
     @Test
+    fun loginScreenPrimaryActionLabelMatchesMode() {
+        fun setLoginContent(mode: LoginScreenMode) {
+            composeRule.setContent {
+                DenariiDolorTheme {
+                    LoginScreen(
+                        mode = mode,
+                        pin = "",
+                        pinConfirmation = "",
+                        securityQuestion = "",
+                        securityAnswer = "",
+                        recoveryQuestion = "Recovery prompt",
+                        signInEnabled = true,
+                        biometricAvailable = false,
+                        showWipeConfirmation = false,
+                        feedbackMessage = null,
+                        onPinChange = {},
+                        onPinConfirmationChange = {},
+                        onSecurityQuestionChange = {},
+                        onSecurityAnswerChange = {},
+                        onPrimaryAction = {},
+                        onForgotPin = {},
+                        onBackToSignIn = {},
+                        onBiometricLogin = {},
+                        onRequestWipeData = {},
+                        onCancelWipeData = {},
+                        onConfirmWipeData = {}
+                    )
+                }
+            }
+        }
+
+        setLoginContent(LoginScreenMode.SIGN_IN)
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.sign_in)).assertIsDisplayed()
+
+        setLoginContent(LoginScreenMode.SETUP)
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.create_security_profile)).assertIsDisplayed()
+
+        setLoginContent(LoginScreenMode.RECOVER_PIN)
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.reset_pin)).assertIsDisplayed()
+    }
+
+    @Test
     fun loginScreenWipeDialogConfirmTriggersDestructiveActionOnly() {
         var cancelTriggered = false
         var confirmTriggered = false

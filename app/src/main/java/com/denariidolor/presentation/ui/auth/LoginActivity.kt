@@ -248,16 +248,24 @@ class LoginActivity : AppCompatActivity() {
             val (wipeSucceeded, reseedSucceeded) =
                 withContext(Dispatchers.IO) {
                     var wipeFailed = false
-                    runCatching { appDatabase.clearAllTables() }.onFailure { wipeFailed = true }
-                    runCatching { encryptedPreferencesManager.clearAllSecurityData() }.onFailure { wipeFailed = true }
-                    runCatching {
+                    if (runCatching { appDatabase.clearAllTables() }.isFailure) {
+                        wipeFailed = true
+                    }
+
+                    if (!wipeFailed && runCatching { encryptedPreferencesManager.clearAllSecurityData() }.isFailure) {
+                        wipeFailed = true
+                    }
+
+                    if (!wipeFailed && runCatching {
                         if (cacheDir.exists() && !cacheDir.deleteRecursively()) {
                             wipeFailed = true
                         }
                         if (!cacheDir.exists() && !cacheDir.mkdirs()) {
                             wipeFailed = true
                         }
-                    }.onFailure { wipeFailed = true }
+                    }.isFailure) {
+                        wipeFailed = true
+                    }
 
                     var reseedFailed = false
                     if (!wipeFailed) {

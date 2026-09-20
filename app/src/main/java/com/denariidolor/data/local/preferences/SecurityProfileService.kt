@@ -186,20 +186,6 @@ class SecurityProfileService(
         store.edit { clear() }
     }
 
-    fun clearPinForSignInReset() {
-        store.edit {
-            remove(KEY_PROFILE_CONFIGURED)
-            remove(KEY_PIN_HASH)
-            remove(KEY_PIN_SALT)
-            remove(KEY_PIN_ITERATIONS)
-            remove(KEY_SECURITY_QUESTION)
-            remove(KEY_SECURITY_ANSWER_HASH)
-            remove(KEY_SECURITY_ANSWER_SALT)
-            remove(KEY_SECURITY_ANSWER_ITERATIONS)
-            remove(KEY_LEGACY_PIN)
-        }
-    }
-
     @OptIn(ExperimentalEncodingApi::class)
     private fun hashSecret(secret: String): HashedSecret {
         val saltBytes = ByteArray(SALT_LENGTH_BYTES).also { secureRandom.nextBytes(it) }

@@ -168,7 +168,7 @@ fun MainActivityContent(
                 SettingsScreen(
                     state = settingsState,
                     onSignOut = { onSettingsAction(false) },
-                    onResetPin = { onSettingsAction(true) }
+                    onResetSecurityProfile = { onSettingsAction(true) }
                 )
             }
             composable(MainDestination.AddTransaction.route) { AddTransactionRoute() }
@@ -547,7 +547,7 @@ private fun ReportRoute(viewModel: ReportViewModel = hiltViewModel()) {
 fun SettingsScreen(
     state: SettingsScreenState,
     onSignOut: () -> Unit,
-    onResetPin: () -> Unit
+    onResetSecurityProfile: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -574,8 +574,8 @@ fun SettingsScreen(
             Text(stringResource(R.string.sign_out))
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = onResetPin, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.reset_pin))
+        Button(onClick = onResetSecurityProfile, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.reset_security_profile))
         }
     }
 }
