@@ -1,6 +1,7 @@
 package com.denariidolor.domain.usecase
 
 import com.denariidolor.domain.auth.PinSecurityStore
+import kotlinx.coroutines.CancellationException
 
 sealed interface InitialLoginResult {
     data object Success : InitialLoginResult
@@ -61,6 +62,8 @@ class InitialLoginUseCase(
         return try {
             wipeAllData()
             InitialLoginResult.Success
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) {
             InitialLoginResult.Error("Unable to wipe app data")
         }

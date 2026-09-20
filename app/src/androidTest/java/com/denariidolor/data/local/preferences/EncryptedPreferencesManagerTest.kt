@@ -40,6 +40,15 @@ class EncryptedPreferencesManagerTest {
     }
 
     @Test
+    fun createPinSecuritySupportsHappyPathVerification() {
+        manager.createPinSecurity(pin = "1234", securityQuestion = "City?", securityAnswer = "Rome")
+
+        assertTrue(manager.isPinConfigured())
+        assertTrue(manager.verifyPin("1234"))
+        assertTrue(manager.verifySecurityAnswer("Rome"))
+    }
+
+    @Test
     fun isPinConfiguredFalseWhenSecurityQuestionBlank() {
         manager.createPinSecurity(pin = "1234", securityQuestion = "City?", securityAnswer = "Rome")
         encryptedPrefs().edit()

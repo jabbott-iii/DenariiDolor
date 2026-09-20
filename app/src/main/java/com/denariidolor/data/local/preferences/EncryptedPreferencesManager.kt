@@ -102,7 +102,7 @@ class EncryptedPreferencesManager @Inject constructor(
     }
 
     private fun isStrictBase64(value: String): Boolean {
-        if (value.isBlank() || value.length % 4 != 0) return false
+        if (value.isBlank()) return false
         return value.matches(Regex("^[A-Za-z0-9+/]*={0,2}$"))
     }
 
