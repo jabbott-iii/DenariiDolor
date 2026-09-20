@@ -63,4 +63,5 @@
     <string name="settings_pin_not_configured">No PIN is configured yet.</string>
     <string name="sign_out">Sign Out</string>
     <string name="reset_pin">Reset PIN</string>
+    <string name="reset_pin_action">Reset PIN</string>
 </resources>

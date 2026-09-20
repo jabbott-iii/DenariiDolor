@@ -373,7 +373,7 @@ fun LoginScreen(
                     enabled = actionsEnabled,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(stringResource(R.string.reset_pin))
+                    Text(stringResource(R.string.reset_pin_action))
                 }
             }
             if (biometricAvailable && !isFirstTimeSetup) {

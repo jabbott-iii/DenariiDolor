@@ -152,9 +152,7 @@ class LoginActivity : AppCompatActivity() {
         isSubmitting = true
         lifecycleScope.launch {
             try {
-                when (val result = withContext(Dispatchers.IO) {
-                    initialLoginUseCase.wipeData(confirm = true)
-                }) {
+                when (val result = initialLoginUseCase.wipeData(confirm = true)) {
                     InitialLoginResult.Success -> {
                         pinInput = ""
                         loginFormStateVersion += 1
@@ -179,11 +177,13 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private suspend fun wipeAllUserData() {
-        appDatabase.clearAllTables()
-        encryptedPreferencesManager.clearAll()
-        clearDirectory(applicationContext.cacheDir)
-        defaultDataInitializer.seedDefaults()
-        sessionManager.invalidate()
+        withContext(Dispatchers.IO) {
+            appDatabase.clearAllTables()
+            encryptedPreferencesManager.clearAll()
+            clearDirectory(applicationContext.cacheDir)
+            defaultDataInitializer.seedDefaults()
+            sessionManager.invalidate()
+        }
     }
 
     private fun clearDirectory(directory: java.io.File?) {
