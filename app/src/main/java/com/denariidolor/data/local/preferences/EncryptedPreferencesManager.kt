@@ -65,11 +65,10 @@ class EncryptedPreferencesManager @Inject constructor(
     override fun resetPin(pin: String): Boolean {
         if (!isPinConfigured()) return false
         val pinSalt = generateSalt()
-        sharedPreferences.edit()
+        return sharedPreferences.edit()
             .putString(KEY_PIN_HASH, hashSecret(pin, pinSalt))
             .putString(KEY_PIN_SALT, Base64.encodeToString(pinSalt, Base64.NO_WRAP))
-            .apply()
-        return true
+            .commit()
     }
 
     override fun clearPin() {
@@ -92,8 +91,12 @@ class EncryptedPreferencesManager @Inject constructor(
 
     private fun hashSecret(secret: String, salt: ByteArray): String {
         val keySpec = PBEKeySpec(secret.toCharArray(), salt, HASH_ITERATIONS, KEY_LENGTH_BITS)
-        val hash = secretKeyFactory.generateSecret(keySpec).encoded
-        return Base64.encodeToString(hash, Base64.NO_WRAP)
+        return try {
+            val hash = secretKeyFactory.generateSecret(keySpec).encoded
+            Base64.encodeToString(hash, Base64.NO_WRAP)
+        } finally {
+            keySpec.clearPassword()
+        }
     }
 
     private fun constantTimeEquals(expected: String, actual: String): Boolean {
