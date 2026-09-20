@@ -3,15 +3,21 @@ package com.denariidolor.presentation.ui.auth
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.denariidolor.MainActivity
 import com.denariidolor.R
 import com.denariidolor.data.local.db.DefaultDataInitializer
 import com.denariidolor.data.local.preferences.EncryptedPreferencesManager
-import com.denariidolor.databinding.ActivityLoginBinding
+import com.denariidolor.presentation.ui.LoginScreen
+import com.denariidolor.presentation.ui.common.DenariiDolorTheme
 import com.denariidolor.util.SessionManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -21,8 +27,6 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class LoginActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityLoginBinding
-
     @Inject
     lateinit var encryptedPreferencesManager: EncryptedPreferencesManager
 
@@ -35,10 +39,24 @@ class LoginActivity : AppCompatActivity() {
     @Inject
     lateinit var defaultDataInitializer: DefaultDataInitializer
 
+    private var signInEnabled by mutableStateOf(false)
+    private var biometricAvailable by mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityLoginBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContent {
+            var pin by rememberSaveable { mutableStateOf("") }
+            DenariiDolorTheme {
+                LoginScreen(
+                    pin = pin,
+                    signInEnabled = signInEnabled,
+                    biometricAvailable = biometricAvailable,
+                    onPinChange = { pin = it },
+                    onLogin = { handlePinLogin(pin) },
+                    onBiometricLogin = ::promptForBiometricSignIn
+                )
+            }
+        }
         setSignInEnabled(false)
 
         lifecycleScope.launch {
@@ -46,41 +64,29 @@ class LoginActivity : AppCompatActivity() {
                 defaultDataInitializer.seedDefaults()
             }
             setSignInEnabled(true)
-            bindAuthActions()
+            biometricAvailable = encryptedPreferencesManager.getPin() != null && biometricAuthManager.canAuthenticate(this@LoginActivity)
         }
     }
 
-    private fun bindAuthActions() {
-        val hasStoredPin = encryptedPreferencesManager.getPin() != null
-        binding.btnLogin.setOnClickListener {
-            val pin = binding.etPin.text?.toString().orEmpty()
-            if (pin.length < 4) {
-                Toast.makeText(this, "PIN must be at least 4 digits", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val stored = encryptedPreferencesManager.getPin()
-            if (stored == null) {
-                encryptedPreferencesManager.savePin(pin)
-            } else if (stored != pin) {
-                Toast.makeText(this, "Invalid PIN", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            openMain()
+    private fun handlePinLogin(pin: String) {
+        if (pin.length < 4) {
+            Toast.makeText(this, "PIN must be at least 4 digits", Toast.LENGTH_SHORT).show()
+            return
         }
 
-        if (hasStoredPin && biometricAuthManager.canAuthenticate(this)) {
-            binding.btnBiometricLogin.setOnClickListener { promptForBiometricSignIn() }
-        } else {
-            binding.btnBiometricLogin.visibility = android.view.View.GONE
+        val stored = encryptedPreferencesManager.getPin()
+        if (stored == null) {
+            encryptedPreferencesManager.savePin(pin)
+        } else if (stored != pin) {
+            Toast.makeText(this, "Invalid PIN", Toast.LENGTH_SHORT).show()
+            return
         }
+
+        openMain()
     }
 
     private fun setSignInEnabled(enabled: Boolean) {
-        binding.etPin.isEnabled = enabled
-        binding.btnLogin.isEnabled = enabled
-        binding.btnBiometricLogin.isEnabled = enabled
+        signInEnabled = enabled
     }
 
     private fun promptForBiometricSignIn() {

@@ -17,6 +17,10 @@ import javax.inject.Inject
 class TransactionViewModel @Inject constructor(
     private val addTransactionUseCase: AddTransactionUseCase
 ) : ViewModel() {
+    companion object {
+        const val STATUS_SAVED = "Saved"
+    }
+
     private val _status = MutableStateFlow<String?>(null)
     val status: StateFlow<String?> = _status
 
@@ -44,7 +48,7 @@ class TransactionViewModel @Inject constructor(
                 onSuccess = { transaction -> addTransactionUseCase(transaction) },
                 onFailure = { Result.failure(it) }
             )
-            _status.value = if (result.isSuccess) "Saved" else (result.exceptionOrNull()?.message ?: "Error")
+            _status.value = if (result.isSuccess) STATUS_SAVED else (result.exceptionOrNull()?.message ?: "Error")
         }
     }
 

@@ -2,14 +2,17 @@ package com.denariidolor
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.setupWithNavController
-import com.denariidolor.databinding.ActivityMainBinding
+import com.denariidolor.data.local.preferences.EncryptedPreferencesManager
+import com.denariidolor.presentation.ui.MainActivityContent
 import com.denariidolor.presentation.ui.auth.LoginActivity
+import com.denariidolor.presentation.ui.common.DenariiDolorTheme
+import com.denariidolor.presentation.ui.settings.SettingsScreenState
+import com.denariidolor.util.Constants
 import com.denariidolor.util.SessionManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -19,22 +22,24 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityMainBinding
-
     @Inject
     lateinit var sessionManager: SessionManager
 
+    @Inject
+    lateinit var encryptedPreferencesManager: EncryptedPreferencesManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-        val navController = navHostFragment.navController
-        binding.bottomNav.setupWithNavController(navController)
-
-        binding.fabAddTransaction.setOnClickListener {
-            navController.navigate(R.id.addTransactionFragment)
+        setContent {
+            DenariiDolorTheme {
+                MainActivityContent(
+                    settingsState = SettingsScreenState(
+                        sessionTimeoutMinutes = Constants.SESSION_TIMEOUT_MILLIS / 60_000,
+                        pinConfigured = encryptedPreferencesManager.getPin() != null
+                    ),
+                    onSettingsAction = ::redirectToLogin
+                )
+            }
         }
 
         lifecycleScope.launch {
@@ -42,7 +47,7 @@ class MainActivity : AppCompatActivity() {
                 while (isActive) {
                     delay(30_000)
                     if (sessionManager.isSessionTimedOut()) {
-                        redirectToLogin()
+                        redirectToLogin(clearPin = false)
                         break
                     }
                 }
@@ -53,20 +58,23 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         if (sessionManager.isSessionTimedOut()) {
-            redirectToLogin()
+            redirectToLogin(clearPin = false)
         }
     }
 
     override fun onUserInteraction() {
         super.onUserInteraction()
         if (sessionManager.isSessionTimedOut()) {
-            redirectToLogin()
+            redirectToLogin(clearPin = false)
         } else {
             sessionManager.touch()
         }
     }
 
-    private fun redirectToLogin() {
+    private fun redirectToLogin(clearPin: Boolean) {
+        if (clearPin) {
+            encryptedPreferencesManager.clearPin()
+        }
         sessionManager.invalidate()
         startActivity(
             Intent(this, LoginActivity::class.java).apply {
