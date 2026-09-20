@@ -254,12 +254,15 @@ class LoginActivity : AppCompatActivity() {
                 securityQuestion = ""
                 securityAnswer = ""
                 recoveryQuestion = null
+                refreshLoginState(preserveRecoveryMode = false)
                 withContext(Dispatchers.IO) {
                     defaultDataInitializer.seedDefaults()
                 }
-                refreshLoginState(preserveRecoveryMode = false)
                 feedbackMessage = getString(R.string.wipe_data_success)
             } catch (_: Exception) {
+                if (wipeSucceeded) {
+                    refreshLoginState(preserveRecoveryMode = false)
+                }
                 feedbackMessage =
                     if (wipeSucceeded) {
                         getString(R.string.wipe_data_reseed_error)
