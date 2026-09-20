@@ -38,6 +38,8 @@
     <string name="invalid_security_answer">Security answer is incorrect.</string>
     <string name="pin_recovery_success">PIN reset successful. Sign in with your new PIN.</string>
     <string name="wipe_data_success">All app data was deleted. Set up a new security profile.</string>
+    <string name="wipe_data_error">Unable to wipe app data. Please try again.</string>
+    <string name="login_initialization_error">Login initialization failed. Please retry.</string>
     <string name="security_question_unavailable">Security question unavailable.</string>
     <string name="legacy_pin_migration_mismatch">Enter your existing PIN to complete secure migration.</string>
     <string name="add_transaction">Add Transaction</string>

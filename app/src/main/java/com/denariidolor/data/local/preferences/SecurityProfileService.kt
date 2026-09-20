@@ -10,6 +10,10 @@ interface SecurityProfileStore {
     fun getString(key: String): String?
     fun getInt(key: String, defaultValue: Int): Int
     fun getBoolean(key: String, defaultValue: Boolean): Boolean
+    fun edit(block: SecurityProfileStoreEditor.() -> Unit)
+}
+
+interface SecurityProfileStoreEditor {
     fun putString(key: String, value: String)
     fun putInt(key: String, value: Int)
     fun putBoolean(key: String, value: Boolean)
@@ -92,15 +96,17 @@ class SecurityProfileService(
         val pinHash = hashSecret(pin)
         val answerHash = hashSecret(trimmedAnswer)
 
-        store.putString(KEY_PIN_HASH, pinHash.hash)
-        store.putString(KEY_PIN_SALT, pinHash.salt)
-        store.putInt(KEY_PIN_ITERATIONS, pinHash.iterations)
-        store.putString(KEY_SECURITY_QUESTION, trimmedQuestion)
-        store.putString(KEY_SECURITY_ANSWER_HASH, answerHash.hash)
-        store.putString(KEY_SECURITY_ANSWER_SALT, answerHash.salt)
-        store.putInt(KEY_SECURITY_ANSWER_ITERATIONS, answerHash.iterations)
-        store.putBoolean(KEY_PROFILE_CONFIGURED, true)
-        store.remove(KEY_LEGACY_PIN)
+        store.edit {
+            putString(KEY_PIN_HASH, pinHash.hash)
+            putString(KEY_PIN_SALT, pinHash.salt)
+            putInt(KEY_PIN_ITERATIONS, pinHash.iterations)
+            putString(KEY_SECURITY_QUESTION, trimmedQuestion)
+            putString(KEY_SECURITY_ANSWER_HASH, answerHash.hash)
+            putString(KEY_SECURITY_ANSWER_SALT, answerHash.salt)
+            putInt(KEY_SECURITY_ANSWER_ITERATIONS, answerHash.iterations)
+            putBoolean(KEY_PROFILE_CONFIGURED, true)
+            remove(KEY_LEGACY_PIN)
+        }
 
         return SetupProfileResult.SUCCESS
     }
@@ -152,10 +158,12 @@ class SecurityProfileService(
         }
 
         val pinHash = hashSecret(newPin)
-        store.putString(KEY_PIN_HASH, pinHash.hash)
-        store.putString(KEY_PIN_SALT, pinHash.salt)
-        store.putInt(KEY_PIN_ITERATIONS, pinHash.iterations)
-        store.remove(KEY_LEGACY_PIN)
+        store.edit {
+            putString(KEY_PIN_HASH, pinHash.hash)
+            putString(KEY_PIN_SALT, pinHash.salt)
+            putInt(KEY_PIN_ITERATIONS, pinHash.iterations)
+            remove(KEY_LEGACY_PIN)
+        }
 
         return RecoverPinResult.SUCCESS
     }
@@ -170,7 +178,7 @@ class SecurityProfileService(
     }
 
     fun wipeAll() {
-        store.clear()
+        store.edit { clear() }
     }
 
     private fun hashSecret(secret: String): HashedSecret {

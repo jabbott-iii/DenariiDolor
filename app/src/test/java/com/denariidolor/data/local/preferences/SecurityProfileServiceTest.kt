@@ -101,7 +101,7 @@ class SecurityProfileServiceTest {
     @Test
     fun legacyPinRequiresMatchingPinToMigrateAndClearsLegacyAfterSuccess() {
         val store = InMemorySecurityProfileStore().apply {
-            putString(SecurityProfileService.KEY_LEGACY_PIN, "2468")
+            edit { putString(SecurityProfileService.KEY_LEGACY_PIN, "2468") }
         }
         val service = SecurityProfileService(store)
 
@@ -137,28 +137,33 @@ class SecurityProfileServiceTest {
 
         override fun getBoolean(key: String, defaultValue: Boolean): Boolean = booleanValues[key] ?: defaultValue
 
-        override fun putString(key: String, value: String) {
-            stringValues[key] = value
-        }
+        override fun edit(block: SecurityProfileStoreEditor.() -> Unit) {
+            val editor = object : SecurityProfileStoreEditor {
+                override fun putString(key: String, value: String) {
+                    stringValues[key] = value
+                }
 
-        override fun putInt(key: String, value: Int) {
-            intValues[key] = value
-        }
+                override fun putInt(key: String, value: Int) {
+                    intValues[key] = value
+                }
 
-        override fun putBoolean(key: String, value: Boolean) {
-            booleanValues[key] = value
-        }
+                override fun putBoolean(key: String, value: Boolean) {
+                    booleanValues[key] = value
+                }
 
-        override fun remove(key: String) {
-            stringValues.remove(key)
-            intValues.remove(key)
-            booleanValues.remove(key)
-        }
+                override fun remove(key: String) {
+                    stringValues.remove(key)
+                    intValues.remove(key)
+                    booleanValues.remove(key)
+                }
 
-        override fun clear() {
-            stringValues.clear()
-            intValues.clear()
-            booleanValues.clear()
+                override fun clear() {
+                    stringValues.clear()
+                    intValues.clear()
+                    booleanValues.clear()
+                }
+            }
+            block(editor)
         }
     }
 }

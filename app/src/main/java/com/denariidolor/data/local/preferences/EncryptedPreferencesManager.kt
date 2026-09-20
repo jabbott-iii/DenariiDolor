@@ -29,24 +29,31 @@ class EncryptedPreferencesManager @Inject constructor(
                 return sharedPreferences.getBoolean(key, defaultValue)
             }
 
-            override fun putString(key: String, value: String) {
-                sharedPreferences.edit().putString(key, value).apply()
-            }
+            override fun edit(block: SecurityProfileStoreEditor.() -> Unit) {
+                val editor = sharedPreferences.edit()
+                val storeEditor = object : SecurityProfileStoreEditor {
+                    override fun putString(key: String, value: String) {
+                        editor.putString(key, value)
+                    }
 
-            override fun putInt(key: String, value: Int) {
-                sharedPreferences.edit().putInt(key, value).apply()
-            }
+                    override fun putInt(key: String, value: Int) {
+                        editor.putInt(key, value)
+                    }
 
-            override fun putBoolean(key: String, value: Boolean) {
-                sharedPreferences.edit().putBoolean(key, value).apply()
-            }
+                    override fun putBoolean(key: String, value: Boolean) {
+                        editor.putBoolean(key, value)
+                    }
 
-            override fun remove(key: String) {
-                sharedPreferences.edit().remove(key).apply()
-            }
+                    override fun remove(key: String) {
+                        editor.remove(key)
+                    }
 
-            override fun clear() {
-                sharedPreferences.edit().clear().apply()
+                    override fun clear() {
+                        editor.clear()
+                    }
+                }
+                block(storeEditor)
+                editor.apply()
             }
         }
     )

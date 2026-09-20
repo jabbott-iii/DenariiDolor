@@ -101,13 +101,18 @@ class LoginActivity : AppCompatActivity() {
         signInEnabled = false
         actionInProgress = true
         lifecycleScope.launch {
-            withContext(Dispatchers.IO) {
-                defaultDataInitializer.seedDefaults()
+            try {
+                withContext(Dispatchers.IO) {
+                    defaultDataInitializer.seedDefaults()
+                }
+                refreshLoginState()
+                feedbackMessage = null
+            } catch (_: Exception) {
+                feedbackMessage = getString(R.string.login_initialization_error)
+            } finally {
+                actionInProgress = false
+                signInEnabled = true
             }
-            refreshLoginState()
-            feedbackMessage = null
-            actionInProgress = false
-            signInEnabled = true
         }
     }
 
@@ -230,24 +235,29 @@ class LoginActivity : AppCompatActivity() {
         signInEnabled = false
 
         lifecycleScope.launch {
-            withContext(Dispatchers.IO) {
-                appDatabase.clearAllTables()
-                encryptedPreferencesManager.clearAllSecurityData()
-                clearAppOwnedFiles(filesDir)
-                clearAppOwnedFiles(cacheDir)
+            try {
+                withContext(Dispatchers.IO) {
+                    appDatabase.clearAllTables()
+                    encryptedPreferencesManager.clearAllSecurityData()
+                    clearAppOwnedFiles(filesDir)
+                    clearAppOwnedFiles(cacheDir)
+                }
+                sessionManager.invalidate()
+                clearInputs()
+                securityQuestion = ""
+                securityAnswer = ""
+                recoveryQuestion = null
+                feedbackMessage = getString(R.string.wipe_data_success)
+                withContext(Dispatchers.IO) {
+                    defaultDataInitializer.seedDefaults()
+                }
+                refreshLoginState()
+            } catch (_: Exception) {
+                feedbackMessage = getString(R.string.wipe_data_error)
+            } finally {
+                actionInProgress = false
+                signInEnabled = true
             }
-            sessionManager.invalidate()
-            clearInputs()
-            securityQuestion = ""
-            securityAnswer = ""
-            recoveryQuestion = null
-            feedbackMessage = getString(R.string.wipe_data_success)
-            withContext(Dispatchers.IO) {
-                defaultDataInitializer.seedDefaults()
-            }
-            refreshLoginState()
-            actionInProgress = false
-            signInEnabled = true
         }
     }
 
