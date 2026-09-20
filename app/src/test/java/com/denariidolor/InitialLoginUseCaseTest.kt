@@ -75,6 +75,7 @@ class InitialLoginUseCaseTest {
         assertEquals(InitialLoginResult.Success, wipeResult)
         assertTrue(authAfterWipe is InitialLoginResult.Error)
         assertTrue(useCase.isFirstTimeSetup())
+        assertEquals(null, useCase.securityQuestion())
         assertEquals(1, wipeInvocations)
     }
 

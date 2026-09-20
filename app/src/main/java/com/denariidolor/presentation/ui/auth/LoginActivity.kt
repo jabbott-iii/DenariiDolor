@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
@@ -50,6 +51,7 @@ class LoginActivity : AppCompatActivity() {
     private var recoveryQuestion by mutableStateOf<String?>(null)
     private var isSubmitting by mutableStateOf(false)
     private var pinInput by mutableStateOf("")
+    private var loginFormStateVersion by mutableStateOf(0)
     private lateinit var initialLoginUseCase: InitialLoginUseCase
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,24 +62,26 @@ class LoginActivity : AppCompatActivity() {
         )
         setContent {
             DenariiDolorTheme {
-                LoginScreen(
-                    pin = pinInput,
-                    signInEnabled = signInEnabled,
-                    biometricAvailable = biometricAvailable,
-                    isFirstTimeSetup = isFirstTimeSetup,
-                    securityQuestionPrompt = recoveryQuestion,
-                    isSubmitting = isSubmitting,
-                    onPinChange = { pinInput = it },
-                    onSignIn = { handleSignIn(pinInput) },
-                    onSetup = { confirmPin, securityQuestion, securityAnswer ->
-                        handleSetup(pinInput, confirmPin, securityQuestion, securityAnswer)
-                    },
-                    onBiometricLogin = ::promptForBiometricSignIn,
-                    onRecoverPin = { answer, newPin, confirmNewPin ->
-                        handlePinRecovery(answer, newPin, confirmNewPin)
-                    },
-                    onWipeDataConfirmed = ::handleConfirmedDataWipe
-                )
+                key(loginFormStateVersion) {
+                    LoginScreen(
+                        pin = pinInput,
+                        signInEnabled = signInEnabled,
+                        biometricAvailable = biometricAvailable,
+                        isFirstTimeSetup = isFirstTimeSetup,
+                        securityQuestionPrompt = recoveryQuestion,
+                        isSubmitting = isSubmitting,
+                        onPinChange = { pinInput = it },
+                        onSignIn = { handleSignIn(pinInput) },
+                        onSetup = { confirmPin, securityQuestion, securityAnswer ->
+                            handleSetup(pinInput, confirmPin, securityQuestion, securityAnswer)
+                        },
+                        onBiometricLogin = ::promptForBiometricSignIn,
+                        onRecoverPin = { answer, newPin, confirmNewPin ->
+                            handlePinRecovery(answer, newPin, confirmNewPin)
+                        },
+                        onWipeDataConfirmed = ::handleConfirmedDataWipe
+                    )
+                }
             }
         }
         signInEnabled = false
@@ -152,6 +156,7 @@ class LoginActivity : AppCompatActivity() {
             }) {
                 InitialLoginResult.Success -> {
                     pinInput = ""
+                    loginFormStateVersion += 1
                     refreshLoginState()
                     Toast.makeText(this@LoginActivity, "All app data has been deleted.", Toast.LENGTH_SHORT).show()
                 }
@@ -173,19 +178,7 @@ class LoginActivity : AppCompatActivity() {
     private suspend fun wipeAllUserData() {
         appDatabase.clearAllTables()
         encryptedPreferencesManager.clearAll()
-        clearDirectory(applicationContext.filesDir)
-        clearDirectory(applicationContext.cacheDir)
         defaultDataInitializer.seedDefaults()
-    }
-
-    private fun clearDirectory(directory: java.io.File?) {
-        directory?.listFiles()?.forEach { child ->
-            if (child.isDirectory) {
-                child.deleteRecursively()
-            } else {
-                child.delete()
-            }
-        }
     }
 
     private fun promptForBiometricSignIn() {
