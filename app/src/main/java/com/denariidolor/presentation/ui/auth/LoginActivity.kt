@@ -58,9 +58,11 @@ class LoginActivity : AppCompatActivity() {
     private var pinConfirmation by mutableStateOf("")
     private var securityQuestion by mutableStateOf("")
     private var securityAnswer by mutableStateOf("")
+    private var launchRecoveryOnInit = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        launchRecoveryOnInit = intent.getBooleanExtra(EXTRA_START_RECOVERY, false)
         setContent {
             DenariiDolorTheme {
                 LoginScreen(
@@ -113,6 +115,10 @@ class LoginActivity : AppCompatActivity() {
             } finally {
                 actionInProgress = false
                 signInEnabled = initialized
+                if (initialized && launchRecoveryOnInit) {
+                    launchRecoveryOnInit = false
+                    startPinRecovery()
+                }
             }
         }
     }
@@ -346,6 +352,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     companion object {
+        const val EXTRA_START_RECOVERY = "extra_start_recovery"
         private val PIN_REGEX = Regex("^[0-9]{4,12}$")
     }
 }

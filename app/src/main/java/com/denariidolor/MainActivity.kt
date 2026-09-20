@@ -73,13 +73,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun redirectToLogin(resetSecurityProfile: Boolean) {
-        if (resetSecurityProfile) {
-            encryptedPreferencesManager.clearAllSecurityData()
-        }
         sessionManager.invalidate()
         startActivity(
             Intent(this, LoginActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                putExtra(LoginActivity.EXTRA_START_RECOVERY, resetSecurityProfile)
             }
         )
         finish()
