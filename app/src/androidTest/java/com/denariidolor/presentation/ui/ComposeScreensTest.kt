@@ -1,6 +1,8 @@
 package com.denariidolor.presentation.ui
 
 import androidx.activity.ComponentActivity
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
 import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -13,12 +15,15 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import com.denariidolor.R
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
 import com.denariidolor.util.Constants
 import org.junit.Rule
 import org.junit.Test
 
 class ComposeScreensTest {
+    private val context: Context = ApplicationProvider.getApplicationContext()
+
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -69,6 +74,9 @@ class ComposeScreensTest {
 
     @Test
     fun loginScreenShowsSetupFieldsDuringFirstTimeSetup() {
+        val confirmPinLabel = context.getString(R.string.confirm_pin_hint)
+        val securityQuestionLabel = context.getString(R.string.security_question_hint)
+        val securityAnswerLabel = context.getString(R.string.security_answer_hint)
         composeRule.setContent {
             DenariiDolorTheme {
                 LoginScreen(
@@ -88,13 +96,20 @@ class ComposeScreensTest {
             }
         }
 
-        composeRule.onNodeWithText("Confirm PIN").assertIsDisplayed()
-        composeRule.onNodeWithText("Security question").assertIsDisplayed()
-        composeRule.onNodeWithText("Security answer").assertIsDisplayed()
+        composeRule.onNodeWithText(confirmPinLabel).assertIsDisplayed()
+        composeRule.onNodeWithText(securityQuestionLabel).assertIsDisplayed()
+        composeRule.onNodeWithText(securityAnswerLabel).assertIsDisplayed()
     }
 
     @Test
     fun loginScreenTogglesRecoveryPanelAndShowsWipeDialog() {
+        val recoverPinLabel = context.getString(R.string.recover_pin)
+        val hideRecoveryLabel = context.getString(R.string.hide_recovery)
+        val recoveryExpanded = context.getString(R.string.pin_recovery_expanded)
+        val newPinLabel = context.getString(R.string.new_pin_hint)
+        val wipeWarningLabel = context.getString(R.string.wipe_all_data_warning_label)
+        val wipeButtonLabel = context.getString(R.string.wipe_all_data)
+        val wipeDialogTitle = context.getString(R.string.wipe_data_confirmation_title)
         composeRule.setContent {
             DenariiDolorTheme {
                 LoginScreen(
@@ -114,18 +129,18 @@ class ComposeScreensTest {
             }
         }
 
-        composeRule.onNodeWithText("Recover PIN").performClick()
-        composeRule.onNodeWithText("Hide PIN Recovery")
+        composeRule.onNodeWithText(recoverPinLabel).performClick()
+        composeRule.onNodeWithText(hideRecoveryLabel)
             .assert(
                 SemanticsMatcher.expectValue(
                     SemanticsProperties.StateDescription,
-                    "PIN recovery options expanded"
+                    recoveryExpanded
                 )
             )
-        composeRule.onNodeWithText("New PIN").assertIsDisplayed()
-        composeRule.onNodeWithContentDescription("Warning: permanently delete all app data")
+        composeRule.onNodeWithText(newPinLabel).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(wipeWarningLabel)
             .assertIsDisplayed()
-        composeRule.onNodeWithText("Wipe All Data").performClick()
-        composeRule.onNodeWithText("Delete all app data?").assertIsDisplayed()
+        composeRule.onNodeWithText(wipeButtonLabel).performClick()
+        composeRule.onNodeWithText(wipeDialogTitle).assertIsDisplayed()
     }
 }

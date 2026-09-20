@@ -179,7 +179,7 @@ class LoginActivity : AppCompatActivity() {
     private suspend fun wipeAllUserData() {
         withContext(Dispatchers.IO) {
             appDatabase.clearAllTables()
-            encryptedPreferencesManager.clearAll()
+            encryptedPreferencesManager.clearPin()
             clearDirectory(applicationContext.cacheDir)
             sessionManager.invalidate()
         }
