@@ -62,4 +62,57 @@ class ComposeScreensTest {
             .assertIsDisplayed()
             .assertTextEquals(Constants.DEFAULT_SAVINGS_ACCOUNT_ID.toString())
     }
+
+    @Test
+    fun loginScreenShowsSetupFieldsDuringFirstTimeSetup() {
+        composeRule.setContent {
+            DenariiDolorTheme {
+                LoginScreen(
+                    pin = "",
+                    signInEnabled = true,
+                    biometricAvailable = false,
+                    isFirstTimeSetup = true,
+                    securityQuestionPrompt = null,
+                    isSubmitting = false,
+                    onPinChange = {},
+                    onSignIn = {},
+                    onSetup = { _, _, _ -> },
+                    onBiometricLogin = {},
+                    onRecoverPin = { _, _, _ -> false },
+                    onWipeDataConfirmed = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Confirm PIN").assertIsDisplayed()
+        composeRule.onNodeWithText("Security question").assertIsDisplayed()
+        composeRule.onNodeWithText("Security answer").assertIsDisplayed()
+    }
+
+    @Test
+    fun loginScreenTogglesRecoveryPanelAndShowsWipeDialog() {
+        composeRule.setContent {
+            DenariiDolorTheme {
+                LoginScreen(
+                    pin = "",
+                    signInEnabled = true,
+                    biometricAvailable = false,
+                    isFirstTimeSetup = false,
+                    securityQuestionPrompt = "City?",
+                    isSubmitting = false,
+                    onPinChange = {},
+                    onSignIn = {},
+                    onSetup = { _, _, _ -> },
+                    onBiometricLogin = {},
+                    onRecoverPin = { _, _, _ -> false },
+                    onWipeDataConfirmed = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Recover PIN").performClick()
+        composeRule.onNodeWithText("New PIN").assertIsDisplayed()
+        composeRule.onNodeWithText("Wipe All Data").performClick()
+        composeRule.onNodeWithText("Delete all app data?").assertIsDisplayed()
+    }
 }

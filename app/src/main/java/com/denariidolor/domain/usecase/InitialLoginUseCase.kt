@@ -58,8 +58,12 @@ class InitialLoginUseCase(
 
     suspend fun wipeData(confirm: Boolean): InitialLoginResult {
         if (!confirm) return InitialLoginResult.Error("Data wipe cancelled")
-        wipeAllData()
-        return InitialLoginResult.Success
+        return try {
+            wipeAllData()
+            InitialLoginResult.Success
+        } catch (_: Exception) {
+            InitialLoginResult.Error("Unable to wipe app data")
+        }
     }
 
     private fun validatePin(pin: String, confirmPin: String): InitialLoginResult.Error? {

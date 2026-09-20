@@ -151,21 +151,24 @@ class LoginActivity : AppCompatActivity() {
         if (!signInEnabled || isSubmitting) return
         isSubmitting = true
         lifecycleScope.launch {
-            when (val result = withContext(Dispatchers.IO) {
-                initialLoginUseCase.wipeData(confirm = true)
-            }) {
-                InitialLoginResult.Success -> {
-                    pinInput = ""
-                    loginFormStateVersion += 1
-                    refreshLoginState()
-                    Toast.makeText(this@LoginActivity, "All app data has been deleted.", Toast.LENGTH_SHORT).show()
-                }
+            try {
+                when (val result = withContext(Dispatchers.IO) {
+                    initialLoginUseCase.wipeData(confirm = true)
+                }) {
+                    InitialLoginResult.Success -> {
+                        pinInput = ""
+                        loginFormStateVersion += 1
+                        refreshLoginState()
+                        Toast.makeText(this@LoginActivity, "All app data has been deleted.", Toast.LENGTH_SHORT).show()
+                    }
 
-                is InitialLoginResult.Error -> {
-                    Toast.makeText(this@LoginActivity, result.message, Toast.LENGTH_SHORT).show()
+                    is InitialLoginResult.Error -> {
+                        Toast.makeText(this@LoginActivity, result.message, Toast.LENGTH_SHORT).show()
+                    }
                 }
+            } finally {
+                isSubmitting = false
             }
-            isSubmitting = false
         }
     }
 
@@ -178,7 +181,6 @@ class LoginActivity : AppCompatActivity() {
     private suspend fun wipeAllUserData() {
         appDatabase.clearAllTables()
         encryptedPreferencesManager.clearAll()
-        clearDirectory(applicationContext.filesDir)
         clearDirectory(applicationContext.cacheDir)
         defaultDataInitializer.seedDefaults()
         sessionManager.invalidate()
