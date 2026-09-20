@@ -23,6 +23,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -33,6 +34,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -76,6 +78,12 @@ internal const val LoginButtonTag = "loginButton"
 internal const val BiometricButtonTag = "biometricButton"
 internal const val TransactionTypeFieldTag = "transactionTypeField"
 internal const val TransferAccountFieldTag = "transferAccountField"
+
+enum class LoginScreenMode {
+    SETUP,
+    SIGN_IN,
+    RECOVER_PIN
+}
 
 private enum class MainDestination(
     val route: String,
@@ -168,14 +176,59 @@ fun MainActivityContent(
 
 @Composable
 fun LoginScreen(
+    mode: LoginScreenMode,
     pin: String,
+    pinConfirmation: String,
+    securityQuestion: String,
+    securityAnswer: String,
+    recoveryQuestion: String?,
     signInEnabled: Boolean,
     biometricAvailable: Boolean,
+    showWipeConfirmation: Boolean,
+    feedbackMessage: String?,
     onPinChange: (String) -> Unit,
-    onLogin: () -> Unit,
-    onBiometricLogin: () -> Unit
+    onPinConfirmationChange: (String) -> Unit,
+    onSecurityQuestionChange: (String) -> Unit,
+    onSecurityAnswerChange: (String) -> Unit,
+    onPrimaryAction: () -> Unit,
+    onForgotPin: () -> Unit,
+    onBackToSignIn: () -> Unit,
+    onBiometricLogin: () -> Unit,
+    onRequestWipeData: () -> Unit,
+    onCancelWipeData: () -> Unit,
+    onConfirmWipeData: () -> Unit
 ) {
     val biometricContentDescription = stringResource(R.string.biometric_sign_in_accessibility_label)
+    val primaryButtonLabel =
+        when (mode) {
+            LoginScreenMode.SIGN_IN -> stringResource(R.string.sign_in)
+            LoginScreenMode.SETUP -> stringResource(R.string.create_security_profile)
+            LoginScreenMode.RECOVER_PIN -> stringResource(R.string.reset_pin)
+        }
+    val pinLabel =
+        when (mode) {
+            LoginScreenMode.RECOVER_PIN -> stringResource(R.string.new_pin_hint)
+            else -> stringResource(R.string.pin_hint)
+        }
+
+    if (showWipeConfirmation) {
+        AlertDialog(
+            onDismissRequest = onCancelWipeData,
+            title = { Text(stringResource(R.string.wipe_data_title)) },
+            text = { Text(stringResource(R.string.wipe_data_warning)) },
+            confirmButton = {
+                TextButton(onClick = onConfirmWipeData) {
+                    Text(stringResource(R.string.wipe_data_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onCancelWipeData) {
+                    Text(stringResource(R.string.wipe_data_cancel))
+                }
+            }
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -190,41 +243,121 @@ fun LoginScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
                 Spacer(modifier = Modifier.height(16.dp))
             }
+            if (feedbackMessage != null) {
+                Text(text = feedbackMessage)
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+            if (mode == LoginScreenMode.RECOVER_PIN) {
+                Text(text = recoveryQuestion ?: stringResource(R.string.security_question_unavailable))
+                Spacer(modifier = Modifier.height(8.dp))
+            }
             OutlinedTextField(
                 value = pin,
                 onValueChange = onPinChange,
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.pin_hint)) },
+                label = { Text(pinLabel) },
                 enabled = signInEnabled,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.NumberPassword,
                     imeAction = ImeAction.Done
                 ),
-                keyboardActions = KeyboardActions(onDone = { if (signInEnabled) onLogin() })
+                keyboardActions = KeyboardActions(onDone = { if (signInEnabled) onPrimaryAction() })
             )
+            if (mode != LoginScreenMode.SIGN_IN) {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = pinConfirmation,
+                    onValueChange = onPinConfirmationChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.confirm_pin_hint)) },
+                    enabled = signInEnabled,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword)
+                )
+            }
+            if (mode == LoginScreenMode.SETUP) {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = securityQuestion,
+                    onValueChange = onSecurityQuestionChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.security_question_hint)) },
+                    enabled = signInEnabled,
+                    singleLine = true
+                )
+            }
+            if (mode == LoginScreenMode.SETUP || mode == LoginScreenMode.RECOVER_PIN) {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = securityAnswer,
+                    onValueChange = onSecurityAnswerChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = {
+                        Text(
+                            stringResource(
+                                if (mode == LoginScreenMode.SETUP) {
+                                    R.string.security_answer_hint
+                                } else {
+                                    R.string.security_answer_verify_hint
+                                }
+                            )
+                        )
+                    },
+                    enabled = signInEnabled,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                )
+            }
             Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = onLogin,
+                onClick = onPrimaryAction,
                 enabled = signInEnabled,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag(LoginButtonTag)
             ) {
-                Text(stringResource(R.string.sign_in))
+                Text(primaryButtonLabel)
             }
-            if (biometricAvailable) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Button(
-                    onClick = onBiometricLogin,
+            if (mode == LoginScreenMode.SIGN_IN) {
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(
+                    onClick = onForgotPin,
                     enabled = signInEnabled,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .semantics { contentDescription = biometricContentDescription }
-                        .testTag(BiometricButtonTag)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(stringResource(R.string.sign_in_with_biometrics))
+                    Text(stringResource(R.string.forgot_pin))
                 }
+                if (biometricAvailable) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Button(
+                        onClick = onBiometricLogin,
+                        enabled = signInEnabled,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .semantics { contentDescription = biometricContentDescription }
+                            .testTag(BiometricButtonTag)
+                    ) {
+                        Text(stringResource(R.string.sign_in_with_biometrics))
+                    }
+                }
+            } else if (mode == LoginScreenMode.RECOVER_PIN) {
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(
+                    onClick = onBackToSignIn,
+                    enabled = signInEnabled,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.back_to_sign_in))
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            TextButton(
+                onClick = onRequestWipeData,
+                enabled = signInEnabled,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.wipe_all_data))
             }
         }
     }

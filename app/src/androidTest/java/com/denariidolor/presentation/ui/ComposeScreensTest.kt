@@ -11,6 +11,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
 import com.denariidolor.util.Constants
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -23,12 +25,27 @@ class ComposeScreensTest {
         composeRule.setContent {
             DenariiDolorTheme {
                 LoginScreen(
+                    mode = LoginScreenMode.SIGN_IN,
                     pin = "",
+                    pinConfirmation = "",
+                    securityQuestion = "",
+                    securityAnswer = "",
+                    recoveryQuestion = null,
                     signInEnabled = false,
                     biometricAvailable = false,
+                    showWipeConfirmation = false,
+                    feedbackMessage = null,
                     onPinChange = {},
-                    onLogin = {},
-                    onBiometricLogin = {}
+                    onPinConfirmationChange = {},
+                    onSecurityQuestionChange = {},
+                    onSecurityAnswerChange = {},
+                    onPrimaryAction = {},
+                    onForgotPin = {},
+                    onBackToSignIn = {},
+                    onBiometricLogin = {},
+                    onRequestWipeData = {},
+                    onCancelWipeData = {},
+                    onConfirmWipeData = {}
                 )
             }
         }
@@ -55,5 +72,45 @@ class ComposeScreensTest {
         composeRule.onNodeWithTag(TransferAccountFieldTag)
             .assertIsDisplayed()
             .assertTextEquals(Constants.DEFAULT_SAVINGS_ACCOUNT_ID.toString())
+    }
+
+    @Test
+    fun loginScreenWipeDialogCancelDoesNotTriggerConfirmAction() {
+        var cancelTriggered = false
+        var confirmTriggered = false
+
+        composeRule.setContent {
+            DenariiDolorTheme {
+                LoginScreen(
+                    mode = LoginScreenMode.SIGN_IN,
+                    pin = "",
+                    pinConfirmation = "",
+                    securityQuestion = "",
+                    securityAnswer = "",
+                    recoveryQuestion = null,
+                    signInEnabled = true,
+                    biometricAvailable = false,
+                    showWipeConfirmation = true,
+                    feedbackMessage = null,
+                    onPinChange = {},
+                    onPinConfirmationChange = {},
+                    onSecurityQuestionChange = {},
+                    onSecurityAnswerChange = {},
+                    onPrimaryAction = {},
+                    onForgotPin = {},
+                    onBackToSignIn = {},
+                    onBiometricLogin = {},
+                    onRequestWipeData = {},
+                    onCancelWipeData = { cancelTriggered = true },
+                    onConfirmWipeData = { confirmTriggered = true }
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Cancel").performClick()
+        composeRule.runOnIdle {
+            assertTrue(cancelTriggered)
+            assertFalse(confirmTriggered)
+        }
     }
 }

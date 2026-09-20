@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity() {
                 MainActivityContent(
                     settingsState = SettingsScreenState(
                         sessionTimeoutMinutes = Constants.SESSION_TIMEOUT_MILLIS / 60_000,
-                        pinConfigured = encryptedPreferencesManager.getPin() != null
+                        pinConfigured = encryptedPreferencesManager.isProfileConfigured()
                     ),
                     onSettingsAction = ::redirectToLogin
                 )
@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun redirectToLogin(clearPin: Boolean) {
         if (clearPin) {
-            encryptedPreferencesManager.clearPin()
+            encryptedPreferencesManager.clearAllSecurityData()
         }
         sessionManager.invalidate()
         startActivity(
