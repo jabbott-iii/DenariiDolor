@@ -700,7 +700,7 @@ internal fun applyTransactionTypeDefaults(
             accountId
         },
         transferAccountId = if (selectedType == "TRANSFER") {
-            transferAccountId.ifBlank { Constants.DEFAULT_SAVINGS_ACCOUNT_ID.toString() }
+            Constants.DEFAULT_SAVINGS_ACCOUNT_ID.toString()
         } else {
             ""
         }

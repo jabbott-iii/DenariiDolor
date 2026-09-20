@@ -4,11 +4,13 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
+import com.denariidolor.util.Constants
 import org.junit.Rule
 import org.junit.Test
 
@@ -50,6 +52,8 @@ class ComposeScreensTest {
         composeRule.onNodeWithTag(TransferAccountFieldTag).assertDoesNotExist()
         composeRule.onNodeWithTag(TransactionTypeFieldTag).performClick()
         composeRule.onNodeWithText("TRANSFER").performClick()
-        composeRule.onNodeWithTag(TransferAccountFieldTag).assertIsDisplayed()
+        composeRule.onNodeWithTag(TransferAccountFieldTag)
+            .assertIsDisplayed()
+            .assertTextEquals(Constants.DEFAULT_SAVINGS_ACCOUNT_ID.toString())
     }
 }
