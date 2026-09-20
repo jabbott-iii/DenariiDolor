@@ -24,7 +24,6 @@ import com.denariidolor.presentation.ui.LoginScreenMode
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
 import com.denariidolor.util.SessionManager
 import dagger.hilt.android.AndroidEntryPoint
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -246,8 +245,8 @@ class LoginActivity : AppCompatActivity() {
                 withContext(Dispatchers.IO) {
                     appDatabase.clearAllTables()
                     encryptedPreferencesManager.clearAllSecurityData()
-                    clearAppOwnedFiles(filesDir)
-                    clearAppOwnedFiles(cacheDir)
+                    cacheDir.deleteRecursively()
+                    cacheDir.mkdirs()
                 }
                 wipeSucceeded = true
                 sessionManager.invalidate()
@@ -255,10 +254,10 @@ class LoginActivity : AppCompatActivity() {
                 securityQuestion = ""
                 securityAnswer = ""
                 recoveryQuestion = null
-                refreshLoginState(preserveRecoveryMode = false)
                 withContext(Dispatchers.IO) {
                     defaultDataInitializer.seedDefaults()
                 }
+                refreshLoginState(preserveRecoveryMode = false)
                 feedbackMessage = getString(R.string.wipe_data_success)
             } catch (_: Exception) {
                 feedbackMessage =
@@ -271,12 +270,6 @@ class LoginActivity : AppCompatActivity() {
                 actionInProgress = false
                 signInEnabled = true
             }
-        }
-    }
-
-    private fun clearAppOwnedFiles(directory: File?) {
-        directory?.listFiles()?.forEach { file ->
-            file.deleteRecursively()
         }
     }
 
