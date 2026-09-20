@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">Denarii Dolor</string>
+    <string name="dashboard">Dashboard</string>
     <string name="dashboard_income">Income: $%.2f</string>
     <string name="dashboard_expense">Expense: $%.2f</string>
     <string name="dashboard_net">Net: $%.2f</string>
@@ -12,7 +13,10 @@
     <string name="biometric_sign_in_failed">Biometric authentication failed. Try again or use your PIN.</string>
     <string name="biometric_sign_in_error">Biometric sign-in is currently unavailable. Use your PIN instead.</string>
     <string name="use_pin_instead">Use PIN instead</string>
+    <string name="pin_hint">PIN</string>
+    <string name="add_transaction">Add Transaction</string>
     <string name="transaction_description_hint">Description</string>
+    <string name="transaction_type_label">Transaction type</string>
     <string name="transaction_amount_hint">Amount</string>
     <string name="transaction_category_id_hint">Category ID (1 expense, 2 income, 3 transfer)</string>
     <string name="transaction_account_id_hint">Account ID (default 1 = Cash)</string>
@@ -25,13 +29,13 @@
         <item>INCOME</item>
         <item>TRANSFER</item>
     </string-array>
+    <string name="search">Search</string>
     <string name="search_description_hint">Description</string>
     <string name="search_category_id_hint">Category ID</string>
     <string name="search_min_amount_hint">Min amount</string>
     <string name="search_max_amount_hint">Max amount</string>
     <string name="search_start_date_hint">Start date (YYYY-MM-DD)</string>
     <string name="search_end_date_hint">End date (YYYY-MM-DD)</string>
-    <string name="search">Search</string>
     <string name="invalid_date_message">Use the YYYY-MM-DD date format.</string>
     <string name="invalid_search_filters_message">Check your search dates and numeric filters, then try again.</string>
     <string name="invalid_search_range_message">Enter a valid amount and date range.</string>
