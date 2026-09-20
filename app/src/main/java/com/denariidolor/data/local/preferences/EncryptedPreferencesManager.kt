@@ -54,7 +54,10 @@ class EncryptedPreferencesManager @Inject constructor(
         return constantTimeEquals(storedHash, hashSecret(pin, salt))
     }
 
-    override fun getSecurityQuestion(): String? = sharedPreferences.getString(KEY_SECURITY_QUESTION, null)
+    override fun getSecurityQuestion(): String? {
+        if (!isPinConfigured()) return null
+        return sharedPreferences.getString(KEY_SECURITY_QUESTION, null)
+    }
 
     override fun verifySecurityAnswer(securityAnswer: String): Boolean {
         val storedHash = sharedPreferences.getString(KEY_SECURITY_ANSWER_HASH, null) ?: return false
