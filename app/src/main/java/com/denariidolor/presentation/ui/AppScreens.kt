@@ -109,7 +109,7 @@ private val bottomDestinations = listOf(
 @Composable
 fun MainActivityContent(
     settingsState: SettingsScreenState,
-    onSettingsAction: (clearSecurityProfile: Boolean) -> Unit
+    onSettingsAction: (resetSignInPin: Boolean) -> Unit
 ) {
     val navController = rememberNavController()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()

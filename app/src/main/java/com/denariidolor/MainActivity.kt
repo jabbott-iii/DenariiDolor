@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity() {
                 while (isActive) {
                     delay(30_000.milliseconds)
                     if (sessionManager.isSessionTimedOut()) {
-                        redirectToLogin(clearSecurityProfile = false)
+                        redirectToLogin(resetSignInPin = false)
                         break
                     }
                 }
@@ -59,22 +59,22 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         if (sessionManager.isSessionTimedOut()) {
-            redirectToLogin(clearSecurityProfile = false)
+            redirectToLogin(resetSignInPin = false)
         }
     }
 
     override fun onUserInteraction() {
         super.onUserInteraction()
         if (sessionManager.isSessionTimedOut()) {
-            redirectToLogin(clearSecurityProfile = false)
+            redirectToLogin(resetSignInPin = false)
         } else {
             sessionManager.touch()
         }
     }
 
-    private fun redirectToLogin(clearSecurityProfile: Boolean) {
-        if (clearSecurityProfile) {
-            encryptedPreferencesManager.clearAllSecurityData()
+    private fun redirectToLogin(resetSignInPin: Boolean) {
+        if (resetSignInPin) {
+            encryptedPreferencesManager.clearPinForSignInReset()
         }
         sessionManager.invalidate()
         startActivity(

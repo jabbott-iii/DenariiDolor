@@ -129,9 +129,12 @@ class LoginActivity : AppCompatActivity() {
                         LoginScreenMode.SIGN_IN
                     }
             }
-        if (loginMenuMode != LoginScreenMode.RECOVER_PIN) {
-            recoveryQuestion = profileState.securityQuestion
-        }
+        recoveryQuestion =
+            if (loginMenuMode == LoginScreenMode.RECOVER_PIN) {
+                profileState.securityQuestion
+            } else {
+                null
+            }
         biometricAvailable =
             profileState.mode == ProfileMode.SIGN_IN && biometricAuthManager.canAuthenticate(this)
     }

@@ -225,4 +225,44 @@ class ComposeScreensTest {
             assertFalse(cancelTriggered)
         }
     }
+
+    @Test
+    fun loginScreenWipeDialogDismissRequestTriggersCancelCallback() {
+        var cancelTriggered = false
+
+        composeRule.setContent {
+            DenariiDolorTheme {
+                LoginScreen(
+                    mode = LoginScreenMode.SIGN_IN,
+                    pin = "",
+                    pinConfirmation = "",
+                    securityQuestion = "",
+                    securityAnswer = "",
+                    recoveryQuestion = null,
+                    signInEnabled = true,
+                    biometricAvailable = false,
+                    showWipeConfirmation = true,
+                    feedbackMessage = null,
+                    onPinChange = {},
+                    onPinConfirmationChange = {},
+                    onSecurityQuestionChange = {},
+                    onSecurityAnswerChange = {},
+                    onPrimaryAction = {},
+                    onForgotPin = {},
+                    onBackToSignIn = {},
+                    onBiometricLogin = {},
+                    onRequestWipeData = {},
+                    onCancelWipeData = { cancelTriggered = true },
+                    onConfirmWipeData = {}
+                )
+            }
+        }
+
+        composeRule.runOnIdle {
+            composeRule.activity.onBackPressedDispatcher.onBackPressed()
+        }
+        composeRule.runOnIdle {
+            assertTrue(cancelTriggered)
+        }
+    }
 }
