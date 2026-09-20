@@ -1,7 +1,12 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.hilt.android)
     id("com.google.devtools.ksp")
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 android {
