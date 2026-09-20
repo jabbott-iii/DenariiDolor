@@ -93,11 +93,17 @@ class EncryptedPreferencesManager @Inject constructor(
     private fun generateSalt(): ByteArray = ByteArray(SALT_BYTES).also { secureRandom.nextBytes(it) }
 
     private fun decodeSalt(value: String): ByteArray? {
+        if (!isStrictBase64(value)) return null
         return try {
             Base64.decode(value, Base64.NO_WRAP)
         } catch (_: IllegalArgumentException) {
             null
         }
+    }
+
+    private fun isStrictBase64(value: String): Boolean {
+        if (value.isBlank() || value.length % 4 != 0) return false
+        return value.matches(Regex("^[A-Za-z0-9+/]*={0,2}$"))
     }
 
     private fun hashSecret(secret: String, salt: ByteArray): String {

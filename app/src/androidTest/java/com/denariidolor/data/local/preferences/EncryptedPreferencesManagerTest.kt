@@ -80,6 +80,16 @@ class EncryptedPreferencesManagerTest {
     }
 
     @Test
+    fun verifyPinFailsWhenPinHashMalformed() {
+        manager.createPinSecurity(pin = "1234", securityQuestion = "City?", securityAnswer = "Rome")
+        encryptedPrefs().edit()
+            .putString(KEY_PIN_HASH, "not-a-valid-base64-value")
+            .commit()
+
+        assertFalse(manager.verifyPin("1234"))
+    }
+
+    @Test
     fun verifySecurityAnswerFailsWhenAnswerSaltMissing() {
         manager.createPinSecurity(pin = "1234", securityQuestion = "City?", securityAnswer = "Rome")
         encryptedPrefs().edit()
@@ -94,6 +104,16 @@ class EncryptedPreferencesManagerTest {
         manager.createPinSecurity(pin = "1234", securityQuestion = "City?", securityAnswer = "Rome")
         encryptedPrefs().edit()
             .putString(KEY_SECURITY_ANSWER_SALT, "not-a-valid-base64-value")
+            .commit()
+
+        assertFalse(manager.verifySecurityAnswer("Rome"))
+    }
+
+    @Test
+    fun verifySecurityAnswerFailsWhenAnswerHashMalformed() {
+        manager.createPinSecurity(pin = "1234", securityQuestion = "City?", securityAnswer = "Rome")
+        encryptedPrefs().edit()
+            .putString(KEY_SECURITY_ANSWER_HASH, "not-a-valid-base64-value")
             .commit()
 
         assertFalse(manager.verifySecurityAnswer("Rome"))
