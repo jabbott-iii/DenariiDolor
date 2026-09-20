@@ -108,7 +108,7 @@ private val bottomDestinations = listOf(
 @Composable
 fun MainActivityContent(
     settingsState: SettingsScreenState,
-    onSettingsAction: (clearPin: Boolean) -> Unit
+    onSettingsAction: (clearSecurityProfile: Boolean) -> Unit
 ) {
     val navController = rememberNavController()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -349,6 +349,21 @@ fun LoginScreen(
                         Text(stringResource(R.string.sign_in_with_biometrics))
                     }
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(
+                    onClick = onRequestWipeData,
+                    enabled = signInEnabled,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics {
+                            contentDescription = wipeActionContentDescription
+                        }
+                ) {
+                    Text(
+                        text = stringResource(R.string.wipe_all_data),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             } else if (mode == LoginScreenMode.RECOVER_PIN) {
                 Spacer(modifier = Modifier.height(8.dp))
                 TextButton(
@@ -358,21 +373,6 @@ fun LoginScreen(
                 ) {
                     Text(stringResource(R.string.back_to_sign_in))
                 }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            TextButton(
-                onClick = onRequestWipeData,
-                enabled = signInEnabled,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .semantics {
-                        contentDescription = wipeActionContentDescription
-                    }
-            ) {
-                Text(
-                    text = stringResource(R.string.wipe_all_data),
-                    color = MaterialTheme.colorScheme.error
-                )
             }
         }
     }

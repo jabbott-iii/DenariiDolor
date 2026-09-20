@@ -280,7 +280,7 @@ class LoginActivity : AppCompatActivity() {
                 }
 
             actionInProgress = false
-            signInEnabled = true
+            signInEnabled = !wipeSucceeded || reseedSucceeded
         }
     }
 
