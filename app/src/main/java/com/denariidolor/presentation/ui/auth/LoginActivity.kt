@@ -283,7 +283,7 @@ class LoginActivity : AppCompatActivity() {
                 }
 
             actionInProgress = false
-            signInEnabled = !wipeSucceeded || reseedSucceeded
+            signInEnabled = true
         }
     }
 

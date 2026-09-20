@@ -192,6 +192,10 @@ class SecurityProfileService(
             remove(KEY_PIN_HASH)
             remove(KEY_PIN_SALT)
             remove(KEY_PIN_ITERATIONS)
+            remove(KEY_SECURITY_QUESTION)
+            remove(KEY_SECURITY_ANSWER_HASH)
+            remove(KEY_SECURITY_ANSWER_SALT)
+            remove(KEY_SECURITY_ANSWER_ITERATIONS)
             remove(KEY_LEGACY_PIN)
         }
     }
