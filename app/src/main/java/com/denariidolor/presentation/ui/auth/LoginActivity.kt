@@ -105,7 +105,7 @@ class LoginActivity : AppCompatActivity() {
                 withContext(Dispatchers.IO) {
                     defaultDataInitializer.seedDefaults()
                 }
-                refreshLoginState()
+                refreshLoginState(preserveRecoveryMode = false)
                 feedbackMessage = null
             } catch (_: Exception) {
                 feedbackMessage = getString(R.string.login_initialization_error)
@@ -116,15 +116,21 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    private fun refreshLoginState() {
+    private fun refreshLoginState(preserveRecoveryMode: Boolean = true) {
         val profileState = encryptedPreferencesManager.getProfileState()
-        if (profileState.mode == ProfileMode.SIGN_IN && loginMenuMode != LoginScreenMode.RECOVER_PIN) {
-            loginMenuMode = LoginScreenMode.SIGN_IN
+        loginMenuMode =
+            when (profileState.mode) {
+                ProfileMode.FIRST_TIME_SETUP -> LoginScreenMode.SETUP
+                ProfileMode.SIGN_IN ->
+                    if (preserveRecoveryMode && loginMenuMode == LoginScreenMode.RECOVER_PIN) {
+                        LoginScreenMode.RECOVER_PIN
+                    } else {
+                        LoginScreenMode.SIGN_IN
+                    }
+            }
+        if (loginMenuMode != LoginScreenMode.RECOVER_PIN) {
+            recoveryQuestion = profileState.securityQuestion
         }
-        if (profileState.mode == ProfileMode.FIRST_TIME_SETUP) {
-            loginMenuMode = LoginScreenMode.SETUP
-        }
-        recoveryQuestion = profileState.securityQuestion
         biometricAvailable =
             profileState.mode == ProfileMode.SIGN_IN && biometricAuthManager.canAuthenticate(this)
     }
@@ -235,6 +241,7 @@ class LoginActivity : AppCompatActivity() {
         signInEnabled = false
 
         lifecycleScope.launch {
+            var wipeSucceeded = false
             try {
                 withContext(Dispatchers.IO) {
                     appDatabase.clearAllTables()
@@ -242,18 +249,24 @@ class LoginActivity : AppCompatActivity() {
                     clearAppOwnedFiles(filesDir)
                     clearAppOwnedFiles(cacheDir)
                 }
+                wipeSucceeded = true
                 sessionManager.invalidate()
                 clearInputs()
                 securityQuestion = ""
                 securityAnswer = ""
                 recoveryQuestion = null
-                feedbackMessage = getString(R.string.wipe_data_success)
+                refreshLoginState(preserveRecoveryMode = false)
                 withContext(Dispatchers.IO) {
                     defaultDataInitializer.seedDefaults()
                 }
-                refreshLoginState()
+                feedbackMessage = getString(R.string.wipe_data_success)
             } catch (_: Exception) {
-                feedbackMessage = getString(R.string.wipe_data_error)
+                feedbackMessage =
+                    if (wipeSucceeded) {
+                        getString(R.string.wipe_data_reseed_error)
+                    } else {
+                        getString(R.string.wipe_data_error)
+                    }
             } finally {
                 actionInProgress = false
                 signInEnabled = true

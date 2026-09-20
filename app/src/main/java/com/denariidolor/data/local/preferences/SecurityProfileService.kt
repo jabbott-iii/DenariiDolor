@@ -195,6 +195,9 @@ class SecurityProfileService(
         if (hash.isNullOrBlank() || salt.isNullOrBlank()) {
             return false
         }
+        if (iterations < MIN_ITERATIONS || iterations > MAX_ITERATIONS) {
+            return false
+        }
 
         val expectedHash = runCatching { Base64.getDecoder().decode(hash) }.getOrNull() ?: return false
         val saltBytes = runCatching { Base64.getDecoder().decode(salt) }.getOrNull() ?: return false
@@ -226,6 +229,8 @@ class SecurityProfileService(
     companion object {
         private const val PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA256"
         private const val DEFAULT_ITERATIONS = 210_000
+        private const val MIN_ITERATIONS = 10_000
+        private const val MAX_ITERATIONS = 1_000_000
         private const val DERIVED_KEY_LENGTH_BITS = 256
         private const val SALT_LENGTH_BYTES = 16
         private val PIN_REGEX = Regex("^[0-9]{4,12}$")

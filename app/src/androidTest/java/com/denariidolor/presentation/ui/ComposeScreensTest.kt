@@ -9,6 +9,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.denariidolor.R
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
 import com.denariidolor.util.Constants
 import org.junit.Assert.assertFalse
@@ -107,7 +108,7 @@ class ComposeScreensTest {
             }
         }
 
-        composeRule.onNodeWithText("Cancel").performClick()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.wipe_data_cancel)).performClick()
         composeRule.runOnIdle {
             assertTrue(cancelTriggered)
             assertFalse(confirmTriggered)
