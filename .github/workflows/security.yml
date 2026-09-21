@@ -1,53 +1,95 @@
-name: Security Scanning
+name: Security
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
   schedule:
-    - cron: '0 2 * * 0'  # Weekly on Sundays at 2 AM UTC
+    - cron: '0 2 * * 1' # Mondays 02:00 UTC: re-scan with the latest CodeQL queries and advisories
+  workflow_dispatch:
 
 permissions:
   contents: read
-  security-events: write
-  packages: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  codeql-kotlin:
-    name: CodeQL Analysis (Kotlin)
+  # Static analysis of Kotlin/Java source (injection, crypto misuse, insecure Android APIs).
+  codeql:
+    name: CodeQL (java-kotlin)
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ java-kotlin ]
-    
+    permissions:
+      contents: read
+      security-events: write
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v4
-      with:
-        languages: ${{ matrix.language }}
-        build-mode: autobuild
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
 
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-        cache: gradle
+      # Also validates the Gradle wrapper checksum (supply-chain protection).
+      - uses: gradle/actions/setup-gradle@v6
 
-    - name: Make Gradle wrapper executable
-      run: chmod +x ./gradlew
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: java-kotlin
+          build-mode: manual
+          queries: security-extended
 
-    - name: Build with Gradle
-      run: ./gradlew assembleDebug --no-daemon
+      - name: Build
+        run: ./gradlew assembleDebug --no-daemon
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v4
-      with:
-        category: "/language:java-kotlin"
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:java-kotlin
+
+  # Publishes the resolved Gradle dependency graph so Dependabot can alert on vulnerable libraries.
+  dependency-submission:
+    name: Dependency graph
+    if: github.event_name == 'push' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/dependency-submission@v6
+
+  # Blocks pull requests that introduce dependencies with known vulnerabilities.
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
+
+  # Catches committed credentials (keystores passwords, API keys, service-account JSON).
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

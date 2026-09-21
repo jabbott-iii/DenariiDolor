@@ -206,3 +206,44 @@ Chronological log of work sessions: what changed, why, and what was verified. Ne
 1. Build once, then **commit `app/schemas/.../2.json`**. `MigrationTest` reads it from test assets, and a clean CI checkout may not have it otherwise.
 2. `./gradlew ktlintFormat` once, then review `./gradlew detekt` (or `detektBaseline`) before making those CI steps blocking.
 3. Verify: `./gradlew testDebugUnitTest createDebugUnitTestCoverageReport connectedAndroidTest assembleRelease`.
+
+## 2026-09-20 — CI/CD rebuild + release Makefile
+**User choices:** Android only (no iOS target exists in this repo; iOS would need a Kotlin Multiplatform port); signed builds go to a **GitHub Release** (no Play upload).
+
+| File | Now does |
+|---|---|
+| `.github/workflows/security.yml` | CodeQL `security-extended` for Kotlin (manual `assembleDebug` build); Gradle dependency graph submission on push/schedule (feeds Dependabot alerts); dependency review on PRs (fails on high severity); gitleaks secret scan. Gradle wrapper validation comes built into `setup-gradle@v6`. Weekly schedule; least-privilege permissions per job. |
+| `.github/workflows/ci.yml` | **verify**: ktlint → detekt → Android lint → unit tests → JaCoCo → R8 `assembleRelease` (all blocking), reports uploaded. **instrumented**: emulator with KVM, API 26 (minSdk) and 34 (targetSdk), `connectedDebugAndroidTest`. Concurrency cancels superseded runs. Sonar, PR-comment and duplicate steps removed. |
+| `.github/workflows/cd.yml` | On `v*` tag: validate tag → `versionName`/`versionCode` (`MAJOR*1e6+MINOR*1e3+PATCH`) → unit tests → restore keystore from secret → Gradle-signed **AAB + APK** → `apksigner`/`jarsigner` verification → SHA256SUMS → GitHub Release (auto notes; `-rc` tags marked prerelease). R8 mapping kept as a private workflow artifact (90 days), not published. Keystore deleted in `always()`. Runs in the `production` environment. |
+| `app/build.gradle.kts` | Release `signingConfig` built only from env vars (`ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`), so local/CI builds without them stay unsigned; `-PversionCode` / `-PversionName` overrides. |
+| `.gitignore` | Ignores `*.jks`, `*.keystore`, `service-account*.json`. |
+| `Makefile` | Verified that the tag push triggers CD. Version regex now matches cd.yml (no `+build`, parts ≤ 999); `release` also checks for a clean tree, being on `main`, and that `main` matches `origin/main`; pushes `refs/tags/<v>` explicitly and prints the Actions URL. |
+
+**Required repository secrets:** `ANDROID_SIGNING_KEY` (base64 of the .jks), `ANDROID_SIGNING_KEYSTORE_PASSWORD`, `ANDROID_SIGNING_KEY_ALIAS`, `ANDROID_SIGNING_KEY_PASSWORD`. Optional: add reviewers to the `production` environment.
+**Notes:** ktlint/detekt are now **blocking**, so run `./gradlew ktlintFormat` and fix or baseline detekt before pushing. Dependency review needs the dependency graph enabled (private repos need GitHub Advanced Security). gitleaks needs `GITLEAKS_LICENSE` only for organization-owned repos.
+
+## 2026-09-20 — Phase 6: Toolchain upgrade
+Aligned to the toolchain Vico 2.0.0 is built with, minus Kotlin 2.1: Hilt 2.52's metadata reader supports Kotlin ≤ 2.0, and no Hilt release was verified for 2.1, so **Kotlin 2.0.21** was chosen (it can still read Vico's 2.1 binaries).
+
+| Item | From → To |
+|---|---|
+| Gradle wrapper | 8.7 → **8.11.1** (sha256 updated in `gradle-wrapper.properties`) |
+| AGP | 8.5.2 → **8.7.3** |
+| Kotlin / KSP | 1.9.24 / 1.9.24-1.0.20 → **2.0.21 / 2.0.21-1.0.28** |
+| Compose compiler | `composeOptions` 1.5.14 → **`org.jetbrains.kotlin.plugin.compose`** (versioned with Kotlin) |
+| Compose BOM | 2024.09.03 → **2024.12.01** (material3 1.3.1) |
+| compileSdk / targetSdk | 34 → **35** |
+| AndroidX | activity 1.9.3, core-ktx 1.15.0, lifecycle 2.8.7, navigation 2.8.5 |
+| Vico | 1.14.0 → **2.0.0** |
+| detekt | 1.23.6 → 1.23.8 |
+| SQLCipher | **kept 4.6.1**: already 16 KB page-size compatible (Zetetic); newer lines target compileSdk 37 / Room 3 |
+| Room / Hilt | kept 2.6.1 / 2.52 |
+
+**Code changes**
+- `dashboard/SpendingChart.kt` rewritten for Vico 2 (`CartesianChartHost` + `rememberColumnCartesianLayer`, `CartesianValueFormatter`, `CorneredShape.rounded`, `rememberM3VicoTheme`, scroll/zoom off, static `CartesianChartModel`). Returns early for empty data (Vico throws on empty series); x labels never empty (Vico requires it). Public API, tag and colors unchanged.
+- targetSdk 35 enforces **edge-to-edge**: `enableEdgeToEdge()` in both activities; login content uses `safeDrawingPadding()`; `NavHost` consumes the Scaffold insets; Add/Edit form uses `imePadding()` so the keyboard doesn't cover fields.
+- `menuAnchor()` → `menuAnchor(MenuAnchorType.PrimaryNotEditable)` (deprecated overload removed from our code).
+- CI instrumented matrix: API 26 + **35**.
+
+**Verification status:** ⚠️ not compiled. The Vico 2 API was verified against the v2.0.0 source by a separate agent. First sync will download Gradle 8.11.1; if the checksum doesn't match, re-run `./gradlew wrapper --gradle-version 8.11.1`. Then run `./gradlew ktlintFormat detekt testDebugUnitTest connectedAndroidTest assembleRelease` and check the login, dashboard and add-transaction screens on an API 35 device for inset/keyboard layout.
+**Future:** Kotlin 2.1+ needs a Hilt release that supports Kotlin 2.1 metadata; SQLCipher 4.1x with compileSdk 37 / Room 3.

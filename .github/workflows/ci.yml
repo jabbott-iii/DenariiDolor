@@ -2,155 +2,103 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-and-test:
+  # Style, static analysis, Android lint, unit tests + coverage, and a minified (R8) release build.
+  verify:
+    name: Lint, test, build
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - uses: actions/checkout@v6
 
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-        cache: gradle
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
 
-    - name: Make Gradle wrapper executable
-      run: chmod +x ./gradlew
+      - uses: gradle/actions/setup-gradle@v6
 
-    - name: Lint Check
-      run: ./gradlew lint --no-daemon --scan
+      - name: Kotlin style (ktlint)
+        run: ./gradlew ktlintCheck
 
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug --no-daemon
+      - name: Static analysis (detekt)
+        run: ./gradlew detekt
 
-    - name: Run Unit Tests
-      run: ./gradlew testDebugUnitTest --no-daemon
+      - name: Android lint
+        run: ./gradlew lintDebug
 
-    - name: Unit Test Coverage (JaCoCo)
-      if: always()
-      run: ./gradlew createDebugUnitTestCoverageReport --no-daemon
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest
 
-    - name: Upload Test Results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results
-        path: '**/build/test-results/**'
-        retention-days: 30
+      - name: Coverage report (JaCoCo)
+        run: ./gradlew createDebugUnitTestCoverageReport
 
-    - name: Upload Coverage Reports
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-reports
-        path: 'app/build/reports/coverage/**'
-        retention-days: 30
+      # Proves the release variant compiles and survives R8 shrinking (unsigned here; CD signs).
+      - name: Release build
+        run: ./gradlew assembleRelease
 
-    - name: Publish Test Report
-      if: always()
-      uses: dorny/test-reporter@v1
-      with:
-        name: Unit Test Results
-        path: '**/build/test-results/testDebugUnitTest/**.xml'
-        reporter: 'java-junit'
-        fail-on-error: false
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: verify-reports
+          path: |
+            app/build/reports/
+            app/build/test-results/
+          retention-days: 14
 
-    - name: Comment PR with Build Status
-      if: github.event_name == 'pull_request'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: '✅ Build and Tests Completed\n\n- ✓ Lint Check Passed\n- ✓ Debug APK Built\n- ✓ Unit Tests Passed\n- ✓ Coverage Report Generated (JaCoCo)'
-          })
-      continue-on-error: true
-
-  instrumented-tests:
+  # Room/SQLCipher, migrations, Compose UI and PDF rendering need a real device runtime.
+  instrumented:
+    name: Instrumented tests (API ${{ matrix.api-level }})
+    needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [ 26, 35 ] # minSdk and targetSdk
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-        cache: gradle
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
 
-    - name: Make Gradle wrapper executable
-      run: chmod +x ./gradlew
+      - uses: gradle/actions/setup-gradle@v6
 
-    - name: Run Connected Tests
-      uses: reactivecircus/android-emulator-runner@v2
-      with:
-        api-level: 33
-        arch: x86_64
-        force-avd-creation: false
-        emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-        disable-animations: true
-        script: ./gradlew connectedAndroidTest --no-daemon
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
 
-    - name: Upload Instrumented Test Results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: instrumented-test-results
-        path: '**/build/outputs/androidTest-results/**'
-        retention-days: 30
+      - name: Run instrumented tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot-save -camera-back none
+          script: ./gradlew connectedDebugAndroidTest
 
-  code-quality:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-        cache: gradle
-
-    - name: Make Gradle wrapper executable
-      run: chmod +x ./gradlew
-
-    # Non-blocking until the first cleanup pass (./gradlew ktlintFormat, then fix or baseline detekt findings).
-    - name: Ktlint Check
-      run: ./gradlew ktlintCheck --no-daemon
-      continue-on-error: true
-
-    - name: Detekt Analysis
-      run: ./gradlew detekt --no-daemon
-      continue-on-error: true
-
-    - name: Upload Analysis Results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: code-quality-reports
-        path: '**/build/reports/**'
-        retention-days: 30
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: instrumented-results-api-${{ matrix.api-level }}
+          path: app/build/outputs/androidTest-results/
+          retention-days: 14

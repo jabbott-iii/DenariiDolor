@@ -74,11 +74,17 @@ Roadmap derived from the project requirements and the 2026-09-20 code review. Se
 - [ ] Verify locally: `./gradlew testDebugUnitTest createDebugUnitTestCoverageReport connectedAndroidTest assembleRelease`.
 - Feature modules: not required (user decision).
 
-## Phase 6 — Toolchain upgrade (separate step, per user)
-- [ ] Kotlin 2.x + Compose compiler Gradle plugin, AGP 8.7+, compileSdk/targetSdk 35.
-- [ ] Vico 2.x (API rewrite of `SpendingChart.kt`), SQLCipher 4.1x (+ androidx.sqlite 2.5), Room 2.7, KSP 2.
-- [ ] Replace deprecated `menuAnchor()` overloads; re-run the full test suite.
-- [ ] CD: `publishBundle` references an unconfigured Play publisher plugin — configure or remove.
+## Phase 6 — Toolchain upgrade ✅ (pending local build verification)
+- [x] Gradle 8.11.1, AGP 8.7.3, Kotlin 2.0.21 + Compose compiler plugin, KSP 2.0.21-1.0.28, Compose BOM 2024.12.01, compileSdk/targetSdk 35.
+- [x] Vico 2.0.0 (chart rewritten); detekt 1.23.8; AndroidX bumps.
+- [x] Edge-to-edge + IME insets for targetSdk 35; `menuAnchor(MenuAnchorType)`.
+- [x] SQLCipher kept at 4.6.1 (16 KB page-size compatible).
+- [ ] Verify locally (see history.md), including inset layout on an API 35 device.
+- Later: Kotlin 2.1+ (needs a Hilt release that supports Kotlin 2.1 metadata), Room 2.7/KSP2, SQLCipher 4.1x (compileSdk 37 / Room 3).
+
+## CI/CD
+- [x] security.yml, ci.yml, cd.yml rebuilt; Makefile release flow verified (see history.md).
+- [ ] Add repository secrets `ANDROID_SIGNING_KEY`, `ANDROID_SIGNING_KEYSTORE_PASSWORD`, `ANDROID_SIGNING_KEY_ALIAS`, `ANDROID_SIGNING_KEY_PASSWORD`; optionally protect the `production` environment.
 
 ## Resolved Questions (2026-09-20)
 1. Account balances — stored, and updated from transaction calculations.

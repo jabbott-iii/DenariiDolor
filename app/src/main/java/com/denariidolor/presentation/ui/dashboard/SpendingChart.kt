@@ -18,7 +18,6 @@ package com.denariidolor.presentation.ui.dashboard
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -28,21 +27,29 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.denariidolor.presentation.ui.common.LocalVizColors
 import com.denariidolor.util.Money
-import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
-import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
-import com.patrykandpatrick.vico.compose.chart.Chart
-import com.patrykandpatrick.vico.compose.chart.column.columnChart
-import com.patrykandpatrick.vico.compose.component.lineComponent
-import com.patrykandpatrick.vico.compose.m3.style.m3ChartStyle
-import com.patrykandpatrick.vico.compose.style.ProvideChartStyle
-import com.patrykandpatrick.vico.core.axis.AxisPosition
-import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
-import com.patrykandpatrick.vico.core.entry.entryModelOf
-import com.patrykandpatrick.vico.core.entry.entryOf
+import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
+import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesianLayer
+import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
+import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
+import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
+import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
+import com.patrykandpatrick.vico.compose.common.fill
+import com.patrykandpatrick.vico.compose.common.shape.rounded
+import com.patrykandpatrick.vico.compose.m3.common.rememberM3VicoTheme
+import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
+import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModel
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
+import com.patrykandpatrick.vico.core.cartesian.data.ColumnCartesianLayerModel
+import com.patrykandpatrick.vico.core.cartesian.layer.ColumnCartesianLayer
+import com.patrykandpatrick.vico.core.common.shape.CorneredShape
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Locale
-import kotlin.math.roundToLong
+import kotlin.math.roundToInt
 
 const val SpendingChartTag = "spendingChart"
 private const val MAX_LABEL_CHARS = 9
@@ -50,40 +57,42 @@ private const val MAX_LABEL_CHARS = 9
 /** Single-series column chart (categorical slot 1). The title names the series, so no legend; values are listed below it. */
 @Composable
 fun SpendingChart(bars: List<Pair<String, Long>>, description: String, modifier: Modifier = Modifier) {
+    if (bars.isEmpty()) return // Vico's layer model rejects an empty series.
     val viz = LocalVizColors.current
     val colors = MaterialTheme.colorScheme
-    val model = remember(bars) { entryModelOf(bars.mapIndexed { index, (_, cents) -> entryOf(index, Money.toDouble(cents)) }) }
+    val model = remember(bars) {
+        CartesianChartModel(ColumnCartesianLayerModel.build { series(bars.map { (_, cents) -> Money.toDouble(cents) }) })
+    }
     val labels = remember(bars) { bars.map { (label, _) -> shorten(label) } }
+    val yFormatter = remember { CartesianValueFormatter { _, value, _ -> compactMoney(value.toFloat()) } }
+    // Vico requires non-empty axis labels.
+    val xFormatter = remember(labels) { CartesianValueFormatter { _, x, _ -> labels.getOrNull(x.roundToInt()) ?: " " } }
 
-    ProvideChartStyle(
-        m3ChartStyle(
-            axisLabelColor = colors.onSurfaceVariant,
-            axisGuidelineColor = colors.outlineVariant,
-            axisLineColor = colors.outlineVariant,
-            entityColors = listOf(viz.series1)
+    ProvideVicoTheme(
+        rememberM3VicoTheme(
+            columnCartesianLayerColors = listOf(viz.series1),
+            lineColor = colors.outlineVariant,
+            textColor = colors.onSurfaceVariant
         )
     ) {
-        Chart(
-            chart = columnChart(
-                columns = listOf(
-                    lineComponent(
-                        color = viz.series1,
-                        thickness = 20.dp,
-                        shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
-                    )
+        CartesianChartHost(
+            chart = rememberCartesianChart(
+                rememberColumnCartesianLayer(
+                    columnProvider = ColumnCartesianLayer.ColumnProvider.series(
+                        rememberLineComponent(
+                            fill = fill(viz.series1),
+                            thickness = 20.dp,
+                            shape = CorneredShape.rounded(topLeft = 4.dp, topRight = 4.dp)
+                        )
+                    ),
+                    columnCollectionSpacing = 16.dp
                 ),
-                spacing = 16.dp
+                startAxis = VerticalAxis.rememberStart(valueFormatter = yFormatter),
+                bottomAxis = HorizontalAxis.rememberBottom(valueFormatter = xFormatter)
             ),
             model = model,
-            startAxis = rememberStartAxis(
-                valueFormatter = AxisValueFormatter<AxisPosition.Vertical.Start> { value, _ -> compactMoney(value) }
-            ),
-            bottomAxis = rememberBottomAxis(
-                valueFormatter = AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
-                    labels.getOrNull(value.roundToLong().toInt()).orEmpty()
-                }
-            ),
-            isZoomEnabled = false,
+            scrollState = rememberVicoScrollState(scrollEnabled = false),
+            zoomState = rememberVicoZoomState(zoomEnabled = false),
             modifier = modifier
                 .fillMaxWidth()
                 .height(200.dp)

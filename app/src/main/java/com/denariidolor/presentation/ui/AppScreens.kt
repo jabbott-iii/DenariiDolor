@@ -18,6 +18,7 @@
 
 package com.denariidolor.presentation.ui
 
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FloatingActionButton
@@ -131,6 +132,7 @@ fun MainActivityContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .consumeWindowInsets(innerPadding)
         ) {
             composable(MainDestination.Dashboard.route) {
                 DashboardRoute(onEditTransaction = { id -> navController.navigate(editTransactionRoute(id)) })

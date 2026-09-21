@@ -8,15 +8,15 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 ## Tech Stack (as built)
 | Area | Choice |
 |---|---|
-| Language | Kotlin 1.9.24, JVM toolchain 17 |
-| UI | Jetpack Compose (Material 3, BOM 2024.09.03, compiler ext 1.5.14), Navigation Compose |
+| Language | Kotlin 2.0.21 (Phase 6), JVM toolchain 17 |
+| UI | Jetpack Compose (Material 3, BOM 2024.12.01, Kotlin Compose compiler plugin), Navigation Compose, Vico 2.0.0 charts |
 | Architecture | MVVM + Repository + use cases (`domain/usecase`) |
 | DI | Hilt 2.52 (KSP) |
-| Database | Room 2.6.1, DB `denarii_dolor.db`, schema v1 |
+| Database | Room 2.6.1 + SQLCipher 4.6.1, DB `denarii_dolor.db`, schema v2 (Long cents) |
 | Async | Coroutines + Flow/StateFlow |
 | Auth | PIN (PBKDF2) + BiometricPrompt (`BIOMETRIC_WEAK`) |
 | Secure storage | `EncryptedSharedPreferences` (security-crypto 1.1.0-alpha06), AES256-GCM master key |
-| SDK | minSdk 26, target/compile 34, AGP 8.5.2 |
+| SDK | minSdk 26, target/compile 35, AGP 8.7.3, Gradle 8.11.1 |
 
 ## Package Layout (`app/src/main/java/com/denariidolor`)
 - `domain/model` — `Transaction` (abstract) → `Expense`, `Income`, `Transfer`; `Account`, `Budget`, `Category`, `SearchFilters`, `MonthlyReport`/`ReportRow`, entity↔domain mappings.
@@ -103,3 +103,5 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 | 2026-09-20 | `AppScreens.kt` split into `LoginScreen.kt`, `TransactionFormScreen.kt`, `SettingsScreen.kt` in the **same package** (`presentation.ui`). | Pure file split; no API or test changes. |
 | 2026-09-20 | Phase 5 (user): toolchain upgrade (Kotlin 2 / AGP / compileSdk 35 / Vico 2 / SQLCipher latest) is a **separate later step**; money moves to **Long cents**; **ktlint + detekt + jacoco** configured, sonar/dependency-check steps removed, CI/CD on JDK 17. | User choices. |
 | 2026-09-20 | Phase 5 design: `TransactionType` enum (Room's built-in enum-by-name storage, so the column stays TEXT and values are unchanged); money = `Long` cents end to end (`amountCents`, `balanceCents`, `monthlyLimitCents`); input parsed with `BigDecimal` (max 2 decimals, rejects more); **DB v2 migration** recreates `accounts`, `budgets`, `transactions` (copy with `CAST(ROUND(x*100) AS INTEGER)`), because `DROP COLUMN` needs SQLite 3.35 (API 34+) on the framework test helper; migration test via `MigrationTestHelper` + exported schemas. Coverage via AGP `enableUnitTestCoverage` (`createDebugUnitTestCoverageReport`). License headers added to all Kotlin sources. | Exact arithmetic; safe first migration; testable. |
+| 2026-09-20 | CI/CD rebuilt (user): Android-only CD (no iOS target in repo), signed AAB+APK to GitHub Release on `v*` tags; signing via Gradle env vars; ktlint/detekt blocking in CI; security = CodeQL + dependency graph/review + gitleaks. | User request; minimal, production-gate focused. |
+| 2026-09-20 | Phase 6: Kotlin **2.0.21** (not 2.1) because Hilt 2.52 reads Kotlin metadata ≤ 2.0 and no Hilt version supporting 2.1 was verified; Vico 2.0.0; SQLCipher stays 4.6.1 (16 KB-ready; newer versions need compileSdk 37 / Room 3); targetSdk 35 edge-to-edge handled with insets. | Binary compatibility; minimal risk. |

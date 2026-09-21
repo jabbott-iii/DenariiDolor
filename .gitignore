@@ -31,3 +31,7 @@ replay_pid*
 .gradle/
 build/
 */build/
+# Signing material must never be committed
+*.jks
+*.keystore
+service-account*.json
