@@ -35,3 +35,6 @@ build/
 *.jks
 *.keystore
 service-account*.json
+
+# Machine-specific SDK path (CI uses ANDROID_HOME)
+local.properties

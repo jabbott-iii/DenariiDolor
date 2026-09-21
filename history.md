@@ -286,3 +286,9 @@ CI run failed at **ktlint** (`ktlintAndroidTestSourceSetCheck`, `ktlintTestSourc
   - `detekt.yml`: `ReturnCount.excludeGuardClauses`, `TooManyFunctions.ignorePrivate/ignoreOverridden`; the PascalCase constant exception was removed (no longer needed).
 
 **Not verifiable here:** Android lint, compilation, and tests (no Google Maven access). Push and let CI run the remaining steps.
+
+## 2026-09-21 — CI fix: `lintDebug` dependency resolution
+- **Error:** `Could not find androidx.compose.ui:ui-test-junit4:` (empty version) while resolving `debugAndroidTestRuntimeClasspath`. The configuration-cache message in the log is a side effect of that failure.
+- **Cause:** the Compose BOM was applied only to `implementation`; `androidTestImplementation` Compose artifacts had no version.
+- **Fix:** `androidTestImplementation(platform(libs.androidx.compose.bom))` in `app/build.gradle.kts`. (`debugImplementation` already inherits from `implementation`.)
+- **Also:** `local.properties` (machine-specific `sdk.dir`) was committed, which produced the "sdk.dir … does not exist" warning on CI. It's now in `.gitignore`; untrack it with `git rm --cached local.properties`.
