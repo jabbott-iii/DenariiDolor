@@ -28,7 +28,8 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.test.espresso.Espresso
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiDevice
 import com.denariidolor.R
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
 import com.denariidolor.presentation.ui.common.PickerOption
@@ -364,8 +365,8 @@ class ComposeScreensTest {
             }
         }
 
-        // The dialog is its own window; a key-level back press reaches it (the activity dispatcher does not).
-        Espresso.pressBack()
+        // A real system back key goes to the focused window, which is the dialog (not the activity behind it).
+        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).pressBack()
         composeRule.runOnIdle {
             assertTrue(cancelTriggered)
         }

@@ -302,3 +302,8 @@ CI run failed at **ktlint** (`ktlintAndroidTestSourceSetCheck`, `ktlintTestSourc
 | `ComposeScreensTest.loginScreenWipeDialogDismissRequestTriggersCancelCallback` | Pre-existing test pressed back on the activity's dispatcher, which never reaches the `AlertDialog` window. | `Espresso.pressBack()` (key-level back to the focused dialog window). |
 
 ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented tests can't run here; re-run CI.
+
+## 2026-09-21 — CI fix: wipe-dialog back-press test (39/40 → 40/40 expected)
+- `ComposeScreensTest.loginScreenWipeDialogDismissRequestTriggersCancelCallback` failed with `RootViewWithoutFocusException`: `Espresso.pressBack()` targeted the activity root, which had no focus because the dialog had it.
+- Fix: `UiDevice.getInstance(instrumentation).pressBack()` (UiAutomator) injects a real system back key into the focused window, the dialog, which calls `onDismissRequest` → `onCancelWipeData`.
+- Added `androidx.test.uiautomator:uiautomator:2.3.0` (catalog alias `androidx-uiautomator`) as `androidTestImplementation`.
