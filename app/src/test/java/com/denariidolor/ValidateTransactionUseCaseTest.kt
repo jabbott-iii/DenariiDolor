@@ -149,7 +149,7 @@ class ValidateTransactionUseCaseTest {
     @Test
     fun repositoryErrorBecomesFailureInsteadOfCrash() = runBlocking<Unit> {
         val failingCategories = object : CategoryRepository by FakeCategoryRepository(TestData.categories) {
-            override suspend fun getById(id: Long): CategoryEntity? = throw IllegalStateException("database closed")
+            override suspend fun getById(id: Long): CategoryEntity? = error("database closed")
         }
         val failingUseCase = ValidateTransactionUseCase(failingCategories, FakeAccountRepository(TestData.accounts), budgets, transactions)
 

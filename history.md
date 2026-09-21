@@ -361,3 +361,9 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
   The class went from 6 to 15 tests, and the unit suite from 107 to 116. ktlint and detekt report 0 findings.
 - **Local run** (2026-09-21 11:33, `./gradlew testDebugUnitTest createDebugUnitTestCoverageReport`): **116/116 passed**, 0 failures. `ValidateTransactionUseCase` coverage: 97.4 % of lines, 94.4 % of branches. The only gaps are a compiler artifact, a coroutine-resume branch, and an unreachable guard on line 56. No production code changes were needed.
 - **Deliverables** in `testing/`: `test-plan.pdf`, `test-scripts.pdf`, `test-results.pdf`, `test-changes.pdf`. The screenshots in them come from the real Gradle and JaCoCo HTML reports, rendered in headless Chromium, plus source and diff views. The Mermaid diagrams are rendered to SVG.
+
+## 2026-09-21 — CI fix: detekt `UseCheckOrError` in the new validation test
+- **CI:** `./gradlew detekt` failed with `ValidateTransactionUseCaseTest.kt:152:71: Use check() or error() instead of throwing an IllegalStateException. [UseCheckOrError]`.
+- **Fix:** the failing fake in TC-15 now calls `error("database closed")` instead of `throw IllegalStateException("database closed")`. `error()` throws the same exception type with the same message, so the test's behaviour and assertions are unchanged.
+- **Root cause of the miss:** my local detekt-cli check ran without `--build-upon-default-config`, but Gradle's `detekt { buildUponDefaultConfig = true }` enables the default rule set. With that flag, the local CLI reproduces the CI finding on the old code and reports 0 findings after the fix. ktlint is still clean.
+- Testing PDFs regenerated to show the corrected line and this finding (`test-changes.pdf` #12).
