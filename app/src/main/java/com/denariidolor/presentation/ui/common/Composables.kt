@@ -24,20 +24,9 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-
-/** Data-visualization roles. Values follow the validated reference palette; light and dark are selected, not flipped. */
-@Immutable
-data class VizColors(
-    val series1: Color,
-    val meterTrack: Color,
-    val statusGood: Color,
-    val statusWarning: Color,
-    val statusCritical: Color
-)
 
 private val LightViz = VizColors(
     series1 = Color(0xFF2A78D6),

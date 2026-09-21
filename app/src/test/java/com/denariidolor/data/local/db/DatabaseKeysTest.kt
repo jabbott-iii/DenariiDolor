@@ -17,6 +17,7 @@
 package com.denariidolor.data.local.db
 
 import com.denariidolor.data.local.db.security.DatabaseKeys
+import java.security.SecureRandom
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -24,7 +25,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.security.SecureRandom
 
 class DatabaseKeysTest {
     @get:Rule

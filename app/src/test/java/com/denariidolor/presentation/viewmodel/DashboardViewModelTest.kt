@@ -27,16 +27,16 @@ import com.denariidolor.testutil.FakeTransactionRepository
 import com.denariidolor.testutil.MainDispatcherRule
 import com.denariidolor.testutil.TestData
 import com.denariidolor.util.DateUtils
+import java.time.Clock
+import java.time.Instant
+import java.time.YearMonth
+import java.time.ZoneOffset
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
-import java.time.Clock
-import java.time.Instant
-import java.time.YearMonth
-import java.time.ZoneOffset
 
 class DashboardViewModelTest {
     @get:Rule

@@ -37,14 +37,6 @@ object Constants {
     )
 }
 
-data class SeedAccount(
-    val id: Long,
-    val name: String,
-    val balanceCents: Long
-)
+data class SeedAccount(val id: Long, val name: String, val balanceCents: Long)
 
-data class SeedCategory(
-    val id: Long,
-    val name: String,
-    val iconName: String
-)
+data class SeedCategory(val id: Long, val name: String, val iconName: String)

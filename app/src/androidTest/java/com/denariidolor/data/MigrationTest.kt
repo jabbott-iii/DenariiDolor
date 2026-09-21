@@ -51,8 +51,10 @@ class MigrationTest {
         val db = helper.runMigrationsAndValidate(dbName, 2, true, MIGRATION_1_2)
 
         db.query("SELECT id, balanceCents FROM accounts ORDER BY id").use { cursor ->
-            cursor.moveToNext(); assertEquals(1_234L, cursor.getLong(1))
-            cursor.moveToNext(); assertEquals(-10L, cursor.getLong(1))
+            cursor.moveToNext()
+            assertEquals(1_234L, cursor.getLong(1))
+            cursor.moveToNext()
+            assertEquals(-10L, cursor.getLong(1))
         }
         db.query("SELECT monthlyLimitCents, warningThresholdPercent FROM budgets").use { cursor ->
             cursor.moveToNext()

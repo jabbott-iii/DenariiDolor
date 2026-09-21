@@ -16,9 +16,4 @@
 
 package com.denariidolor.domain.model
 
-data class Budget(
-    val id: Long = 0,
-    val categoryId: Long,
-    val monthlyLimitCents: Long,
-    val warningThresholdPercent: Int = 80
-)
+data class Budget(val id: Long = 0, val categoryId: Long, val monthlyLimitCents: Long, val warningThresholdPercent: Int = 80)

@@ -57,8 +57,15 @@ class TransactionDaoTest {
     @After
     fun tearDown() = db.close()
 
-    private fun txn(id: Long, type: TransactionType, description: String, cents: Long, categoryId: Long, date: Long, transferTo: Long? = null) =
-        TransactionEntity(id, type, description, cents, categoryId, 1, transferTo, date, createdAtEpochMillis = 0)
+    private fun txn(
+        id: Long,
+        type: TransactionType,
+        description: String,
+        cents: Long,
+        categoryId: Long,
+        date: Long,
+        transferTo: Long? = null
+    ) = TransactionEntity(id, type, description, cents, categoryId, 1, transferTo, date, createdAtEpochMillis = 0)
 
     private suspend fun search(
         description: String? = null,

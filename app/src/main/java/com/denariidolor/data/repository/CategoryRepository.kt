@@ -18,9 +18,9 @@ package com.denariidolor.data.repository
 
 import com.denariidolor.data.local.db.dao.CategoryDao
 import com.denariidolor.data.local.db.entity.CategoryEntity
-import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
 
 interface CategoryRepository {
     suspend fun add(category: CategoryEntity): Long
@@ -32,13 +32,10 @@ interface CategoryRepository {
 }
 
 @Singleton
-class CategoryRepositoryImpl @Inject constructor(
-    private val categoryDao: CategoryDao
-) : CategoryRepository {
+class CategoryRepositoryImpl @Inject constructor(private val categoryDao: CategoryDao) : CategoryRepository {
     override suspend fun add(category: CategoryEntity): Long = categoryDao.insert(category)
 
-    override suspend fun update(category: CategoryEntity): Boolean =
-        categoryDao.update(category.id, category.name, category.iconName) > 0
+    override suspend fun update(category: CategoryEntity): Boolean = categoryDao.update(category.id, category.name, category.iconName) > 0
 
     override suspend fun delete(id: Long): Boolean = categoryDao.deleteById(id) > 0
 
@@ -46,6 +43,5 @@ class CategoryRepositoryImpl @Inject constructor(
 
     override fun getAll(): Flow<List<CategoryEntity>> = categoryDao.getAll()
 
-    override suspend fun isDuplicateName(name: String, excludeId: Long): Boolean =
-        categoryDao.countByName(name, excludeId) > 0
+    override suspend fun isDuplicateName(name: String, excludeId: Long): Boolean = categoryDao.countByName(name, excludeId) > 0
 }

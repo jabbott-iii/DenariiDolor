@@ -56,8 +56,8 @@ import com.denariidolor.presentation.ui.common.TransactionRow
 import com.denariidolor.presentation.ui.common.TransactionRowItem
 import java.time.LocalDate
 
-const val SearchButtonTag = "searchButton"
-const val SearchResultCountTag = "searchResultCount"
+const val SEARCH_BUTTON_TAG = "searchButton"
+const val SEARCH_RESULT_COUNT_TAG = "searchResultCount"
 private const val ALL_CATEGORIES_ID = 0L
 
 @Composable
@@ -169,7 +169,7 @@ fun SearchScreen(
                 },
                 modifier = Modifier
                     .weight(1f)
-                    .testTag(SearchButtonTag)
+                    .testTag(SEARCH_BUTTON_TAG)
             ) {
                 Text(stringResource(R.string.search))
             }
@@ -186,7 +186,7 @@ fun SearchScreen(
                     stringResource(R.string.search_result_count, rows.size)
                 },
                 style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.testTag(SearchResultCountTag)
+                modifier = Modifier.testTag(SEARCH_RESULT_COUNT_TAG)
             )
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(rows, key = { it.id }) { row ->

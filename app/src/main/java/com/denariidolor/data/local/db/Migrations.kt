@@ -78,5 +78,3 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
 
     private fun toCents(column: String) = "CAST(ROUND(`$column` * 100) AS INTEGER)"
 }
-
-val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2)

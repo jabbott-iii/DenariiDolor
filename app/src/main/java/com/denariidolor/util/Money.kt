@@ -23,6 +23,7 @@ import java.math.RoundingMode
 /** Money is stored and computed as whole cents (`Long`); these helpers are the only conversions to and from text. */
 object Money {
     private const val SCALE = 2
+    private const val CENTS_PER_UNIT = 100.0
     private val MAX_INPUT = BigDecimal("9999999999.99")
     private val DECIMAL = Regex("^-?\\d+(\\.\\d+)?$")
 
@@ -41,7 +42,7 @@ object Money {
     /** Editable text without trailing zeros, e.g. `4.5`, `250`. */
     fun toInput(cents: Long): String = BigDecimal.valueOf(cents, SCALE).stripTrailingZeros().toPlainString()
 
-    fun toDouble(cents: Long): Double = cents / 100.0
+    fun toDouble(cents: Long): Double = cents / CENTS_PER_UNIT
 }
 
 fun formatMoney(cents: Long): String {

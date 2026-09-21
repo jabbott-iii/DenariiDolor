@@ -3,8 +3,6 @@
 naming:
   FunctionNaming:
     ignoreAnnotated: ['Composable']
-  TopLevelPropertyNaming:
-    constantPattern: '[A-Z][A-Za-z0-9]*'
 
 complexity:
   LongParameterList:
@@ -17,6 +15,9 @@ complexity:
     ignoreAnnotated: ['Composable']
   TooManyFunctions:
     excludes: ['**/test/**', '**/androidTest/**']
+    # Count the public surface only; private helpers and interface overrides don't make a class harder to use.
+    ignorePrivate: true
+    ignoreOverridden: true
   CyclomaticComplexMethod:
     ignoreAnnotated: ['Composable']
 
@@ -32,5 +33,7 @@ style:
     ignoreAnnotated: ['Preview']
   ReturnCount:
     max: 4
+    # Validation functions use early-return guard clauses by design.
+    excludeGuardClauses: true
   ForbiddenComment:
     active: false

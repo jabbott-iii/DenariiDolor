@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
-package com.denariidolor.domain.model
+package com.denariidolor.presentation.ui.common
 
-/** Persisted by name (Room's built-in enum support), so stored values stay `EXPENSE` / `INCOME` / `TRANSFER`. */
-enum class TransactionType {
-    EXPENSE,
-    INCOME,
-    TRANSFER;
+import androidx.compose.runtime.Immutable
+import androidx.compose.ui.graphics.Color
 
-    companion object {
-        fun parse(value: String): TransactionType = entries.firstOrNull { it.name.equals(value.trim(), ignoreCase = true) }
-            ?: throw IllegalArgumentException("Unsupported transaction type: $value")
-    }
-}
+/** Data-visualization roles. Values follow the validated reference palette; light and dark are selected, not flipped. */
+@Immutable
+data class VizColors(val series1: Color, val meterTrack: Color, val statusGood: Color, val statusWarning: Color, val statusCritical: Color)

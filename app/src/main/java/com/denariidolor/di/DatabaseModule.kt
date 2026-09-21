@@ -18,8 +18,8 @@ package com.denariidolor.di
 
 import android.content.Context
 import androidx.room.Room
-import com.denariidolor.data.local.db.ALL_MIGRATIONS
 import com.denariidolor.data.local.db.AppDatabase
+import com.denariidolor.data.local.db.MIGRATION_1_2
 import com.denariidolor.data.local.db.dao.AccountDao
 import com.denariidolor.data.local.db.dao.BudgetDao
 import com.denariidolor.data.local.db.dao.CategoryDao
@@ -32,18 +32,15 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import javax.inject.Singleton
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
     @Provides
     @Singleton
-    fun provideAppDatabase(
-        @ApplicationContext context: Context,
-        keyProvider: DatabaseKeyProvider
-    ): AppDatabase {
+    fun provideAppDatabase(@ApplicationContext context: Context, keyProvider: DatabaseKeyProvider): AppDatabase {
         System.loadLibrary("sqlcipher")
         val key = keyProvider.getOrCreate()
         if (DatabaseKeys.shouldDiscard(context.getDatabasePath(Constants.APP_DB_NAME), key.newlyCreated)) {
@@ -51,12 +48,15 @@ object DatabaseModule {
         }
         return Room.databaseBuilder(context, AppDatabase::class.java, Constants.APP_DB_NAME)
             .openHelperFactory(SupportOpenHelperFactory(key.passphrase))
-            .addMigrations(*ALL_MIGRATIONS)
+            .addMigrations(MIGRATION_1_2)
             .build()
     }
 
     @Provides fun provideTransactionDao(db: AppDatabase): TransactionDao = db.transactionDao()
+
     @Provides fun provideCategoryDao(db: AppDatabase): CategoryDao = db.categoryDao()
+
     @Provides fun provideBudgetDao(db: AppDatabase): BudgetDao = db.budgetDao()
+
     @Provides fun provideAccountDao(db: AppDatabase): AccountDao = db.accountDao()
 }

@@ -35,11 +35,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -50,11 +50,7 @@ import com.denariidolor.R
 
 data class PickerOption(val id: Long, val label: String)
 
-data class FormField(
-    val label: String,
-    val initialValue: String = "",
-    val keyboardType: KeyboardType = KeyboardType.Text
-)
+data class FormField(val label: String, val initialValue: String = "", val keyboardType: KeyboardType = KeyboardType.Text)
 
 @Composable
 fun ReferencePicker(
@@ -98,13 +94,7 @@ fun ReferencePicker(
 }
 
 @Composable
-fun ConfirmDialog(
-    title: String,
-    message: String,
-    confirmLabel: String,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
+fun ConfirmDialog(title: String, message: String, confirmLabel: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
@@ -122,7 +112,7 @@ fun FormDialog(
     onDismiss: () -> Unit,
     confirmLabel: String = stringResource(R.string.save)
 ) {
-    val values = remember(fields) { mutableStateListOf(*fields.map { it.initialValue }.toTypedArray()) }
+    val values = remember(fields) { fields.map { it.initialValue }.toMutableStateList() }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },

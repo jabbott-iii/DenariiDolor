@@ -17,10 +17,10 @@
 package com.denariidolor
 
 import com.denariidolor.presentation.ui.search.SearchFilterParser
+import java.time.ZoneId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import java.time.ZoneId
 
 class SearchFilterParserTest {
     private val zoneId = ZoneId.of("UTC")

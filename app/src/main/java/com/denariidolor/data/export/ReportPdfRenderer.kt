@@ -31,6 +31,7 @@ import java.io.OutputStream
 import java.time.ZoneId
 
 /** Renders a [MonthlyReport] as a paginated US-Letter PDF table using the platform [PdfDocument]. */
+@Suppress("MagicNumber") // Layout coordinates and font sizes in PDF points; naming each would hurt readability.
 object ReportPdfRenderer {
     private const val PAGE_WIDTH = 612
     private const val PAGE_HEIGHT = 792
@@ -50,9 +51,15 @@ object ReportPdfRenderer {
     )
 
     fun render(report: MonthlyReport, out: OutputStream, zoneId: ZoneId = ZoneId.systemDefault()) {
-        val titlePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 18f; typeface = Typeface.DEFAULT_BOLD }
+        val titlePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = 18f
+            typeface = Typeface.DEFAULT_BOLD
+        }
         val metaPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 10f }
-        val headerPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 9f; typeface = Typeface.DEFAULT_BOLD }
+        val headerPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = 9f
+            typeface = Typeface.DEFAULT_BOLD
+        }
         val cellPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 9f }
         val linePaint = Paint().apply { strokeWidth = 0.5f }
 
@@ -123,7 +130,9 @@ object ReportPdfRenderer {
         canvas.drawText("Generated: ${ReportText.generatedLabel(report.generatedAtEpochMillis, zoneId)}", MARGIN, y, metaPaint)
         y += 14f
         canvas.drawText(
-            "Income: ${formatMoney(report.totalIncomeCents)}   Expense: ${formatMoney(report.totalExpenseCents)}   Net: ${formatMoney(report.netCents)}",
+            "Income: ${formatMoney(
+                report.totalIncomeCents
+            )}   Expense: ${formatMoney(report.totalExpenseCents)}   Net: ${formatMoney(report.netCents)}",
             MARGIN,
             y,
             metaPaint

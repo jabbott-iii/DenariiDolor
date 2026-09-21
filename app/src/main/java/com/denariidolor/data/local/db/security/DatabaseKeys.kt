@@ -38,9 +38,8 @@ object DatabaseKeys {
     /** SQLCipher raw-key syntax: skips PBKDF2 because the key is already 256 bits of randomness. */
     fun toRawKeyPassphrase(hexKey: String): ByteArray = "x'$hexKey'".toByteArray(Charsets.US_ASCII)
 
-    fun hasPlaintextHeader(header: ByteArray): Boolean =
-        header.size >= SQLITE_PLAINTEXT_HEADER.size &&
-            header.copyOf(SQLITE_PLAINTEXT_HEADER.size).contentEquals(SQLITE_PLAINTEXT_HEADER)
+    fun hasPlaintextHeader(header: ByteArray): Boolean = header.size >= SQLITE_PLAINTEXT_HEADER.size &&
+        header.copyOf(SQLITE_PLAINTEXT_HEADER.size).contentEquals(SQLITE_PLAINTEXT_HEADER)
 
     fun isPlaintextDatabase(file: File): Boolean {
         if (!file.isFile || file.length() < SQLITE_PLAINTEXT_HEADER.size) return false
@@ -50,6 +49,5 @@ object DatabaseKeys {
     }
 
     /** Plaintext (pre-encryption) or orphaned (key lost) databases cannot be opened and are discarded. */
-    fun shouldDiscard(file: File, keyNewlyCreated: Boolean): Boolean =
-        file.exists() && (keyNewlyCreated || isPlaintextDatabase(file))
+    fun shouldDiscard(file: File, keyNewlyCreated: Boolean): Boolean = file.exists() && (keyNewlyCreated || isPlaintextDatabase(file))
 }

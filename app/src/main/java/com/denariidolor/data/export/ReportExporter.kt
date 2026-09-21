@@ -23,12 +23,12 @@ import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.domain.report.ReportCsvFormatter
 import com.denariidolor.domain.report.ReportText
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.OutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 enum class ReportFormat(val mimeType: String, val extension: String) {
     CSV("text/csv", "csv"),
@@ -36,9 +36,7 @@ enum class ReportFormat(val mimeType: String, val extension: String) {
 }
 
 @Singleton
-class ReportExporter @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
+class ReportExporter @Inject constructor(@ApplicationContext private val context: Context) {
     suspend fun writeTo(uri: Uri, report: MonthlyReport, format: ReportFormat) = withContext(Dispatchers.IO) {
         val stream = context.contentResolver.openOutputStream(uri, "wt") ?: error("Unable to open export destination")
         stream.use { write(it, report, format) }

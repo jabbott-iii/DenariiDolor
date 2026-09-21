@@ -51,8 +51,10 @@ import java.math.RoundingMode
 import java.util.Locale
 import kotlin.math.roundToInt
 
-const val SpendingChartTag = "spendingChart"
+const val SPENDING_CHART_TAG = "spendingChart"
 private const val MAX_LABEL_CHARS = 9
+private const val THOUSAND = 1_000f
+private const val MILLION = 1_000_000f
 
 /** Single-series column chart (categorical slot 1). The title names the series, so no legend; values are listed below it. */
 @Composable
@@ -101,12 +103,11 @@ fun SpendingChart(bars: List<Pair<String, Long>>, description: String, modifier:
     }
 }
 
-private fun shorten(label: String): String =
-    if (label.length <= MAX_LABEL_CHARS) label else label.take(MAX_LABEL_CHARS - 1) + "…"
+private fun shorten(label: String): String = if (label.length <= MAX_LABEL_CHARS) label else label.take(MAX_LABEL_CHARS - 1) + "…"
 
 /** Axis labels in dollars: `$5`, `$12.5`, `$1.5K`, `$2.0M`. */
 internal fun compactMoney(dollars: Float): String = when {
-    dollars >= 1_000_000f -> "$" + String.format(Locale.US, "%.1fM", dollars / 1_000_000f)
-    dollars >= 1_000f -> "$" + String.format(Locale.US, "%.1fK", dollars / 1_000f)
+    dollars >= MILLION -> "$" + String.format(Locale.US, "%.1fM", dollars / MILLION)
+    dollars >= THOUSAND -> "$" + String.format(Locale.US, "%.1fK", dollars / THOUSAND)
     else -> "$" + BigDecimal(dollars.toString()).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
 }

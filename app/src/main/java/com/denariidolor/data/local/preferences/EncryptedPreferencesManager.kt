@@ -24,9 +24,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class EncryptedPreferencesManager @Inject constructor(
-    @ApplicationContext context: Context
-) {
+class EncryptedPreferencesManager @Inject constructor(@ApplicationContext context: Context) {
     private val sharedPreferences = EncryptedSharedPreferences.create(
         context,
         "secure_prefs",
@@ -43,9 +41,7 @@ class EncryptedPreferencesManager @Inject constructor(
 
             override fun getLong(key: String, defaultValue: Long): Long = sharedPreferences.getLong(key, defaultValue)
 
-            override fun getBoolean(key: String, defaultValue: Boolean): Boolean {
-                return sharedPreferences.getBoolean(key, defaultValue)
-            }
+            override fun getBoolean(key: String, defaultValue: Boolean): Boolean = sharedPreferences.getBoolean(key, defaultValue)
 
             override fun edit(block: SecurityProfileStoreEditor.() -> Unit) {
                 val editor = sharedPreferences.edit()
@@ -82,19 +78,13 @@ class EncryptedPreferencesManager @Inject constructor(
 
     fun getProfileState(): SecurityProfileState = securityProfileService.getProfileState()
 
-    fun setupProfile(
-        pin: String,
-        pinConfirmation: String,
-        securityQuestion: String,
-        securityAnswer: String
-    ): SetupProfileResult {
-        return securityProfileService.setupProfile(
+    fun setupProfile(pin: String, pinConfirmation: String, securityQuestion: String, securityAnswer: String): SetupProfileResult =
+        securityProfileService.setupProfile(
             pin = pin,
             pinConfirmation = pinConfirmation,
             securityQuestion = securityQuestion,
             securityAnswer = securityAnswer
         )
-    }
 
     fun attemptPin(pin: String): PinAttemptResult = securityProfileService.attemptPin(pin)
 
@@ -102,17 +92,11 @@ class EncryptedPreferencesManager @Inject constructor(
 
     fun lockoutRemainingMillis(): Long = securityProfileService.lockoutRemainingMillis()
 
-    fun recoverPin(
-        securityAnswer: String,
-        newPin: String,
-        pinConfirmation: String
-    ): RecoverPinResult {
-        return securityProfileService.recoverPin(
-            securityAnswer = securityAnswer,
-            newPin = newPin,
-            pinConfirmation = pinConfirmation
-        )
-    }
+    fun recoverPin(securityAnswer: String, newPin: String, pinConfirmation: String): RecoverPinResult = securityProfileService.recoverPin(
+        securityAnswer = securityAnswer,
+        newPin = newPin,
+        pinConfirmation = pinConfirmation
+    )
 
     fun isProfileConfigured(): Boolean = securityProfileService.isProfileConfigured()
 

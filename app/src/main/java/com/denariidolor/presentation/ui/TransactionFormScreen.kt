@@ -72,17 +72,14 @@ import com.denariidolor.util.DateUtils
 import com.denariidolor.util.Money
 import java.time.LocalDate
 
-internal const val TransactionTypeFieldTag = "transactionTypeField"
-internal const val TransferAccountFieldTag = "transferAccountField"
-internal const val CategoryPickerTag = "categoryPicker"
-internal const val AccountPickerTag = "accountPicker"
-internal const val SaveTransactionButtonTag = "saveTransactionButton"
+internal const val TRANSACTION_TYPE_FIELD_TAG = "transactionTypeField"
+internal const val TRANSFER_ACCOUNT_FIELD_TAG = "transferAccountField"
+internal const val CATEGORY_PICKER_TAG = "categoryPicker"
+internal const val ACCOUNT_PICKER_TAG = "accountPicker"
+internal const val SAVE_TRANSACTION_BUTTON_TAG = "saveTransactionButton"
 
 @Composable
-internal fun AddTransactionRoute(
-    onFinished: () -> Unit,
-    viewModel: TransactionViewModel = hiltViewModel()
-) {
+internal fun AddTransactionRoute(onFinished: () -> Unit, viewModel: TransactionViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val formState by viewModel.formState.collectAsStateWithLifecycle()
     val categories by viewModel.categoryOptions.collectAsStateWithLifecycle()
@@ -120,7 +117,7 @@ internal fun AddTransactionRoute(
                 categories = categories,
                 accounts = accounts,
                 initial = state.initial,
-                onBack = if (viewModel.isEditMode) onFinished else null
+                onBack = onFinished
             )
         }
     }
@@ -128,7 +125,15 @@ internal fun AddTransactionRoute(
 
 @Composable
 fun AddTransactionScreen(
-    onSave: (type: String, description: String, amountCents: Long, categoryId: Long, accountId: Long, transferAccountId: Long?, dateEpochMillis: Long) -> Unit,
+    onSave: (
+        type: String,
+        description: String,
+        amountCents: Long,
+        categoryId: Long,
+        accountId: Long,
+        transferAccountId: Long?,
+        dateEpochMillis: Long
+    ) -> Unit,
     onShowMessage: (String) -> Unit,
     categories: List<PickerOption> = emptyList(),
     accounts: List<PickerOption> = emptyList(),
@@ -143,8 +148,7 @@ fun AddTransactionScreen(
             selectedType = startType,
             currentCategoryId = "",
             lastAutoCategoryId = null,
-            accountId = "",
-            transferAccountId = ""
+            accountId = ""
         )
     }
     var description by rememberSaveable { mutableStateOf(initial?.description.orEmpty()) }
@@ -168,8 +172,11 @@ fun AddTransactionScreen(
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        if (initial != null) {
-            ScreenHeader(title = stringResource(R.string.edit_transaction), onBack = onBack)
+        if (initial != null || onBack != null) {
+            ScreenHeader(
+                title = stringResource(if (initial != null) R.string.edit_transaction else R.string.add_transaction),
+                onBack = onBack
+            )
         }
         OutlinedTextField(
             value = description,
@@ -192,7 +199,7 @@ fun AddTransactionScreen(
                 modifier = Modifier
                     .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                     .fillMaxWidth()
-                    .testTag(TransactionTypeFieldTag)
+                    .testTag(TRANSACTION_TYPE_FIELD_TAG)
             )
             ExposedDropdownMenu(
                 expanded = dropdownExpanded,
@@ -208,8 +215,7 @@ fun AddTransactionScreen(
                                 selectedType = type,
                                 currentCategoryId = categoryId,
                                 lastAutoCategoryId = lastAutoCategoryId,
-                                accountId = accountId,
-                                transferAccountId = transferAccountId
+                                accountId = accountId
                             )
                             categoryId = defaults.categoryId
                             accountId = defaults.accountId
@@ -235,7 +241,7 @@ fun AddTransactionScreen(
             options = categories,
             selectedId = categoryId,
             onSelected = { categoryId = it },
-            fieldModifier = Modifier.testTag(CategoryPickerTag)
+            fieldModifier = Modifier.testTag(CATEGORY_PICKER_TAG)
         )
         Spacer(modifier = Modifier.height(8.dp))
         ReferencePicker(
@@ -243,7 +249,7 @@ fun AddTransactionScreen(
             options = accounts,
             selectedId = accountId,
             onSelected = { accountId = it },
-            fieldModifier = Modifier.testTag(AccountPickerTag)
+            fieldModifier = Modifier.testTag(ACCOUNT_PICKER_TAG)
         )
         if (selectedType == TransactionType.TRANSFER.name) {
             Spacer(modifier = Modifier.height(8.dp))
@@ -252,7 +258,7 @@ fun AddTransactionScreen(
                 options = accounts,
                 selectedId = transferAccountId,
                 onSelected = { transferAccountId = it },
-                fieldModifier = Modifier.testTag(TransferAccountFieldTag)
+                fieldModifier = Modifier.testTag(TRANSFER_ACCOUNT_FIELD_TAG)
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -298,7 +304,7 @@ fun AddTransactionScreen(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag(SaveTransactionButtonTag)
+                .testTag(SAVE_TRANSACTION_BUTTON_TAG)
         ) {
             Text(stringResource(if (initial == null) R.string.save_transaction else R.string.update_transaction))
         }
@@ -306,21 +312,13 @@ fun AddTransactionScreen(
 }
 
 @Composable
-private fun DateSelectorButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+private fun DateSelectorButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Button(onClick = onClick, modifier = modifier) {
         Text(text = text)
     }
 }
 
-private fun launchDatePicker(
-    context: android.content.Context,
-    value: String,
-    onDateSelected: (String) -> Unit
-) {
+private fun launchDatePicker(context: android.content.Context, value: String, onDateSelected: (String) -> Unit) {
     val selectedDate = value.takeIf { it.isNotBlank() }?.let {
         runCatching { LocalDate.parse(it) }.getOrNull()
     } ?: LocalDate.now()
@@ -346,8 +344,7 @@ internal fun applyTransactionTypeDefaults(
     selectedType: String,
     currentCategoryId: String,
     lastAutoCategoryId: String?,
-    accountId: String,
-    transferAccountId: String
+    accountId: String
 ): TransactionTypeDefaults {
     val nextDefaultCategoryId = defaultCategoryId(selectedType).toString()
     return TransactionTypeDefaults(
@@ -368,10 +365,8 @@ internal fun applyTransactionTypeDefaults(
     )
 }
 
-internal fun defaultCategoryId(type: String): Long {
-    return when (type) {
-        TransactionType.INCOME.name -> Constants.DEFAULT_INCOME_CATEGORY_ID
-        TransactionType.TRANSFER.name -> Constants.DEFAULT_TRANSFER_CATEGORY_ID
-        else -> Constants.DEFAULT_EXPENSE_CATEGORY_ID
-    }
+internal fun defaultCategoryId(type: String): Long = when (type) {
+    TransactionType.INCOME.name -> Constants.DEFAULT_INCOME_CATEGORY_ID
+    TransactionType.TRANSFER.name -> Constants.DEFAULT_TRANSFER_CATEGORY_ID
+    else -> Constants.DEFAULT_EXPENSE_CATEGORY_ID
 }

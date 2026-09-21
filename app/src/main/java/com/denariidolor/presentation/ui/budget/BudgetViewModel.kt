@@ -27,6 +27,7 @@ import com.denariidolor.domain.usecase.BudgetUseCases
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.Money
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,7 +36,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 data class BudgetRow(val categoryId: Long, val categoryName: String, val budget: BudgetEntity?)
 
@@ -50,7 +50,9 @@ class BudgetViewModel @Inject constructor(
     categoryRepository: CategoryRepository,
     budgetRepository: BudgetRepository
 ) : ViewModel() {
-    val rows: StateFlow<List<BudgetRow>> = combine(categoryRepository.getAll(), budgetRepository.getAll()) { categories, budgets -> buildBudgetRows(categories, budgets) }
+    val rows: StateFlow<List<BudgetRow>> = combine(categoryRepository.getAll(), budgetRepository.getAll()) { categories, budgets ->
+        buildBudgetRows(categories, budgets)
+    }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _messages = Channel<UiMessage>(Channel.BUFFERED)

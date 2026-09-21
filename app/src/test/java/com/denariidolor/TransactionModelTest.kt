@@ -26,7 +26,8 @@ import org.junit.Test
 class TransactionModelTest {
     private val expense = Expense(description = "Groceries", amountCents = 4_500, categoryId = 1, accountId = 1, dateEpochMillis = 1L)
     private val income = Income(description = "Salary", amountCents = 125_000, categoryId = 2, accountId = 1, dateEpochMillis = 1L)
-    private val transfer = Transfer(description = "Move", amountCents = 8_000, categoryId = 3, accountId = 1, transferAccountId = 2, dateEpochMillis = 1L)
+    private val transfer =
+        Transfer(description = "Move", amountCents = 8_000, categoryId = 3, accountId = 1, transferAccountId = 2, dateEpochMillis = 1L)
 
     @Test
     fun transactionSubclassesReportExpectedBalanceImpact() {

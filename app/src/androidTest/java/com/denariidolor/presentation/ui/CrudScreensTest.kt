@@ -39,18 +39,18 @@ import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.presentation.ui.budget.BudgetRow
 import com.denariidolor.presentation.ui.budget.ManageBudgetsScreen
-import com.denariidolor.presentation.ui.category.CategoryIconOptionTagPrefix
+import com.denariidolor.presentation.ui.category.CATEGORY_ICON_OPTION_TAG_PREFIX
 import com.denariidolor.presentation.ui.category.ManageCategoriesScreen
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
 import com.denariidolor.presentation.ui.common.PickerOption
+import com.denariidolor.presentation.ui.common.TRANSACTION_ROW_TAG_PREFIX
 import com.denariidolor.presentation.ui.common.TransactionRow
-import com.denariidolor.presentation.ui.common.TransactionRowTagPrefix
-import com.denariidolor.presentation.ui.dashboard.BudgetAlertBannerTag
+import com.denariidolor.presentation.ui.dashboard.BUDGET_ALERT_BANNER_TAG
 import com.denariidolor.presentation.ui.dashboard.BudgetProgress
 import com.denariidolor.presentation.ui.dashboard.CategorySpend
 import com.denariidolor.presentation.ui.dashboard.DashboardScreen
 import com.denariidolor.presentation.ui.dashboard.DashboardUiState
-import com.denariidolor.presentation.ui.dashboard.SpendingChartTag
+import com.denariidolor.presentation.ui.dashboard.SPENDING_CHART_TAG
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
 import com.denariidolor.presentation.ui.transaction.TransactionFormInput
 import org.junit.Assert.assertEquals
@@ -91,7 +91,7 @@ class CrudScreensTest {
             }
         }
 
-        composeRule.onNodeWithTag(TransactionRowTagPrefix + 7).performClick()
+        composeRule.onNodeWithTag(TRANSACTION_ROW_TAG_PREFIX + 7).performClick()
 
         assertEquals(7L, editedId)
     }
@@ -137,9 +137,28 @@ class CrudScreensTest {
         }
 
         composeRule.onNodeWithText("Edit Transaction").assertIsDisplayed()
-        composeRule.onNodeWithTag(CategoryPickerTag).assertTextContains("Dining")
-        composeRule.onNodeWithTag(AccountPickerTag).assertTextContains("Cash")
-        composeRule.onNodeWithTag(SaveTransactionButtonTag).assertTextContains("Update Transaction")
+        composeRule.onNodeWithTag(CATEGORY_PICKER_TAG).assertTextContains("Dining")
+        composeRule.onNodeWithTag(ACCOUNT_PICKER_TAG).assertTextContains("Cash")
+        composeRule.onNodeWithTag(SAVE_TRANSACTION_BUTTON_TAG).assertTextContains("Update Transaction")
+    }
+
+    @Test
+    fun addModeShowsHeaderWithBackThatReturns() {
+        var backPressed = false
+        composeRule.setContent {
+            DenariiDolorTheme {
+                AddTransactionScreen(
+                    onSave = { _, _, _, _, _, _, _ -> },
+                    onShowMessage = {},
+                    onBack = { backPressed = true }
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Add Transaction").assertIsDisplayed()
+        composeRule.onNodeWithText("Back").performClick()
+
+        assertTrue(backPressed)
     }
 
     @Test
@@ -155,7 +174,7 @@ class CrudScreensTest {
             }
         }
 
-        composeRule.onNodeWithTag(SaveTransactionButtonTag).performClick()
+        composeRule.onNodeWithTag(SAVE_TRANSACTION_BUTTON_TAG).performClick()
 
         assertEquals(123_456L, savedDate)
     }
@@ -174,10 +193,10 @@ class CrudScreensTest {
         }
 
         composeRule.onNodeWithText("Recover PIN").assertDoesNotExist()
-        composeRule.onNodeWithTag(DarkModeSwitchTag).assertIsOff().performClick()
-        composeRule.onNodeWithTag(DarkModeSwitchTag).assertIsOn()
+        composeRule.onNodeWithTag(DARK_MODE_SWITCH_TAG).assertIsOff().performClick()
+        composeRule.onNodeWithTag(DARK_MODE_SWITCH_TAG).assertIsOn()
         assertEquals(true, darkMode)
-        composeRule.onNodeWithTag(DarkModeSwitchTag).performClick()
+        composeRule.onNodeWithTag(DARK_MODE_SWITCH_TAG).performClick()
         assertEquals(false, darkMode)
     }
 
@@ -220,8 +239,8 @@ class CrudScreensTest {
 
         composeRule.onNodeWithText("Add Category").performClick()
         composeRule.onNodeWithText("Category name").performTextReplacement("Dining")
-        composeRule.onNodeWithTag(CategoryIconOptionTagPrefix + "dining").performClick()
-        composeRule.onNodeWithTag(CategoryIconOptionTagPrefix + "dining").assertIsSelected()
+        composeRule.onNodeWithTag(CATEGORY_ICON_OPTION_TAG_PREFIX + "dining").performClick()
+        composeRule.onNodeWithTag(CATEGORY_ICON_OPTION_TAG_PREFIX + "dining").assertIsSelected()
         composeRule.onNodeWithText("Save").performClick()
 
         assertEquals("Dining" to "dining", added)
@@ -234,7 +253,9 @@ class CrudScreensTest {
                 DashboardScreen(
                     DashboardUiState(
                         spending = listOf(CategorySpend(4, "Dining", "dining", 9_500)),
-                        budgets = listOf(BudgetProgress(4, "Dining", "dining", spentCents = 9_500, limitCents = 10_000, warningPercent = 80))
+                        budgets = listOf(
+                            BudgetProgress(4, "Dining", "dining", spentCents = 9_500, limitCents = 10_000, warningPercent = 80)
+                        )
                     ),
                     onEditTransaction = {},
                     onDeleteTransaction = {}
@@ -242,9 +263,9 @@ class CrudScreensTest {
             }
         }
 
-        composeRule.onNodeWithTag(BudgetAlertBannerTag).assertIsDisplayed()
+        composeRule.onNodeWithTag(BUDGET_ALERT_BANNER_TAG).assertIsDisplayed()
         composeRule.onNodeWithText("1 budget is near or over its limit.").assertIsDisplayed()
-        composeRule.onNodeWithTag(SpendingChartTag).assertExists()
+        composeRule.onNodeWithTag(SPENDING_CHART_TAG).assertExists()
         composeRule.onNodeWithText("Near limit · 95% used").assertExists()
     }
 
@@ -253,14 +274,18 @@ class CrudScreensTest {
         composeRule.setContent {
             DenariiDolorTheme {
                 DashboardScreen(
-                    DashboardUiState(budgets = listOf(BudgetProgress(4, "Dining", "dining", spentCents = 1_000, limitCents = 10_000, warningPercent = 80))),
+                    DashboardUiState(
+                        budgets = listOf(
+                            BudgetProgress(4, "Dining", "dining", spentCents = 1_000, limitCents = 10_000, warningPercent = 80)
+                        )
+                    ),
                     onEditTransaction = {},
                     onDeleteTransaction = {}
                 )
             }
         }
 
-        composeRule.onNodeWithTag(BudgetAlertBannerTag).assertDoesNotExist()
+        composeRule.onNodeWithTag(BUDGET_ALERT_BANNER_TAG).assertDoesNotExist()
         composeRule.onNodeWithText("On track · 10% used").assertExists()
     }
 

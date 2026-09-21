@@ -23,6 +23,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.denariidolor.data.local.db.AppDatabase
 import com.denariidolor.data.local.db.entity.AccountEntity
 import com.denariidolor.data.local.db.security.DatabaseKeys
+import java.security.SecureRandom
 import kotlinx.coroutines.runBlocking
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import org.junit.After
@@ -32,7 +33,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.security.SecureRandom
 
 @RunWith(AndroidJUnit4::class)
 class EncryptedDatabaseTest {

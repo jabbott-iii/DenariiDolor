@@ -31,10 +31,10 @@ import androidx.compose.material.icons.outlined.ElectricBolt
 import androidx.compose.material.icons.outlined.Fastfood
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Flight
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LocalCafe
 import androidx.compose.material.icons.outlined.LocalGasStation
 import androidx.compose.material.icons.outlined.LocalHospital
-import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Pets

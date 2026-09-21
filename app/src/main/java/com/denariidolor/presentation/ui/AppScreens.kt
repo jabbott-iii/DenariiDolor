@@ -49,11 +49,7 @@ import com.denariidolor.presentation.ui.search.SearchRoute
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
 import com.denariidolor.presentation.ui.transaction.TransactionViewModel
 
-private enum class MainDestination(
-    val route: String,
-    val titleRes: Int,
-    val iconRes: Int
-) {
+private enum class MainDestination(val route: String, val titleRes: Int, val iconRes: Int) {
     Dashboard("dashboard", R.string.dashboard, android.R.drawable.ic_menu_view),
     Search("search", R.string.search, android.R.drawable.ic_menu_search),
     Report("report", R.string.reports, android.R.drawable.ic_menu_info_details),
@@ -79,11 +75,7 @@ private val bottomDestinations = listOf(
 )
 
 @Composable
-fun MainActivityContent(
-    settingsState: SettingsScreenState,
-    onSignOut: () -> Unit,
-    onDarkModeChange: (Boolean) -> Unit
-) {
+fun MainActivityContent(settingsState: SettingsScreenState, onSignOut: () -> Unit, onDarkModeChange: (Boolean) -> Unit) {
     val navController = rememberNavController()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route

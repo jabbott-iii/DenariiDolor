@@ -59,7 +59,8 @@ class LedgerTest {
 
     @Test
     fun transferMovesMoneyBetweenAccounts() {
-        val transfer = Transfer(description = "Save", amountCents = 10_000, categoryId = 3, accountId = 1, transferAccountId = 2, dateEpochMillis = 1L)
+        val transfer =
+            Transfer(description = "Save", amountCents = 10_000, categoryId = 3, accountId = 1, transferAccountId = 2, dateEpochMillis = 1L)
         assertEquals(mapOf(1L to -10_000L, 2L to 10_000L), Ledger.balanceDeltas(null, transfer))
         assertEquals(mapOf(1L to 10_000L, 2L to -10_000L), Ledger.balanceDeltas(transfer, null))
     }

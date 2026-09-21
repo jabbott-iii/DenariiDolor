@@ -25,12 +25,12 @@ import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.domain.model.ReportRow
 import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.report.ReportText
+import java.io.File
+import java.time.YearMonth
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
-import java.time.YearMonth
 
 @RunWith(AndroidJUnit4::class)
 class ReportPdfRendererTest {
@@ -44,7 +44,15 @@ class ReportPdfRendererTest {
         totalExpenseCents = rowCount * 100L,
         netCents = -rowCount * 100L,
         rows = List(rowCount) { index ->
-            ReportRow(index.toLong(), 0L, TransactionType.EXPENSE, "Category $index", "A long description that must be ellipsized $index", 100L, "Cash")
+            ReportRow(
+                index.toLong(),
+                0L,
+                TransactionType.EXPENSE,
+                "Category $index",
+                "A long description that must be ellipsized $index",
+                100L,
+                "Cash"
+            )
         }
     )
 

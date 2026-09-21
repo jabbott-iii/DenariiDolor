@@ -71,8 +71,8 @@ class ComposeScreensTest {
             }
         }
 
-        composeRule.onNodeWithTag(LoginButtonTag).assertIsNotEnabled()
-        composeRule.onNodeWithTag(BiometricButtonTag).assertDoesNotExist()
+        composeRule.onNodeWithTag(LOGIN_BUTTON_TAG).assertIsNotEnabled()
+        composeRule.onNodeWithTag(BIOMETRIC_BUTTON_TAG).assertDoesNotExist()
     }
 
     @Test
@@ -90,10 +90,10 @@ class ComposeScreensTest {
             }
         }
 
-        composeRule.onNodeWithTag(TransferAccountFieldTag).assertDoesNotExist()
-        composeRule.onNodeWithTag(TransactionTypeFieldTag).performClick()
+        composeRule.onNodeWithTag(TRANSFER_ACCOUNT_FIELD_TAG).assertDoesNotExist()
+        composeRule.onNodeWithTag(TRANSACTION_TYPE_FIELD_TAG).performClick()
         composeRule.onNodeWithText("TRANSFER").performClick()
-        composeRule.onNodeWithTag(TransferAccountFieldTag)
+        composeRule.onNodeWithTag(TRANSFER_ACCOUNT_FIELD_TAG)
             .assertIsDisplayed()
             .assertTextContains("Savings")
     }

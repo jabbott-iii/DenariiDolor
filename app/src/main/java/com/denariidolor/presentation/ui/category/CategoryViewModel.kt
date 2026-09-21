@@ -24,6 +24,7 @@ import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.domain.usecase.CategoryUseCases
 import com.denariidolor.presentation.ui.common.UiMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,13 +32,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @HiltViewModel
-class CategoryViewModel @Inject constructor(
-    private val categoryUseCases: CategoryUseCases,
-    categoryRepository: CategoryRepository
-) : ViewModel() {
+class CategoryViewModel @Inject constructor(private val categoryUseCases: CategoryUseCases, categoryRepository: CategoryRepository) :
+    ViewModel() {
     val categories: StateFlow<List<CategoryEntity>> = categoryRepository.getAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -46,8 +44,7 @@ class CategoryViewModel @Inject constructor(
 
     fun add(name: String, iconKey: String) = report(R.string.category_saved) { categoryUseCases.add(name, iconKey) }
 
-    fun update(id: Long, name: String, iconKey: String) =
-        report(R.string.category_saved) { categoryUseCases.update(id, name, iconKey) }
+    fun update(id: Long, name: String, iconKey: String) = report(R.string.category_saved) { categoryUseCases.update(id, name, iconKey) }
 
     fun delete(id: Long) = report(R.string.category_deleted) { categoryUseCases.delete(id) }
 

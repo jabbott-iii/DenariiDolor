@@ -52,7 +52,10 @@ class ValidateTransactionUseCase @Inject constructor(
         if (categoryRepository.getById(transaction.categoryId) == null) return failure("Category not found")
         if (accountRepository.getById(transaction.accountId) == null) return failure("Account not found")
         val transferAccountId = transaction.transferAccountId
-        if (transaction.type == TransactionType.TRANSFER && transferAccountId != null && accountRepository.getById(transferAccountId) == null) {
+        if (transaction.type == TransactionType.TRANSFER &&
+            transferAccountId != null &&
+            accountRepository.getById(transferAccountId) == null
+        ) {
             return failure("Transfer destination account not found")
         }
         if (transaction.type == TransactionType.EXPENSE) {

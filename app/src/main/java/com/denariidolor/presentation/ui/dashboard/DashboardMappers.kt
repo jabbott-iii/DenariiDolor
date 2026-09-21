@@ -25,11 +25,7 @@ import com.denariidolor.presentation.ui.common.CategoryIcons
 import com.denariidolor.presentation.ui.common.TransactionRow
 import java.time.YearMonth
 
-data class DashboardSummary(
-    val incomeCents: Long = 0L,
-    val expenseCents: Long = 0L,
-    val netCents: Long = 0L
-)
+data class DashboardSummary(val incomeCents: Long = 0L, val expenseCents: Long = 0L, val netCents: Long = 0L)
 
 data class AccountBalance(val id: Long, val name: String, val balanceCents: Long)
 
@@ -68,10 +64,12 @@ fun summarize(transactions: List<TransactionEntity>): DashboardSummary {
     return DashboardSummary(income, expense, net)
 }
 
+private const val PERCENT = 100L
+
 /** Integer math: `spent * 100 >= limit * percent` avoids rounding at the threshold. */
 fun budgetStatus(spentCents: Long, limitCents: Long, warningPercent: Int): BudgetStatus = when {
     spentCents > limitCents -> BudgetStatus.OVER
-    spentCents * 100 >= limitCents * warningPercent -> BudgetStatus.WARNING
+    spentCents * PERCENT >= limitCents * warningPercent -> BudgetStatus.WARNING
     else -> BudgetStatus.OK
 }
 
@@ -87,7 +85,14 @@ fun spendingByCategory(
         .groupBy { it.categoryId }
         .map { (categoryId, items) ->
             val category = categoriesById[categoryId]
-            CategorySpend(categoryId, category?.name ?: "#$categoryId", category?.iconName ?: CategoryIcons.DEFAULT_KEY, items.sumOf { it.amountCents })
+            CategorySpend(
+                categoryId,
+                category?.name ?: "#$categoryId",
+                category?.iconName ?: CategoryIcons.DEFAULT_KEY,
+                items.sumOf {
+                    it.amountCents
+                }
+            )
         }
         .sortedWith(compareByDescending<CategorySpend> { it.amountCents }.thenBy { it.name })
     if (totals.size <= maxBars) return totals

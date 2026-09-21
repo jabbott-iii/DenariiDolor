@@ -25,13 +25,13 @@ import com.denariidolor.testutil.FakeCategoryRepository
 import com.denariidolor.testutil.FakeTransactionRepository
 import com.denariidolor.testutil.TestData
 import com.denariidolor.util.DateUtils
-import kotlinx.coroutines.runBlocking
-import org.junit.Assert.assertEquals
-import org.junit.Test
 import java.time.Clock
 import java.time.Instant
 import java.time.YearMonth
 import java.time.ZoneId
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Test
 
 class GenerateReportUseCaseTest {
     private val zone = ZoneId.of("UTC")
@@ -41,10 +41,47 @@ class GenerateReportUseCaseTest {
 
     private val transactions = FakeTransactionRepository(
         listOf(
-            TransactionEntity(id = 1, type = TransactionType.EXPENSE, description = "Rent", amountCents = 90_000, categoryId = 4, accountId = 1, dateEpochMillis = start + 2_000),
-            TransactionEntity(id = 2, type = TransactionType.INCOME, description = "Salary", amountCents = 200_000, categoryId = 2, accountId = 1, dateEpochMillis = start + 1_000),
-            TransactionEntity(id = 3, type = TransactionType.TRANSFER, description = "Savings", amountCents = 30_000, categoryId = 3, accountId = 1, transferAccountId = 2, dateEpochMillis = start + 3_000),
-            TransactionEntity(id = 4, type = TransactionType.EXPENSE, description = "Old", amountCents = 5_000, categoryId = 99, accountId = 1, dateEpochMillis = start - 1)
+            TransactionEntity(
+                id = 1,
+                type = TransactionType.EXPENSE,
+                description = "Rent",
+                amountCents = 90_000,
+                categoryId = 4,
+                accountId = 1,
+                dateEpochMillis =
+                start + 2_000
+            ),
+            TransactionEntity(
+                id = 2,
+                type = TransactionType.INCOME,
+                description = "Salary",
+                amountCents = 200_000,
+                categoryId = 2,
+                accountId = 1,
+                dateEpochMillis =
+                start + 1_000
+            ),
+            TransactionEntity(
+                id = 3,
+                type = TransactionType.TRANSFER,
+                description = "Savings",
+                amountCents = 30_000,
+                categoryId = 3,
+                accountId = 1,
+                transferAccountId = 2,
+                dateEpochMillis =
+                start + 3_000
+            ),
+            TransactionEntity(
+                id = 4,
+                type = TransactionType.EXPENSE,
+                description = "Old",
+                amountCents = 5_000,
+                categoryId = 99,
+                accountId = 1,
+                dateEpochMillis =
+                start - 1
+            )
         )
     )
     private val useCase = GenerateReportUseCase(

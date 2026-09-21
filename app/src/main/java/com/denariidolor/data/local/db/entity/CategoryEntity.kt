@@ -24,8 +24,4 @@ import androidx.room.PrimaryKey
     tableName = "categories",
     indices = [Index(value = ["name"], unique = true)]
 )
-data class CategoryEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val name: String,
-    val iconName: String = "ic_category_default"
-)
+data class CategoryEntity(@PrimaryKey(autoGenerate = true) val id: Long = 0, val name: String, val iconName: String = "ic_category_default")

@@ -70,12 +70,7 @@ interface TransactionDao {
           AND id != :excludeTransactionId
         """
     )
-    suspend fun getExpenseTotalForCategory(
-        categoryId: Long,
-        startInclusive: Long,
-        endInclusive: Long,
-        excludeTransactionId: Long
-    ): Long
+    suspend fun getExpenseTotalForCategory(categoryId: Long, startInclusive: Long, endInclusive: Long, excludeTransactionId: Long): Long
 
     @Query("SELECT * FROM transactions WHERE id = :id")
     suspend fun getById(id: Long): TransactionEntity?

@@ -54,8 +54,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.denariidolor.R
 
-internal const val LoginButtonTag = "loginButton"
-internal const val BiometricButtonTag = "biometricButton"
+internal const val LOGIN_BUTTON_TAG = "loginButton"
+internal const val BIOMETRIC_BUTTON_TAG = "biometricButton"
 
 enum class LoginScreenMode {
     SETUP,
@@ -171,13 +171,13 @@ fun LoginScreen(
                     TextButton(onClick = { pinVisible = !pinVisible }) {
                         Text(
                             text =
-                                stringResource(
-                                    if (pinVisible) {
-                                        R.string.hide_pin
-                                    } else {
-                                        R.string.show_pin
-                                    }
-                                )
+                            stringResource(
+                                if (pinVisible) {
+                                    R.string.hide_pin
+                                } else {
+                                    R.string.show_pin
+                                }
+                            )
                         )
                     }
                 },
@@ -198,13 +198,13 @@ fun LoginScreen(
                         TextButton(onClick = { pinVisible = !pinVisible }) {
                             Text(
                                 text =
-                                    stringResource(
-                                        if (pinVisible) {
-                                            R.string.hide_pin
-                                        } else {
-                                            R.string.show_pin
-                                        }
-                                    )
+                                stringResource(
+                                    if (pinVisible) {
+                                        R.string.hide_pin
+                                    } else {
+                                        R.string.show_pin
+                                    }
+                                )
                             )
                         }
                     }
@@ -249,7 +249,7 @@ fun LoginScreen(
                 enabled = signInEnabled,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .testTag(LoginButtonTag)
+                    .testTag(LOGIN_BUTTON_TAG)
             ) {
                 Text(primaryButtonLabel)
             }
@@ -270,7 +270,7 @@ fun LoginScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .semantics { contentDescription = biometricContentDescription }
-                            .testTag(BiometricButtonTag)
+                            .testTag(BIOMETRIC_BUTTON_TAG)
                     ) {
                         Text(stringResource(R.string.sign_in_with_biometrics))
                     }

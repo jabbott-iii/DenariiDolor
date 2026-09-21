@@ -45,8 +45,14 @@ class TransactionCrudUseCaseTest {
     private val update = UpdateTransactionUseCase(validate, transactions)
     private val delete = DeleteTransactionUseCase(transactions)
 
-    private fun expense(id: Long, amountCents: Long) =
-        Expense(id = id, description = "Coffee", amountCents = amountCents, categoryId = 4, accountId = 1, dateEpochMillis = System.currentTimeMillis())
+    private fun expense(id: Long, amountCents: Long) = Expense(
+        id = id,
+        description = "Coffee",
+        amountCents = amountCents,
+        categoryId = 4,
+        accountId = 1,
+        dateEpochMillis = System.currentTimeMillis()
+    )
 
     @Test
     fun addIgnoresCallerSuppliedId() = runBlocking {
@@ -58,7 +64,8 @@ class TransactionCrudUseCaseTest {
 
     @Test
     fun updateReplacesExistingTransaction() = runBlocking {
-        val result = update(Income(id = 1, description = "Refund", amountCents = 3_000, categoryId = 2, accountId = 1, dateEpochMillis = 1L))
+        val result =
+            update(Income(id = 1, description = "Refund", amountCents = 3_000, categoryId = 2, accountId = 1, dateEpochMillis = 1L))
 
         assertTrue(result.isSuccess)
         assertEquals(TransactionType.INCOME, transactions.items.single().type)

@@ -23,10 +23,10 @@ import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.presentation.ui.account.AccountViewModel
 import com.denariidolor.presentation.ui.budget.buildBudgetRows
 import com.denariidolor.presentation.ui.transaction.TransactionFormInput
+import java.time.ZoneId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import java.time.ZoneId
 
 class FormMappingTest {
     private val entity = TransactionEntity(

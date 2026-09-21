@@ -19,12 +19,12 @@ package com.denariidolor.domain.report
 import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.domain.model.ReportRow
 import com.denariidolor.domain.model.TransactionType
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
 import java.time.YearMonth
 import java.time.ZoneId
 import java.util.Locale
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
 
 class ReportFormattingTest {
     private val utc = ZoneId.of("UTC")

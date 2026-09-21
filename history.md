@@ -262,3 +262,27 @@ Aligned to the toolchain Vico 2.0.0 is built with, minus Kotlin 2.1: Hilt 2.52's
 | `CrudScreensTest` | Settings test updated; new `settingsHasNoRecoverPinAndTogglesDarkMode` (no Recover PIN; switch off → on → off updates state). |
 
 **Verification status:** ⚠️ not compiled. Check manually that toggling in Settings switches the whole app, the choice survives a restart, and the login screen matches.
+
+## 2026-09-21 — Back button on Add Transaction
+- `presentation/ui/TransactionFormScreen.kt`: the header (title + **Back**) now shows in add mode too. Its title is "Add Transaction" or "Edit Transaction" by mode. Back always calls `onFinished` → `navController.popBackStack()`, returning to whichever screen the **+** button was pressed on (Dashboard, Search, Reports or Settings). System back already did this. After a save, add mode still stays on a cleared form so several entries can be made in a row.
+- `CrudScreensTest.addModeShowsHeaderWithBackThatReturns` added.
+- ⚠️ Not compiled here; verify on device from each tab.
+
+## 2026-09-21 — CI fix: ktlint (and detekt) failures
+CI run failed at **ktlint** (`ktlintAndroidTestSourceSetCheck`, `ktlintTestSourceSetCheck`: import order, argument wrapping, lines > 140). Fixed in the project using the same **ktlint 1.3.1** and **detekt 1.23.8** versions as CI, run against the repo's `.editorconfig` and `config/detekt/detekt.yml`. Both now report **0 findings** for main, test and androidTest.
+
+- `ktlint --format` over all Kotlin sources (formatting only, 70+ files).
+- Test-tag constants renamed to SCREAMING_SNAKE_CASE (ktlint `property-naming`), e.g. `SpendingChartTag` → `SPENDING_CHART_TAG`, `TransactionRowTagPrefix` → `TRANSACTION_ROW_TAG_PREFIX` (16 constants, all usages updated).
+- `Validators.isValidSearchRange` long line wrapped.
+- detekt (the next CI step) fixes:
+  - `LoginActivity`: wipe flow split into `wipeStorage()` / `resetCacheDir()` (was complexity 17); `MILLIS_PER_SECOND` constant.
+  - `ReportCsvFormatter.escape`: named `looksLikeFormula` + `QUOTE_TRIGGERS` set (same behaviour).
+  - `SearchFilterParser`: `throw IllegalArgumentException` → `require(...)` (same exception type and messages).
+  - Named constants replace magic numbers (`THOUSAND`/`MILLION`, `PERCENT`, `CENTS_PER_UNIT`, `MAX_PERCENT`); `ReportPdfRenderer` gets a documented `@Suppress("MagicNumber")` for layout coordinates.
+  - `runSuspendCatching`: documented `@Suppress("TooGenericExceptionCaught")` (catch-all by design).
+  - Spread operators removed (`toMutableStateList()`, `addMigrations(MIGRATION_1_2)`; `ALL_MIGRATIONS` removed).
+  - Unused `transferAccountId` parameter removed from `applyTransactionTypeDefaults` (and its test calls).
+  - File/declaration names: `util/MoneyFormat.kt` → `util/Money.kt`; `VizColors` moved to `common/VizColors.kt`.
+  - `detekt.yml`: `ReturnCount.excludeGuardClauses`, `TooManyFunctions.ignorePrivate/ignoreOverridden`; the PascalCase constant exception was removed (no longer needed).
+
+**Not verifiable here:** Android lint, compilation, and tests (no Google Maven access). Push and let CI run the remaining steps.

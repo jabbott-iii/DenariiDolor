@@ -18,8 +18,8 @@ package com.denariidolor.util
 
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.YearMonth
+import java.time.ZoneId
 
 object DateUtils {
     fun monthRangeEpochMillis(year: Int, month: Int, zoneId: ZoneId = ZoneId.systemDefault()): Pair<Long, Long> {
@@ -34,13 +34,9 @@ object DateUtils {
     fun formatLocalDate(epochMillis: Long, zoneId: ZoneId = ZoneId.systemDefault()): String =
         Instant.ofEpochMilli(epochMillis).atZone(zoneId).toLocalDate().toString()
 
-    fun parseIsoDateToStartOfDayEpochMillis(
-        value: String,
-        zoneId: ZoneId = ZoneId.systemDefault()
-    ): Long = LocalDate.parse(value).atStartOfDay(zoneId).toInstant().toEpochMilli()
+    fun parseIsoDateToStartOfDayEpochMillis(value: String, zoneId: ZoneId = ZoneId.systemDefault()): Long =
+        LocalDate.parse(value).atStartOfDay(zoneId).toInstant().toEpochMilli()
 
-    fun parseIsoDateToEndOfDayEpochMillis(
-        value: String,
-        zoneId: ZoneId = ZoneId.systemDefault()
-    ): Long = LocalDate.parse(value).plusDays(1).atStartOfDay(zoneId).toInstant().toEpochMilli() - 1
+    fun parseIsoDateToEndOfDayEpochMillis(value: String, zoneId: ZoneId = ZoneId.systemDefault()): Long =
+        LocalDate.parse(value).plusDays(1).atStartOfDay(zoneId).toInstant().toEpochMilli() - 1
 }

@@ -32,11 +32,11 @@ import com.denariidolor.presentation.ui.settings.SettingsScreenState
 import com.denariidolor.util.Constants
 import com.denariidolor.util.SessionManager
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-import kotlin.time.Duration.Companion.milliseconds
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {

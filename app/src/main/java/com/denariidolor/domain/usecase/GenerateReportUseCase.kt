@@ -25,10 +25,10 @@ import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.model.toDomainTransaction
 import com.denariidolor.domain.report.ReportText
 import com.denariidolor.util.DateUtils
-import kotlinx.coroutines.flow.first
 import java.time.Clock
 import java.time.YearMonth
 import javax.inject.Inject
+import kotlinx.coroutines.flow.first
 
 class GenerateReportUseCase @Inject constructor(
     private val transactionRepository: TransactionRepository,

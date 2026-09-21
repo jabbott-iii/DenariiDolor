@@ -66,7 +66,7 @@ import com.denariidolor.util.DateUtils
 import com.denariidolor.util.formatMoney
 import com.denariidolor.util.formatSignedAmount
 
-const val ReportTableTag = "reportTable"
+const val REPORT_TABLE_TAG = "reportTable"
 
 private data class ReportColumn(val titleRes: Int, val width: Dp, val alignEnd: Boolean = false)
 
@@ -166,12 +166,14 @@ fun ReportScreen(
             style = MaterialTheme.typography.bodySmall
         )
         Spacer(modifier = Modifier.height(4.dp))
-        Text(text = stringResource(
+        Text(
+            text = stringResource(
                 R.string.report_totals,
                 formatMoney(report.totalIncomeCents),
                 formatMoney(report.totalExpenseCents),
                 formatMoney(report.netCents)
-            ))
+            )
+        )
         Spacer(modifier = Modifier.height(8.dp))
         ExportButtons(enabled = !state.loading, onSave = onSave, onShare = onShare)
         Spacer(modifier = Modifier.height(8.dp))
@@ -212,7 +214,7 @@ private fun ReportTable(rows: List<ReportRow>, modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState())
-            .testTag(ReportTableTag)
+            .testTag(REPORT_TABLE_TAG)
     ) {
         Column(
             modifier = Modifier

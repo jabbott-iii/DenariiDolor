@@ -29,11 +29,10 @@ sealed interface UiMessage {
     data class Text(val text: String) : UiMessage
 
     companion object {
-        fun fromResult(result: Result<*>, @StringRes successResId: Int): UiMessage =
-            result.fold(
-                onSuccess = { Resource(successResId) },
-                onFailure = { error -> error.message?.takeIf { it.isNotBlank() }?.let(::Text) ?: Resource(R.string.generic_error) }
-            )
+        fun fromResult(result: Result<*>, @StringRes successResId: Int): UiMessage = result.fold(
+            onSuccess = { Resource(successResId) },
+            onFailure = { error -> error.message?.takeIf { it.isNotBlank() }?.let(::Text) ?: Resource(R.string.generic_error) }
+        )
     }
 }
 

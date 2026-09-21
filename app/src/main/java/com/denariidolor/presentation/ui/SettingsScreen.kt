@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.denariidolor.R
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
 
-internal const val DarkModeSwitchTag = "darkModeSwitch"
+internal const val DARK_MODE_SWITCH_TAG = "darkModeSwitch"
 
 @Composable
 fun SettingsScreen(
@@ -80,7 +80,7 @@ fun SettingsScreen(
                 .fillMaxWidth()
                 .toggleable(value = state.darkMode, role = Role.Switch, onValueChange = onDarkModeChange)
                 .padding(vertical = 8.dp)
-                .testTag(DarkModeSwitchTag),
+                .testTag(DARK_MODE_SWITCH_TAG),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(text = stringResource(R.string.settings_dark_mode), modifier = Modifier.weight(1f))

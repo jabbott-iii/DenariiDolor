@@ -25,13 +25,14 @@ import com.denariidolor.data.repository.TransactionRepository
 import com.denariidolor.domain.model.Expense
 import com.denariidolor.domain.model.Income
 import com.denariidolor.domain.model.Transaction
-import com.denariidolor.domain.model.Transfer
 import com.denariidolor.domain.model.TransactionType
+import com.denariidolor.domain.model.Transfer
 import com.denariidolor.domain.usecase.AddTransactionUseCase
 import com.denariidolor.domain.usecase.UpdateTransactionUseCase
 import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.util.runSuspendCatching
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,7 +43,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 sealed interface TransactionFormState {
     data object Loading : TransactionFormState

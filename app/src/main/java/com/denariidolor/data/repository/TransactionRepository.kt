@@ -24,9 +24,9 @@ import com.denariidolor.data.local.db.entity.TransactionEntity
 import com.denariidolor.domain.model.Ledger
 import com.denariidolor.domain.model.SearchFilters
 import com.denariidolor.domain.model.toDomainTransaction
-import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
 
 interface TransactionRepository {
     suspend fun add(transaction: TransactionEntity): Long
@@ -76,29 +76,24 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override fun getAll(): Flow<List<TransactionEntity>> = transactionDao.getAll()
 
-    override fun search(filters: SearchFilters): Flow<List<TransactionEntity>> {
-        return transactionDao.search(
-            description = filters.description,
-            categoryId = filters.categoryId,
-            minAmountCents = filters.minAmountCents,
-            maxAmountCents = filters.maxAmountCents,
-            startDate = filters.startDateEpochMillis,
-            endDate = filters.endDateEpochMillis
-        )
-    }
+    override fun search(filters: SearchFilters): Flow<List<TransactionEntity>> = transactionDao.search(
+        description = filters.description,
+        categoryId = filters.categoryId,
+        minAmountCents = filters.minAmountCents,
+        maxAmountCents = filters.maxAmountCents,
+        startDate = filters.startDateEpochMillis,
+        endDate = filters.endDateEpochMillis
+    )
 
-    override suspend fun getByDateRange(startInclusive: Long, endInclusive: Long): List<TransactionEntity> {
-        return transactionDao.getByDateRange(startInclusive, endInclusive)
-    }
+    override suspend fun getByDateRange(startInclusive: Long, endInclusive: Long): List<TransactionEntity> =
+        transactionDao.getByDateRange(startInclusive, endInclusive)
 
     override suspend fun getExpenseTotalForCategory(
         categoryId: Long,
         startInclusive: Long,
         endInclusive: Long,
         excludeTransactionId: Long
-    ): Long {
-        return transactionDao.getExpenseTotalForCategory(categoryId, startInclusive, endInclusive, excludeTransactionId)
-    }
+    ): Long = transactionDao.getExpenseTotalForCategory(categoryId, startInclusive, endInclusive, excludeTransactionId)
 
     override suspend fun countByCategory(categoryId: Long): Int = transactionDao.countByCategory(categoryId)
 

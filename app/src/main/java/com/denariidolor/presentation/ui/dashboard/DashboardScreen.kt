@@ -67,14 +67,11 @@ import com.denariidolor.presentation.ui.common.TransactionRowItem
 import com.denariidolor.presentation.ui.common.UiMessageEffect
 import com.denariidolor.util.formatMoney
 
-const val BudgetAlertBannerTag = "budgetAlertBanner"
-const val BudgetMeterTagPrefix = "budgetMeter_"
+const val BUDGET_ALERT_BANNER_TAG = "budgetAlertBanner"
+const val BUDGET_METER_TAG_PREFIX = "budgetMeter_"
 
 @Composable
-fun DashboardRoute(
-    onEditTransaction: (Long) -> Unit,
-    viewModel: DashboardViewModel = hiltViewModel()
-) {
+fun DashboardRoute(onEditTransaction: (Long) -> Unit, viewModel: DashboardViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     UiMessageEffect(viewModel.messages)
     DashboardScreen(
@@ -85,11 +82,7 @@ fun DashboardRoute(
 }
 
 @Composable
-fun DashboardScreen(
-    state: DashboardUiState,
-    onEditTransaction: (Long) -> Unit,
-    onDeleteTransaction: (Long) -> Unit
-) {
+fun DashboardScreen(state: DashboardUiState, onEditTransaction: (Long) -> Unit, onDeleteTransaction: (Long) -> Unit) {
     var pendingDelete by remember { mutableStateOf<TransactionRow?>(null) }
     val otherLabel = stringResource(R.string.spending_other)
 
@@ -111,7 +104,7 @@ fun DashboardScreen(
                 SpendingChart(
                     bars = bars,
                     description = bars.joinToString { (name, amount) -> "$name ${formatMoney(amount)}" },
-                    modifier = Modifier.testTag(SpendingChartTag)
+                    modifier = Modifier.testTag(SPENDING_CHART_TAG)
                 )
             }
             items(state.spending, key = { "spend_${it.categoryId}" }) { spend ->
@@ -199,7 +192,7 @@ private fun BudgetAlertBanner(count: Int) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 12.dp)
-            .testTag(BudgetAlertBannerTag),
+            .testTag(BUDGET_ALERT_BANNER_TAG),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -223,7 +216,7 @@ private fun BudgetMeter(progress: BudgetProgress) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp)
-            .testTag(BudgetMeterTagPrefix + progress.categoryId)
+            .testTag(BUDGET_METER_TAG_PREFIX + progress.categoryId)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             CategoryIconBadge(iconKey = progress.iconKey, size = 28.dp)

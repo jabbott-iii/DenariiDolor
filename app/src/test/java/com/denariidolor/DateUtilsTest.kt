@@ -17,9 +17,9 @@
 package com.denariidolor
 
 import com.denariidolor.util.DateUtils
+import java.time.ZoneId
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.time.ZoneId
 
 class DateUtilsTest {
     private val zoneId = ZoneId.of("UTC")

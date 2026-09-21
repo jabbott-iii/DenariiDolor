@@ -27,6 +27,9 @@ import com.denariidolor.domain.usecase.GenerateReportUseCase
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.runSuspendCatching
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Clock
+import java.time.YearMonth
+import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -36,9 +39,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.Clock
-import java.time.YearMonth
-import javax.inject.Inject
 
 data class ReportUiState(
     val period: YearMonth,
@@ -73,7 +73,13 @@ class ReportViewModel @Inject constructor(
             _state.update { it.copy(loading = true, failed = false) }
             val result = runSuspendCatching { generateReportUseCase(period) }
             _state.update {
-                it.copy(report = result.getOrNull() ?: it.report.takeIf { report -> report?.period == period }, loading = false, failed = result.isFailure)
+                it.copy(
+                    report = result.getOrNull() ?: it.report.takeIf { report ->
+                        report?.period == period
+                    },
+                    loading = false,
+                    failed = result.isFailure
+                )
             }
         }
     }

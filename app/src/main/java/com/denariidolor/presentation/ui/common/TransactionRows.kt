@@ -42,7 +42,7 @@ import com.denariidolor.util.DateUtils
 import com.denariidolor.util.formatSignedAmount
 import java.time.ZoneId
 
-const val TransactionRowTagPrefix = "transactionRow_"
+const val TRANSACTION_ROW_TAG_PREFIX = "transactionRow_"
 
 data class TransactionRow(
     val id: Long,
@@ -90,7 +90,7 @@ fun TransactionRowItem(row: TransactionRow, onClick: () -> Unit, onDelete: (() -
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .testTag(TransactionRowTagPrefix + row.id)
+            .testTag(TRANSACTION_ROW_TAG_PREFIX + row.id)
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

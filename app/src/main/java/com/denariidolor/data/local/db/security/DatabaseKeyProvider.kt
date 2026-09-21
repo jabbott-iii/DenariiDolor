@@ -27,9 +27,7 @@ import javax.inject.Singleton
 class DatabaseKey(val passphrase: ByteArray, val newlyCreated: Boolean)
 
 @Singleton
-class DatabaseKeyProvider @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
+class DatabaseKeyProvider @Inject constructor(@ApplicationContext private val context: Context) {
     private val preferences by lazy {
         EncryptedSharedPreferences.create(
             context,

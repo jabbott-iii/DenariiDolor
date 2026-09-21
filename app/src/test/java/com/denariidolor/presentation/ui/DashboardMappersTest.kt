@@ -30,14 +30,15 @@ import com.denariidolor.presentation.ui.dashboard.spendingByCategory
 import com.denariidolor.presentation.ui.dashboard.summarize
 import com.denariidolor.util.formatMoney
 import com.denariidolor.util.formatSignedAmount
+import java.time.ZoneId
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.time.ZoneId
 
 class DashboardMappersTest {
     private val utc = ZoneId.of("UTC")
     private val categories = listOf(CategoryEntity(id = 1, name = "Dining"), CategoryEntity(id = 3, name = "Transfer"))
-    private val accounts = listOf(AccountEntity(id = 1, name = "Cash", balanceCents = 0L), AccountEntity(id = 2, name = "Savings", balanceCents = 0L))
+    private val accounts =
+        listOf(AccountEntity(id = 1, name = "Cash", balanceCents = 0L), AccountEntity(id = 2, name = "Savings", balanceCents = 0L))
 
     private fun txn(id: Long, type: TransactionType, date: Long, transferTo: Long? = null, categoryId: Long = 1) = TransactionEntity(
         id = id,
@@ -65,7 +66,12 @@ class DashboardMappersTest {
 
     @Test
     fun rowsResolveNamesAndTransferLabel() {
-        val row = buildTransactionRows(listOf(txn(1, TransactionType.TRANSFER, 0, transferTo = 2, categoryId = 3)), categories, accounts, zoneId = utc).single()
+        val row = buildTransactionRows(
+            listOf(txn(1, TransactionType.TRANSFER, 0, transferTo = 2, categoryId = 3)),
+            categories,
+            accounts,
+            zoneId = utc
+        ).single()
 
         assertEquals("Transfer", row.categoryName)
         assertEquals("Cash → Savings", row.accountLabel)
@@ -75,7 +81,12 @@ class DashboardMappersTest {
 
     @Test
     fun missingReferencesFallBackToIds() {
-        val row = buildTransactionRows(listOf(txn(1, TransactionType.EXPENSE, 0, categoryId = 99)), emptyList(), emptyList(), zoneId = utc).single()
+        val row = buildTransactionRows(
+            listOf(txn(1, TransactionType.EXPENSE, 0, categoryId = 99)),
+            emptyList(),
+            emptyList(),
+            zoneId = utc
+        ).single()
 
         assertEquals("#99", row.categoryName)
         assertEquals("#1", row.accountLabel)
@@ -92,7 +103,14 @@ class DashboardMappersTest {
 
     @Test
     fun summaryTreatsTransfersAsNetNeutral() {
-        val summary = summarize(listOf(txn(1, TransactionType.INCOME, 0), txn(2, TransactionType.EXPENSE, 0), txn(3, TransactionType.TRANSFER, 0, transferTo = 2)))
+        val summary =
+            summarize(
+                listOf(
+                    txn(1, TransactionType.INCOME, 0),
+                    txn(2, TransactionType.EXPENSE, 0),
+                    txn(3, TransactionType.TRANSFER, 0, transferTo = 2)
+                )
+            )
 
         assertEquals(1_000L, summary.incomeCents)
         assertEquals(1_000L, summary.expenseCents)
@@ -118,7 +136,9 @@ class DashboardMappersTest {
     @Test
     fun spendingSortsDescendingAndFoldsOther() {
         val cats = (1L..7L).map { CategoryEntity(id = it, name = "C$it") }
-        val expenses = (1L..7L).map { txn(it, TransactionType.EXPENSE, 0, categoryId = it).copy(amountCents = it * 1_000) } + txn(99, TransactionType.INCOME, 0)
+        val expenses =
+            (1L..7L).map { txn(it, TransactionType.EXPENSE, 0, categoryId = it).copy(amountCents = it * 1_000) } +
+                txn(99, TransactionType.INCOME, 0)
 
         val spending = spendingByCategory(expenses, cats, maxBars = 5)
 
@@ -140,7 +160,12 @@ class DashboardMappersTest {
             BudgetEntity(id = 1, categoryId = 1, monthlyLimitCents = 10_000),
             BudgetEntity(id = 2, categoryId = 3, monthlyLimitCents = 1_000, warningThresholdPercent = 50)
         )
-        val progress = budgetProgress(budgets, categories, listOf(txn(1, TransactionType.EXPENSE, 0), txn(2, TransactionType.EXPENSE, 0), txn(3, TransactionType.INCOME, 0)))
+        val progress =
+            budgetProgress(
+                budgets,
+                categories,
+                listOf(txn(1, TransactionType.EXPENSE, 0), txn(2, TransactionType.EXPENSE, 0), txn(3, TransactionType.INCOME, 0))
+            )
 
         assertEquals(listOf(1L, 3L), progress.map { it.categoryId })
         assertEquals(2_000L, progress[0].spentCents)

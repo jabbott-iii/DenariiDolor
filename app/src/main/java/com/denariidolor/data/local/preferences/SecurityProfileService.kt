@@ -45,10 +45,7 @@ enum class ProfileMode {
     SIGN_IN
 }
 
-data class SecurityProfileState(
-    val mode: ProfileMode,
-    val securityQuestion: String?
-)
+data class SecurityProfileState(val mode: ProfileMode, val securityQuestion: String?)
 
 enum class SetupProfileResult {
     SUCCESS,
@@ -81,19 +78,12 @@ class SecurityProfileService(
     private val secureRandom: SecureRandom = SecureRandom(),
     private val clock: () -> Long = System::currentTimeMillis
 ) {
-    fun getProfileState(): SecurityProfileState {
-        return SecurityProfileState(
-            mode = if (isProfileConfigured()) ProfileMode.SIGN_IN else ProfileMode.FIRST_TIME_SETUP,
-            securityQuestion = if (isProfileConfigured()) store.getString(KEY_SECURITY_QUESTION) else null
-        )
-    }
+    fun getProfileState(): SecurityProfileState = SecurityProfileState(
+        mode = if (isProfileConfigured()) ProfileMode.SIGN_IN else ProfileMode.FIRST_TIME_SETUP,
+        securityQuestion = if (isProfileConfigured()) store.getString(KEY_SECURITY_QUESTION) else null
+    )
 
-    fun setupProfile(
-        pin: String,
-        pinConfirmation: String,
-        securityQuestion: String,
-        securityAnswer: String
-    ): SetupProfileResult {
+    fun setupProfile(pin: String, pinConfirmation: String, securityQuestion: String, securityAnswer: String): SetupProfileResult {
         if (isProfileConfigured()) {
             return SetupProfileResult.ALREADY_CONFIGURED
         }
@@ -178,11 +168,7 @@ class SecurityProfileService(
         return constantTimeStringEquals(pin, legacyPin)
     }
 
-    fun recoverPin(
-        securityAnswer: String,
-        newPin: String,
-        pinConfirmation: String
-    ): RecoverPinResult {
+    fun recoverPin(securityAnswer: String, newPin: String, pinConfirmation: String): RecoverPinResult {
         if (!isProfileConfigured()) {
             return RecoverPinResult.PROFILE_NOT_CONFIGURED
         }
@@ -304,15 +290,10 @@ class SecurityProfileService(
 
     private fun isValidPin(pin: String): Boolean = PIN_REGEX.matches(pin)
 
-    private fun constantTimeStringEquals(left: String, right: String): Boolean {
-        return MessageDigest.isEqual(left.toByteArray(Charsets.UTF_8), right.toByteArray(Charsets.UTF_8))
-    }
+    private fun constantTimeStringEquals(left: String, right: String): Boolean =
+        MessageDigest.isEqual(left.toByteArray(Charsets.UTF_8), right.toByteArray(Charsets.UTF_8))
 
-    private data class HashedSecret(
-        val hash: String,
-        val salt: String,
-        val iterations: Int
-    )
+    private data class HashedSecret(val hash: String, val salt: String, val iterations: Int)
 
     companion object {
         private const val PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA256"

@@ -27,8 +27,7 @@ class TransactionTypeDefaultsTest {
             selectedType = "INCOME",
             currentCategoryId = Constants.DEFAULT_EXPENSE_CATEGORY_ID.toString(),
             lastAutoCategoryId = Constants.DEFAULT_EXPENSE_CATEGORY_ID.toString(),
-            accountId = "",
-            transferAccountId = ""
+            accountId = ""
         )
 
         assertEquals(Constants.DEFAULT_INCOME_CATEGORY_ID.toString(), defaults.categoryId)
@@ -42,8 +41,7 @@ class TransactionTypeDefaultsTest {
             selectedType = "TRANSFER",
             currentCategoryId = "99",
             lastAutoCategoryId = Constants.DEFAULT_EXPENSE_CATEGORY_ID.toString(),
-            accountId = "7",
-            transferAccountId = "123"
+            accountId = "7"
         )
 
         assertEquals("99", defaults.categoryId)

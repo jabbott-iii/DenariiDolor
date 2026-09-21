@@ -64,7 +64,7 @@ import com.denariidolor.presentation.ui.common.ManagedItemRow
 import com.denariidolor.presentation.ui.common.ScreenHeader
 import com.denariidolor.presentation.ui.common.UiMessageEffect
 
-const val CategoryIconOptionTagPrefix = "categoryIcon_"
+const val CATEGORY_ICON_OPTION_TAG_PREFIX = "categoryIcon_"
 
 @Composable
 fun ManageCategoriesRoute(onBack: () -> Unit, viewModel: CategoryViewModel = hiltViewModel()) {
@@ -204,7 +204,7 @@ private fun CategoryDialog(
                                 )
                                 .clickable { icon = option.key }
                                 .semantics { this.selected = selected }
-                                .testTag(CategoryIconOptionTagPrefix + option.key)
+                                .testTag(CATEGORY_ICON_OPTION_TAG_PREFIX + option.key)
                         )
                     }
                 }

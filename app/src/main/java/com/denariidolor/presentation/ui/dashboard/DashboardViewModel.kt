@@ -28,6 +28,9 @@ import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.presentation.ui.common.buildTransactionRows
 import com.denariidolor.util.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Clock
+import java.time.YearMonth
+import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,9 +39,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.time.Clock
-import java.time.YearMonth
-import javax.inject.Inject
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(

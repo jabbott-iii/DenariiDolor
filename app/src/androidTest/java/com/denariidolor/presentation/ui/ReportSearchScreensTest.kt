@@ -29,18 +29,18 @@ import com.denariidolor.domain.model.ReportRow
 import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.report.ReportText
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
+import com.denariidolor.presentation.ui.common.TRANSACTION_ROW_TAG_PREFIX
 import com.denariidolor.presentation.ui.common.TransactionRow
-import com.denariidolor.presentation.ui.common.TransactionRowTagPrefix
+import com.denariidolor.presentation.ui.report.REPORT_TABLE_TAG
 import com.denariidolor.presentation.ui.report.ReportScreen
-import com.denariidolor.presentation.ui.report.ReportTableTag
 import com.denariidolor.presentation.ui.report.ReportUiState
-import com.denariidolor.presentation.ui.search.SearchButtonTag
-import com.denariidolor.presentation.ui.search.SearchResultCountTag
+import com.denariidolor.presentation.ui.search.SEARCH_BUTTON_TAG
+import com.denariidolor.presentation.ui.search.SEARCH_RESULT_COUNT_TAG
 import com.denariidolor.presentation.ui.search.SearchScreen
+import java.time.YearMonth
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
-import java.time.YearMonth
 
 class ReportSearchScreensTest {
     @get:Rule
@@ -73,7 +73,7 @@ class ReportSearchScreensTest {
         }
 
         composeRule.onNodeWithText(ReportText.TITLE).assertIsDisplayed()
-        composeRule.onNodeWithTag(ReportTableTag).assertIsDisplayed()
+        composeRule.onNodeWithTag(REPORT_TABLE_TAG).assertIsDisplayed()
         composeRule.onNodeWithText("Payment Method").assertExists()
         composeRule.onNodeWithText("Coffee").assertExists()
         composeRule.onNodeWithText("Visa").assertExists()
@@ -110,8 +110,8 @@ class ReportSearchScreensTest {
             }
         }
 
-        composeRule.onNodeWithTag(SearchResultCountTag).assertTextContains("1 result(s)")
-        composeRule.onNodeWithTag(TransactionRowTagPrefix + 5).performClick()
+        composeRule.onNodeWithTag(SEARCH_RESULT_COUNT_TAG).assertTextContains("1 result(s)")
+        composeRule.onNodeWithTag(TRANSACTION_ROW_TAG_PREFIX + 5).performClick()
 
         assertEquals(5L, opened)
     }
@@ -126,7 +126,7 @@ class ReportSearchScreensTest {
         }
 
         composeRule.onNodeWithText("All categories").assertExists()
-        composeRule.onNodeWithTag(SearchButtonTag).performClick()
+        composeRule.onNodeWithTag(SEARCH_BUTTON_TAG).performClick()
 
         assertEquals(true, searched)
     }

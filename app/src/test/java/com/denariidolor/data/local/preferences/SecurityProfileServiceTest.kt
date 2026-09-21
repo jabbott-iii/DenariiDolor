@@ -144,10 +144,9 @@ class SecurityProfileServiceTest {
 
     private var now = 1_000_000L
 
-    private fun lockableService(): SecurityProfileService =
-        SecurityProfileService(InMemorySecurityProfileStore(), clock = { now }).apply {
-            setupProfile("1234", "1234", "Question?", "answer")
-        }
+    private fun lockableService(): SecurityProfileService = SecurityProfileService(InMemorySecurityProfileStore(), clock = { now }).apply {
+        setupProfile("1234", "1234", "Question?", "answer")
+    }
 
     @Test
     fun lockoutDurationEscalatesAndCaps() {

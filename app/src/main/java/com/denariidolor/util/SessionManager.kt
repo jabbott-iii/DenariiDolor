@@ -35,9 +35,8 @@ class SessionManager @Inject constructor() {
         lastActiveAt = now
     }
 
-    fun isSessionTimedOut(now: Long = System.currentTimeMillis()): Boolean {
-        return !authenticated || now - lastActiveAt > Constants.SESSION_TIMEOUT_MILLIS
-    }
+    fun isSessionTimedOut(now: Long = System.currentTimeMillis()): Boolean =
+        !authenticated || now - lastActiveAt > Constants.SESSION_TIMEOUT_MILLIS
 
     fun invalidate() {
         authenticated = false

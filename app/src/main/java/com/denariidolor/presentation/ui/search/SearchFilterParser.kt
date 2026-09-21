@@ -36,17 +36,17 @@ object SearchFilterParser {
             categoryId = parseOptionalLong(categoryId, "category ID must be a whole number"),
             minAmountCents = parseOptionalCents(minAmount, "minimum amount must be a valid number"),
             maxAmountCents = parseOptionalCents(maxAmount, "maximum amount must be a valid number"),
-            startDateEpochMillis = startDate.trim().takeIf { it.isNotEmpty() }?.let { DateUtils.parseIsoDateToStartOfDayEpochMillis(it, zoneId) },
+            startDateEpochMillis = startDate.trim().takeIf {
+                it.isNotEmpty()
+            }?.let { DateUtils.parseIsoDateToStartOfDayEpochMillis(it, zoneId) },
             endDateEpochMillis = endDate.trim().takeIf { it.isNotEmpty() }?.let { DateUtils.parseIsoDateToEndOfDayEpochMillis(it, zoneId) }
         )
-        if (filters.startDateEpochMillis != null && filters.endDateEpochMillis != null &&
-            filters.startDateEpochMillis > filters.endDateEpochMillis
-        ) {
-            throw IllegalArgumentException("Start date must be on or before the end date")
-        }
-        if (filters.minAmountCents != null && filters.maxAmountCents != null && filters.minAmountCents > filters.maxAmountCents) {
-            throw IllegalArgumentException("Minimum amount must be less than or equal to the maximum amount")
-        }
+        val start = filters.startDateEpochMillis
+        val end = filters.endDateEpochMillis
+        require(start == null || end == null || start <= end) { "Start date must be on or before the end date" }
+        val min = filters.minAmountCents
+        val max = filters.maxAmountCents
+        require(min == null || max == null || min <= max) { "Minimum amount must be less than or equal to the maximum amount" }
         return filters
     }
 

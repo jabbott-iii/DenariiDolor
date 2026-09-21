@@ -41,10 +41,10 @@ import com.denariidolor.presentation.ui.LoginScreenMode
 import com.denariidolor.presentation.ui.common.setThemedContent
 import com.denariidolor.util.SessionManager
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class LoginActivity : AppCompatActivity() {
@@ -154,7 +154,8 @@ class LoginActivity : AppCompatActivity() {
                 null
             }
         biometricAvailable =
-            profileState.mode == ProfileMode.SIGN_IN && biometricAuthManager.canAuthenticate(this)
+            profileState.mode == ProfileMode.SIGN_IN &&
+            biometricAuthManager.canAuthenticate(this)
     }
 
     private fun handlePrimaryAction() {
@@ -271,34 +272,9 @@ class LoginActivity : AppCompatActivity() {
         signInEnabled = false
 
         lifecycleScope.launch {
-            val (wipeSucceeded, reseedSucceeded) =
-                withContext(Dispatchers.IO) {
-                    var wipeFailed = false
-                    if (runCatching { appDatabase.clearAllTables() }.isFailure) {
-                        wipeFailed = true
-                    }
-
-                    if (!wipeFailed && runCatching { encryptedPreferencesManager.clearAllSecurityData() }.isFailure) {
-                        wipeFailed = true
-                    }
-
-                    if (!wipeFailed && runCatching {
-                        if (cacheDir.exists() && !cacheDir.deleteRecursively()) {
-                            wipeFailed = true
-                        }
-                        if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-                            wipeFailed = true
-                        }
-                    }.isFailure) {
-                        wipeFailed = true
-                    }
-
-                    var reseedFailed = false
-                    if (!wipeFailed) {
-                        runCatching { defaultDataInitializer.seedDefaults() }.onFailure { reseedFailed = true }
-                    }
-                    (!wipeFailed) to (!reseedFailed)
-                }
+            val wipeSucceeded = withContext(Dispatchers.IO) { wipeStorage() }
+            val reseedSucceeded = wipeSucceeded &&
+                withContext(Dispatchers.IO) { runCatching { defaultDataInitializer.seedDefaults() }.isSuccess }
 
             if (wipeSucceeded) {
                 sessionManager.invalidate()
@@ -321,6 +297,16 @@ class LoginActivity : AppCompatActivity() {
             signInEnabled = wipeSucceeded && reseedSucceeded
         }
     }
+
+    /** Clears the database, security profile and cache, stopping at the first failure. */
+    private fun wipeStorage(): Boolean = runCatching { appDatabase.clearAllTables() }.isSuccess &&
+        runCatching { encryptedPreferencesManager.clearAllSecurityData() }.isSuccess &&
+        resetCacheDir()
+
+    private fun resetCacheDir(): Boolean = runCatching {
+        val cleared = !cacheDir.exists() || cacheDir.deleteRecursively()
+        cleared && (cacheDir.exists() || cacheDir.mkdirs())
+    }.getOrDefault(false)
 
     private fun clearInputs() {
         pin = ""
@@ -368,7 +354,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun lockoutMessage(remainingMillis: Long): String {
-        val seconds = ((remainingMillis + 999) / 1000).coerceAtLeast(1)
+        val seconds = ((remainingMillis + MILLIS_PER_SECOND - 1) / MILLIS_PER_SECOND).coerceAtLeast(1)
         return getString(R.string.pin_locked_out, seconds)
     }
 
@@ -380,5 +366,6 @@ class LoginActivity : AppCompatActivity() {
 
     companion object {
         private val PIN_REGEX = Regex("^[0-9]{4,12}$")
+        private const val MILLIS_PER_SECOND = 1_000L
     }
 }
