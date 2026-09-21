@@ -313,3 +313,39 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
 - **Fix:** `refreshLoginState(preserveRecoveryMode = false)`.
 - **Also:** `LoginScreen` adds a `BackHandler` in recovery mode, so the system back gesture returns to sign-in too (it previously closed the app).
 - **Test:** `ComposeScreensTest.recoveryModeBackButtonAndSystemBackReturnToSignIn` (button and system back both return to sign-in). ktlint/detekt still clean.
+
+## 2026-09-21 — Documentation: design document and user guides
+- `diagram.md`: design document containing:
+  - requirements mapping;
+  - architecture diagram;
+  - class diagrams (domain inheritance, Room entities, repositories/use cases, security, ViewModels);
+  - design diagrams (navigation, save-transaction sequence, sign-in/lockout state machine, data protection, report export);
+  - key decisions, schema history, and testing strategy.
+- `guide-maint.md`: maintainer guide covering:
+  - prerequisites, build/run, and project structure;
+  - test, lint, and coverage commands; conventions;
+  - DB migration procedure; security controls;
+  - CI/CD workflows, signing secrets, and `make release`;
+  - dependency upgrades and troubleshooting.
+- `guide-use.md`: end-user guide covering:
+  - install and first-launch setup;
+  - sign-in, biometrics, lockout, Forgot PIN, and wipe;
+  - Dashboard, transactions, Search, Reports/export, and Settings;
+  - privacy and FAQ.
+- Mermaid diagrams were checked against the grammar by hand, not rendered (no Mermaid CLI available here). Preview them on GitHub or in the Android Studio Markdown preview.
+
+## 2026-09-21 — Documentation exported to PDF
+- Rendered `diagram.md`, `guide-maint.md` and `guide-use.md` to `diagram.pdf`, `guide-maint.pdf` and `guide-use.pdf` in the project root (US Letter, page numbers in the footer).
+- All 11 Mermaid diagrams were rendered with mermaid-cli, so they are now syntax-validated. They are embedded as vector SVG, so you can zoom in without losing detail. Wide diagrams (architecture, 4.3, 4.4, 5.1, 5.2, 5.4, 5.5) sit on their own landscape pages.
+- Pipeline: `mmdc` (Markdown → SVG) → pandoc (HTML) → headless Chromium (PDF). The Markdown files remain the source of truth; regenerate the PDFs after editing them.
+- Fixed a stale copy of `guide-use.md`: the date fields use a calendar picker, not typed `YYYY-MM-DD`.
+
+## 2026-09-21 — README rewrite
+- `README.md` rewritten with:
+  - CI, security and license badges;
+  - an overview, a feature table and use cases;
+  - install steps;
+  - a condensed user guide (first launch, sign-in and lockout, navigation, transactions, budgets/categories/accounts, reports);
+  - worked examples (a sample month, a search, and the exact CSV export format from `ReportCsvFormatter`);
+  - a developer section (stack, architecture diagram, commands, layout, CI/CD, signing secrets), security, and license.
+- The standalone docs (`diagram.md`, the guides) are no longer in the repo, so the README is self-contained and doesn't link to them.
