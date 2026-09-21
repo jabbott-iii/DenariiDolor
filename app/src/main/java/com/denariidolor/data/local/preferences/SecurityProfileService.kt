@@ -10,6 +10,7 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 interface SecurityProfileStore {
     fun getString(key: String): String?
     fun getInt(key: String, defaultValue: Int): Int
+    fun getLong(key: String, defaultValue: Long): Long
     fun getBoolean(key: String, defaultValue: Boolean): Boolean
     fun edit(block: SecurityProfileStoreEditor.() -> Unit)
 }
@@ -17,6 +18,7 @@ interface SecurityProfileStore {
 interface SecurityProfileStoreEditor {
     fun putString(key: String, value: String)
     fun putInt(key: String, value: Int)
+    fun putLong(key: String, value: Long)
     fun putBoolean(key: String, value: Boolean)
     fun remove(key: String)
     fun clear()
@@ -48,12 +50,20 @@ enum class RecoverPinResult {
     SECURITY_ANSWER_REQUIRED,
     INVALID_SECURITY_ANSWER,
     INVALID_PIN_FORMAT,
-    PIN_MISMATCH
+    PIN_MISMATCH,
+    LOCKED_OUT
+}
+
+sealed interface PinAttemptResult {
+    data object Success : PinAttemptResult
+    data class Invalid(val attemptsBeforeLockout: Int) : PinAttemptResult
+    data class LockedOut(val remainingMillis: Long) : PinAttemptResult
 }
 
 class SecurityProfileService(
     private val store: SecurityProfileStore,
-    private val secureRandom: SecureRandom = SecureRandom()
+    private val secureRandom: SecureRandom = SecureRandom(),
+    private val clock: () -> Long = System::currentTimeMillis
 ) {
     fun getProfileState(): SecurityProfileState {
         return SecurityProfileState(
@@ -112,7 +122,33 @@ class SecurityProfileService(
         return SetupProfileResult.SUCCESS
     }
 
-    fun verifyPin(pin: String): Boolean {
+    fun attemptPin(pin: String): PinAttemptResult {
+        lockoutRemainingMillis().takeIf { it > 0 }?.let { return PinAttemptResult.LockedOut(it) }
+        if (verifyPin(pin)) {
+            resetFailedAttempts()
+            return PinAttemptResult.Success
+        }
+        val failures = registerFailedAttempt()
+        val remaining = lockoutRemainingMillis()
+        return if (remaining > 0) {
+            PinAttemptResult.LockedOut(remaining)
+        } else {
+            PinAttemptResult.Invalid(attemptsBeforeLockout = MAX_FREE_ATTEMPTS - failures)
+        }
+    }
+
+    fun recordSuccessfulAuthentication() = resetFailedAttempts()
+
+    fun lockoutRemainingMillis(): Long {
+        val lockedUntil = store.getLong(KEY_LOCKED_UNTIL, 0L)
+        if (lockedUntil <= 0L) return 0L
+        val lastFailureAt = store.getLong(KEY_LAST_FAILURE_AT, 0L)
+        // A clock moved backwards must not shorten the lockout.
+        val now = maxOf(clock(), lastFailureAt)
+        return (lockedUntil - now).coerceAtLeast(0L)
+    }
+
+    internal fun verifyPin(pin: String): Boolean {
         if (isProfileConfigured()) {
             return verifyHashedSecret(
                 secret = pin,
@@ -135,6 +171,10 @@ class SecurityProfileService(
             return RecoverPinResult.PROFILE_NOT_CONFIGURED
         }
 
+        if (lockoutRemainingMillis() > 0) {
+            return RecoverPinResult.LOCKED_OUT
+        }
+
         if (!isValidPin(newPin)) {
             return RecoverPinResult.INVALID_PIN_FORMAT
         }
@@ -155,7 +195,8 @@ class SecurityProfileService(
             iterations = store.getInt(KEY_SECURITY_ANSWER_ITERATIONS, DEFAULT_ITERATIONS)
         )
         if (!answerMatches) {
-            return RecoverPinResult.INVALID_SECURITY_ANSWER
+            registerFailedAttempt()
+            return if (lockoutRemainingMillis() > 0) RecoverPinResult.LOCKED_OUT else RecoverPinResult.INVALID_SECURITY_ANSWER
         }
 
         val pinHash = hashSecret(newPin)
@@ -164,6 +205,7 @@ class SecurityProfileService(
             putString(KEY_PIN_SALT, pinHash.salt)
             putInt(KEY_PIN_ITERATIONS, pinHash.iterations)
             remove(KEY_LEGACY_PIN)
+            removeLockoutState()
         }
 
         return RecoverPinResult.SUCCESS
@@ -184,6 +226,29 @@ class SecurityProfileService(
 
     fun wipeAll() {
         store.edit { clear() }
+    }
+
+    private fun registerFailedAttempt(): Int {
+        val failures = store.getInt(KEY_FAILED_ATTEMPTS, 0) + 1
+        val now = clock()
+        store.edit {
+            putInt(KEY_FAILED_ATTEMPTS, failures)
+            putLong(KEY_LAST_FAILURE_AT, now)
+            if (failures >= MAX_FREE_ATTEMPTS) {
+                putLong(KEY_LOCKED_UNTIL, now + lockoutDurationMillis(failures))
+            }
+        }
+        return failures
+    }
+
+    private fun resetFailedAttempts() {
+        store.edit { removeLockoutState() }
+    }
+
+    private fun SecurityProfileStoreEditor.removeLockoutState() {
+        remove(KEY_FAILED_ATTEMPTS)
+        remove(KEY_LAST_FAILURE_AT)
+        remove(KEY_LOCKED_UNTIL)
     }
 
     @OptIn(ExperimentalEncodingApi::class)
@@ -241,6 +306,21 @@ class SecurityProfileService(
         private const val DERIVED_KEY_LENGTH_BITS = 256
         private const val SALT_LENGTH_BYTES = 16
         private val PIN_REGEX = Regex("^[0-9]{4,12}$")
+        private const val MAX_DOUBLINGS = 5
+
+        const val MAX_FREE_ATTEMPTS = 5
+        const val BASE_LOCKOUT_MILLIS = 30_000L
+        const val MAX_LOCKOUT_MILLIS = 15 * 60_000L
+        const val KEY_FAILED_ATTEMPTS = "key_failed_attempts"
+        const val KEY_LAST_FAILURE_AT = "key_last_failure_at"
+        const val KEY_LOCKED_UNTIL = "key_locked_until"
+
+        /** 5th failure locks for 30s; each further failure doubles it, capped at 15 minutes. */
+        fun lockoutDurationMillis(failures: Int): Long {
+            if (failures < MAX_FREE_ATTEMPTS) return 0L
+            val doublings = (failures - MAX_FREE_ATTEMPTS).coerceAtMost(MAX_DOUBLINGS)
+            return (BASE_LOCKOUT_MILLIS shl doublings).coerceAtMost(MAX_LOCKOUT_MILLIS)
+        }
 
         const val KEY_PROFILE_CONFIGURED = "key_profile_configured"
         const val KEY_PIN_HASH = "key_pin_hash"

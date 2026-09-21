@@ -7,7 +7,10 @@ import javax.inject.Inject
 class BiometricAuthManager @Inject constructor() {
     fun canAuthenticate(activity: FragmentActivity): Boolean {
         val biometricManager = BiometricManager.from(activity)
-        val result = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)
-        return result == BiometricManager.BIOMETRIC_SUCCESS
+        return biometricManager.canAuthenticate(ALLOWED_AUTHENTICATORS) == BiometricManager.BIOMETRIC_SUCCESS
+    }
+
+    companion object {
+        const val ALLOWED_AUTHENTICATORS = BiometricManager.Authenticators.BIOMETRIC_STRONG
     }
 }

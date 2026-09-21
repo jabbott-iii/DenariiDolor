@@ -84,3 +84,34 @@ Chronological log of work sessions: what changed, why, and what was verified. Ne
 - Manage dialogs close on submit even if validation fails (the error shows as a toast; reopen to retry).
 - Search still takes a raw category ID (Phase 3 will switch it to a picker).
 - Budget warning threshold is stored and editable but not yet surfaced (Phase 4).
+
+## 2026-09-20 — Phase 2: Security hardening
+**User choices:** wipe (not migrate) any plaintext DB; escalating PIN lockout; strong biometrics only. Audit log and screenshot blocking were **not** selected.
+
+| File | Change |
+|---|---|
+| `gradle/libs.versions.toml`, `app/build.gradle.kts` | Added `net.zetetic:sqlcipher-android:4.6.1` + `androidx.sqlite:sqlite:2.4.0`. Release build: `isMinifyEnabled = true`, `isShrinkResources = true`, `proguard-rules.pro`. KSP `room.schemaLocation = app/schemas`. |
+| `app/proguard-rules.pro` *(new)* | Keep SQLCipher JNI classes; `-dontwarn` for Tink's optional annotation deps. |
+| `data/local/db/security/DatabaseKeys.kt` *(new)* | 256-bit hex key generation/validation, SQLCipher raw-key passphrase (`x'…'`, skips PBKDF2), plaintext-header detection, `shouldDiscard()` rule. |
+| `data/local/db/security/DatabaseKeyProvider.kt` *(new)* | Gets or creates the DB key in its own EncryptedSharedPreferences file `db_key_prefs` (not touched by "wipe all data"). |
+| `di/DatabaseModule.kt` | Loads SQLCipher, deletes a plaintext or orphaned DB, opens Room through `SupportOpenHelperFactory`. **Removed `fallbackToDestructiveMigration()`**. |
+| `data/local/db/AppDatabase.kt` | `exportSchema = true` (schema JSON is generated under `app/schemas/` on build; commit it). |
+| `AndroidManifest.xml`, `res/xml/backup_rules.xml`, `res/xml/data_extraction_rules.xml` | `allowBackup=false`; database, sharedpref, and file domains excluded from cloud backup and device transfer. |
+| `data/local/preferences/SecurityProfileService.kt` | `attemptPin()` → `PinAttemptResult` (Success / Invalid(attemptsLeft) / LockedOut(remainingMs)); lockout 30s at the 5th failure, doubling to a 15-min cap; state persisted; clock rollback can't shorten it; wrong security answers count too (`RecoverPinResult.LOCKED_OUT`); success, recovery, biometric, and wipe reset it. `verifyPin()` is now `internal`. Store gained `getLong`/`putLong`. |
+| `data/local/preferences/EncryptedPreferencesManager.kt` | Exposes `attemptPin`, `recordSuccessfulAuthentication`, `lockoutRemainingMillis`; `verifyPin` removed from the public API; writes now use `commit()` (so a killed process can't drop a failure count). |
+| `presentation/ui/auth/LoginActivity.kt` | Uses `attemptPin`; shows attempts left or lockout seconds; clears the PIN field after a failure; recovery shows the lockout; biometric success resets the counter; prompt restricted to strong biometrics. |
+| `presentation/ui/auth/BiometricAuthManager.kt` | `BIOMETRIC_STRONG` via shared `ALLOWED_AUTHENTICATORS`. |
+| `res/values/strings.xml` | `invalid_pin_attempts_left`, `pin_locked_out`; removed unused `invalid_pin`. |
+
+**Tests**
+- `SecurityProfileServiceTest`: store supports longs; 9 new lockout tests (duration curve, lock at 5th failure, correct PIN blocked while locked, doubling, reset on success/biometric/recovery/wipe, clock rollback, shared lockout for security answers).
+- New `DatabaseKeysTest` (JVM): key format, raw-key syntax, plaintext detection, discard rules.
+- New instrumented `EncryptedDatabaseTest`: DB file has no plaintext header and reopens with the same key; a wrong key cannot read it.
+
+**Verification status:** ⚠️ not compiled or run (no Google Maven access from Claude's sandbox). Please run:
+`./gradlew testDebugUnitTest connectedAndroidTest assembleRelease` (the last checks R8 with the new keep rules).
+
+**Behaviour notes**
+- First launch after upgrading deletes the old plaintext DB and reseeds defaults. The PIN profile is kept, since it lives in prefs.
+- Any future `AppDatabase` version bump now **requires** a `Migration`; the app will crash rather than silently wipe data.
+- Key creation and DB open happen on first injection (main thread), as `EncryptedPreferencesManager` already did.

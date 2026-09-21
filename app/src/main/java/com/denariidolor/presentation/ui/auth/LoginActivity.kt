@@ -16,6 +16,7 @@ import com.denariidolor.R
 import com.denariidolor.data.local.db.AppDatabase
 import com.denariidolor.data.local.db.DefaultDataInitializer
 import com.denariidolor.data.local.preferences.EncryptedPreferencesManager
+import com.denariidolor.data.local.preferences.PinAttemptResult
 import com.denariidolor.data.local.preferences.ProfileMode
 import com.denariidolor.data.local.preferences.RecoverPinResult
 import com.denariidolor.data.local.preferences.SetupProfileResult
@@ -163,13 +164,20 @@ class LoginActivity : AppCompatActivity() {
             return
         }
 
-        if (!encryptedPreferencesManager.verifyPin(pin)) {
-            feedbackMessage = getString(R.string.invalid_pin)
-            return
+        when (val result = encryptedPreferencesManager.attemptPin(pin)) {
+            PinAttemptResult.Success -> {
+                feedbackMessage = null
+                openMain()
+            }
+            is PinAttemptResult.Invalid -> {
+                pin = ""
+                feedbackMessage = getString(R.string.invalid_pin_attempts_left, result.attemptsBeforeLockout)
+            }
+            is PinAttemptResult.LockedOut -> {
+                pin = ""
+                feedbackMessage = lockoutMessage(result.remainingMillis)
+            }
         }
-
-        feedbackMessage = null
-        openMain()
     }
 
     private fun handleSetupProfile() {
@@ -239,6 +247,7 @@ class LoginActivity : AppCompatActivity() {
                 RecoverPinResult.INVALID_SECURITY_ANSWER -> getString(R.string.invalid_security_answer)
                 RecoverPinResult.INVALID_PIN_FORMAT -> getString(R.string.pin_format_error)
                 RecoverPinResult.PIN_MISMATCH -> getString(R.string.pin_confirmation_mismatch)
+                RecoverPinResult.LOCKED_OUT -> lockoutMessage(encryptedPreferencesManager.lockoutRemainingMillis())
             }
     }
 
@@ -316,6 +325,7 @@ class LoginActivity : AppCompatActivity() {
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
+                    encryptedPreferencesManager.recordSuccessfulAuthentication()
                     openMain()
                 }
 
@@ -341,8 +351,14 @@ class LoginActivity : AppCompatActivity() {
                 .setTitle(getString(R.string.biometric_sign_in_title))
                 .setSubtitle(getString(R.string.biometric_sign_in_subtitle))
                 .setNegativeButtonText(getString(R.string.use_pin_instead))
+                .setAllowedAuthenticators(BiometricAuthManager.ALLOWED_AUTHENTICATORS)
                 .build()
         )
+    }
+
+    private fun lockoutMessage(remainingMillis: Long): String {
+        val seconds = ((remainingMillis + 999) / 1000).coerceAtLeast(1)
+        return getString(R.string.pin_locked_out, seconds)
     }
 
     private fun openMain() {

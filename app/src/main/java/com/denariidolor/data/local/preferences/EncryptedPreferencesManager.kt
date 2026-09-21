@@ -25,6 +25,8 @@ class EncryptedPreferencesManager @Inject constructor(
 
             override fun getInt(key: String, defaultValue: Int): Int = sharedPreferences.getInt(key, defaultValue)
 
+            override fun getLong(key: String, defaultValue: Long): Long = sharedPreferences.getLong(key, defaultValue)
+
             override fun getBoolean(key: String, defaultValue: Boolean): Boolean {
                 return sharedPreferences.getBoolean(key, defaultValue)
             }
@@ -40,6 +42,10 @@ class EncryptedPreferencesManager @Inject constructor(
                         editor.putInt(key, value)
                     }
 
+                    override fun putLong(key: String, value: Long) {
+                        editor.putLong(key, value)
+                    }
+
                     override fun putBoolean(key: String, value: Boolean) {
                         editor.putBoolean(key, value)
                     }
@@ -53,7 +59,7 @@ class EncryptedPreferencesManager @Inject constructor(
                     }
                 }
                 block(storeEditor)
-                editor.apply()
+                check(editor.commit()) { "Unable to persist security profile" }
             }
         }
     )
@@ -74,7 +80,11 @@ class EncryptedPreferencesManager @Inject constructor(
         )
     }
 
-    fun verifyPin(pin: String): Boolean = securityProfileService.verifyPin(pin)
+    fun attemptPin(pin: String): PinAttemptResult = securityProfileService.attemptPin(pin)
+
+    fun recordSuccessfulAuthentication() = securityProfileService.recordSuccessfulAuthentication()
+
+    fun lockoutRemainingMillis(): Long = securityProfileService.lockoutRemainingMillis()
 
     fun recoverPin(
         securityAnswer: String,

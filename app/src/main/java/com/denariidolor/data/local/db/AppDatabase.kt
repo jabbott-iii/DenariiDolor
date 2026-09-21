@@ -14,7 +14,7 @@ import com.denariidolor.data.local.db.entity.TransactionEntity
 @Database(
     entities = [TransactionEntity::class, CategoryEntity::class, BudgetEntity::class, AccountEntity::class],
     version = 1,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao

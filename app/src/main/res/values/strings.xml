@@ -32,7 +32,6 @@
     <string name="wipe_data_confirm_destructive_label">Destructive confirmation: delete all app data permanently</string>
     <string name="wipe_data_cancel">Cancel</string>
     <string name="pin_format_error">PIN must be 4 to 12 digits.</string>
-    <string name="invalid_pin">Invalid PIN.</string>
     <string name="pin_confirmation_mismatch">PIN and confirmation must match.</string>
     <string name="security_question_required">Security question is required.</string>
     <string name="security_answer_required">Security answer is required.</string>
@@ -126,4 +125,6 @@
     <string name="budget_saved">Budget saved.</string>
     <string name="budget_deleted">Budget removed.</string>
     <string name="invalid_budget_input">Enter a valid limit and a warning percentage from 1 to 100.</string>
+    <string name="invalid_pin_attempts_left">Invalid PIN. %d attempt(s) left before a temporary lockout.</string>
+    <string name="pin_locked_out">Too many failed attempts. Try again in %d seconds.</string>
 </resources>

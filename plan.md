@@ -10,8 +10,8 @@ Roadmap derived from the project requirements and the 2026-09-20 code review. Se
 | Secure DB add / edit / delete | 🟡 Partial | Full add/edit/delete in UI; DB still unencrypted (Phase 2) |
 | Reports (multi-column, rows, timestamp, title) | 🟡 Partial | Missing category name + payment method; no export |
 | Validation | ✅ Done | Amount, description, date, references, budget limit, duplicate names (category/account) |
-| Security | 🟡 Partial | PIN (PBKDF2) + biometric + encrypted prefs + timeout done; DB encryption, backup rules, R8 pending |
-| Scalability | 🟡 Partial | MVVM, repos, Hilt, use cases; single module (accepted), destructive migrations |
+| Security | ✅ Done | PIN (PBKDF2) + lockout, strong biometrics, encrypted prefs, SQLCipher DB, no backups, R8, session timeout |
+| Scalability | 🟡 Partial | MVVM, repos, Hilt, use cases; single module (accepted); explicit migrations + exported schema |
 | GUI | 🟡 Partial | Bottom nav, FAB, dashboard summary + balances + recent list, manage screens; charts, icons, filters pending |
 
 ## Phase 1 — Complete Core CRUD
@@ -33,15 +33,17 @@ Roadmap derived from the project requirements and the 2026-09-20 code review. Se
 - [x] Compose UI tests + JVM tests for mappers.
 - [ ] Verify locally: `./gradlew testDebugUnitTest connectedAndroidTest`.
 
-## Phase 2 — Security Hardening
-- [ ] Encrypt Room with SQLCipher (approved); passphrase generated once and stored via Keystore/encrypted prefs.
-- [ ] Exclude DB and prefs from backup (`allowBackup=false` or explicit exclude rules).
-- [ ] Enable R8 (`isMinifyEnabled = true`, shrink resources) with keep rules for Room/Hilt.
-- [ ] Replace `fallbackToDestructiveMigration()` with explicit migrations; `exportSchema = true`.
-- [ ] PIN attempt throttling / lockout.
-- [ ] Optional: `BIOMETRIC_STRONG` + `CryptoObject`.
-- [ ] Audit log table for create/update/delete events.
-- [ ] `FLAG_SECURE` on sensitive screens.
+## Phase 2 — Security Hardening ✅ (pending local build verification)
+- [x] Encrypt Room with SQLCipher 4.6.1; random 256-bit key in a separate encrypted prefs file.
+- [x] Plaintext or orphaned DB is wiped and reseeded (user choice: no migration).
+- [x] Exclude DB, prefs, and files from backup and device transfer (`allowBackup=false` + extraction rules).
+- [x] Enable R8 (`isMinifyEnabled`, `isShrinkResources`) with keep rules.
+- [x] Removed `fallbackToDestructiveMigration()`; `exportSchema = true`.
+- [x] PIN and security-answer lockout: 5 tries, then 30s doubling to 15 min.
+- [x] `BIOMETRIC_STRONG` only.
+- [ ] Verify locally: `./gradlew testDebugUnitTest connectedAndroidTest assembleRelease`; commit `app/schemas/`.
+- Deferred (not selected): audit log table, `FLAG_SECURE`, biometric `CryptoObject`.
+- Follow-up: upgrade SQLCipher to 4.1x with the Phase 5 toolchain upgrade (Kotlin 2.x / compileSdk 35+).
 
 ## Phase 3 — Reports & Search UX
 - [ ] Report model columns: Date, Category (name), Description, Amount, Payment Method (add payment method / account name to transactions).
@@ -59,6 +61,7 @@ Roadmap derived from the project requirements and the 2026-09-20 code review. Se
 - [ ] Replace string `type` with enum/sealed class + Room `TypeConverter`.
 - [ ] Money as `Long` cents (or `BigDecimal`) — decide before adding migrations.
 - [x] ~~Feature modules~~ — not required; keep single `:app` module with package-level separation.
+- [ ] Upgrade toolchain (Kotlin 2.x, compileSdk 35+) and SQLCipher 4.1x.
 - [ ] Clean `libs.versions.toml` (duplicate activity-compose aliases, unused navigation-fragment/ui, recyclerview, constraintlayout).
 - [ ] Configure or remove detekt/ktlint/jacoco/dependency-check/sonar in Gradle; align CI/CD JDK versions.
 - [ ] Rewrite `NOTICE`; add license headers per `CONTRIBUTING.md`.

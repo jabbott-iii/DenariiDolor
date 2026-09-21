@@ -46,10 +46,10 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 
 ## Known Gaps / Observations (from review 2026-09-20)
 1. ~~**CRUD incomplete**~~ — done in Phases 1a/1b (see `history.md`).
-2. **Room DB is not encrypted** — only preferences are. Financial data sits in plaintext SQLite. Consider SQLCipher (`net.zetetic:sqlcipher-android`) with a Keystore-wrapped passphrase.
-3. `android:allowBackup="true"` with template `backup_rules.xml` / `data_extraction_rules.xml` — DB and prefs may be included in cloud backup/device transfer.
-4. `release` build has `isMinifyEnabled = false`; `keepRules/rules.keep` is the default template.
-5. `DatabaseModule` uses `fallbackToDestructiveMigration()` and `exportSchema = false` — schema changes will silently wipe user data.
+2. ~~Room DB not encrypted~~ — SQLCipher in Phase 2.
+3. ~~Backups include data~~ — excluded in Phase 2.
+4. ~~R8 off~~ — enabled in Phase 2 via `app/proguard-rules.pro`. `src/main/keepRules/rules.keep` is an unused template (AGP 8.5 doesn't read that folder).
+5. ~~Destructive migrations~~ — removed in Phase 2; schema exported to `app/schemas/`.
 6. ~~Account balances never updated~~ — fixed in Phase 1a (stored balances updated atomically). Data created before then may be out of sync.
 7. ~~Duplicate-category validation / empty ViewModels~~ — done in Phases 1a/1b.
 8. Budget warning threshold (`warningThresholdPercent`) is stored but unused — only the hard limit blocks.
@@ -58,7 +58,7 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 11. Transaction `type` is a raw string in several places — candidate for an enum / sealed type.
 12. Money uses `Double`; consider `Long` minor units (cents) or `BigDecimal` to avoid rounding errors.
 13. No audit log or role checks (listed in the recommended stack).
-14. `BiometricAuthManager` uses `BIOMETRIC_WEAK` and the prompt has no `CryptoObject`; biometric success bypasses any key unlock.
+14. Biometrics now `BIOMETRIC_STRONG` (Phase 2); still no `CryptoObject` (deferred).
 15. `SessionManager` state is in-memory only; process death resets to unauthenticated (safe), but `LoginActivity` launch is the only gate.
 16. Dependency hygiene: `libs.versions.toml` has five unused `activity-compose` version aliases; `app/build.gradle.kts` pulls both `activity-compose` 1.9.0 and 1.9.2, plus unused `navigation-fragment`/`navigation-ui` (XML-era).
 17. `NOTICE` file was copied from another project ("Cryptare", Go dependencies) and needs rewriting for this app.
@@ -90,3 +90,7 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 | 2026-09-20 | Transaction list lives on the **Dashboard** as "Recent transactions" (tap = edit, delete with confirm). | User choice. |
 | 2026-09-20 | Category / Account / Budget management screens open from **Settings**. | User choice. |
 | 2026-09-20 | Phase 1b plan: shared UI components in `presentation/ui/common`; one Add/Edit screen (edit via `edit_transaction/{transactionId}` + `SavedStateHandle`); one-shot VM events via `Channel` instead of `StateFlow<String>` (fixes repeat-save not resetting the form); new screens in per-feature files; logic kept in pure functions for JVM tests (no coroutines-test dependency added). | Keeps `AppScreens.kt` from growing; testable without new deps. |
+| 2026-09-20 | Phase 2 scope (user): plaintext DB on upgrade is **wiped and reseeded** (no migration); PIN lockout = **escalating delay** (5 failures → 30s, doubling, max 15 min, persisted); **BIOMETRIC_STRONG** only. Audit log and FLAG_SECURE **not** included. | User choices. |
+| 2026-09-20 | DB key: random 256-bit, Base64 in a **separate** EncryptedSharedPreferences file (`db_key_prefs`) so "wipe all data" (which clears `secure_prefs`) can't orphan the DB key. Missing key + existing DB file → DB deleted and reseeded. | Avoids unopenable DB after wipe/key loss. |
+| 2026-09-20 | Pinned `net.zetetic:sqlcipher-android:4.6.1` + `androidx.sqlite:sqlite:2.4.0`. | Latest (4.18+) targets compileSdk 37/Room 3; 4.6.1 matches Room 2.6.1 / Kotlin 1.9 toolchain. Upgrade with Phase 5 toolchain bump. |
+| 2026-09-20 | Lockout also throttles security-answer attempts; biometric sign-in stays allowed during a PIN lockout and resets the counter on success. | Recovery is otherwise a brute-force bypass; biometrics have their own OS-level lockout. |

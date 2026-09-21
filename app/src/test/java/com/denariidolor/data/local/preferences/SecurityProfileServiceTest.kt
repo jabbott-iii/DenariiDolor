@@ -126,14 +126,115 @@ class SecurityProfileServiceTest {
         assertTrue(service.verifyPin("2468"))
     }
 
+    private var now = 1_000_000L
+
+    private fun lockableService(): SecurityProfileService =
+        SecurityProfileService(InMemorySecurityProfileStore(), clock = { now }).apply {
+            setupProfile("1234", "1234", "Question?", "answer")
+        }
+
+    @Test
+    fun lockoutDurationEscalatesAndCaps() {
+        assertEquals(0L, SecurityProfileService.lockoutDurationMillis(4))
+        assertEquals(30_000L, SecurityProfileService.lockoutDurationMillis(5))
+        assertEquals(60_000L, SecurityProfileService.lockoutDurationMillis(6))
+        assertEquals(480_000L, SecurityProfileService.lockoutDurationMillis(9))
+        assertEquals(900_000L, SecurityProfileService.lockoutDurationMillis(10))
+        assertEquals(900_000L, SecurityProfileService.lockoutDurationMillis(1_000))
+    }
+
+    @Test
+    fun fifthWrongPinLocksOutAndBlocksCorrectPin() {
+        val service = lockableService()
+
+        repeat(4) { attempt ->
+            assertEquals(PinAttemptResult.Invalid(attemptsBeforeLockout = 4 - attempt), service.attemptPin("0000"))
+        }
+        assertEquals(PinAttemptResult.LockedOut(30_000L), service.attemptPin("0000"))
+
+        now += 10_000L
+        assertEquals(PinAttemptResult.LockedOut(20_000L), service.attemptPin("1234"))
+    }
+
+    @Test
+    fun lockoutExpiresAndNextFailureDoubles() {
+        val service = lockableService()
+        repeat(5) { service.attemptPin("0000") }
+
+        now += 30_000L
+        assertEquals(PinAttemptResult.LockedOut(60_000L), service.attemptPin("0000"))
+    }
+
+    @Test
+    fun successResetsFailureCounter() {
+        val service = lockableService()
+        repeat(4) { service.attemptPin("0000") }
+
+        assertEquals(PinAttemptResult.Success, service.attemptPin("1234"))
+        assertEquals(PinAttemptResult.Invalid(attemptsBeforeLockout = 4), service.attemptPin("0000"))
+    }
+
+    @Test
+    fun biometricSuccessResetsLockout() {
+        val service = lockableService()
+        repeat(5) { service.attemptPin("0000") }
+
+        service.recordSuccessfulAuthentication()
+
+        assertEquals(0L, service.lockoutRemainingMillis())
+        assertEquals(PinAttemptResult.Success, service.attemptPin("1234"))
+    }
+
+    @Test
+    fun clockRollbackDoesNotShortenLockout() {
+        val service = lockableService()
+        repeat(5) { service.attemptPin("0000") }
+
+        now -= 3_600_000L
+
+        assertEquals(30_000L, service.lockoutRemainingMillis())
+    }
+
+    @Test
+    fun wrongSecurityAnswersShareTheLockout() {
+        val service = lockableService()
+        repeat(4) { assertEquals(RecoverPinResult.INVALID_SECURITY_ANSWER, service.recoverPin("wrong", "5678", "5678")) }
+
+        assertEquals(RecoverPinResult.LOCKED_OUT, service.recoverPin("wrong", "5678", "5678"))
+        assertEquals(RecoverPinResult.LOCKED_OUT, service.recoverPin("answer", "5678", "5678"))
+        assertTrue(service.attemptPin("1234") is PinAttemptResult.LockedOut)
+    }
+
+    @Test
+    fun successfulRecoveryClearsLockout() {
+        val service = lockableService()
+        repeat(4) { service.attemptPin("0000") }
+
+        assertEquals(RecoverPinResult.SUCCESS, service.recoverPin("answer", "5678", "5678"))
+        assertEquals(PinAttemptResult.Invalid(attemptsBeforeLockout = 4), service.attemptPin("0000"))
+    }
+
+    @Test
+    fun wipeClearsLockout() {
+        val service = lockableService()
+        repeat(5) { service.attemptPin("0000") }
+
+        service.wipeAll()
+
+        assertEquals(0L, service.lockoutRemainingMillis())
+    }
+
     private class InMemorySecurityProfileStore : SecurityProfileStore {
         private val stringValues = mutableMapOf<String, String>()
         private val intValues = mutableMapOf<String, Int>()
+        private val longValues = mutableMapOf<String, Long>()
         private val booleanValues = mutableMapOf<String, Boolean>()
 
         override fun getString(key: String): String? = stringValues[key]
 
         override fun getInt(key: String, defaultValue: Int): Int = intValues[key] ?: defaultValue
+
+        override fun getLong(key: String, defaultValue: Long): Long = longValues[key] ?: defaultValue
 
         override fun getBoolean(key: String, defaultValue: Boolean): Boolean = booleanValues[key] ?: defaultValue
 
@@ -147,6 +248,10 @@ class SecurityProfileServiceTest {
                     intValues[key] = value
                 }
 
+                override fun putLong(key: String, value: Long) {
+                    longValues[key] = value
+                }
+
                 override fun putBoolean(key: String, value: Boolean) {
                     booleanValues[key] = value
                 }
@@ -154,12 +259,14 @@ class SecurityProfileServiceTest {
                 override fun remove(key: String) {
                     stringValues.remove(key)
                     intValues.remove(key)
+                    longValues.remove(key)
                     booleanValues.remove(key)
                 }
 
                 override fun clear() {
                     stringValues.clear()
                     intValues.clear()
+                    longValues.clear()
                     booleanValues.clear()
                 }
             }

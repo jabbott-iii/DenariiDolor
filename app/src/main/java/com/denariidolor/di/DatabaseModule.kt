@@ -7,12 +7,15 @@ import com.denariidolor.data.local.db.dao.AccountDao
 import com.denariidolor.data.local.db.dao.BudgetDao
 import com.denariidolor.data.local.db.dao.CategoryDao
 import com.denariidolor.data.local.db.dao.TransactionDao
+import com.denariidolor.data.local.db.security.DatabaseKeyProvider
+import com.denariidolor.data.local.db.security.DatabaseKeys
 import com.denariidolor.util.Constants
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import javax.inject.Singleton
 
 @Module
@@ -20,9 +23,17 @@ import javax.inject.Singleton
 object DatabaseModule {
     @Provides
     @Singleton
-    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
+    fun provideAppDatabase(
+        @ApplicationContext context: Context,
+        keyProvider: DatabaseKeyProvider
+    ): AppDatabase {
+        System.loadLibrary("sqlcipher")
+        val key = keyProvider.getOrCreate()
+        if (DatabaseKeys.shouldDiscard(context.getDatabasePath(Constants.APP_DB_NAME), key.newlyCreated)) {
+            context.deleteDatabase(Constants.APP_DB_NAME)
+        }
         return Room.databaseBuilder(context, AppDatabase::class.java, Constants.APP_DB_NAME)
-            .fallbackToDestructiveMigration()
+            .openHelperFactory(SupportOpenHelperFactory(key.passphrase))
             .build()
     }
 
