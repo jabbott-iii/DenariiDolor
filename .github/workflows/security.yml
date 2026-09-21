@@ -27,6 +27,8 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false # no later step pushes with git; keeps GITHUB_TOKEN out of .git/config
 
       - uses: actions/setup-java@v5
         with:
@@ -59,6 +61,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false # no later step pushes with git; keeps GITHUB_TOKEN out of .git/config
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -76,6 +80,8 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false # no later step pushes with git; keeps GITHUB_TOKEN out of .git/config
       - uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
@@ -90,6 +96,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

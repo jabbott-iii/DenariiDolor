@@ -1,6 +1,6 @@
 # Denarii Dolor — Project Notes
 
-Running log of context, decisions, clarifications, and preferences. Read this (and `plan.md`) before making changes.
+Running log of context, decisions, clarifications, and preferences. Read this (and `plan.md`, `cysec.md`) before making changes.
 
 ## Project Summary
 Personal budget and expense tracker for Android. Users log income, expenses, transfers, categories, budgets, and accounts; search transactions; and generate monthly reports. Built to satisfy course requirements: OOP (inheritance/polymorphism/encapsulation), multi-row search, secure CRUD database, multi-column timestamped reports, validation, industry-appropriate security, scalable design, and a user-friendly GUI.
@@ -34,7 +34,7 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 - **Validation:** `Validators` (amount > 0 and finite, non-blank description, positive epoch, sane ranges) + `ValidateTransactionUseCase` (valid account/category, transfer destination required and different, expense must not push monthly category spend over `Budget.monthlyLimit`). Returns `Result` rather than throwing.
 - **Search:** single parameterized Room query with nullable filters (description LIKE, category, amount range, date range). UI inputs parsed by `SearchFilterParser` (ISO dates → start/end of day in the device zone).
 - **Reports:** `GenerateReportUseCase(year, month)` → rows, totals, net, `generatedAt`, and a CSV string (RFC-4180-style quoting on description).
-- **Auth / PIN lifecycle:** single-user profile. First launch = setup (PIN 4–12 digits + security question/answer). PIN and answer stored as PBKDF2-HMAC-SHA256 hashes (210k iterations, 16-byte salt, 256-bit key) inside encrypted prefs; constant-time comparisons. Recovery via security answer. Legacy plaintext `key_pin` migrates on setup. "Wipe all data" clears Room tables, secure prefs, cache, then reseeds defaults.
+- **Auth / PIN lifecycle:** single-user profile. First launch = setup (PIN 6–12 digits + security question/answer). PIN and answer stored as PBKDF2-HMAC-SHA256 hashes (210k iterations, 16-byte salt, 256-bit key) inside encrypted prefs; constant-time comparisons. Recovery via security answer. Legacy plaintext `key_pin` migrates on setup. "Wipe all data" clears Room tables, secure prefs, cache, then reseeds defaults.
 - **Session:** `SessionManager` singleton, 5-minute inactivity timeout; `MainActivity` checks every 30s, on resume, and on each user interaction, then redirects to `LoginActivity` with a cleared task.
 
 ## Tooling & Process
@@ -72,6 +72,8 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 - Outline a plan before multi-file changes; present per-file changes and get confirmation before finalizing.
 - Record plans, clarifications, rationale, and confirmed preferences in this file.
 - User reviews diffs and commits changes themselves; Claude leaves work uncommitted.
+- Context files live in `intel/` at the repo root: `notes.md` (decisions), `plan.md` (roadmap), `history.md` (session log), `cysec.md` (security findings). Read them before making changes.
+- `intel/cysec.md` is updated continuously: every change that touches auth, storage, exports, build or CI records new findings, fixes (keeping stable `CS-NN` IDs) or accepted risks.
 
 ## Decision Log
 | Date | Decision | Rationale |
@@ -106,3 +108,7 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 | 2026-09-20 | CI/CD rebuilt (user): Android-only CD (no iOS target in repo), signed AAB+APK to GitHub Release on `v*` tags; signing via Gradle env vars; ktlint/detekt blocking in CI; security = CodeQL + dependency graph/review + gitleaks. | User request; minimal, production-gate focused. |
 | 2026-09-20 | Phase 6: Kotlin **2.0.21** (not 2.1) because Hilt 2.52 reads Kotlin metadata ≤ 2.0 and no Hilt version supporting 2.1 was verified; Vico 2.0.0; SQLCipher stays 4.6.1 (16 KB-ready; newer versions need compileSdk 37 / Room 3); targetSdk 35 edge-to-edge handled with insets. | Binary compatibility; minimal risk. |
 | 2026-09-21 | Settings: Recover PIN removed (recovery stays on the login screen via "Forgot PIN?"); **dark mode switch** follows the device until changed, then persists (`ThemePreferences`, plain prefs) and applies to login + main UI and system bar icons. | User request. |
+| 2026-09-21 | Context `.md` files moved to `intel/`; `cysec.md` created and maintained continuously for security findings. | User request. |
+| 2026-09-21 | Security review: fixed CS-01 (monotonic session clock), CS-02 (session check before UI in `MainActivity.onCreate`), CS-03 (`persist-credentials: false` in CI), CS-04 (share cache cleared at session end), CS-05 (Dependabot). Two decisions are left to you: CS-06 FLAG_SECURE (previously declined) and CS-10 (6-digit PIN minimum). | Low-risk fixes applied; UX-affecting changes need confirmation. |
+| 2026-09-21 | **CS-06 FLAG_SECURE declined** (accepted risk CS-A4): this is a productivity app, not a finance app. **CS-10 applied:** PINs must be 6–12 digits for setup, reset and sign-in; existing short PINs are not supported (reset through Forgot PIN). | User decisions. |
+| 2026-09-21 | PDF deliverables (docs, testing, references) are no longer needed; don't regenerate them. | User decision. |

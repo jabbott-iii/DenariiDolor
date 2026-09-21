@@ -16,26 +16,31 @@
 
 package com.denariidolor.util
 
+import android.os.SystemClock
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Tracks the signed-in session. Times come from [SystemClock.elapsedRealtime] (monotonic, includes deep sleep),
+ * so changing the device's wall clock cannot extend or reset a session.
+ */
 @Singleton
 class SessionManager @Inject constructor() {
-    private var lastActiveAt: Long = System.currentTimeMillis()
+    private var lastActiveAt: Long = 0L
     private var authenticated: Boolean = false
 
-    fun touch(now: Long = System.currentTimeMillis()) {
+    fun touch(now: Long = SystemClock.elapsedRealtime()) {
         if (authenticated) {
             lastActiveAt = now
         }
     }
 
-    fun markAuthenticated(now: Long = System.currentTimeMillis()) {
+    fun markAuthenticated(now: Long = SystemClock.elapsedRealtime()) {
         authenticated = true
         lastActiveAt = now
     }
 
-    fun isSessionTimedOut(now: Long = System.currentTimeMillis()): Boolean =
+    fun isSessionTimedOut(now: Long = SystemClock.elapsedRealtime()): Boolean =
         !authenticated || now - lastActiveAt > Constants.SESSION_TIMEOUT_MILLIS
 
     fun invalidate() {

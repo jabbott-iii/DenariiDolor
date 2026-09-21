@@ -1,13 +1,13 @@
 # Denarii Dolor — Plan
 
-Roadmap derived from the project requirements and the 2026-09-20 code review. See `notes.md` for rationale and the full gap list. Items are proposals until confirmed.
+Roadmap derived from the project requirements and the 2026-09-20 code review. See `notes.md` for rationale and the full gap list, and `cysec.md` for security findings. Items are proposals until confirmed.
 
 ## Requirement Status
 | Requirement | Status | Notes |
 |---|---|---|
 | Inheritance / polymorphism / encapsulation | ✅ Done | `Transaction` → `Expense`/`Income`/`Transfer`, `balanceImpact()` |
-| Search with multi-row results | 🟡 Partial | Query + parser done; results shown as plain strings |
-| Secure DB add / edit / delete | 🟡 Partial | Full add/edit/delete in UI; DB still unencrypted (Phase 2) |
+| Search with multi-row results | ✅ Done | Typed multi-row results with count; tap to edit |
+| Secure DB add / edit / delete | ✅ Done | Full add/edit/delete in UI; SQLCipher-encrypted DB |
 | Reports (multi-column, rows, timestamp, title) | ✅ Done | 6 columns, title, period, timestamp, totals; CSV + PDF save/share |
 | Validation | ✅ Done | Amount, description, date, references, budget limit, duplicate names (category/account) |
 | Security | ✅ Done | PIN (PBKDF2) + lockout, strong biometrics, encrypted prefs, SQLCipher DB, no backups, R8, session timeout |
@@ -94,3 +94,14 @@ Roadmap derived from the project requirements and the 2026-09-20 code review. Se
 2. SQLCipher — permitted.
 3. Export — both PDF and CSV required.
 4. Multi-module split — not required.
+
+## Security (tracked in `cysec.md`)
+- [x] CS-01 – CS-05 fixed 2026-09-21 (session clock, session gate, CI token persistence, share-cache cleanup, Dependabot).
+- [ ] Verify: `./gradlew testDebugUnitTest connectedDebugAndroidTest assembleRelease`, plus the manual clock-rollback check.
+- [x] CS-06 FLAG_SECURE — declined (accepted risk CS-A4).
+- [x] CS-10 6–12 digit PIN, enforced for setup, reset and sign-in (2026-09-21).
+- [ ] CS-07 biometric `CryptoObject` bound to a Keystore key.
+- [ ] CS-08 pin workflow actions to commit SHAs.
+- [ ] CS-09 migrate off deprecated `security-crypto`.
+- [ ] CS-11 hide overlays / tapjacking protection on the login screen.
+- [ ] CS-12 audit log table.

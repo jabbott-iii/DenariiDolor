@@ -376,3 +376,20 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
   - Then send the back press through the activity's `onBackPressedDispatcher` on the UI thread. That is the dispatcher `BackHandler` registers with, so the result is deterministic.
   - The wipe-dialog test keeps `UiDevice.pressBack()`, because dialogs need a real key event.
 - ktlint and detekt (with the default rule set, as Gradle runs it) report 0 findings. Re-run CI to confirm 41/41.
+
+## 2026-09-21 — `intel/` directory and security log
+- Created `intel/` at the repo root and moved the context files into it: `notes.md`, `plan.md`, `history.md`. Added `intel/cysec.md`, which is updated continuously with security findings: open, fixed or accepted, with stable `CS-NN` IDs.
+- Security review of the manifest, auth, session, storage, exports, build and CI. Fixes, left uncommitted:
+  - **CS-01** `SessionManager` now uses `SystemClock.elapsedRealtime()`. Setting the wall clock back could previously keep a session alive forever.
+  - **CS-02** `MainActivity.onCreate` redirects to sign-in before `setContent` when there is no session. This covers the task being restored after process death.
+  - **CS-03** `persist-credentials: false` on all 7 `actions/checkout` steps, so `GITHUB_TOKEN` no longer sits in `.git/config` during write-permission jobs.
+  - **CS-04** `ReportExporter.clearShareCache()` runs on sign-out, on timeout and on every `LoginActivity` start.
+  - **CS-05** `.github/dependabot.yml` (github-actions + gradle, weekly).
+- Open: CS-06 (FLAG_SECURE) and CS-10 (6-digit PIN minimum) need your decision; CS-07 (biometric `CryptoObject`), CS-08 (SHA-pinned actions), CS-09 (deprecated `security-crypto`), CS-11 (tapjacking) and CS-12 (audit log) are planned.
+- ktlint and detekt report 0 findings, and the YAML is valid. Not compiled here; CI will verify.
+
+## 2026-09-21 — Security decisions: CS-06 declined, CS-10 applied
+- **CS-06 (FLAG_SECURE):** declined, because this is a productivity app and not a finance app. Recorded as accepted risk **CS-A4** in `cysec.md`.
+- **CS-10 (PIN length):** PINs must now be **6–12 digits** (`^[0-9]{6,12}$`) in `SecurityProfileService` (setup and reset) and `LoginActivity` (sign-in). The error message is now "PIN must be 6 to 12 digits." As you chose, existing 4–5-digit PINs no longer work; those users reset through **Forgot PIN?**.
+- Tests: `SecurityProfileServiceTest` now uses 6-digit PINs, and there is a new `pinMustBeSixToTwelveDigits` test, so the unit suite has 117 tests. `ComposeScreensTest` sample PIN is now 6 digits. `README.md` says 6–12 digits.
+- ktlint and detekt (with the default rule set) report 0 findings. Not compiled here; CI will verify.

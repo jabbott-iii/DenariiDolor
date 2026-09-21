@@ -33,7 +33,7 @@
 | **Search** | Filter by description text, category, amount range and date range. The results show as a multi-row list, and you tap a row to edit it. |
 | **Reports** | A monthly spending report with a title, a generated timestamp, totals, and a 6-column table (Date, Type, Category, Description, Amount, Payment Method). **Save** or **Share** it as **CSV** or **PDF**. |
 | **Validation** | Rejects zero or negative amounts, amounts with more than 2 decimals, blank descriptions, invalid dates, transfers to the same account, duplicate names, and inverted search ranges. |
-| **Security** | PIN (4–12 digits) with escalating lockout; strong biometrics; SQLCipher-encrypted database; encrypted preferences; 5-minute session timeout; no cloud backup. |
+| **Security** | PIN (6–12 digits) with escalating lockout; strong biometrics; SQLCipher-encrypted database; encrypted preferences; 5-minute session timeout; no cloud backup. |
 | **Look & feel** | Material 3, a dark mode switch, bottom navigation, and a floating **+** button for quick entry. |
 
 ## Use cases
@@ -57,7 +57,7 @@
 
 ### 1. First launch
 
-1. Choose a **PIN** (4–12 digits) and confirm it.
+1. Choose a **PIN** (6–12 digits) and confirm it.
 2. Write a **security question** only you can answer, and give its **answer**. You'll need the answer if you forget your PIN.
 3. Tap **Create Security Profile**, then sign in.
 

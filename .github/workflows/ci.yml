@@ -22,6 +22,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false # no later step pushes with git; keeps GITHUB_TOKEN out of .git/config
 
       - uses: actions/setup-java@v5
         with:
@@ -71,6 +73,8 @@ jobs:
         api-level: [ 26, 35 ] # minSdk and targetSdk
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false # no later step pushes with git; keeps GITHUB_TOKEN out of .git/config
 
       - uses: actions/setup-java@v5
         with:

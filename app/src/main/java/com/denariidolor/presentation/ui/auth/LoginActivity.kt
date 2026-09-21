@@ -28,6 +28,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.denariidolor.MainActivity
 import com.denariidolor.R
+import com.denariidolor.data.export.ReportExporter
 import com.denariidolor.data.local.db.AppDatabase
 import com.denariidolor.data.local.db.DefaultDataInitializer
 import com.denariidolor.data.local.preferences.EncryptedPreferencesManager
@@ -81,6 +82,8 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Cold start or return after sign-out: no unencrypted share copies should outlive a session.
+        ReportExporter.clearShareCache(this)
         setThemedContent(themePreferences) {
             LoginScreen(
                 mode = loginMenuMode,
@@ -365,7 +368,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     companion object {
-        private val PIN_REGEX = Regex("^[0-9]{4,12}$")
+        private val PIN_REGEX = Regex("^[0-9]{6,12}$")
         private const val MILLIS_PER_SECOND = 1_000L
     }
 }

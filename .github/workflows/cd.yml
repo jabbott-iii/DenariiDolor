@@ -22,6 +22,8 @@ jobs:
       contents: write # create the GitHub Release
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false # no later step pushes with git; keeps GITHUB_TOKEN out of .git/config
 
       - name: Derive version from tag
         id: version

@@ -259,7 +259,7 @@ class ComposeScreensTest {
             DenariiDolorTheme {
                 LoginScreen(
                     mode = LoginScreenMode.SIGN_IN,
-                    pin = "1234",
+                    pin = "123456",
                     pinConfirmation = "",
                     securityQuestion = "",
                     securityAnswer = "",

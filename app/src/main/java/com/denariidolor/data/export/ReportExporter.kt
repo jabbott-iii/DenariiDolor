@@ -63,5 +63,8 @@ class ReportExporter @Inject constructor(@ApplicationContext private val context
     companion object {
         const val SHARE_DIR = "reports"
         const val AUTHORITY_SUFFIX = ".fileprovider"
+
+        /** Deletes unencrypted report copies left for sharing; called when the session ends. */
+        fun clearShareCache(context: Context): Boolean = File(context.cacheDir, SHARE_DIR).deleteRecursively()
     }
 }

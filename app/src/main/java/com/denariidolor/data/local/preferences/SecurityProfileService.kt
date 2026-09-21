@@ -302,7 +302,7 @@ class SecurityProfileService(
         private const val MAX_ITERATIONS = 1_000_000
         private const val DERIVED_KEY_LENGTH_BITS = 256
         private const val SALT_LENGTH_BYTES = 16
-        private val PIN_REGEX = Regex("^[0-9]{4,12}$")
+        private val PIN_REGEX = Regex("^[0-9]{6,12}$") // NIST SP 800-63B: numeric secrets need at least 6 digits
         private const val MAX_DOUBLINGS = 5
 
         const val MAX_FREE_ATTEMPTS = 5

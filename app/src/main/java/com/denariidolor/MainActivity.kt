@@ -22,6 +22,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.denariidolor.data.export.ReportExporter
 import com.denariidolor.data.local.preferences.EncryptedPreferencesManager
 import com.denariidolor.data.local.preferences.ThemePreferences
 import com.denariidolor.presentation.ui.MainActivityContent
@@ -51,6 +52,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Also covers the task being restored after process death, when no session exists.
+        if (sessionManager.isSessionTimedOut()) {
+            redirectToLogin()
+            return
+        }
         val pinConfigured = encryptedPreferencesManager.isProfileConfigured()
         setThemedContent(themePreferences) {
             MainActivityContent(
@@ -95,6 +101,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun redirectToLogin() {
         sessionManager.invalidate()
+        ReportExporter.clearShareCache(this)
         startActivity(
             Intent(this, LoginActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

@@ -30,8 +30,8 @@ class SecurityProfileServiceTest {
         val service = SecurityProfileService(InMemorySecurityProfileStore())
 
         val result = service.setupProfile(
-            pin = "1234",
-            pinConfirmation = "1234",
+            pin = "123456",
+            pinConfirmation = "123456",
             securityQuestion = "Favorite color?",
             securityAnswer = "blue"
         )
@@ -44,9 +44,9 @@ class SecurityProfileServiceTest {
     @Test
     fun repeatedSetupIsRejected() {
         val service = SecurityProfileService(InMemorySecurityProfileStore())
-        service.setupProfile("1234", "1234", "Question?", "answer")
+        service.setupProfile("123456", "123456", "Question?", "answer")
 
-        val result = service.setupProfile("1234", "1234", "Question?", "answer")
+        val result = service.setupProfile("123456", "123456", "Question?", "answer")
 
         assertEquals(SetupProfileResult.ALREADY_CONFIGURED, result)
     }
@@ -54,76 +54,76 @@ class SecurityProfileServiceTest {
     @Test
     fun pinVerificationSucceedsAndFails() {
         val service = SecurityProfileService(InMemorySecurityProfileStore())
-        service.setupProfile("1234", "1234", "Question?", "answer")
+        service.setupProfile("123456", "123456", "Question?", "answer")
 
-        assertTrue(service.verifyPin("1234"))
-        assertFalse(service.verifyPin("5555"))
+        assertTrue(service.verifyPin("123456"))
+        assertFalse(service.verifyPin("555555"))
     }
 
     @Test
     fun recoveryRejectsIncorrectAnswerWithoutChangingPin() {
         val service = SecurityProfileService(InMemorySecurityProfileStore())
-        service.setupProfile("1234", "1234", "Question?", "answer")
+        service.setupProfile("123456", "123456", "Question?", "answer")
 
         val result = service.recoverPin(
             securityAnswer = "wrong",
-            newPin = "5678",
-            pinConfirmation = "5678"
+            newPin = "567890",
+            pinConfirmation = "567890"
         )
 
         assertEquals(RecoverPinResult.INVALID_SECURITY_ANSWER, result)
-        assertTrue(service.verifyPin("1234"))
-        assertFalse(service.verifyPin("5678"))
+        assertTrue(service.verifyPin("123456"))
+        assertFalse(service.verifyPin("567890"))
     }
 
     @Test
     fun recoveryWithCorrectAnswerReplacesPin() {
         val service = SecurityProfileService(InMemorySecurityProfileStore())
-        service.setupProfile("1234", "1234", "Question?", "answer")
+        service.setupProfile("123456", "123456", "Question?", "answer")
 
         val result = service.recoverPin(
             securityAnswer = "answer",
-            newPin = "5678",
-            pinConfirmation = "5678"
+            newPin = "567890",
+            pinConfirmation = "567890"
         )
 
         assertEquals(RecoverPinResult.SUCCESS, result)
-        assertFalse(service.verifyPin("1234"))
-        assertTrue(service.verifyPin("5678"))
+        assertFalse(service.verifyPin("123456"))
+        assertTrue(service.verifyPin("567890"))
     }
 
     @Test
     fun wipeClearsConfiguredState() {
         val service = SecurityProfileService(InMemorySecurityProfileStore())
-        service.setupProfile("1234", "1234", "Question?", "answer")
+        service.setupProfile("123456", "123456", "Question?", "answer")
 
         service.wipeAll()
 
         assertFalse(service.isProfileConfigured())
-        assertFalse(service.verifyPin("1234"))
+        assertFalse(service.verifyPin("123456"))
         assertEquals(ProfileMode.FIRST_TIME_SETUP, service.getProfileState().mode)
     }
 
     @Test
     fun cancelingWipeKeepsExistingCredentialsUntouched() {
         val service = SecurityProfileService(InMemorySecurityProfileStore())
-        service.setupProfile("1234", "1234", "Question?", "answer")
+        service.setupProfile("123456", "123456", "Question?", "answer")
 
         // Simulates user canceling the destructive dialog by not invoking wipeAll().
         assertTrue(service.isProfileConfigured())
-        assertTrue(service.verifyPin("1234"))
+        assertTrue(service.verifyPin("123456"))
     }
 
     @Test
     fun legacyPinRequiresMatchingPinToMigrateAndClearsLegacyAfterSuccess() {
         val store = InMemorySecurityProfileStore().apply {
-            edit { putString(SecurityProfileService.KEY_LEGACY_PIN, "2468") }
+            edit { putString(SecurityProfileService.KEY_LEGACY_PIN, "246801") }
         }
         val service = SecurityProfileService(store)
 
         val mismatch = service.setupProfile(
-            pin = "1234",
-            pinConfirmation = "1234",
+            pin = "123456",
+            pinConfirmation = "123456",
             securityQuestion = "Question?",
             securityAnswer = "answer"
         )
@@ -131,21 +131,34 @@ class SecurityProfileServiceTest {
         assertNotNull(store.getString(SecurityProfileService.KEY_LEGACY_PIN))
 
         val success = service.setupProfile(
-            pin = "2468",
-            pinConfirmation = "2468",
+            pin = "246801",
+            pinConfirmation = "246801",
             securityQuestion = "Question?",
             securityAnswer = "answer"
         )
 
         assertEquals(SetupProfileResult.SUCCESS, success)
         assertNull(store.getString(SecurityProfileService.KEY_LEGACY_PIN))
-        assertTrue(service.verifyPin("2468"))
+        assertTrue(service.verifyPin("246801"))
+    }
+
+    @Test
+    fun pinMustBeSixToTwelveDigits() {
+        val service = SecurityProfileService(InMemorySecurityProfileStore())
+
+        assertEquals(SetupProfileResult.INVALID_PIN_FORMAT, service.setupProfile("12345", "12345", "Question?", "answer"))
+        assertEquals(SetupProfileResult.INVALID_PIN_FORMAT, service.setupProfile("1234567890123", "1234567890123", "Question?", "answer"))
+        assertEquals(SetupProfileResult.INVALID_PIN_FORMAT, service.setupProfile("12345a", "12345a", "Question?", "answer"))
+        assertEquals(SetupProfileResult.SUCCESS, service.setupProfile("123456789012", "123456789012", "Question?", "answer"))
+
+        assertEquals(RecoverPinResult.INVALID_PIN_FORMAT, service.recoverPin("answer", "12345", "12345"))
+        assertTrue(service.verifyPin("123456789012"))
     }
 
     private var now = 1_000_000L
 
     private fun lockableService(): SecurityProfileService = SecurityProfileService(InMemorySecurityProfileStore(), clock = { now }).apply {
-        setupProfile("1234", "1234", "Question?", "answer")
+        setupProfile("123456", "123456", "Question?", "answer")
     }
 
     @Test
@@ -163,47 +176,47 @@ class SecurityProfileServiceTest {
         val service = lockableService()
 
         repeat(4) { attempt ->
-            assertEquals(PinAttemptResult.Invalid(attemptsBeforeLockout = 4 - attempt), service.attemptPin("0000"))
+            assertEquals(PinAttemptResult.Invalid(attemptsBeforeLockout = 4 - attempt), service.attemptPin("000000"))
         }
-        assertEquals(PinAttemptResult.LockedOut(30_000L), service.attemptPin("0000"))
+        assertEquals(PinAttemptResult.LockedOut(30_000L), service.attemptPin("000000"))
 
         now += 10_000L
-        assertEquals(PinAttemptResult.LockedOut(20_000L), service.attemptPin("1234"))
+        assertEquals(PinAttemptResult.LockedOut(20_000L), service.attemptPin("123456"))
     }
 
     @Test
     fun lockoutExpiresAndNextFailureDoubles() {
         val service = lockableService()
-        repeat(5) { service.attemptPin("0000") }
+        repeat(5) { service.attemptPin("000000") }
 
         now += 30_000L
-        assertEquals(PinAttemptResult.LockedOut(60_000L), service.attemptPin("0000"))
+        assertEquals(PinAttemptResult.LockedOut(60_000L), service.attemptPin("000000"))
     }
 
     @Test
     fun successResetsFailureCounter() {
         val service = lockableService()
-        repeat(4) { service.attemptPin("0000") }
+        repeat(4) { service.attemptPin("000000") }
 
-        assertEquals(PinAttemptResult.Success, service.attemptPin("1234"))
-        assertEquals(PinAttemptResult.Invalid(attemptsBeforeLockout = 4), service.attemptPin("0000"))
+        assertEquals(PinAttemptResult.Success, service.attemptPin("123456"))
+        assertEquals(PinAttemptResult.Invalid(attemptsBeforeLockout = 4), service.attemptPin("000000"))
     }
 
     @Test
     fun biometricSuccessResetsLockout() {
         val service = lockableService()
-        repeat(5) { service.attemptPin("0000") }
+        repeat(5) { service.attemptPin("000000") }
 
         service.recordSuccessfulAuthentication()
 
         assertEquals(0L, service.lockoutRemainingMillis())
-        assertEquals(PinAttemptResult.Success, service.attemptPin("1234"))
+        assertEquals(PinAttemptResult.Success, service.attemptPin("123456"))
     }
 
     @Test
     fun clockRollbackDoesNotShortenLockout() {
         val service = lockableService()
-        repeat(5) { service.attemptPin("0000") }
+        repeat(5) { service.attemptPin("000000") }
 
         now -= 3_600_000L
 
@@ -213,26 +226,26 @@ class SecurityProfileServiceTest {
     @Test
     fun wrongSecurityAnswersShareTheLockout() {
         val service = lockableService()
-        repeat(4) { assertEquals(RecoverPinResult.INVALID_SECURITY_ANSWER, service.recoverPin("wrong", "5678", "5678")) }
+        repeat(4) { assertEquals(RecoverPinResult.INVALID_SECURITY_ANSWER, service.recoverPin("wrong", "567890", "567890")) }
 
-        assertEquals(RecoverPinResult.LOCKED_OUT, service.recoverPin("wrong", "5678", "5678"))
-        assertEquals(RecoverPinResult.LOCKED_OUT, service.recoverPin("answer", "5678", "5678"))
-        assertTrue(service.attemptPin("1234") is PinAttemptResult.LockedOut)
+        assertEquals(RecoverPinResult.LOCKED_OUT, service.recoverPin("wrong", "567890", "567890"))
+        assertEquals(RecoverPinResult.LOCKED_OUT, service.recoverPin("answer", "567890", "567890"))
+        assertTrue(service.attemptPin("123456") is PinAttemptResult.LockedOut)
     }
 
     @Test
     fun successfulRecoveryClearsLockout() {
         val service = lockableService()
-        repeat(4) { service.attemptPin("0000") }
+        repeat(4) { service.attemptPin("000000") }
 
-        assertEquals(RecoverPinResult.SUCCESS, service.recoverPin("answer", "5678", "5678"))
-        assertEquals(PinAttemptResult.Invalid(attemptsBeforeLockout = 4), service.attemptPin("0000"))
+        assertEquals(RecoverPinResult.SUCCESS, service.recoverPin("answer", "567890", "567890"))
+        assertEquals(PinAttemptResult.Invalid(attemptsBeforeLockout = 4), service.attemptPin("000000"))
     }
 
     @Test
     fun wipeClearsLockout() {
         val service = lockableService()
-        repeat(5) { service.attemptPin("0000") }
+        repeat(5) { service.attemptPin("000000") }
 
         service.wipeAll()
 
