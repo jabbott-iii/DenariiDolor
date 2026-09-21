@@ -17,7 +17,12 @@
 package com.denariidolor.presentation.ui
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasAnyAncestor
@@ -44,8 +49,8 @@ import com.denariidolor.presentation.ui.dashboard.BudgetAlertBannerTag
 import com.denariidolor.presentation.ui.dashboard.BudgetProgress
 import com.denariidolor.presentation.ui.dashboard.CategorySpend
 import com.denariidolor.presentation.ui.dashboard.DashboardScreen
-import com.denariidolor.presentation.ui.dashboard.SpendingChartTag
 import com.denariidolor.presentation.ui.dashboard.DashboardUiState
+import com.denariidolor.presentation.ui.dashboard.SpendingChartTag
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
 import com.denariidolor.presentation.ui.transaction.TransactionFormInput
 import org.junit.Assert.assertEquals
@@ -156,14 +161,34 @@ class CrudScreensTest {
     }
 
     @Test
+    fun settingsHasNoRecoverPinAndTogglesDarkMode() {
+        var darkMode by mutableStateOf(false)
+        composeRule.setContent {
+            DenariiDolorTheme(darkTheme = darkMode) {
+                SettingsScreen(
+                    state = SettingsScreenState(sessionTimeoutMinutes = 5, pinConfigured = true, darkMode = darkMode),
+                    onSignOut = {},
+                    onDarkModeChange = { darkMode = it }
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Recover PIN").assertDoesNotExist()
+        composeRule.onNodeWithTag(DarkModeSwitchTag).assertIsOff().performClick()
+        composeRule.onNodeWithTag(DarkModeSwitchTag).assertIsOn()
+        assertEquals(true, darkMode)
+        composeRule.onNodeWithTag(DarkModeSwitchTag).performClick()
+        assertEquals(false, darkMode)
+    }
+
+    @Test
     fun settingsManageButtonsInvokeCallbacks() {
         val opened = mutableListOf<String>()
         composeRule.setContent {
             DenariiDolorTheme {
                 SettingsScreen(
-                    state = SettingsScreenState(sessionTimeoutMinutes = 5, pinConfigured = true),
+                    state = SettingsScreenState(sessionTimeoutMinutes = 5, pinConfigured = true, darkMode = false),
                     onSignOut = {},
-                    onResetSecurityProfile = {},
                     onManageCategories = { opened += "categories" },
                     onManageAccounts = { opened += "accounts" },
                     onManageBudgets = { opened += "budgets" }

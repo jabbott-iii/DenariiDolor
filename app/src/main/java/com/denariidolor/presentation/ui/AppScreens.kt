@@ -81,7 +81,8 @@ private val bottomDestinations = listOf(
 @Composable
 fun MainActivityContent(
     settingsState: SettingsScreenState,
-    onSettingsAction: (startPinRecovery: Boolean) -> Unit
+    onSignOut: () -> Unit,
+    onDarkModeChange: (Boolean) -> Unit
 ) {
     val navController = rememberNavController()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -144,8 +145,8 @@ fun MainActivityContent(
             composable(MainDestination.Settings.route) {
                 SettingsScreen(
                     state = settingsState,
-                    onSignOut = { onSettingsAction(false) },
-                    onResetSecurityProfile = { onSettingsAction(true) },
+                    onSignOut = onSignOut,
+                    onDarkModeChange = onDarkModeChange,
                     onManageCategories = { navController.navigate(MainDestination.ManageCategories.route) },
                     onManageAccounts = { navController.navigate(MainDestination.ManageAccounts.route) },
                     onManageBudgets = { navController.navigate(MainDestination.ManageBudgets.route) }

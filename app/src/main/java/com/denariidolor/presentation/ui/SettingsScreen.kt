@@ -19,29 +19,37 @@
 package com.denariidolor.presentation.ui
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.denariidolor.R
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
 
+internal const val DarkModeSwitchTag = "darkModeSwitch"
+
 @Composable
 fun SettingsScreen(
     state: SettingsScreenState,
     onSignOut: () -> Unit,
-    onResetSecurityProfile: () -> Unit,
+    onDarkModeChange: (Boolean) -> Unit = {},
     onManageCategories: () -> Unit = {},
     onManageAccounts: () -> Unit = {},
     onManageBudgets: () -> Unit = {}
@@ -66,6 +74,18 @@ fun SettingsScreen(
                 }
             )
         )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .toggleable(value = state.darkMode, role = Role.Switch, onValueChange = onDarkModeChange)
+                .padding(vertical = 8.dp)
+                .testTag(DarkModeSwitchTag),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = stringResource(R.string.settings_dark_mode), modifier = Modifier.weight(1f))
+            Switch(checked = state.darkMode, onCheckedChange = null)
+        }
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = onManageCategories, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.manage_categories))
@@ -83,10 +103,6 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.sign_out))
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = onResetSecurityProfile, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.settings_recover_pin))
         }
     }
 }

@@ -82,6 +82,9 @@ Roadmap derived from the project requirements and the 2026-09-20 code review. Se
 - [ ] Verify locally (see history.md), including inset layout on an API 35 device.
 - Later: Kotlin 2.1+ (needs a Hilt release that supports Kotlin 2.1 metadata), Room 2.7/KSP2, SQLCipher 4.1x (compileSdk 37 / Room 3).
 
+## Settings
+- [x] Removed Recover PIN from Settings; added a persisted dark mode switch (2026-09-21).
+
 ## CI/CD
 - [x] security.yml, ci.yml, cd.yml rebuilt; Makefile release flow verified (see history.md).
 - [ ] Add repository secrets `ANDROID_SIGNING_KEY`, `ANDROID_SIGNING_KEYSTORE_PASSWORD`, `ANDROID_SIGNING_KEY_ALIAS`, `ANDROID_SIGNING_KEY_PASSWORD`; optionally protect the `production` environment.

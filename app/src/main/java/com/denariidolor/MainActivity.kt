@@ -18,16 +18,16 @@ package com.denariidolor
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.denariidolor.data.local.preferences.EncryptedPreferencesManager
+import com.denariidolor.data.local.preferences.ThemePreferences
 import com.denariidolor.presentation.ui.MainActivityContent
 import com.denariidolor.presentation.ui.auth.LoginActivity
-import com.denariidolor.presentation.ui.common.DenariiDolorTheme
+import com.denariidolor.presentation.ui.common.isDarkTheme
+import com.denariidolor.presentation.ui.common.setThemedContent
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
 import com.denariidolor.util.Constants
 import com.denariidolor.util.SessionManager
@@ -46,19 +46,22 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var encryptedPreferencesManager: EncryptedPreferencesManager
 
+    @Inject
+    lateinit var themePreferences: ThemePreferences
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            DenariiDolorTheme {
-                MainActivityContent(
-                    settingsState = SettingsScreenState(
-                        sessionTimeoutMinutes = Constants.SESSION_TIMEOUT_MILLIS / 60_000,
-                        pinConfigured = encryptedPreferencesManager.isProfileConfigured()
-                    ),
-                    onSettingsAction = ::redirectToLogin
-                )
-            }
+        val pinConfigured = encryptedPreferencesManager.isProfileConfigured()
+        setThemedContent(themePreferences) {
+            MainActivityContent(
+                settingsState = SettingsScreenState(
+                    sessionTimeoutMinutes = Constants.SESSION_TIMEOUT_MILLIS / 60_000,
+                    pinConfigured = pinConfigured,
+                    darkMode = themePreferences.isDarkTheme()
+                ),
+                onSignOut = ::redirectToLogin,
+                onDarkModeChange = themePreferences::setDarkMode
+            )
         }
 
         lifecycleScope.launch {
@@ -66,7 +69,7 @@ class MainActivity : AppCompatActivity() {
                 while (isActive) {
                     delay(30_000.milliseconds)
                     if (sessionManager.isSessionTimedOut()) {
-                        redirectToLogin(startPinRecovery = false)
+                        redirectToLogin()
                         break
                     }
                 }
@@ -77,25 +80,24 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         if (sessionManager.isSessionTimedOut()) {
-            redirectToLogin(startPinRecovery = false)
+            redirectToLogin()
         }
     }
 
     override fun onUserInteraction() {
         super.onUserInteraction()
         if (sessionManager.isSessionTimedOut()) {
-            redirectToLogin(startPinRecovery = false)
+            redirectToLogin()
         } else {
             sessionManager.touch()
         }
     }
 
-    private fun redirectToLogin(startPinRecovery: Boolean) {
+    private fun redirectToLogin() {
         sessionManager.invalidate()
         startActivity(
             Intent(this, LoginActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                putExtra(LoginActivity.EXTRA_START_RECOVERY, startPinRecovery)
             }
         )
         finish()

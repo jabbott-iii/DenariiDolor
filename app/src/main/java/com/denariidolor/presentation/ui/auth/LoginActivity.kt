@@ -19,8 +19,6 @@ package com.denariidolor.presentation.ui.auth
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
 import androidx.compose.runtime.getValue
@@ -37,9 +35,10 @@ import com.denariidolor.data.local.preferences.PinAttemptResult
 import com.denariidolor.data.local.preferences.ProfileMode
 import com.denariidolor.data.local.preferences.RecoverPinResult
 import com.denariidolor.data.local.preferences.SetupProfileResult
+import com.denariidolor.data.local.preferences.ThemePreferences
 import com.denariidolor.presentation.ui.LoginScreen
 import com.denariidolor.presentation.ui.LoginScreenMode
-import com.denariidolor.presentation.ui.common.DenariiDolorTheme
+import com.denariidolor.presentation.ui.common.setThemedContent
 import com.denariidolor.util.SessionManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -64,6 +63,9 @@ class LoginActivity : AppCompatActivity() {
     @Inject
     lateinit var appDatabase: AppDatabase
 
+    @Inject
+    lateinit var themePreferences: ThemePreferences
+
     private var signInEnabled by mutableStateOf(false)
     private var biometricAvailable by mutableStateOf(false)
     private var loginMenuMode by mutableStateOf(LoginScreenMode.SETUP)
@@ -76,42 +78,37 @@ class LoginActivity : AppCompatActivity() {
     private var pinConfirmation by mutableStateOf("")
     private var securityQuestion by mutableStateOf("")
     private var securityAnswer by mutableStateOf("")
-    private var launchRecoveryOnInit = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        launchRecoveryOnInit = intent.getBooleanExtra(EXTRA_START_RECOVERY, false)
-        setContent {
-            DenariiDolorTheme {
-                LoginScreen(
-                    mode = loginMenuMode,
-                    pin = pin,
-                    pinConfirmation = pinConfirmation,
-                    securityQuestion = securityQuestion,
-                    securityAnswer = securityAnswer,
-                    recoveryQuestion = recoveryQuestion,
-                    signInEnabled = signInEnabled,
-                    biometricAvailable = biometricAvailable,
-                    showWipeConfirmation = showWipeConfirmation,
-                    feedbackMessage = feedbackMessage,
-                    onPinChange = { pin = it },
-                    onPinConfirmationChange = { pinConfirmation = it },
-                    onSecurityQuestionChange = { securityQuestion = it },
-                    onSecurityAnswerChange = { securityAnswer = it },
-                    onPrimaryAction = ::handlePrimaryAction,
-                    onForgotPin = ::startPinRecovery,
-                    onBackToSignIn = ::switchToSignIn,
-                    onBiometricLogin = ::promptForBiometricSignIn,
-                    onRequestWipeData = {
-                        if (signInEnabled && !actionInProgress) {
-                            showWipeConfirmation = true
-                        }
-                    },
-                    onCancelWipeData = { showWipeConfirmation = false },
-                    onConfirmWipeData = ::wipeAllUserData
-                )
-            }
+        setThemedContent(themePreferences) {
+            LoginScreen(
+                mode = loginMenuMode,
+                pin = pin,
+                pinConfirmation = pinConfirmation,
+                securityQuestion = securityQuestion,
+                securityAnswer = securityAnswer,
+                recoveryQuestion = recoveryQuestion,
+                signInEnabled = signInEnabled,
+                biometricAvailable = biometricAvailable,
+                showWipeConfirmation = showWipeConfirmation,
+                feedbackMessage = feedbackMessage,
+                onPinChange = { pin = it },
+                onPinConfirmationChange = { pinConfirmation = it },
+                onSecurityQuestionChange = { securityQuestion = it },
+                onSecurityAnswerChange = { securityAnswer = it },
+                onPrimaryAction = ::handlePrimaryAction,
+                onForgotPin = ::startPinRecovery,
+                onBackToSignIn = ::switchToSignIn,
+                onBiometricLogin = ::promptForBiometricSignIn,
+                onRequestWipeData = {
+                    if (signInEnabled && !actionInProgress) {
+                        showWipeConfirmation = true
+                    }
+                },
+                onCancelWipeData = { showWipeConfirmation = false },
+                onConfirmWipeData = ::wipeAllUserData
+            )
         }
 
         initializeScreen()
@@ -134,10 +131,6 @@ class LoginActivity : AppCompatActivity() {
             } finally {
                 actionInProgress = false
                 signInEnabled = initialized
-                if (initialized && launchRecoveryOnInit) {
-                    launchRecoveryOnInit = false
-                    startPinRecovery()
-                }
             }
         }
     }
@@ -386,7 +379,6 @@ class LoginActivity : AppCompatActivity() {
     }
 
     companion object {
-        const val EXTRA_START_RECOVERY = "extra_start_recovery"
         private val PIN_REGEX = Regex("^[0-9]{4,12}$")
     }
 }

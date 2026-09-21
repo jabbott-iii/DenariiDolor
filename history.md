@@ -247,3 +247,18 @@ Aligned to the toolchain Vico 2.0.0 is built with, minus Kotlin 2.1: Hilt 2.52's
 
 **Verification status:** ⚠️ not compiled. The Vico 2 API was verified against the v2.0.0 source by a separate agent. First sync will download Gradle 8.11.1; if the checksum doesn't match, re-run `./gradlew wrapper --gradle-version 8.11.1`. Then run `./gradlew ktlintFormat detekt testDebugUnitTest connectedAndroidTest assembleRelease` and check the login, dashboard and add-transaction screens on an API 35 device for inset/keyboard layout.
 **Future:** Kotlin 2.1+ needs a Hilt release that supports Kotlin 2.1 metadata; SQLCipher 4.1x with compileSdk 37 / Room 3.
+
+## 2026-09-21 — Settings: remove Recover PIN, add dark mode switch
+| File | Change |
+|---|---|
+| `presentation/ui/SettingsScreen.kt` | Removed the **Recover PIN** button and its `onResetSecurityProfile` callback. Added a **Dark mode** row (`Switch`; the whole row is a `toggleable` with `Role.Switch`; tag `DarkModeSwitchTag`). |
+| `presentation/ui/settings/SettingsScreenState.kt` | New `darkMode: Boolean`. |
+| `data/local/preferences/ThemePreferences.kt` *(new)* | `darkModeOverride: StateFlow<Boolean?>`, where `null` = follow the device; stored in plain app-private prefs `ui_prefs` (not sensitive; backups already excluded). |
+| `presentation/ui/common/ThemedContent.kt` *(new)* | `ThemePreferences.isDarkTheme()` (override ?: system) and `ComponentActivity.setThemedContent()`, which wraps content in `DenariiDolorTheme(darkTheme)` and re-applies `enableEdgeToEdge` so status/nav bar icons match the chosen theme. |
+| `MainActivity.kt` | Uses `setThemedContent`; passes `darkMode` + `themePreferences::setDarkMode` down; `redirectToLogin()` no longer carries a recovery flag. |
+| `presentation/ui/AppScreens.kt` | `MainActivityContent(settingsState, onSignOut, onDarkModeChange)` replaces `onSettingsAction(startPinRecovery)`. |
+| `presentation/ui/auth/LoginActivity.kt` | Uses `setThemedContent` (login follows the same theme); removed `EXTRA_START_RECOVERY` / auto-start recovery. "Forgot PIN?" on the login screen is unchanged. |
+| `res/values/strings.xml` | `settings_recover_pin` → `settings_dark_mode`. |
+| `CrudScreensTest` | Settings test updated; new `settingsHasNoRecoverPinAndTogglesDarkMode` (no Recover PIN; switch off → on → off updates state). |
+
+**Verification status:** ⚠️ not compiled. Check manually that toggling in Settings switches the whole app, the choice survives a restart, and the login screen matches.

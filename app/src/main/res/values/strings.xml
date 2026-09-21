@@ -70,7 +70,7 @@
     <string name="settings_pin_not_configured">No PIN is configured yet.</string>
     <string name="sign_out">Sign Out</string>
     <string name="reset_pin">Reset PIN</string>
-    <string name="settings_recover_pin">Recover PIN</string>
+    <string name="settings_dark_mode">Dark mode</string>
     <string name="transaction_category_label">Category</string>
     <string name="transaction_account_label">Account</string>
     <string name="transaction_transfer_account_label">Transfer to account</string>
