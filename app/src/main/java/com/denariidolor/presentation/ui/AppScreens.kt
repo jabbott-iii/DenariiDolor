@@ -14,12 +14,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -78,9 +75,8 @@ import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.presentation.ui.common.ReferencePicker
 import com.denariidolor.presentation.ui.common.ScreenHeader
 import com.denariidolor.presentation.ui.dashboard.DashboardRoute
-import com.denariidolor.presentation.ui.report.ReportViewModel
-import com.denariidolor.presentation.ui.search.SearchFilterParser
-import com.denariidolor.presentation.ui.search.SearchViewModel
+import com.denariidolor.presentation.ui.report.ReportRoute
+import com.denariidolor.presentation.ui.search.SearchRoute
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
 import com.denariidolor.presentation.ui.transaction.TransactionEvent
 import com.denariidolor.presentation.ui.transaction.TransactionFormInput
@@ -191,7 +187,9 @@ fun MainActivityContent(
             composable(MainDestination.Dashboard.route) {
                 DashboardRoute(onEditTransaction = { id -> navController.navigate(editTransactionRoute(id)) })
             }
-            composable(MainDestination.Search.route) { SearchRoute() }
+            composable(MainDestination.Search.route) {
+                SearchRoute(onEditTransaction = { id -> navController.navigate(editTransactionRoute(id)) })
+            }
             composable(MainDestination.Report.route) { ReportRoute() }
             composable(MainDestination.Settings.route) {
                 SettingsScreen(
@@ -460,148 +458,6 @@ fun LoginScreen(
                 ) {
                     Text(stringResource(R.string.back_to_sign_in))
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SearchRoute(viewModel: SearchViewModel = hiltViewModel()) {
-    val context = LocalContext.current
-    val results by viewModel.results.collectAsStateWithLifecycle()
-    var description by rememberSaveable { mutableStateOf("") }
-    var categoryId by rememberSaveable { mutableStateOf("") }
-    var minAmount by rememberSaveable { mutableStateOf("") }
-    var maxAmount by rememberSaveable { mutableStateOf("") }
-    var startDate by rememberSaveable { mutableStateOf("") }
-    var endDate by rememberSaveable { mutableStateOf("") }
-    val invalidFiltersMessage = stringResource(R.string.invalid_search_filters_message)
-    val startDatePlaceholder = stringResource(R.string.search_start_date_hint)
-    val endDatePlaceholder = stringResource(R.string.search_end_date_hint)
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        OutlinedTextField(
-            value = description,
-            onValueChange = { description = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.search_description_hint)) },
-            singleLine = true
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(
-            value = categoryId,
-            onValueChange = { categoryId = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.search_category_id_hint)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(modifier = Modifier.fillMaxWidth()) {
-            OutlinedTextField(
-                value = minAmount,
-                onValueChange = { minAmount = it },
-                modifier = Modifier.weight(1f),
-                label = { Text(stringResource(R.string.search_min_amount_hint)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            OutlinedTextField(
-                value = maxAmount,
-                onValueChange = { maxAmount = it },
-                modifier = Modifier.weight(1f),
-                label = { Text(stringResource(R.string.search_max_amount_hint)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(modifier = Modifier.fillMaxWidth()) {
-            DateSelectorButton(
-                text = startDate.ifBlank { startDatePlaceholder },
-                onClick = {
-                    launchDatePicker(context, startDate) { startDate = it }
-                },
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            DateSelectorButton(
-                text = endDate.ifBlank { endDatePlaceholder },
-                onClick = {
-                    launchDatePicker(context, endDate) { endDate = it }
-                },
-                modifier = Modifier.weight(1f)
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(
-            onClick = {
-                val filters = runCatching {
-                    SearchFilterParser.parse(
-                        description = description,
-                        categoryId = categoryId,
-                        minAmount = minAmount,
-                        maxAmount = maxAmount,
-                        startDate = startDate,
-                        endDate = endDate
-                    )
-                }.getOrElse {
-                    Toast.makeText(context, invalidFiltersMessage, Toast.LENGTH_SHORT).show()
-                    return@Button
-                }
-                viewModel.search(filters)
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.search))
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(results) { result ->
-                Text(
-                    text = result,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp)
-                )
-                HorizontalDivider()
-            }
-        }
-    }
-}
-
-@Composable
-private fun ReportRoute(viewModel: ReportViewModel = hiltViewModel()) {
-    val report by viewModel.report.collectAsStateWithLifecycle()
-    LaunchedEffect(Unit) {
-        val now = LocalDate.now()
-        viewModel.load(now.year, now.monthValue)
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        report?.let {
-            Text(
-                text = stringResource(
-                    R.string.report_summary,
-                    it.monthLabel,
-                    it.totalIncome,
-                    it.totalExpense,
-                    it.net
-                )
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            SelectionContainer {
-                Text(text = it.csv)
             }
         }
     }

@@ -115,3 +115,31 @@ Chronological log of work sessions: what changed, why, and what was verified. Ne
 - First launch after upgrading deletes the old plaintext DB and reseeds defaults. The PIN profile is kept, since it lives in prefs.
 - Any future `AppDatabase` version bump now **requires** a `Migration`; the app will crash rather than silently wipe data.
 - Key creation and DB open happen on first injection (main thread), as `EncryptedPreferencesManager` already did.
+
+## 2026-09-20 — Phase 3: Reports & Search
+**User choices:** Payment Method = the account (no schema change); exports via Save (system file picker) **and** Share.
+
+| File | Change |
+|---|---|
+| `domain/model/MonthlyReport.kt` | Report now carries `title`, `period: YearMonth`, `generatedAtEpochMillis`, totals, and rows with **Date, Type, Category (name), Description, Amount, Payment Method**. The `csv` field was removed (formatting moved out). |
+| `domain/usecase/GenerateReportUseCase.kt` | Takes a `YearMonth`; resolves category and account names; rows in chronological order; transfers show `Source → Destination`; uses the injected `Clock` for the month range and generated timestamp. |
+| `domain/report/ReportText.kt` *(new)* | Title constant, period label ("September 2026"), generated label (`yyyy-MM-dd HH:mm z`), file name `spending-report-YYYY-MM.ext`. |
+| `domain/report/ReportCsvFormatter.kt` *(new)* | Metadata block + header + rows, CRLF, RFC 4180 quoting, **CSV formula-injection guard** (leading `= + - @` text is prefixed with `'`). |
+| `data/export/ReportPdfRenderer.kt` *(new)* | US-Letter PDF via `PdfDocument`: title/period, generated time, totals, header row repeated on each page, ellipsized cells, right-aligned amounts, page numbers. |
+| `data/export/ReportExporter.kt` *(new)* | `writeTo(uri)` for Save; `createShareUri()` writes to `cache/reports/` (cleared on each share) and returns a FileProvider URI. |
+| `AndroidManifest.xml`, `res/xml/file_paths.xml` *(new)* | Non-exported `FileProvider` (`${applicationId}.fileprovider`) limited to `cache/reports/`. |
+| `presentation/ui/report/ReportViewModel.kt`, `ReportScreen.kt` *(new screen file)* | Month navigation, refresh on tab entry, title/timestamp/totals, horizontally scrollable 6-column table, Save CSV/PDF (`CreateDocument`) and Share CSV/PDF (chooser with read grant). |
+| `presentation/ui/search/SearchViewModel.kt`, `SearchScreen.kt` *(new screen file)* | Category **picker** with "All categories"; Clear button; inline error text; result count; multi-row results reuse the dashboard row; tap opens Edit. The VM uses `flatMapLatest` over a filters `StateFlow` (old code started a new collector on every search). |
+| `presentation/ui/common/TransactionRows.kt` *(new)* | `TransactionRow`, `buildTransactionRows`, `TransactionRowItem` moved here from the dashboard (shared). Tag renamed `TransactionRowTagPrefix`. |
+| `util/MoneyFormat.kt` *(new)* | `formatMoney`, `formatSignedAmount` (moved from the dashboard). |
+| `presentation/ui/AppScreens.kt` | Old Search/Report composables removed (now ~815 lines); Search results navigate to Edit. |
+| `res/values/strings.xml` | Report/search strings added; removed unused `report_summary`, `search_category_id_hint`. |
+
+**Tests**
+- Rewrote `GenerateReportUseCaseTest` (fixed clock: title/period/timestamp/totals, chronological rows, names, payment method, fallback).
+- New `ReportFormattingTest` (labels, file name, CSV layout/quoting, formula-injection guard).
+- `DashboardMappersTest`: imports moved; `formatMoney` check.
+- New instrumented `ReportPdfRendererTest` (valid `%PDF`, 1 page when empty, paginates 150 rows via `PdfRenderer`).
+- New Compose `ReportSearchScreensTest` (report title/columns/rows/export callbacks, empty state, search count + open result, "All categories" → no category filter). `CrudScreensTest` imports updated.
+
+**Verification status:** ⚠️ not compiled or run by Claude. Run `./gradlew testDebugUnitTest connectedAndroidTest assembleRelease`.

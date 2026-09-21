@@ -1,50 +1,52 @@
 package com.denariidolor.domain.usecase
 
+import com.denariidolor.data.repository.AccountRepository
+import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.data.repository.TransactionRepository
 import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.domain.model.ReportRow
 import com.denariidolor.domain.model.toDomainTransaction
+import com.denariidolor.domain.report.ReportText
 import com.denariidolor.util.DateUtils
+import kotlinx.coroutines.flow.first
+import java.time.Clock
 import java.time.YearMonth
 import javax.inject.Inject
 
 class GenerateReportUseCase @Inject constructor(
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val categoryRepository: CategoryRepository,
+    private val accountRepository: AccountRepository,
+    private val clock: Clock
 ) {
-    suspend operator fun invoke(year: Int, month: Int): MonthlyReport {
-        val (start, end) = DateUtils.monthRangeEpochMillis(year, month)
+    suspend operator fun invoke(period: YearMonth): MonthlyReport {
+        val (start, end) = DateUtils.monthRangeEpochMillis(period.year, period.monthValue, clock.zone)
         val transactions = transactionRepository.getByDateRange(start, end)
-        val rows = transactions.map {
+            .sortedWith(compareBy({ it.dateEpochMillis }, { it.id }))
+        val categoryNames = categoryRepository.getAll().first().associate { it.id to it.name }
+        val accountNames = accountRepository.getAll().first().associate { it.id to it.name }
+        fun accountName(id: Long) = accountNames[id] ?: "#$id"
+
+        val rows = transactions.map { transaction ->
+            val source = accountName(transaction.accountId)
             ReportRow(
-                description = it.description,
-                categoryId = it.categoryId,
-                type = it.type,
-                amount = it.amount,
-                dateEpochMillis = it.dateEpochMillis
+                transactionId = transaction.id,
+                dateEpochMillis = transaction.dateEpochMillis,
+                type = transaction.type,
+                categoryName = categoryNames[transaction.categoryId] ?: "#${transaction.categoryId}",
+                description = transaction.description,
+                amount = transaction.amount,
+                paymentMethod = transaction.transferAccountId?.let { "$source → ${accountName(it)}" } ?: source
             )
         }
-        val income = rows.filter { it.type == "INCOME" }.sumOf { it.amount }
-        val expense = rows.filter { it.type == "EXPENSE" }.sumOf { it.amount }
-        val net = transactions.sumOf { it.toDomainTransaction().balanceImpact() }
-        val generatedAt = System.currentTimeMillis()
-        val csv = buildString {
-            appendLine("generated_at,${DateUtils.formatIso(generatedAt)}")
-            appendLine("description,category_id,type,amount,date")
-            rows.forEach {
-                appendLine("${escape(it.description)},${it.categoryId},${it.type},${it.amount},${DateUtils.formatIso(it.dateEpochMillis)}")
-            }
-        }
-
         return MonthlyReport(
-            monthLabel = YearMonth.of(year, month).toString(),
-            generatedAtEpochMillis = generatedAt,
-            totalIncome = income,
-            totalExpense = expense,
-            net = net,
-            rows = rows,
-            csv = csv
+            title = ReportText.TITLE,
+            period = period,
+            generatedAtEpochMillis = clock.millis(),
+            totalIncome = rows.filter { it.type == "INCOME" }.sumOf { it.amount },
+            totalExpense = rows.filter { it.type == "EXPENSE" }.sumOf { it.amount },
+            net = transactions.sumOf { it.toDomainTransaction().balanceImpact() },
+            rows = rows
         )
     }
-
-    private fun escape(input: String): String = '"' + input.replace("\"", "\"\"") + '"'
 }

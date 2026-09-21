@@ -53,8 +53,8 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 6. ~~Account balances never updated~~ — fixed in Phase 1a (stored balances updated atomically). Data created before then may be out of sync.
 7. ~~Duplicate-category validation / empty ViewModels~~ — done in Phases 1a/1b.
 8. Budget warning threshold (`warningThresholdPercent`) is stored but unused — only the hard limit blocks.
-9. Report rows lack **Category name** and **Payment Method** columns called for in the spec; `ReportRow` shows `categoryId`. No CSV export/share action.
-10. Search results are rendered as `"description: amount"` strings rather than a multi-column row model (can reuse `TransactionRow` from the Dashboard in Phase 3).
+9. ~~Report columns / export~~ — done in Phase 3.
+10. ~~Search result strings~~ — typed rows in Phase 3.
 11. Transaction `type` is a raw string in several places — candidate for an enum / sealed type.
 12. Money uses `Double`; consider `Long` minor units (cents) or `BigDecimal` to avoid rounding errors.
 13. No audit log or role checks (listed in the recommended stack).
@@ -64,7 +64,7 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 17. `NOTICE` file was copied from another project ("Cryptare", Go dependencies) and needs rewriting for this app.
 18. No source file currently has a license header, contrary to `CONTRIBUTING.md`.
 19. CI uses JDK 21, CD uses JDK 17; detekt/ktlint/sonar/dependencyCheck/jacoco/publishBundle plugins are referenced but not configured in Gradle.
-20. `AppScreens.kt` is ~950 lines (new screens now go in per-feature files); split per feature as screens grow. Spec calls for separate feature modules — currently single `:app` module.
+20. `AppScreens.kt` is ~815 lines (Login, Add/Edit, Settings remain; new screens go in per-feature files); split per feature as screens grow. Spec calls for separate feature modules — currently single `:app` module.
 
 ## Preferences & Conventions
 - Pair-programming style: minimal, clean, tested, secure code; no filler comments.
@@ -94,3 +94,6 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 | 2026-09-20 | DB key: random 256-bit, Base64 in a **separate** EncryptedSharedPreferences file (`db_key_prefs`) so "wipe all data" (which clears `secure_prefs`) can't orphan the DB key. Missing key + existing DB file → DB deleted and reseeded. | Avoids unopenable DB after wipe/key loss. |
 | 2026-09-20 | Pinned `net.zetetic:sqlcipher-android:4.6.1` + `androidx.sqlite:sqlite:2.4.0`. | Latest (4.18+) targets compileSdk 37/Room 3; 4.6.1 matches Room 2.6.1 / Kotlin 1.9 toolchain. Upgrade with Phase 5 toolchain bump. |
 | 2026-09-20 | Lockout also throttles security-answer attempts; biometric sign-in stays allowed during a PIN lockout and resets the counter on success. | Recovery is otherwise a brute-force bypass; biometrics have their own OS-level lockout. |
+| 2026-09-20 | Phase 3: **Payment Method = the transaction's account** (transfers show `Source → Destination`); no schema change. | User choice. |
+| 2026-09-20 | Phase 3: exports offer **Save** (SAF `CreateDocument`) and **Share** (FileProvider over `cache/reports/`, cleared on each share). PDF via `android.graphics.pdf.PdfDocument`; CSV via a pure formatter with formula-injection guarding. | User choice; no storage permissions or third-party PDF library. |
+| 2026-09-20 | Phase 3: `TransactionRow` + row composable move to `presentation/ui/common` (shared by Dashboard and Search); money formatting moves to `util/MoneyFormat.kt`; search uses `flatMapLatest` over a filters `StateFlow`. | Reuse; fixes duplicate collectors on repeated searches. |

@@ -8,7 +8,7 @@ Roadmap derived from the project requirements and the 2026-09-20 code review. Se
 | Inheritance / polymorphism / encapsulation | ✅ Done | `Transaction` → `Expense`/`Income`/`Transfer`, `balanceImpact()` |
 | Search with multi-row results | 🟡 Partial | Query + parser done; results shown as plain strings |
 | Secure DB add / edit / delete | 🟡 Partial | Full add/edit/delete in UI; DB still unencrypted (Phase 2) |
-| Reports (multi-column, rows, timestamp, title) | 🟡 Partial | Missing category name + payment method; no export |
+| Reports (multi-column, rows, timestamp, title) | ✅ Done | 6 columns, title, period, timestamp, totals; CSV + PDF save/share |
 | Validation | ✅ Done | Amount, description, date, references, budget limit, duplicate names (category/account) |
 | Security | ✅ Done | PIN (PBKDF2) + lockout, strong biometrics, encrypted prefs, SQLCipher DB, no backups, R8, session timeout |
 | Scalability | 🟡 Partial | MVVM, repos, Hilt, use cases; single module (accepted); explicit migrations + exported schema |
@@ -45,11 +45,12 @@ Roadmap derived from the project requirements and the 2026-09-20 code review. Se
 - Deferred (not selected): audit log table, `FLAG_SECURE`, biometric `CryptoObject`.
 - Follow-up: upgrade SQLCipher to 4.1x with the Phase 5 toolchain upgrade (Kotlin 2.x / compileSdk 35+).
 
-## Phase 3 — Reports & Search UX
-- [ ] Report model columns: Date, Category (name), Description, Amount, Payment Method (add payment method / account name to transactions).
-- [ ] Report screen: title, generated timestamp, month picker, table via `LazyColumn`.
-- [ ] CSV **and** PDF export (both required) through SAF (`ACTION_CREATE_DOCUMENT`) / share sheet; PDF via `android.graphics.pdf.PdfDocument` unless a library is preferred.
-- [ ] Search results as a typed row model with multi-column layout; category dropdown instead of ID entry; date pickers.
+## Phase 3 — Reports & Search UX ✅ (pending local build verification)
+- [x] Report columns: Date, Type, Category (name), Description, Amount, Payment Method (= account).
+- [x] Report screen: title, generated timestamp, month navigation, scrollable table.
+- [x] CSV **and** PDF export via Save (SAF) and Share (FileProvider).
+- [x] Search: category picker, typed multi-row results with count, tap to edit, no duplicate collectors.
+- [ ] Verify locally: `./gradlew testDebugUnitTest connectedAndroidTest assembleRelease`.
 
 ## Phase 4 — GUI Polish
 - [ ] Dashboard cards (income/expense/net, budget progress), spending-by-category chart.

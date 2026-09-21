@@ -8,6 +8,7 @@ import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.data.repository.TransactionRepository
 import com.denariidolor.domain.usecase.DeleteTransactionUseCase
 import com.denariidolor.presentation.ui.common.UiMessage
+import com.denariidolor.presentation.ui.common.buildTransactionRows
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow

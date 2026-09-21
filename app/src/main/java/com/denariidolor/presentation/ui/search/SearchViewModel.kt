@@ -2,27 +2,58 @@ package com.denariidolor.presentation.ui.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.denariidolor.data.local.db.entity.TransactionEntity
+import com.denariidolor.data.repository.AccountRepository
+import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.domain.model.SearchFilters
 import com.denariidolor.domain.usecase.SearchTransactionUseCase
+import com.denariidolor.presentation.ui.common.PickerOption
+import com.denariidolor.presentation.ui.common.TransactionRow
+import com.denariidolor.presentation.ui.common.buildTransactionRows
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    private val searchTransactionUseCase: SearchTransactionUseCase
+    private val searchTransactionUseCase: SearchTransactionUseCase,
+    categoryRepository: CategoryRepository,
+    accountRepository: AccountRepository
 ) : ViewModel() {
-    private val _results = MutableStateFlow<List<String>>(emptyList())
-    val results: StateFlow<List<String>> = _results.asStateFlow()
+    private val filters = MutableStateFlow<SearchFilters?>(null)
 
-    fun search(filters: SearchFilters) {
-        viewModelScope.launch {
-            searchTransactionUseCase(filters).collect { entities ->
-                _results.value = entities.map { "${it.description}: ${it.amount}" }
+    val categoryOptions: StateFlow<List<PickerOption>> = categoryRepository.getAll()
+        .map { categories -> categories.map { PickerOption(it.id, it.name) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** `null` until the first search; afterwards a live, auto-updating result list. */
+    val results: StateFlow<List<TransactionRow>?> = combine(
+        filters.flatMapLatest { current ->
+            if (current == null) {
+                flowOf<List<TransactionEntity>?>(null)
+            } else {
+                flow { emitAll(searchTransactionUseCase(current)) }.catch { emit(emptyList()) }
             }
-        }
+        },
+        categoryRepository.getAll(),
+        accountRepository.getAll()
+    ) { transactions, categories, accounts ->
+        transactions?.let { buildTransactionRows(it, categories, accounts) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    fun search(newFilters: SearchFilters) {
+        filters.value = newFilters
     }
 }

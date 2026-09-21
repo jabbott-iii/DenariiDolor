@@ -4,7 +4,6 @@
     <string name="dashboard_income">Income: $%.2f</string>
     <string name="dashboard_expense">Expense: $%.2f</string>
     <string name="dashboard_net">Net: $%.2f</string>
-    <string name="report_summary">Month: %1$s\nIncome: $%2$.2f\nExpense: $%3$.2f\nNet: $%4$.2f</string>
     <string name="sign_in">Sign In</string>
     <string name="sign_in_with_biometrics">Sign In with Biometrics</string>
     <string name="biometric_sign_in_accessibility_label">Sign in with biometrics</string>
@@ -60,7 +59,6 @@
     </string-array>
     <string name="search">Search</string>
     <string name="search_description_hint">Description</string>
-    <string name="search_category_id_hint">Category ID</string>
     <string name="search_min_amount_hint">Min amount</string>
     <string name="search_max_amount_hint">Max amount</string>
     <string name="search_start_date_hint">Start date (YYYY-MM-DD)</string>
@@ -127,4 +125,27 @@
     <string name="invalid_budget_input">Enter a valid limit and a warning percentage from 1 to 100.</string>
     <string name="invalid_pin_attempts_left">Invalid PIN. %d attempt(s) left before a temporary lockout.</string>
     <string name="pin_locked_out">Too many failed attempts. Try again in %d seconds.</string>
+    <string name="search_all_categories">All categories</string>
+    <string name="search_clear">Clear</string>
+    <string name="search_result_count">%d result(s)</string>
+    <string name="search_no_results">No matching transactions.</string>
+    <string name="previous_month">‹ Prev</string>
+    <string name="next_month">Next ›</string>
+    <string name="report_generated">Generated %1$s</string>
+    <string name="report_totals">Income $%1$.2f · Expense $%2$.2f · Net $%3$.2f</string>
+    <string name="report_col_date">Date</string>
+    <string name="report_col_type">Type</string>
+    <string name="report_col_category">Category</string>
+    <string name="report_col_description">Description</string>
+    <string name="report_col_amount">Amount</string>
+    <string name="report_col_payment">Payment Method</string>
+    <string name="report_empty">No transactions in this month.</string>
+    <string name="report_load_failed">Couldn\'t generate the report. Try again.</string>
+    <string name="save_csv">Save CSV</string>
+    <string name="save_pdf">Save PDF</string>
+    <string name="share_csv">Share CSV</string>
+    <string name="share_pdf">Share PDF</string>
+    <string name="share_report">Share report</string>
+    <string name="report_saved">Report saved.</string>
+    <string name="report_export_failed">Couldn\'t export the report.</string>
 </resources>

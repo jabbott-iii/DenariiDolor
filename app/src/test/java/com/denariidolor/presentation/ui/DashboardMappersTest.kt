@@ -3,9 +3,10 @@ package com.denariidolor.presentation.ui
 import com.denariidolor.data.local.db.entity.AccountEntity
 import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.data.local.db.entity.TransactionEntity
-import com.denariidolor.presentation.ui.dashboard.buildTransactionRows
-import com.denariidolor.presentation.ui.dashboard.formatSignedAmount
+import com.denariidolor.presentation.ui.common.buildTransactionRows
 import com.denariidolor.presentation.ui.dashboard.summarize
+import com.denariidolor.util.formatMoney
+import com.denariidolor.util.formatSignedAmount
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.ZoneId
@@ -62,6 +63,7 @@ class DashboardMappersTest {
         assertEquals("-$4.50", formatSignedAmount("EXPENSE", 4.5))
         assertEquals("+$1200.00", formatSignedAmount("INCOME", 1200.0))
         assertEquals("$80.00", formatSignedAmount("TRANSFER", 80.0))
+        assertEquals("$0.50", formatMoney(0.5))
     }
 
     @Test

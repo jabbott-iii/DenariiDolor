@@ -19,10 +19,10 @@ import com.denariidolor.presentation.ui.budget.ManageBudgetsScreen
 import com.denariidolor.presentation.ui.category.ManageCategoriesScreen
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
 import com.denariidolor.presentation.ui.common.PickerOption
+import com.denariidolor.presentation.ui.common.TransactionRow
+import com.denariidolor.presentation.ui.common.TransactionRowTagPrefix
 import com.denariidolor.presentation.ui.dashboard.DashboardScreen
 import com.denariidolor.presentation.ui.dashboard.DashboardUiState
-import com.denariidolor.presentation.ui.dashboard.RecentTransactionRowTagPrefix
-import com.denariidolor.presentation.ui.dashboard.TransactionRow
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
 import com.denariidolor.presentation.ui.transaction.TransactionFormInput
 import org.junit.Assert.assertEquals
@@ -63,7 +63,7 @@ class CrudScreensTest {
             }
         }
 
-        composeRule.onNodeWithTag(RecentTransactionRowTagPrefix + 7).performClick()
+        composeRule.onNodeWithTag(TransactionRowTagPrefix + 7).performClick()
 
         assertEquals(7L, editedId)
     }

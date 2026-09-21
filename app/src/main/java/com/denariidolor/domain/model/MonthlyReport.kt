@@ -1,19 +1,23 @@
 package com.denariidolor.domain.model
 
+import java.time.YearMonth
+
 data class MonthlyReport(
-    val monthLabel: String,
+    val title: String,
+    val period: YearMonth,
     val generatedAtEpochMillis: Long,
     val totalIncome: Double,
     val totalExpense: Double,
     val net: Double,
-    val rows: List<ReportRow>,
-    val csv: String
+    val rows: List<ReportRow>
 )
 
 data class ReportRow(
-    val description: String,
-    val categoryId: Long,
+    val transactionId: Long,
+    val dateEpochMillis: Long,
     val type: String,
+    val categoryName: String,
+    val description: String,
     val amount: Double,
-    val dateEpochMillis: Long
+    val paymentMethod: String
 )
