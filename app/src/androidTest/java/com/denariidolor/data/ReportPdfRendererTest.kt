@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.denariidolor.data
 
 import android.graphics.pdf.PdfRenderer
@@ -7,6 +23,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.denariidolor.data.export.ReportPdfRenderer
 import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.domain.model.ReportRow
+import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.report.ReportText
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -23,11 +40,11 @@ class ReportPdfRendererTest {
         title = ReportText.TITLE,
         period = YearMonth.of(2026, 9),
         generatedAtEpochMillis = 0L,
-        totalIncome = 0.0,
-        totalExpense = rowCount.toDouble(),
-        net = -rowCount.toDouble(),
+        totalIncomeCents = 0L,
+        totalExpenseCents = rowCount * 100L,
+        netCents = -rowCount * 100L,
         rows = List(rowCount) { index ->
-            ReportRow(index.toLong(), 0L, "EXPENSE", "Category $index", "A long description that must be ellipsized $index", 1.0, "Cash")
+            ReportRow(index.toLong(), 0L, TransactionType.EXPENSE, "Category $index", "A long description that must be ellipsized $index", 100L, "Cash")
         }
     )
 

@@ -1,7 +1,24 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.denariidolor.domain.report
 
 import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.util.DateUtils
+import com.denariidolor.util.Money
 import java.time.ZoneId
 import java.util.Locale
 
@@ -13,18 +30,18 @@ object ReportCsvFormatter {
             appendRow("title", report.title)
             appendRow("period", ReportText.periodLabel(report.period, locale))
             appendRow("generated_at", ReportText.generatedLabel(report.generatedAtEpochMillis, zoneId))
-            appendRow("total_income", amount(report.totalIncome))
-            appendRow("total_expense", amount(report.totalExpense))
-            appendRow("net", amount(report.net))
+            appendRow("total_income", Money.toPlain(report.totalIncomeCents))
+            appendRow("total_expense", Money.toPlain(report.totalExpenseCents))
+            appendRow("net", Money.toPlain(report.netCents))
             append("\r\n")
             appendRow("date", "type", "category", "description", "amount", "payment_method")
             report.rows.forEach { row ->
                 appendRow(
                     DateUtils.formatLocalDate(row.dateEpochMillis, zoneId),
-                    row.type,
+                    row.type.name,
                     row.categoryName,
                     row.description,
-                    amount(row.amount),
+                    Money.toPlain(row.amountCents),
                     row.paymentMethod
                 )
             }
@@ -39,8 +56,6 @@ object ReportCsvFormatter {
             safe
         }
     }
-
-    private fun amount(value: Double): String = String.format(Locale.US, "%.2f", value)
 
     private fun StringBuilder.appendRow(vararg cells: String) {
         append(cells.joinToString(",") { escape(it) })

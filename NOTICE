@@ -2,4 +2,13 @@ DenariiDolor
 
 Copyright 2026 Joseph Anthony Abbott III
 
-This product includes third-party software:
+This product includes software developed by third parties:
+
+  - Android Jetpack / AndroidX libraries (Compose, Room, Lifecycle, Navigation,
+    Biometric, Security Crypto, SQLite) - The Android Open Source Project - Apache License 2.0
+  - Material Components for Android - Google LLC - Apache License 2.0
+  - Dagger / Hilt - Google LLC - Apache License 2.0
+  - Kotlin standard library and kotlinx.coroutines - JetBrains s.r.o. - Apache License 2.0
+  - Vico (charts) - Patryk Goworowski and Patrick Michalik - Apache License 2.0
+  - SQLCipher for Android (Community Edition) - Copyright (c) 2008-2024 Zetetic LLC -
+    BSD-style license (https://www.zetetic.net/sqlcipher/license/)

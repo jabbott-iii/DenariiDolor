@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.denariidolor.presentation.ui.dashboard
 
 import androidx.compose.foundation.layout.Arrangement
@@ -91,7 +107,7 @@ fun DashboardScreen(
             item { MutedText(stringResource(R.string.spending_none)) }
         } else {
             item {
-                val bars = state.spending.map { (it.name ?: otherLabel) to it.amount }
+                val bars = state.spending.map { (it.name ?: otherLabel) to it.amountCents }
                 SpendingChart(
                     bars = bars,
                     description = bars.joinToString { (name, amount) -> "$name ${formatMoney(amount)}" },
@@ -103,7 +119,7 @@ fun DashboardScreen(
                     CategoryIconBadge(iconKey = spend.iconKey, size = 28.dp)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = spend.name ?: otherLabel, modifier = Modifier.weight(1f))
-                    Text(text = formatMoney(spend.amount))
+                    Text(text = formatMoney(spend.amountCents))
                 }
             }
         }
@@ -116,7 +132,7 @@ fun DashboardScreen(
             items(state.balances, key = { "balance_${it.id}" }) { account ->
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Text(text = account.name, modifier = Modifier.weight(1f))
-                    Text(text = formatMoney(account.balance))
+                    Text(text = formatMoney(account.balanceCents))
                 }
             }
         }
@@ -154,14 +170,14 @@ private fun SummarySection(state: DashboardUiState) {
         )
         Text(text = stringResource(R.string.net_this_month), style = MaterialTheme.typography.titleSmall)
         Text(
-            text = formatMoney(state.summary.net),
+            text = formatMoney(state.summary.netCents),
             style = MaterialTheme.typography.displayMedium,
             fontWeight = FontWeight.SemiBold
         )
         Spacer(modifier = Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatTile(stringResource(R.string.income_this_month), formatMoney(state.summary.income), Modifier.weight(1f))
-            StatTile(stringResource(R.string.expense_this_month), formatMoney(state.summary.expense), Modifier.weight(1f))
+            StatTile(stringResource(R.string.income_this_month), formatMoney(state.summary.incomeCents), Modifier.weight(1f))
+            StatTile(stringResource(R.string.expense_this_month), formatMoney(state.summary.expenseCents), Modifier.weight(1f))
         }
     }
 }
@@ -213,7 +229,7 @@ private fun BudgetMeter(progress: BudgetProgress) {
             CategoryIconBadge(iconKey = progress.iconKey, size = 28.dp)
             Spacer(modifier = Modifier.width(8.dp))
             Text(text = progress.categoryName, modifier = Modifier.weight(1f))
-            Text(text = stringResource(R.string.budget_spent_of_limit, formatMoney(progress.spent), formatMoney(progress.limit)))
+            Text(text = stringResource(R.string.budget_spent_of_limit, formatMoney(progress.spentCents), formatMoney(progress.limitCents)))
         }
         Spacer(modifier = Modifier.height(6.dp))
         LinearProgressIndicator(

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.denariidolor.presentation.ui.transaction
 
 import androidx.lifecycle.SavedStateHandle
@@ -10,6 +26,7 @@ import com.denariidolor.domain.model.Expense
 import com.denariidolor.domain.model.Income
 import com.denariidolor.domain.model.Transaction
 import com.denariidolor.domain.model.Transfer
+import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.usecase.AddTransactionUseCase
 import com.denariidolor.domain.usecase.UpdateTransactionUseCase
 import com.denariidolor.presentation.ui.common.PickerOption
@@ -80,7 +97,7 @@ class TransactionViewModel @Inject constructor(
     fun saveTransaction(
         type: String,
         description: String,
-        amount: Double,
+        amountCents: Long,
         categoryId: Long,
         accountId: Long,
         transferAccountId: Long?,
@@ -90,9 +107,9 @@ class TransactionViewModel @Inject constructor(
             val result = runSuspendCatching {
                 buildTransaction(
                     id = transactionId ?: 0L,
-                    type = type.trim().uppercase(),
+                    type = TransactionType.parse(type),
                     description = description,
-                    amount = amount,
+                    amountCents = amountCents,
                     categoryId = categoryId,
                     accountId = accountId,
                     transferAccountId = transferAccountId,
@@ -110,30 +127,28 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
+    @Suppress("LongParameterList")
     private fun buildTransaction(
         id: Long,
-        type: String,
+        type: TransactionType,
         description: String,
-        amount: Double,
+        amountCents: Long,
         categoryId: Long,
         accountId: Long,
         transferAccountId: Long?,
         dateEpochMillis: Long
-    ): Transaction {
-        return when (type) {
-            "INCOME" -> Income(id, description, amount, categoryId, accountId, dateEpochMillis)
-            "EXPENSE" -> Expense(id, description, amount, categoryId, accountId, dateEpochMillis)
-            "TRANSFER" -> Transfer(
-                id = id,
-                description = description,
-                amount = amount,
-                categoryId = categoryId,
-                accountId = accountId,
-                transferAccountId = transferAccountId ?: throw IllegalArgumentException("Transfer destination is required"),
-                dateEpochMillis = dateEpochMillis
-            )
-            else -> throw IllegalArgumentException("Unsupported transaction type")
-        }
+    ): Transaction = when (type) {
+        TransactionType.INCOME -> Income(id, description, amountCents, categoryId, accountId, dateEpochMillis)
+        TransactionType.EXPENSE -> Expense(id, description, amountCents, categoryId, accountId, dateEpochMillis)
+        TransactionType.TRANSFER -> Transfer(
+            id = id,
+            description = description,
+            amountCents = amountCents,
+            categoryId = categoryId,
+            accountId = accountId,
+            transferAccountId = transferAccountId ?: throw IllegalArgumentException("Transfer destination is required"),
+            dateEpochMillis = dateEpochMillis
+        )
     }
 
     companion object {

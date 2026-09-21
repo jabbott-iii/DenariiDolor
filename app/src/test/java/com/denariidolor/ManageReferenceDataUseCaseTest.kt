@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.denariidolor
 
 import com.denariidolor.domain.usecase.AccountUseCases
@@ -55,9 +71,9 @@ class ManageReferenceDataUseCaseTest {
 
     @Test
     fun accountAddValidatesNameAndBalance() = runBlocking {
-        assertTrue(accounts.add("Credit Card", -250.0).isSuccess)
+        assertTrue(accounts.add("Credit Card", -25_000).isSuccess)
+        assertEquals(-25_000L, accountRepo.items.last().balanceCents)
         assertTrue(accounts.add("cash").isFailure)
-        assertTrue(accounts.add("Broken", Double.POSITIVE_INFINITY).isFailure)
     }
 
     @Test
@@ -70,20 +86,20 @@ class ManageReferenceDataUseCaseTest {
 
     @Test
     fun budgetSetValidatesAndReplacesExisting() = runBlocking {
-        val firstId = budgets.set(4, 200.0).getOrThrow()
-        val secondId = budgets.set(4, 300.0, 90).getOrThrow()
+        val firstId = budgets.set(4, 20_000).getOrThrow()
+        val secondId = budgets.set(4, 30_000, 90).getOrThrow()
 
         assertEquals(firstId, secondId)
-        assertEquals(300.0, budgetRepo.items.single().monthlyLimit, 0.0001)
+        assertEquals(30_000L, budgetRepo.items.single().monthlyLimitCents)
         assertEquals(90, budgetRepo.items.single().warningThresholdPercent)
-        assertTrue(budgets.set(4, 0.0).isFailure)
-        assertTrue(budgets.set(4, 100.0, 0).isFailure)
-        assertTrue(budgets.set(99, 100.0).isFailure)
+        assertTrue(budgets.set(4, 0).isFailure)
+        assertTrue(budgets.set(4, 10_000, 0).isFailure)
+        assertTrue(budgets.set(99, 10_000).isFailure)
     }
 
     @Test
     fun budgetDelete() = runBlocking {
-        budgets.set(4, 200.0)
+        budgets.set(4, 20_000)
         assertTrue(budgets.delete(4).isSuccess)
         assertTrue(budgets.delete(4).isFailure)
     }

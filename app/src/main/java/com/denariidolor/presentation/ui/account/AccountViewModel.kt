@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.denariidolor.presentation.ui.account
 
 import androidx.lifecycle.ViewModel
@@ -7,6 +23,7 @@ import com.denariidolor.data.local.db.entity.AccountEntity
 import com.denariidolor.data.repository.AccountRepository
 import com.denariidolor.domain.usecase.AccountUseCases
 import com.denariidolor.presentation.ui.common.UiMessage
+import com.denariidolor.util.Money
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -46,7 +63,7 @@ class AccountViewModel @Inject constructor(
     }
 
     companion object {
-        fun parseOpeningBalance(text: String): Double? =
-            text.trim().ifEmpty { "0" }.toDoubleOrNull()?.takeIf { it.isFinite() }
+        /** Blank means zero; otherwise at most 2 decimals, negative allowed (e.g. a credit card). */
+        fun parseOpeningBalance(text: String): Long? = if (text.isBlank()) 0L else Money.parseToCents(text)
     }
 }

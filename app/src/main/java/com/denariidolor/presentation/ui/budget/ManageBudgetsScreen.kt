@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.denariidolor.presentation.ui.budget
 
 import androidx.compose.foundation.layout.Column
@@ -24,6 +40,8 @@ import com.denariidolor.presentation.ui.common.FormField
 import com.denariidolor.presentation.ui.common.ManagedItemRow
 import com.denariidolor.presentation.ui.common.ScreenHeader
 import com.denariidolor.presentation.ui.common.UiMessageEffect
+import com.denariidolor.util.Money
+import com.denariidolor.util.formatMoney
 
 private const val DEFAULT_WARNING_PERCENT = "80"
 
@@ -60,7 +78,7 @@ fun ManageBudgetsScreen(
                 ManagedItemRow(
                     title = row.categoryName,
                     subtitle = row.budget?.let {
-                        stringResource(R.string.budget_summary, it.monthlyLimit, it.warningThresholdPercent)
+                        stringResource(R.string.budget_summary, formatMoney(it.monthlyLimitCents), it.warningThresholdPercent)
                     } ?: stringResource(R.string.no_budget),
                     onEdit = { editing = row },
                     onDelete = if (row.budget != null) ({ deleting = row }) else null,
@@ -78,7 +96,7 @@ fun ManageBudgetsScreen(
             fields = listOf(
                 FormField(
                     stringResource(R.string.budget_limit),
-                    row.budget?.monthlyLimit?.toBigDecimal()?.stripTrailingZeros()?.toPlainString().orEmpty(),
+                    row.budget?.monthlyLimitCents?.let(Money::toInput).orEmpty(),
                     KeyboardType.Decimal
                 ),
                 FormField(

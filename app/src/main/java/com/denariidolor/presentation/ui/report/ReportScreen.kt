@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.denariidolor.presentation.ui.report
 
 import android.content.ClipData
@@ -47,6 +63,7 @@ import com.denariidolor.domain.model.ReportRow
 import com.denariidolor.domain.report.ReportText
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.DateUtils
+import com.denariidolor.util.formatMoney
 import com.denariidolor.util.formatSignedAmount
 
 const val ReportTableTag = "reportTable"
@@ -149,7 +166,12 @@ fun ReportScreen(
             style = MaterialTheme.typography.bodySmall
         )
         Spacer(modifier = Modifier.height(4.dp))
-        Text(text = stringResource(R.string.report_totals, report.totalIncome, report.totalExpense, report.net))
+        Text(text = stringResource(
+                R.string.report_totals,
+                formatMoney(report.totalIncomeCents),
+                formatMoney(report.totalExpenseCents),
+                formatMoney(report.netCents)
+            ))
         Spacer(modifier = Modifier.height(8.dp))
         ExportButtons(enabled = !state.loading, onSave = onSave, onShare = onShare)
         Spacer(modifier = Modifier.height(8.dp))
@@ -204,10 +226,10 @@ private fun ReportTable(rows: List<ReportRow>, modifier: Modifier = Modifier) {
                     TableRow(
                         cells = listOf(
                             DateUtils.formatLocalDate(row.dateEpochMillis),
-                            row.type,
+                            row.type.name,
                             row.categoryName,
                             row.description,
-                            formatSignedAmount(row.type, row.amount),
+                            formatSignedAmount(row.type, row.amountCents),
                             row.paymentMethod
                         ),
                         header = false

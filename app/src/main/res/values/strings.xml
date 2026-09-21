@@ -104,20 +104,20 @@
     <string name="rename_account">Rename Account</string>
     <string name="account_name">Account name</string>
     <string name="opening_balance">Opening balance</string>
-    <string name="account_balance">Balance: $%.2f</string>
+    <string name="account_balance">Balance: %1$s</string>
     <string name="account_saved">Account saved.</string>
     <string name="account_deleted">Account deleted.</string>
-    <string name="invalid_opening_balance">Enter a valid opening balance.</string>
+    <string name="invalid_opening_balance">Enter a valid opening balance (at most 2 decimals).</string>
     <string name="set_budget">Set Budget</string>
     <string name="budget_for_category">Budget: %1$s</string>
     <string name="budget_limit">Monthly limit</string>
     <string name="budget_warning_percent">Warning threshold (percent of limit)</string>
-    <string name="budget_summary">Limit $%1$.2f · warn at %2$d%%</string>
+    <string name="budget_summary">Limit %1$s · warn at %2$d%%</string>
     <string name="no_budget">No budget set</string>
     <string name="remove">Remove</string>
     <string name="budget_saved">Budget saved.</string>
     <string name="budget_deleted">Budget removed.</string>
-    <string name="invalid_budget_input">Enter a valid limit and a warning percentage from 1 to 100.</string>
+    <string name="invalid_budget_input">Enter a limit with at most 2 decimals and a warning percentage from 1 to 100.</string>
     <string name="invalid_pin_attempts_left">Invalid PIN. %d attempt(s) left before a temporary lockout.</string>
     <string name="pin_locked_out">Too many failed attempts. Try again in %d seconds.</string>
     <string name="search_all_categories">All categories</string>
@@ -127,7 +127,7 @@
     <string name="previous_month">‹ Prev</string>
     <string name="next_month">Next ›</string>
     <string name="report_generated">Generated %1$s</string>
-    <string name="report_totals">Income $%1$.2f · Expense $%2$.2f · Net $%3$.2f</string>
+    <string name="report_totals">Income %1$s · Expense %2$s · Net %3$s</string>
     <string name="report_col_date">Date</string>
     <string name="report_col_type">Type</string>
     <string name="report_col_category">Category</string>
@@ -161,4 +161,5 @@
     </plurals>
     <string name="edit_category">Edit Category</string>
     <string name="category_icon_label">Icon: %1$s</string>
+    <string name="invalid_amount_message">Enter an amount greater than 0 with at most 2 decimals.</string>
 </resources>

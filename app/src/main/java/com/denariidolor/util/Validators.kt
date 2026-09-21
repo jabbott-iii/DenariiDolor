@@ -1,9 +1,25 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.denariidolor.util
 
 import com.denariidolor.domain.model.SearchFilters
 
 object Validators {
-    fun isValidAmount(amount: Double): Boolean = amount > 0.0 && amount.isFinite()
+    fun isValidAmount(amountCents: Long): Boolean = amountCents > 0
 
     fun isValidDescription(description: String): Boolean = description.isNotBlank()
 
@@ -15,10 +31,8 @@ object Validators {
 
     fun isValidPercent(percent: Int): Boolean = percent in 1..100
 
-    fun isValidBalance(balance: Double): Boolean = balance.isFinite()
-
     fun isValidSearchRange(filters: SearchFilters): Boolean {
-        val amountOk = (filters.minAmount == null || filters.maxAmount == null || filters.minAmount <= filters.maxAmount)
+        val amountOk = (filters.minAmountCents == null || filters.maxAmountCents == null || filters.minAmountCents <= filters.maxAmountCents)
         val dateOk = (filters.startDateEpochMillis == null || filters.endDateEpochMillis == null ||
             filters.startDateEpochMillis <= filters.endDateEpochMillis)
         return amountOk && dateOk

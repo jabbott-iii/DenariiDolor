@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.denariidolor.presentation.ui.dashboard
 
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,7 +27,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.denariidolor.presentation.ui.common.LocalVizColors
-import com.denariidolor.util.formatMoney
+import com.denariidolor.util.Money
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
@@ -23,6 +39,9 @@ import com.patrykandpatrick.vico.core.axis.AxisPosition
 import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
 import com.patrykandpatrick.vico.core.entry.entryModelOf
 import com.patrykandpatrick.vico.core.entry.entryOf
+import java.math.BigDecimal
+import java.math.RoundingMode
+import java.util.Locale
 import kotlin.math.roundToLong
 
 const val SpendingChartTag = "spendingChart"
@@ -30,10 +49,10 @@ private const val MAX_LABEL_CHARS = 9
 
 /** Single-series column chart (categorical slot 1). The title names the series, so no legend; values are listed below it. */
 @Composable
-fun SpendingChart(bars: List<Pair<String, Double>>, description: String, modifier: Modifier = Modifier) {
+fun SpendingChart(bars: List<Pair<String, Long>>, description: String, modifier: Modifier = Modifier) {
     val viz = LocalVizColors.current
     val colors = MaterialTheme.colorScheme
-    val model = remember(bars) { entryModelOf(bars.mapIndexed { index, (_, amount) -> entryOf(index, amount) }) }
+    val model = remember(bars) { entryModelOf(bars.mapIndexed { index, (_, cents) -> entryOf(index, Money.toDouble(cents)) }) }
     val labels = remember(bars) { bars.map { (label, _) -> shorten(label) } }
 
     ProvideChartStyle(
@@ -76,8 +95,9 @@ fun SpendingChart(bars: List<Pair<String, Double>>, description: String, modifie
 private fun shorten(label: String): String =
     if (label.length <= MAX_LABEL_CHARS) label else label.take(MAX_LABEL_CHARS - 1) + "…"
 
-internal fun compactMoney(value: Float): String = when {
-    value >= 1_000_000f -> "$" + String.format(java.util.Locale.US, "%.1fM", value / 1_000_000f)
-    value >= 1_000f -> "$" + String.format(java.util.Locale.US, "%.1fK", value / 1_000f)
-    else -> formatMoney(value.toDouble()).substringBefore(".00")
+/** Axis labels in dollars: `$5`, `$12.5`, `$1.5K`, `$2.0M`. */
+internal fun compactMoney(dollars: Float): String = when {
+    dollars >= 1_000_000f -> "$" + String.format(Locale.US, "%.1fM", dollars / 1_000_000f)
+    dollars >= 1_000f -> "$" + String.format(Locale.US, "%.1fK", dollars / 1_000f)
+    else -> "$" + BigDecimal(dollars.toString()).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
 }

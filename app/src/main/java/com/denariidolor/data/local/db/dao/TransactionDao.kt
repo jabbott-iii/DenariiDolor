@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.denariidolor.data.local.db.dao
 
 import androidx.room.Dao
@@ -21,8 +37,8 @@ interface TransactionDao {
         SELECT * FROM transactions
         WHERE (:description IS NULL OR description LIKE '%' || :description || '%')
           AND (:categoryId IS NULL OR categoryId = :categoryId)
-          AND (:minAmount IS NULL OR amount >= :minAmount)
-          AND (:maxAmount IS NULL OR amount <= :maxAmount)
+          AND (:minAmountCents IS NULL OR amountCents >= :minAmountCents)
+          AND (:maxAmountCents IS NULL OR amountCents <= :maxAmountCents)
           AND (:startDate IS NULL OR dateEpochMillis >= :startDate)
           AND (:endDate IS NULL OR dateEpochMillis <= :endDate)
         ORDER BY dateEpochMillis DESC
@@ -31,8 +47,8 @@ interface TransactionDao {
     fun search(
         description: String?,
         categoryId: Long?,
-        minAmount: Double?,
-        maxAmount: Double?,
+        minAmountCents: Long?,
+        maxAmountCents: Long?,
         startDate: Long?,
         endDate: Long?
     ): Flow<List<TransactionEntity>>
@@ -48,7 +64,7 @@ interface TransactionDao {
 
     @Query(
         """
-        SELECT COALESCE(SUM(amount), 0) FROM transactions
+        SELECT COALESCE(SUM(amountCents), 0) FROM transactions
         WHERE type = 'EXPENSE' AND categoryId = :categoryId
           AND dateEpochMillis BETWEEN :startInclusive AND :endInclusive
           AND id != :excludeTransactionId
@@ -59,7 +75,7 @@ interface TransactionDao {
         startInclusive: Long,
         endInclusive: Long,
         excludeTransactionId: Long
-    ): Double
+    ): Long
 
     @Query("SELECT * FROM transactions WHERE id = :id")
     suspend fun getById(id: Long): TransactionEntity?

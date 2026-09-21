@@ -1,6 +1,23 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.denariidolor
 
 import com.denariidolor.data.local.db.entity.TransactionEntity
+import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.report.ReportText
 import com.denariidolor.domain.usecase.GenerateReportUseCase
 import com.denariidolor.testutil.FakeAccountRepository
@@ -24,10 +41,10 @@ class GenerateReportUseCaseTest {
 
     private val transactions = FakeTransactionRepository(
         listOf(
-            TransactionEntity(id = 1, type = "EXPENSE", description = "Rent", amount = 900.0, categoryId = 4, accountId = 1, dateEpochMillis = start + 2_000),
-            TransactionEntity(id = 2, type = "INCOME", description = "Salary", amount = 2000.0, categoryId = 2, accountId = 1, dateEpochMillis = start + 1_000),
-            TransactionEntity(id = 3, type = "TRANSFER", description = "Savings", amount = 300.0, categoryId = 3, accountId = 1, transferAccountId = 2, dateEpochMillis = start + 3_000),
-            TransactionEntity(id = 4, type = "EXPENSE", description = "Old", amount = 50.0, categoryId = 99, accountId = 1, dateEpochMillis = start - 1)
+            TransactionEntity(id = 1, type = TransactionType.EXPENSE, description = "Rent", amountCents = 90_000, categoryId = 4, accountId = 1, dateEpochMillis = start + 2_000),
+            TransactionEntity(id = 2, type = TransactionType.INCOME, description = "Salary", amountCents = 200_000, categoryId = 2, accountId = 1, dateEpochMillis = start + 1_000),
+            TransactionEntity(id = 3, type = TransactionType.TRANSFER, description = "Savings", amountCents = 30_000, categoryId = 3, accountId = 1, transferAccountId = 2, dateEpochMillis = start + 3_000),
+            TransactionEntity(id = 4, type = TransactionType.EXPENSE, description = "Old", amountCents = 5_000, categoryId = 99, accountId = 1, dateEpochMillis = start - 1)
         )
     )
     private val useCase = GenerateReportUseCase(
@@ -44,9 +61,9 @@ class GenerateReportUseCaseTest {
         assertEquals(ReportText.TITLE, report.title)
         assertEquals(september, report.period)
         assertEquals(clock.millis(), report.generatedAtEpochMillis)
-        assertEquals(2000.0, report.totalIncome, 0.0001)
-        assertEquals(900.0, report.totalExpense, 0.0001)
-        assertEquals(1100.0, report.net, 0.0001)
+        assertEquals(200_000L, report.totalIncomeCents)
+        assertEquals(90_000L, report.totalExpenseCents)
+        assertEquals(110_000L, report.netCents)
     }
 
     @Test

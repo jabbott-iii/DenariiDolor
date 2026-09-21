@@ -1,7 +1,22 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.denariidolor.presentation.ui
 
 import androidx.activity.ComponentActivity
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
@@ -16,6 +31,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import com.denariidolor.data.local.db.entity.BudgetEntity
 import com.denariidolor.data.local.db.entity.CategoryEntity
+import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.presentation.ui.budget.BudgetRow
 import com.denariidolor.presentation.ui.budget.ManageBudgetsScreen
 import com.denariidolor.presentation.ui.category.CategoryIconOptionTagPrefix
@@ -45,7 +61,7 @@ class CrudScreensTest {
     private val row = TransactionRow(
         id = 7,
         description = "Coffee",
-        type = "EXPENSE",
+        type = TransactionType.EXPENSE,
         amountText = "-$4.50",
         categoryName = "Dining",
         accountLabel = "Cash",
@@ -192,8 +208,8 @@ class CrudScreensTest {
             DenariiDolorTheme {
                 DashboardScreen(
                     DashboardUiState(
-                        spending = listOf(CategorySpend(4, "Dining", "dining", 95.0)),
-                        budgets = listOf(BudgetProgress(4, "Dining", "dining", spent = 95.0, limit = 100.0, warningPercent = 80))
+                        spending = listOf(CategorySpend(4, "Dining", "dining", 9_500)),
+                        budgets = listOf(BudgetProgress(4, "Dining", "dining", spentCents = 9_500, limitCents = 10_000, warningPercent = 80))
                     ),
                     onEditTransaction = {},
                     onDeleteTransaction = {}
@@ -212,7 +228,7 @@ class CrudScreensTest {
         composeRule.setContent {
             DenariiDolorTheme {
                 DashboardScreen(
-                    DashboardUiState(budgets = listOf(BudgetProgress(4, "Dining", "dining", spent = 10.0, limit = 100.0, warningPercent = 80))),
+                    DashboardUiState(budgets = listOf(BudgetProgress(4, "Dining", "dining", spentCents = 1_000, limitCents = 10_000, warningPercent = 80))),
                     onEditTransaction = {},
                     onDeleteTransaction = {}
                 )
@@ -230,7 +246,7 @@ class CrudScreensTest {
             DenariiDolorTheme {
                 ManageBudgetsScreen(
                     rows = listOf(
-                        BudgetRow(1, "Groceries", BudgetEntity(id = 1, categoryId = 1, monthlyLimit = 200.0)),
+                        BudgetRow(1, "Groceries", BudgetEntity(id = 1, categoryId = 1, monthlyLimitCents = 20_000)),
                         BudgetRow(2, "Dining", null)
                     ),
                     onBack = {},

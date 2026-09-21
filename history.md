@@ -172,3 +172,37 @@ Chronological log of work sessions: what changed, why, and what was verified. Ne
 **Known limits**
 - The Vico chart has no per-bar tooltip (the marker API wasn't used); the value list under the chart carries exact numbers.
 - Existing installs keep the old default icon on the seeded Income/Transfer categories; edit them to pick an icon.
+
+## 2026-09-20 — Phase 5: Code quality & scalability
+**User choices:** toolchain upgrade deferred to its own step; money → **Long cents**; **ktlint + detekt + jacoco** configured.
+
+**Money & types**
+| Area | Change |
+|---|---|
+| `domain/model/TransactionType.kt` *(new)* | Enum with a lenient `parse()`. Room stores it by name, so the column stays TEXT with the same values. |
+| `util/MoneyFormat.kt` | `Money.parseToCents` (BigDecimal; rejects >2 decimals, exponents, out-of-range), `toPlain`, `toInput`, `toDouble`; `formatMoney(cents)` gives `-$1.00` style; `formatSignedAmount(TransactionType, cents)`. |
+| Entities / DAOs | `amountCents`, `balanceCents`, `monthlyLimitCents` (Long); `adjustBalance(deltaCents)`; expense total returns Long; search uses `min/maxAmountCents`. |
+| `data/local/db/Migrations.kt` *(new)*, `AppDatabase` v2, `DatabaseModule` | **First real migration**: rebuilds `accounts`, `budgets`, `transactions`, converting with `CAST(ROUND(x*100) AS INTEGER)`, then recreates indices. |
+| Domain | `Transaction.amountCents`, `type`, `balanceImpact(): Long`, `accountImpacts(): Map<Long, Long>`; Ledger in Long; validation/budget checks in Long; report totals and rows in cents with `TransactionType`. |
+| Presentation | Parsing goes through `Money` (form, search, opening balance, budget limit), with an inline "invalid amount" message on the form; dashboard/budget math in integer cents (`spent*100 >= limit*pct`); chart converts cents → dollars only at the edge; strings switched from `$%.2f` to `%s` with `formatMoney`. |
+
+**Tooling**
+- Version catalog rewritten: duplicate/unused aliases removed (5× activity-compose, constraintlayout, recyclerview, navigation-fragment/ui, android-library plugin); root build uses catalog aliases.
+- `ktlint` (Gradle plugin 12.1.1, ktlint 1.3.1, `android_studio` style via `.editorconfig`, Compose naming allowed) and `detekt` 1.23.6 (`config/detekt/detekt.yml`, Compose-aware overrides).
+- JaCoCo via AGP `enableUnitTestCoverage` → `createDebugUnitTestCoverageReport`.
+- CI: JDK 17 everywhere; coverage step uses the real task; SonarQube step and dependency-check job removed; ktlint/detekt run for real but are **non-blocking** until the first cleanup pass. security.yml: empty dependency-scanning stub removed; CodeQL builds with `assembleDebug` (so lint findings can't break it).
+- `NOTICE` lists third-party attributions (including SQLCipher's BSD-style notice); Apache license header added to all 116 Kotlin files (CONTRIBUTING.md requirement).
+
+**Tests**
+- All unit and instrumented tests converted to cents/enum.
+- New: `MoneyTest`, `TransactionModelTest` (type + parse), `LedgerTest.centsAvoidFloatingPointDrift`, `ValidateTransactionUseCaseTest.expenseExactlyAtLimitIsAllowed`.
+- New ViewModel tests with `kotlinx-coroutines-test` + `MainDispatcherRule`: `DashboardViewModelTest`, `TransactionViewModelTest`.
+- New instrumented: `MigrationTest` (v1→v2 values, FK check), `TransactionDaoTest` (search filters, expense total exclusion, transfer-destination count).
+- Fixed a pre-existing compile error: `import androidx.compose.ui.test.assertDoesNotExist` (a member function, not importable) in `ComposeScreensTest` and `CrudScreensTest`.
+
+**Independent review:** a separate agent reviewed every file as a "compiler". It found the import error above (fixed) and the schema-file issue below; the migration schema, symbols, strings, catalog aliases, and all test arithmetic checked out.
+
+**Before first run**
+1. Build once, then **commit `app/schemas/.../2.json`**. `MigrationTest` reads it from test assets, and a clean CI checkout may not have it otherwise.
+2. `./gradlew ktlintFormat` once, then review `./gradlew detekt` (or `detektBaseline`) before making those CI steps blocking.
+3. Verify: `./gradlew testDebugUnitTest createDebugUnitTestCoverageReport connectedAndroidTest assembleRelease`.

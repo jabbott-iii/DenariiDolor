@@ -38,70 +38,16 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '21'
+        java-version: '17'
         cache: gradle
 
     - name: Make Gradle wrapper executable
       run: chmod +x ./gradlew
 
     - name: Build with Gradle
-      run: ./gradlew build --no-daemon -x test
+      run: ./gradlew assembleDebug --no-daemon
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
       with:
         category: "/language:java-kotlin"
-
-  dependency-scanning:
-    name: Dependency Vulnerability Scanning
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '21'
-        cache: gradle
-
-    - name: Make Gradle wrapper executable
-      run: chmod +x ./gradlew
-
-  sast-kotlin:
-    name: Static Analysis (Detekt + Ktlint)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '21'
-        cache: gradle
-
-    - name: Make Gradle wrapper executable
-      run: chmod +x ./gradlew
-
-    - name: Run Detekt (Static Analysis)
-      run: ./gradlew detekt --no-daemon || true
-      continue-on-error: true
-
-    - name: Run Ktlint (Code Style)
-      run: ./gradlew ktlintCheck --no-daemon || true
-      continue-on-error: true
-
-    - name: Upload Detekt Report
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: detekt-report
-        path: build/reports/detekt/
-        retention-days: 30

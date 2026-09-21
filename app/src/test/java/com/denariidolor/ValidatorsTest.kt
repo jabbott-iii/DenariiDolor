@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.denariidolor
 
 import com.denariidolor.domain.model.SearchFilters
@@ -9,17 +25,18 @@ import org.junit.Test
 class ValidatorsTest {
     @Test
     fun amountAndDescriptionValidation() {
-        assertTrue(Validators.isValidAmount(10.0))
-        assertFalse(Validators.isValidAmount(0.0))
+        assertTrue(Validators.isValidAmount(1_000L))
+        assertFalse(Validators.isValidAmount(0L))
+        assertFalse(Validators.isValidAmount(-1L))
         assertTrue(Validators.isValidDescription("Rent"))
         assertFalse(Validators.isValidDescription("   "))
     }
 
     @Test
     fun rangeValidationRejectsInvertedRanges() {
-        assertFalse(Validators.isValidSearchRange(SearchFilters(minAmount = 100.0, maxAmount = 50.0)))
+        assertFalse(Validators.isValidSearchRange(SearchFilters(minAmountCents = 10_000, maxAmountCents = 5_000)))
         assertFalse(Validators.isValidSearchRange(SearchFilters(startDateEpochMillis = 2L, endDateEpochMillis = 1L)))
-        assertTrue(Validators.isValidSearchRange(SearchFilters(minAmount = 1.0, maxAmount = 2.0)))
+        assertTrue(Validators.isValidSearchRange(SearchFilters(minAmountCents = 100, maxAmountCents = 200)))
     }
 
     @Test
@@ -30,6 +47,5 @@ class ValidatorsTest {
         assertTrue(Validators.isValidPercent(80))
         assertFalse(Validators.isValidPercent(0))
         assertFalse(Validators.isValidPercent(101))
-        assertFalse(Validators.isValidBalance(Double.NaN))
     }
 }

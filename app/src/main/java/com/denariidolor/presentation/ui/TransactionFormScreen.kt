@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.denariidolor.presentation.ui
@@ -41,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.denariidolor.R
+import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.presentation.ui.common.ReferencePicker
 import com.denariidolor.presentation.ui.common.ScreenHeader
@@ -50,6 +67,7 @@ import com.denariidolor.presentation.ui.transaction.TransactionFormState
 import com.denariidolor.presentation.ui.transaction.TransactionViewModel
 import com.denariidolor.util.Constants
 import com.denariidolor.util.DateUtils
+import com.denariidolor.util.Money
 import java.time.LocalDate
 
 internal const val TransactionTypeFieldTag = "transactionTypeField"
@@ -108,7 +126,7 @@ internal fun AddTransactionRoute(
 
 @Composable
 fun AddTransactionScreen(
-    onSave: (String, String, Double, Long, Long, Long?, Long) -> Unit,
+    onSave: (type: String, description: String, amountCents: Long, categoryId: Long, accountId: Long, transferAccountId: Long?, dateEpochMillis: Long) -> Unit,
     onShowMessage: (String) -> Unit,
     categories: List<PickerOption> = emptyList(),
     accounts: List<PickerOption> = emptyList(),
@@ -138,6 +156,7 @@ fun AddTransactionScreen(
     var dropdownExpanded by rememberSaveable { mutableStateOf(false) }
     val invalidDateMessage = stringResource(R.string.invalid_date_message)
     val referenceRequiredMessage = stringResource(R.string.transaction_reference_required_message)
+    val invalidAmountMessage = stringResource(R.string.invalid_amount_message)
     val datePlaceholder = stringResource(R.string.date_hint)
 
     Column(
@@ -223,7 +242,7 @@ fun AddTransactionScreen(
             onSelected = { accountId = it },
             fieldModifier = Modifier.testTag(AccountPickerTag)
         )
-        if (selectedType == "TRANSFER") {
+        if (selectedType == TransactionType.TRANSFER.name) {
             Spacer(modifier = Modifier.height(8.dp))
             ReferencePicker(
                 label = stringResource(R.string.transaction_transfer_account_label),
@@ -242,11 +261,13 @@ fun AddTransactionScreen(
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
+                val amountCents = Money.parseToCents(amount)?.takeIf { it > 0 }
+                    ?: return@Button onShowMessage(invalidAmountMessage)
                 val parsedCategoryId = categoryId.toLongOrNull()
                     ?: return@Button onShowMessage(referenceRequiredMessage)
                 val parsedAccountId = accountId.toLongOrNull()
                     ?: return@Button onShowMessage(referenceRequiredMessage)
-                val parsedTransferAccountId = if (selectedType == "TRANSFER") {
+                val parsedTransferAccountId = if (selectedType == TransactionType.TRANSFER.name) {
                     transferAccountId.toLongOrNull()
                         ?: return@Button onShowMessage(referenceRequiredMessage)
                 } else {
@@ -265,7 +286,7 @@ fun AddTransactionScreen(
                 onSave(
                     selectedType,
                     description,
-                    amount.toDoubleOrNull() ?: 0.0,
+                    amountCents,
                     parsedCategoryId,
                     parsedAccountId,
                     parsedTransferAccountId,
@@ -336,7 +357,7 @@ internal fun applyTransactionTypeDefaults(
         accountId = accountId.ifBlank {
             Constants.DEFAULT_CASH_ACCOUNT_ID.toString()
         },
-        transferAccountId = if (selectedType == "TRANSFER") {
+        transferAccountId = if (selectedType == TransactionType.TRANSFER.name) {
             Constants.DEFAULT_SAVINGS_ACCOUNT_ID.toString()
         } else {
             ""
@@ -346,8 +367,8 @@ internal fun applyTransactionTypeDefaults(
 
 internal fun defaultCategoryId(type: String): Long {
     return when (type) {
-        "INCOME" -> Constants.DEFAULT_INCOME_CATEGORY_ID
-        "TRANSFER" -> Constants.DEFAULT_TRANSFER_CATEGORY_ID
+        TransactionType.INCOME.name -> Constants.DEFAULT_INCOME_CATEGORY_ID
+        TransactionType.TRANSFER.name -> Constants.DEFAULT_TRANSFER_CATEGORY_ID
         else -> Constants.DEFAULT_EXPENSE_CATEGORY_ID
     }
 }

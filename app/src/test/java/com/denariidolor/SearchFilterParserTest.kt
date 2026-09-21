@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.denariidolor
 
 import com.denariidolor.presentation.ui.search.SearchFilterParser
@@ -23,8 +39,8 @@ class SearchFilterParserTest {
 
         assertEquals("Groceries", filters.description)
         assertEquals(1L, filters.categoryId)
-        assertEquals(10.5, filters.minAmount)
-        assertEquals(20.5, filters.maxAmount)
+        assertEquals(1_050L, filters.minAmountCents)
+        assertEquals(2_050L, filters.maxAmountCents)
         assertEquals(1_725_148_800_000L, filters.startDateEpochMillis)
         assertEquals(1_727_740_799_999L, filters.endDateEpochMillis)
     }
@@ -108,8 +124,8 @@ class SearchFilterParserTest {
 
         assertNull(filters.description)
         assertNull(filters.categoryId)
-        assertNull(filters.minAmount)
-        assertNull(filters.maxAmount)
+        assertNull(filters.minAmountCents)
+        assertNull(filters.maxAmountCents)
         assertNull(filters.startDateEpochMillis)
         assertNull(filters.endDateEpochMillis)
     }

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.denariidolor.presentation.ui
 
 import androidx.activity.ComponentActivity
@@ -10,6 +26,7 @@ import androidx.compose.ui.test.performClick
 import com.denariidolor.data.export.ReportFormat
 import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.domain.model.ReportRow
+import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.report.ReportText
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
 import com.denariidolor.presentation.ui.common.TransactionRow
@@ -34,10 +51,10 @@ class ReportSearchScreensTest {
         title = ReportText.TITLE,
         period = period,
         generatedAtEpochMillis = 0L,
-        totalIncome = 100.0,
-        totalExpense = 40.0,
-        net = 60.0,
-        rows = listOf(ReportRow(1, 0L, "EXPENSE", "Dining", "Coffee", 40.0, "Visa"))
+        totalIncomeCents = 10_000,
+        totalExpenseCents = 4_000,
+        netCents = 6_000,
+        rows = listOf(ReportRow(1, 0L, TransactionType.EXPENSE, "Dining", "Coffee", 4_000, "Visa"))
     )
 
     @Test
@@ -86,7 +103,7 @@ class ReportSearchScreensTest {
             DenariiDolorTheme {
                 SearchScreen(
                     categories = emptyList(),
-                    results = listOf(TransactionRow(5, "Coffee", "EXPENSE", "-$4.00", "Dining", "Cash", "2026-09-20")),
+                    results = listOf(TransactionRow(5, "Coffee", TransactionType.EXPENSE, "-$4.00", "Dining", "Cash", "2026-09-20")),
                     onSearch = {},
                     onResultClick = { opened = it }
                 )

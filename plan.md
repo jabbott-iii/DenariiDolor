@@ -11,7 +11,7 @@ Roadmap derived from the project requirements and the 2026-09-20 code review. Se
 | Reports (multi-column, rows, timestamp, title) | ✅ Done | 6 columns, title, period, timestamp, totals; CSV + PDF save/share |
 | Validation | ✅ Done | Amount, description, date, references, budget limit, duplicate names (category/account) |
 | Security | ✅ Done | PIN (PBKDF2) + lockout, strong biometrics, encrypted prefs, SQLCipher DB, no backups, R8, session timeout |
-| Scalability | 🟡 Partial | MVVM, repos, Hilt, use cases; single module (accepted); explicit migrations + exported schema |
+| Scalability | ✅ Done | MVVM, repos, use cases, Hilt, typed enums, cents, explicit migrations + exported schema, lint/static analysis/coverage in CI |
 | GUI | ✅ Done | Bottom nav, FAB, monthly dashboard (hero, tiles, chart, budget meters, alerts), category icons, dark mode, manage screens |
 
 ## Phase 1 — Complete Core CRUD
@@ -62,15 +62,23 @@ Roadmap derived from the project requirements and the 2026-09-20 code review. Se
 - [ ] Verify locally: `./gradlew testDebugUnitTest connectedAndroidTest assembleRelease`.
 - Later: chart tooltip/marker; upgrade Vico to 2.x with the Kotlin 2 toolchain.
 
-## Phase 5 — Code Quality & Scalability
-- [ ] Replace string `type` with enum/sealed class + Room `TypeConverter`.
-- [ ] Money as `Long` cents (or `BigDecimal`) — decide before adding migrations.
-- [x] ~~Feature modules~~ — not required; keep single `:app` module with package-level separation.
-- [ ] Upgrade toolchain (Kotlin 2.x, compileSdk 35+), SQLCipher 4.1x, and Vico 2.x.
-- [ ] Clean `libs.versions.toml` (duplicate activity-compose aliases, unused navigation-fragment/ui, recyclerview, constraintlayout).
-- [ ] Configure or remove detekt/ktlint/jacoco/dependency-check/sonar in Gradle; align CI/CD JDK versions.
-- [ ] Rewrite `NOTICE`; add license headers per `CONTRIBUTING.md`.
-- [ ] Tests: DAO tests (in-memory Room), use-case tests for update/delete, ViewModel tests with `kotlinx-coroutines-test`.
+## Phase 5 — Code Quality & Scalability ✅ (pending local build verification)
+- [x] `TransactionType` enum replaces type strings.
+- [x] Money as `Long` cents end to end; DB v2 with the first Room `Migration` + migration test.
+- [x] Version catalog cleaned; root build uses aliases.
+- [x] ktlint + detekt + JaCoCo configured; CI/CD on JDK 17; sonar/dependency-check removed.
+- [x] `NOTICE` rewritten; license headers on all Kotlin sources.
+- [x] Tests: DAO (instrumented), migration, ViewModels (`kotlinx-coroutines-test`), Money.
+- [ ] Commit `app/schemas/.../2.json` after the first build.
+- [ ] `./gradlew ktlintFormat`; triage detekt; then make both CI steps blocking.
+- [ ] Verify locally: `./gradlew testDebugUnitTest createDebugUnitTestCoverageReport connectedAndroidTest assembleRelease`.
+- Feature modules: not required (user decision).
+
+## Phase 6 — Toolchain upgrade (separate step, per user)
+- [ ] Kotlin 2.x + Compose compiler Gradle plugin, AGP 8.7+, compileSdk/targetSdk 35.
+- [ ] Vico 2.x (API rewrite of `SpendingChart.kt`), SQLCipher 4.1x (+ androidx.sqlite 2.5), Room 2.7, KSP 2.
+- [ ] Replace deprecated `menuAnchor()` overloads; re-run the full test suite.
+- [ ] CD: `publishBundle` references an unconfigured Play publisher plugin — configure or remove.
 
 ## Resolved Questions (2026-09-20)
 1. Account balances — stored, and updated from transaction calculations.

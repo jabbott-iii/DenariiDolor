@@ -1,3 +1,19 @@
+/*
+ * Copyright 2026 Joseph Anthony Abbott III
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.denariidolor.testutil
 
 import com.denariidolor.data.local.db.entity.AccountEntity
@@ -9,12 +25,13 @@ import com.denariidolor.data.repository.BudgetRepository
 import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.data.repository.TransactionRepository
 import com.denariidolor.domain.model.SearchFilters
+import com.denariidolor.domain.model.TransactionType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 class FakeTransactionRepository(initial: List<TransactionEntity> = emptyList()) : TransactionRepository {
     val items = initial.toMutableList()
-    var expenseTotal = 0.0
+    var expenseTotalCents = 0L
     var lastExcludedTransactionId: Long? = null
     private var nextId = (initial.maxOfOrNull { it.id } ?: 0L) + 1
 
@@ -43,9 +60,9 @@ class FakeTransactionRepository(initial: List<TransactionEntity> = emptyList()) 
         startInclusive: Long,
         endInclusive: Long,
         excludeTransactionId: Long
-    ): Double {
+    ): Long {
         lastExcludedTransactionId = excludeTransactionId
-        return expenseTotal
+        return expenseTotalCents
     }
 
     override suspend fun countByCategory(categoryId: Long): Int = items.count { it.categoryId == categoryId }
@@ -125,16 +142,16 @@ object TestData {
         CategoryEntity(id = 4, name = "Groceries")
     )
     val accounts = listOf(
-        AccountEntity(id = 1, name = "Cash", balance = 0.0),
-        AccountEntity(id = 2, name = "Savings", balance = 0.0),
-        AccountEntity(id = 3, name = "Checking", balance = 0.0)
+        AccountEntity(id = 1, name = "Cash", balanceCents = 0L),
+        AccountEntity(id = 2, name = "Savings", balanceCents = 0L),
+        AccountEntity(id = 3, name = "Checking", balanceCents = 0L)
     )
 
-    fun expense(id: Long = 0, amount: Double = 20.0, categoryId: Long = 4, accountId: Long = 1) = TransactionEntity(
+    fun expense(id: Long = 0, amountCents: Long = 2_000, categoryId: Long = 4, accountId: Long = 1) = TransactionEntity(
         id = id,
-        type = "EXPENSE",
+        type = TransactionType.EXPENSE,
         description = "Coffee",
-        amount = amount,
+        amountCents = amountCents,
         categoryId = categoryId,
         accountId = accountId,
         dateEpochMillis = System.currentTimeMillis()

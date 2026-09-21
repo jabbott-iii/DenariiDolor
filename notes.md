@@ -55,15 +55,15 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 8. ~~Budget warning threshold unused~~ — dashboard meters and banner (Phase 4).
 9. ~~Report columns / export~~ — done in Phase 3.
 10. ~~Search result strings~~ — typed rows in Phase 3.
-11. Transaction `type` is a raw string in several places — candidate for an enum / sealed type.
-12. Money uses `Double`; consider `Long` minor units (cents) or `BigDecimal` to avoid rounding errors.
+11. ~~String transaction types~~ — `TransactionType` enum (Phase 5).
+12. ~~Money as Double~~ — Long cents + DB v2 migration (Phase 5).
 13. No audit log or role checks (listed in the recommended stack).
 14. Biometrics now `BIOMETRIC_STRONG` (Phase 2); still no `CryptoObject` (deferred).
 15. `SessionManager` state is in-memory only; process death resets to unauthenticated (safe), but `LoginActivity` launch is the only gate.
 16. Dependency hygiene: `libs.versions.toml` has five unused `activity-compose` version aliases; `app/build.gradle.kts` pulls both `activity-compose` 1.9.0 and 1.9.2, plus unused `navigation-fragment`/`navigation-ui` (XML-era).
-17. `NOTICE` file was copied from another project ("Cryptare", Go dependencies) and needs rewriting for this app.
-18. No source file currently has a license header, contrary to `CONTRIBUTING.md`.
-19. CI uses JDK 21, CD uses JDK 17; detekt/ktlint/sonar/dependencyCheck/jacoco/publishBundle plugins are referenced but not configured in Gradle.
+17. ~~NOTICE~~ — rewritten (Phase 5).
+18. ~~License headers~~ — added to all Kotlin files (Phase 5); add them to new files going forward.
+19. ~~CI JDK mismatch / unconfigured tools~~ — JDK 17 everywhere; ktlint/detekt/JaCoCo configured (Phase 5). CD `publishBundle` still unconfigured (Phase 6).
 20. ~~`AppScreens.kt` size~~ — split in Phase 4 (~150 lines, navigation only); split per feature as screens grow. Spec calls for separate feature modules — currently single `:app` module.
 
 ## Preferences & Conventions
@@ -101,3 +101,5 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 | 2026-09-20 | Pinned **Vico 1.14.0** (`compose`, `compose-m3`, `core`): last release built with Kotlin 1.9.22 / Compose compiler 1.5.8. Vico 1.15+ / 2.x are built with Kotlin 2.0/2.1 and can't be consumed by Kotlin 1.9.24. Upgrade with the Phase 5 toolchain bump. | Binary compatibility. |
 | 2026-09-20 | Dataviz rules applied: spending-by-category = single-series column chart in categorical slot 1 (blue `#2a78d6` light / `#3987e5` dark, validator PASS both modes), top 5 + "Other", no legend (title names it), text list under the chart as the table view; budgets = meters (accent → warning `#fab219` ≥ threshold → critical `#d03b3b` > 100%) with icon + label, never color alone; one hero figure (net this month). | Accessibility / consistency. |
 | 2026-09-20 | `AppScreens.kt` split into `LoginScreen.kt`, `TransactionFormScreen.kt`, `SettingsScreen.kt` in the **same package** (`presentation.ui`). | Pure file split; no API or test changes. |
+| 2026-09-20 | Phase 5 (user): toolchain upgrade (Kotlin 2 / AGP / compileSdk 35 / Vico 2 / SQLCipher latest) is a **separate later step**; money moves to **Long cents**; **ktlint + detekt + jacoco** configured, sonar/dependency-check steps removed, CI/CD on JDK 17. | User choices. |
+| 2026-09-20 | Phase 5 design: `TransactionType` enum (Room's built-in enum-by-name storage, so the column stays TEXT and values are unchanged); money = `Long` cents end to end (`amountCents`, `balanceCents`, `monthlyLimitCents`); input parsed with `BigDecimal` (max 2 decimals, rejects more); **DB v2 migration** recreates `accounts`, `budgets`, `transactions` (copy with `CAST(ROUND(x*100) AS INTEGER)`), because `DROP COLUMN` needs SQLite 3.35 (API 34+) on the framework test helper; migration test via `MigrationTestHelper` + exported schemas. Coverage via AGP `enableUnitTestCoverage` (`createDebugUnitTestCoverageReport`). License headers added to all Kotlin sources. | Exact arithmetic; safe first migration; testable. |
