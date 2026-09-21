@@ -372,4 +372,48 @@ class ComposeScreensTest {
         }
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.wipe_data_confirm)).assertDoesNotExist()
     }
+
+    @Test
+    fun recoveryModeBackButtonAndSystemBackReturnToSignIn() {
+        var mode by mutableStateOf(LoginScreenMode.RECOVER_PIN)
+        var backCalls = 0
+        composeRule.setContent {
+            DenariiDolorTheme {
+                LoginScreen(
+                    mode = mode,
+                    pin = "",
+                    pinConfirmation = "",
+                    securityQuestion = "",
+                    securityAnswer = "",
+                    recoveryQuestion = "Recovery prompt",
+                    signInEnabled = true,
+                    biometricAvailable = false,
+                    showWipeConfirmation = false,
+                    feedbackMessage = null,
+                    onPinChange = {},
+                    onPinConfirmationChange = {},
+                    onSecurityQuestionChange = {},
+                    onSecurityAnswerChange = {},
+                    onPrimaryAction = {},
+                    onForgotPin = { mode = LoginScreenMode.RECOVER_PIN },
+                    onBackToSignIn = {
+                        backCalls++
+                        mode = LoginScreenMode.SIGN_IN
+                    },
+                    onBiometricLogin = {},
+                    onRequestWipeData = {},
+                    onCancelWipeData = {},
+                    onConfirmWipeData = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.back_to_sign_in)).performClick()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.sign_in)).assertIsDisplayed()
+
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.forgot_pin)).performClick()
+        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).pressBack()
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.sign_in)).assertIsDisplayed()
+        composeRule.runOnIdle { assertTrue(backCalls == 2) }
+    }
 }

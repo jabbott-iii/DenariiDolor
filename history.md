@@ -307,3 +307,9 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
 - `ComposeScreensTest.loginScreenWipeDialogDismissRequestTriggersCancelCallback` failed with `RootViewWithoutFocusException`: `Espresso.pressBack()` targeted the activity root, which had no focus because the dialog had it.
 - Fix: `UiDevice.getInstance(instrumentation).pressBack()` (UiAutomator) injects a real system back key into the focused window, the dialog, which calls `onDismissRequest` → `onCancelWipeData`.
 - Added `androidx.test.uiautomator:uiautomator:2.3.0` (catalog alias `androidx-uiautomator`) as `androidTestImplementation`.
+
+## 2026-09-21 — Fix: "Back to Sign In" on the Forgot PIN screen
+- **Bug:** `LoginActivity.switchToSignIn()` called `refreshLoginState()`, whose default `preserveRecoveryMode = true` kept the screen in `RECOVER_PIN`, so the button did nothing visible.
+- **Fix:** `refreshLoginState(preserveRecoveryMode = false)`.
+- **Also:** `LoginScreen` adds a `BackHandler` in recovery mode, so the system back gesture returns to sign-in too (it previously closed the app).
+- **Test:** `ComposeScreensTest.recoveryModeBackButtonAndSystemBackReturnToSignIn` (button and system back both return to sign-in). ktlint/detekt still clean.

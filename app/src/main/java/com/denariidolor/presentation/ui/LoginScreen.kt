@@ -18,6 +18,7 @@
 
 package com.denariidolor.presentation.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -87,6 +88,8 @@ fun LoginScreen(
     onCancelWipeData: () -> Unit,
     onConfirmWipeData: () -> Unit
 ) {
+    BackHandler(enabled = mode == LoginScreenMode.RECOVER_PIN && signInEnabled, onBack = onBackToSignIn)
+
     val biometricContentDescription = stringResource(R.string.biometric_sign_in_accessibility_label)
     val wipeActionContentDescription = stringResource(R.string.wipe_all_data_destructive_label)
     val wipeConfirmContentDescription = stringResource(R.string.wipe_data_confirm_destructive_label)

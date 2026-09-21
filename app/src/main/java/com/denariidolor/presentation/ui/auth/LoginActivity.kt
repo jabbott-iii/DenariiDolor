@@ -235,7 +235,7 @@ class LoginActivity : AppCompatActivity() {
             return
         }
         clearInputs()
-        refreshLoginState()
+        refreshLoginState(preserveRecoveryMode = false)
         feedbackMessage = null
     }
 
