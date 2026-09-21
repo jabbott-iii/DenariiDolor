@@ -1,34 +1,54 @@
 package com.denariidolor.presentation.ui.category
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.denariidolor.R
 import com.denariidolor.data.local.db.entity.CategoryEntity
+import com.denariidolor.presentation.ui.common.CategoryIconBadge
+import com.denariidolor.presentation.ui.common.CategoryIcons
 import com.denariidolor.presentation.ui.common.ConfirmDialog
-import com.denariidolor.presentation.ui.common.FormDialog
-import com.denariidolor.presentation.ui.common.FormField
 import com.denariidolor.presentation.ui.common.ManagedItemRow
 import com.denariidolor.presentation.ui.common.ScreenHeader
 import com.denariidolor.presentation.ui.common.UiMessageEffect
+
+const val CategoryIconOptionTagPrefix = "categoryIcon_"
 
 @Composable
 fun ManageCategoriesRoute(onBack: () -> Unit, viewModel: CategoryViewModel = hiltViewModel()) {
@@ -38,7 +58,7 @@ fun ManageCategoriesRoute(onBack: () -> Unit, viewModel: CategoryViewModel = hil
         categories = categories,
         onBack = onBack,
         onAdd = viewModel::add,
-        onRename = viewModel::rename,
+        onUpdate = viewModel::update,
         onDelete = viewModel::delete
     )
 }
@@ -47,14 +67,13 @@ fun ManageCategoriesRoute(onBack: () -> Unit, viewModel: CategoryViewModel = hil
 fun ManageCategoriesScreen(
     categories: List<CategoryEntity>,
     onBack: () -> Unit,
-    onAdd: (String) -> Unit,
-    onRename: (Long, String) -> Unit,
+    onAdd: (name: String, iconKey: String) -> Unit,
+    onUpdate: (id: Long, name: String, iconKey: String) -> Unit,
     onDelete: (Long) -> Unit
 ) {
     var adding by remember { mutableStateOf(false) }
-    var renaming by remember { mutableStateOf<CategoryEntity?>(null) }
+    var editing by remember { mutableStateOf<CategoryEntity?>(null) }
     var deleting by remember { mutableStateOf<CategoryEntity?>(null) }
-    val nameLabel = stringResource(R.string.category_name)
 
     Column(
         modifier = Modifier
@@ -68,37 +87,45 @@ fun ManageCategoriesScreen(
         Spacer(modifier = Modifier.height(8.dp))
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(categories, key = { it.id }) { category ->
-                ManagedItemRow(
-                    title = category.name,
-                    subtitle = null,
-                    onEdit = { renaming = category },
-                    onDelete = { deleting = category }
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CategoryIconBadge(iconKey = category.iconName)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        ManagedItemRow(
+                            title = category.name,
+                            subtitle = null,
+                            onEdit = { editing = category },
+                            onDelete = { deleting = category }
+                        )
+                    }
+                }
                 HorizontalDivider()
             }
         }
     }
 
     if (adding) {
-        FormDialog(
+        CategoryDialog(
             title = stringResource(R.string.add_category),
-            fields = listOf(FormField(nameLabel)),
-            onConfirm = { values ->
+            initialName = "",
+            initialIcon = CategoryIcons.DEFAULT_KEY,
+            onConfirm = { name, icon ->
                 adding = false
-                onAdd(values[0])
+                onAdd(name, icon)
             },
             onDismiss = { adding = false }
         )
     }
-    renaming?.let { category ->
-        FormDialog(
-            title = stringResource(R.string.rename_category),
-            fields = listOf(FormField(nameLabel, category.name)),
-            onConfirm = { values ->
-                renaming = null
-                onRename(category.id, values[0])
+    editing?.let { category ->
+        CategoryDialog(
+            title = stringResource(R.string.edit_category),
+            initialName = category.name,
+            initialIcon = category.iconName,
+            onConfirm = { name, icon ->
+                editing = null
+                onUpdate(category.id, name, icon)
             },
-            onDismiss = { renaming = null }
+            onDismiss = { editing = null }
         )
     }
     deleting?.let { category ->
@@ -113,4 +140,61 @@ fun ManageCategoriesScreen(
             onDismiss = { deleting = null }
         )
     }
+}
+
+@Composable
+private fun CategoryDialog(
+    title: String,
+    initialName: String,
+    initialIcon: String,
+    onConfirm: (name: String, iconKey: String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var name by rememberSaveable { mutableStateOf(initialName) }
+    var icon by rememberSaveable { mutableStateOf(CategoryIcons.forKey(initialIcon).key) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.category_name)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = stringResource(R.string.category_icon_label, CategoryIcons.forKey(icon).label),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 48.dp),
+                    modifier = Modifier.height(200.dp)
+                ) {
+                    items(CategoryIcons.options, key = { it.key }) { option ->
+                        val selected = option.key == icon
+                        CategoryIconBadge(
+                            iconKey = option.key,
+                            size = 40.dp,
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .border(
+                                    width = 2.dp,
+                                    color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                    shape = CircleShape
+                                )
+                                .clickable { icon = option.key }
+                                .semantics { this.selected = selected }
+                                .testTag(CategoryIconOptionTagPrefix + option.key)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { onConfirm(name, icon) }) { Text(stringResource(R.string.save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } }
+    )
 }

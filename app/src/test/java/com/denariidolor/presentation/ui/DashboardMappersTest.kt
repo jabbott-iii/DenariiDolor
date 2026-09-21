@@ -1,9 +1,15 @@
 package com.denariidolor.presentation.ui
 
 import com.denariidolor.data.local.db.entity.AccountEntity
+import com.denariidolor.data.local.db.entity.BudgetEntity
 import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.data.local.db.entity.TransactionEntity
 import com.denariidolor.presentation.ui.common.buildTransactionRows
+import com.denariidolor.presentation.ui.dashboard.BudgetStatus
+import com.denariidolor.presentation.ui.dashboard.budgetProgress
+import com.denariidolor.presentation.ui.dashboard.budgetStatus
+import com.denariidolor.presentation.ui.dashboard.compactMoney
+import com.denariidolor.presentation.ui.dashboard.spendingByCategory
 import com.denariidolor.presentation.ui.dashboard.summarize
 import com.denariidolor.util.formatMoney
 import com.denariidolor.util.formatSignedAmount
@@ -73,5 +79,61 @@ class DashboardMappersTest {
         assertEquals(10.0, summary.income, 0.0001)
         assertEquals(10.0, summary.expense, 0.0001)
         assertEquals(0.0, summary.net, 0.0001)
+    }
+
+    @Test
+    fun rowsCarryCategoryIcon() {
+        val cats = listOf(CategoryEntity(id = 1, name = "Dining", iconName = "dining"))
+        val row = buildTransactionRows(listOf(txn(1, "EXPENSE", 0)), cats, accounts, zoneId = utc).single()
+
+        assertEquals("dining", row.categoryIcon)
+    }
+
+    @Test
+    fun budgetStatusThresholds() {
+        assertEquals(BudgetStatus.OK, budgetStatus(79.0, 100.0, 80))
+        assertEquals(BudgetStatus.WARNING, budgetStatus(80.0, 100.0, 80))
+        assertEquals(BudgetStatus.WARNING, budgetStatus(100.0, 100.0, 80))
+        assertEquals(BudgetStatus.OVER, budgetStatus(100.01, 100.0, 80))
+    }
+
+    @Test
+    fun spendingSortsDescendingAndFoldsOther() {
+        val cats = (1L..7L).map { CategoryEntity(id = it, name = "C$it") }
+        val expenses = (1L..7L).map { txn(it, "EXPENSE", 0, categoryId = it).copy(amount = it * 10.0) } + txn(99, "INCOME", 0)
+
+        val spending = spendingByCategory(expenses, cats, maxBars = 5)
+
+        assertEquals(listOf(7L, 6L, 5L, 4L, 3L, null), spending.map { it.categoryId })
+        assertEquals(30.0, spending.last().amount, 0.0001)
+    }
+
+    @Test
+    fun spendingWithoutFoldWhenFewCategories() {
+        val spending = spendingByCategory(listOf(txn(1, "EXPENSE", 0), txn(2, "EXPENSE", 0)), categories)
+
+        assertEquals(1, spending.size)
+        assertEquals(20.0, spending.single().amount, 0.0001)
+    }
+
+    @Test
+    fun budgetProgressSumsMonthExpensesAndSortsByFraction() {
+        val budgets = listOf(
+            BudgetEntity(id = 1, categoryId = 1, monthlyLimit = 100.0),
+            BudgetEntity(id = 2, categoryId = 3, monthlyLimit = 10.0, warningThresholdPercent = 50)
+        )
+        val progress = budgetProgress(budgets, categories, listOf(txn(1, "EXPENSE", 0), txn(2, "EXPENSE", 0), txn(3, "INCOME", 0)))
+
+        assertEquals(listOf(1L, 3L), progress.map { it.categoryId })
+        assertEquals(20.0, progress[0].spent, 0.0001)
+        assertEquals(0.0, progress[1].spent, 0.0001)
+        assertEquals(BudgetStatus.OK, progress[0].status)
+    }
+
+    @Test
+    fun compactMoneyAxisLabels() {
+        assertEquals("$5", compactMoney(5f))
+        assertEquals("$1.5K", compactMoney(1_500f))
+        assertEquals("$2.0M", compactMoney(2_000_000f))
     }
 }

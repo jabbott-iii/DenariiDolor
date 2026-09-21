@@ -3,8 +3,10 @@ package com.denariidolor.presentation.ui.common
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -32,7 +34,8 @@ data class TransactionRow(
     val amountText: String,
     val categoryName: String,
     val accountLabel: String,
-    val dateText: String
+    val dateText: String,
+    val categoryIcon: String = CategoryIcons.DEFAULT_KEY
 )
 
 fun buildTransactionRows(
@@ -42,7 +45,7 @@ fun buildTransactionRows(
     limit: Int = Int.MAX_VALUE,
     zoneId: ZoneId = ZoneId.systemDefault()
 ): List<TransactionRow> {
-    val categoryNames = categories.associate { it.id to it.name }
+    val categoriesById = categories.associateBy { it.id }
     val accountNames = accounts.associate { it.id to it.name }
     fun accountName(id: Long) = accountNames[id] ?: "#$id"
 
@@ -56,9 +59,10 @@ fun buildTransactionRows(
                 description = transaction.description,
                 type = transaction.type,
                 amountText = formatSignedAmount(transaction.type, transaction.amount),
-                categoryName = categoryNames[transaction.categoryId] ?: "#${transaction.categoryId}",
+                categoryName = categoriesById[transaction.categoryId]?.name ?: "#${transaction.categoryId}",
                 accountLabel = transaction.transferAccountId?.let { "$source → ${accountName(it)}" } ?: source,
-                dateText = DateUtils.formatLocalDate(transaction.dateEpochMillis, zoneId)
+                dateText = DateUtils.formatLocalDate(transaction.dateEpochMillis, zoneId),
+                categoryIcon = categoriesById[transaction.categoryId]?.iconName ?: CategoryIcons.DEFAULT_KEY
             )
         }
 }
@@ -73,6 +77,8 @@ fun TransactionRowItem(row: TransactionRow, onClick: () -> Unit, onDelete: (() -
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        CategoryIconBadge(iconKey = row.categoryIcon)
+        Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(text = row.description, style = MaterialTheme.typography.bodyLarge)
             Text(

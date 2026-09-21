@@ -143,3 +143,32 @@ Chronological log of work sessions: what changed, why, and what was verified. Ne
 - New Compose `ReportSearchScreensTest` (report title/columns/rows/export callbacks, empty state, search count + open result, "All categories" → no category filter). `CrudScreensTest` imports updated.
 
 **Verification status:** ⚠️ not compiled or run by Claude. Run `./gradlew testDebugUnitTest connectedAndroidTest assembleRelease`.
+
+## 2026-09-20 — Phase 4: GUI polish
+**User choices:** Vico charts; dashboard summarizes the current month; built-in category icon picker. Charts and colors follow the dataviz method (single-series palette validated in light and dark; status colors always paired with icon + label).
+
+| File | Change |
+|---|---|
+| `gradle/libs.versions.toml`, `app/build.gradle.kts` | Added Vico **1.14.0** (`compose`, `compose-m3`, `core`; the last release built with Kotlin 1.9) and `material-icons-extended` (BOM-managed; R8 strips unused icons in release). |
+| `presentation/ui/common/Composables.kt` | `DenariiDolorTheme` now has light **and** dark color schemes (blue brand, reference surfaces) plus `LocalVizColors` (series 1, meter track, good/warning/critical). |
+| `presentation/ui/common/CategoryIcons.kt` *(new)* | 24 curated icons keyed by string (the stored `iconName`); `forKey()` falls back to General; `CategoryIconBadge`. |
+| `util/Constants.kt` | Seeded "General Income" / "Transfer" use the `income` / `transfer` icons (new installs only). |
+| `presentation/ui/common/TransactionRows.kt` | `TransactionRow.categoryIcon` (defaults to General); rows show an icon badge. |
+| `presentation/ui/category/*` | Add/Edit dialog with name + icon grid (selected state exposed to accessibility); list shows icons. VM `rename` → `update(id, name, icon)`. |
+| `presentation/ui/dashboard/DashboardMappers.kt` | Pure `spendingByCategory` (expenses, largest first, top 5 + "Other"), `budgetProgress`, `budgetStatus` (OK / WARNING ≥ threshold % / OVER > limit), `DashboardUiState.budgetAlerts`. |
+| `presentation/ui/dashboard/DashboardViewModel.kt` | Combines transactions, categories, accounts, budgets; current month from the injected `Clock`. |
+| `presentation/ui/dashboard/SpendingChart.kt` *(new)* | Vico column chart: one series in slot-1 blue, rounded 4dp tops, compact $ axis, truncated category labels, zoom off, content description lists the values. |
+| `presentation/ui/dashboard/DashboardScreen.kt` | Month label, **hero figure** (net this month), Income/Expense stat tiles, **budget alert banner**, spending chart plus a value list (table view), **budget meters** (status icon + label + % used), balances, recent transactions. |
+| `presentation/ui/AppScreens.kt` → + `LoginScreen.kt`, `SettingsScreen.kt`, `TransactionFormScreen.kt` | File split, same package: `AppScreens.kt` is now ~150 lines (navigation only). `AddTransactionRoute` is `internal`. |
+| `res/values/strings.xml` | Dashboard/budget strings, `budget_alerts` plurals, category icon strings; removed unused `dashboard_*`, `rename_category`, `account_balance_line`. |
+
+**Tests**
+- `DashboardMappersTest`: row icon, status thresholds, top-5 + Other folding, budget progress sorting/sums, compact axis labels.
+- New `CategoryIconsTest`: unique keys, fallback, seeded icons are known.
+- `CrudScreensTest`: category dialog submits name **and** icon (selection state); dashboard alert banner + "Near limit · 95% used" meter + chart present; banner hidden when on track.
+
+**Verification status:** ⚠️ not compiled or run by Claude. Run `./gradlew testDebugUnitTest connectedAndroidTest assembleRelease`.
+
+**Known limits**
+- The Vico chart has no per-bar tooltip (the marker API wasn't used); the value list under the chart carries exact numbers.
+- Existing installs keep the old default icon on the seeded Income/Transfer categories; edit them to pick an icon.

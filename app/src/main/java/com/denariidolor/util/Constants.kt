@@ -16,8 +16,8 @@ object Constants {
 
     val DEFAULT_CATEGORIES = listOf(
         SeedCategory(DEFAULT_EXPENSE_CATEGORY_ID, "General Expense", "ic_category_default"),
-        SeedCategory(DEFAULT_INCOME_CATEGORY_ID, "General Income", "ic_category_default"),
-        SeedCategory(DEFAULT_TRANSFER_CATEGORY_ID, "Transfer", "ic_category_default")
+        SeedCategory(DEFAULT_INCOME_CATEGORY_ID, "General Income", "income"),
+        SeedCategory(DEFAULT_TRANSFER_CATEGORY_ID, "Transfer", "transfer")
     )
 }
 

@@ -28,9 +28,10 @@ class CategoryViewModel @Inject constructor(
     private val _messages = Channel<UiMessage>(Channel.BUFFERED)
     val messages: Flow<UiMessage> = _messages.receiveAsFlow()
 
-    fun add(name: String) = report(R.string.category_saved) { categoryUseCases.add(name) }
+    fun add(name: String, iconKey: String) = report(R.string.category_saved) { categoryUseCases.add(name, iconKey) }
 
-    fun rename(id: Long, name: String) = report(R.string.category_saved) { categoryUseCases.update(id, name) }
+    fun update(id: Long, name: String, iconKey: String) =
+        report(R.string.category_saved) { categoryUseCases.update(id, name, iconKey) }
 
     fun delete(id: Long) = report(R.string.category_deleted) { categoryUseCases.delete(id) }
 

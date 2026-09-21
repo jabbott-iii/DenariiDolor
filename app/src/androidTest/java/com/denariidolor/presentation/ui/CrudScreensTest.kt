@@ -1,7 +1,9 @@
 package com.denariidolor.presentation.ui
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
@@ -16,12 +18,17 @@ import com.denariidolor.data.local.db.entity.BudgetEntity
 import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.presentation.ui.budget.BudgetRow
 import com.denariidolor.presentation.ui.budget.ManageBudgetsScreen
+import com.denariidolor.presentation.ui.category.CategoryIconOptionTagPrefix
 import com.denariidolor.presentation.ui.category.ManageCategoriesScreen
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
 import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.presentation.ui.common.TransactionRow
 import com.denariidolor.presentation.ui.common.TransactionRowTagPrefix
+import com.denariidolor.presentation.ui.dashboard.BudgetAlertBannerTag
+import com.denariidolor.presentation.ui.dashboard.BudgetProgress
+import com.denariidolor.presentation.ui.dashboard.CategorySpend
 import com.denariidolor.presentation.ui.dashboard.DashboardScreen
+import com.denariidolor.presentation.ui.dashboard.SpendingChartTag
 import com.denariidolor.presentation.ui.dashboard.DashboardUiState
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
 import com.denariidolor.presentation.ui.transaction.TransactionFormInput
@@ -156,15 +163,15 @@ class CrudScreensTest {
     }
 
     @Test
-    fun manageCategoriesAddDialogSubmitsName() {
-        var added: String? = null
+    fun manageCategoriesAddDialogSubmitsNameAndIcon() {
+        var added: Pair<String, String>? = null
         composeRule.setContent {
             DenariiDolorTheme {
                 ManageCategoriesScreen(
                     categories = listOf(CategoryEntity(id = 1, name = "General Expense")),
                     onBack = {},
-                    onAdd = { added = it },
-                    onRename = { _, _ -> },
+                    onAdd = { name, icon -> added = name to icon },
+                    onUpdate = { _, _, _ -> },
                     onDelete = {}
                 )
             }
@@ -172,9 +179,48 @@ class CrudScreensTest {
 
         composeRule.onNodeWithText("Add Category").performClick()
         composeRule.onNodeWithText("Category name").performTextReplacement("Dining")
+        composeRule.onNodeWithTag(CategoryIconOptionTagPrefix + "dining").performClick()
+        composeRule.onNodeWithTag(CategoryIconOptionTagPrefix + "dining").assertIsSelected()
         composeRule.onNodeWithText("Save").performClick()
 
-        assertEquals("Dining", added)
+        assertEquals("Dining" to "dining", added)
+    }
+
+    @Test
+    fun dashboardShowsBudgetAlertAndMeterStatus() {
+        composeRule.setContent {
+            DenariiDolorTheme {
+                DashboardScreen(
+                    DashboardUiState(
+                        spending = listOf(CategorySpend(4, "Dining", "dining", 95.0)),
+                        budgets = listOf(BudgetProgress(4, "Dining", "dining", spent = 95.0, limit = 100.0, warningPercent = 80))
+                    ),
+                    onEditTransaction = {},
+                    onDeleteTransaction = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(BudgetAlertBannerTag).assertIsDisplayed()
+        composeRule.onNodeWithText("1 budget is near or over its limit.").assertIsDisplayed()
+        composeRule.onNodeWithTag(SpendingChartTag).assertExists()
+        composeRule.onNodeWithText("Near limit · 95% used").assertExists()
+    }
+
+    @Test
+    fun dashboardHidesBannerWhenBudgetsOnTrack() {
+        composeRule.setContent {
+            DenariiDolorTheme {
+                DashboardScreen(
+                    DashboardUiState(budgets = listOf(BudgetProgress(4, "Dining", "dining", spent = 10.0, limit = 100.0, warningPercent = 80))),
+                    onEditTransaction = {},
+                    onDeleteTransaction = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(BudgetAlertBannerTag).assertDoesNotExist()
+        composeRule.onNodeWithText("On track · 10% used").assertExists()
     }
 
     @Test

@@ -52,7 +52,7 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 5. ~~Destructive migrations~~ — removed in Phase 2; schema exported to `app/schemas/`.
 6. ~~Account balances never updated~~ — fixed in Phase 1a (stored balances updated atomically). Data created before then may be out of sync.
 7. ~~Duplicate-category validation / empty ViewModels~~ — done in Phases 1a/1b.
-8. Budget warning threshold (`warningThresholdPercent`) is stored but unused — only the hard limit blocks.
+8. ~~Budget warning threshold unused~~ — dashboard meters and banner (Phase 4).
 9. ~~Report columns / export~~ — done in Phase 3.
 10. ~~Search result strings~~ — typed rows in Phase 3.
 11. Transaction `type` is a raw string in several places — candidate for an enum / sealed type.
@@ -64,7 +64,7 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 17. `NOTICE` file was copied from another project ("Cryptare", Go dependencies) and needs rewriting for this app.
 18. No source file currently has a license header, contrary to `CONTRIBUTING.md`.
 19. CI uses JDK 21, CD uses JDK 17; detekt/ktlint/sonar/dependencyCheck/jacoco/publishBundle plugins are referenced but not configured in Gradle.
-20. `AppScreens.kt` is ~815 lines (Login, Add/Edit, Settings remain; new screens go in per-feature files); split per feature as screens grow. Spec calls for separate feature modules — currently single `:app` module.
+20. ~~`AppScreens.kt` size~~ — split in Phase 4 (~150 lines, navigation only); split per feature as screens grow. Spec calls for separate feature modules — currently single `:app` module.
 
 ## Preferences & Conventions
 - Pair-programming style: minimal, clean, tested, secure code; no filler comments.
@@ -97,3 +97,7 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 | 2026-09-20 | Phase 3: **Payment Method = the transaction's account** (transfers show `Source → Destination`); no schema change. | User choice. |
 | 2026-09-20 | Phase 3: exports offer **Save** (SAF `CreateDocument`) and **Share** (FileProvider over `cache/reports/`, cleared on each share). PDF via `android.graphics.pdf.PdfDocument`; CSV via a pure formatter with formula-injection guarding. | User choice; no storage permissions or third-party PDF library. |
 | 2026-09-20 | Phase 3: `TransactionRow` + row composable move to `presentation/ui/common` (shared by Dashboard and Search); money formatting moves to `util/MoneyFormat.kt`; search uses `flatMapLatest` over a filters `StateFlow`. | Reuse; fixes duplicate collectors on repeated searches. |
+| 2026-09-20 | Phase 4 (user): charts via **Vico**; dashboard summarizes the **current month**; categories get a **built-in icon picker** (material-icons-extended, curated set). | User choices. |
+| 2026-09-20 | Pinned **Vico 1.14.0** (`compose`, `compose-m3`, `core`): last release built with Kotlin 1.9.22 / Compose compiler 1.5.8. Vico 1.15+ / 2.x are built with Kotlin 2.0/2.1 and can't be consumed by Kotlin 1.9.24. Upgrade with the Phase 5 toolchain bump. | Binary compatibility. |
+| 2026-09-20 | Dataviz rules applied: spending-by-category = single-series column chart in categorical slot 1 (blue `#2a78d6` light / `#3987e5` dark, validator PASS both modes), top 5 + "Other", no legend (title names it), text list under the chart as the table view; budgets = meters (accent → warning `#fab219` ≥ threshold → critical `#d03b3b` > 100%) with icon + label, never color alone; one hero figure (net this month). | Accessibility / consistency. |
+| 2026-09-20 | `AppScreens.kt` split into `LoginScreen.kt`, `TransactionFormScreen.kt`, `SettingsScreen.kt` in the **same package** (`presentation.ui`). | Pure file split; no API or test changes. |

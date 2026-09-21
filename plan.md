@@ -12,7 +12,7 @@ Roadmap derived from the project requirements and the 2026-09-20 code review. Se
 | Validation | ✅ Done | Amount, description, date, references, budget limit, duplicate names (category/account) |
 | Security | ✅ Done | PIN (PBKDF2) + lockout, strong biometrics, encrypted prefs, SQLCipher DB, no backups, R8, session timeout |
 | Scalability | 🟡 Partial | MVVM, repos, Hilt, use cases; single module (accepted); explicit migrations + exported schema |
-| GUI | 🟡 Partial | Bottom nav, FAB, dashboard summary + balances + recent list, manage screens; charts, icons, filters pending |
+| GUI | ✅ Done | Bottom nav, FAB, monthly dashboard (hero, tiles, chart, budget meters, alerts), category icons, dark mode, manage screens |
 
 ## Phase 1 — Complete Core CRUD
 ### 1a — Data + domain layer ✅ (pending local build verification)
@@ -52,17 +52,21 @@ Roadmap derived from the project requirements and the 2026-09-20 code review. Se
 - [x] Search: category picker, typed multi-row results with count, tap to edit, no duplicate collectors.
 - [ ] Verify locally: `./gradlew testDebugUnitTest connectedAndroidTest assembleRelease`.
 
-## Phase 4 — GUI Polish
-- [ ] Dashboard cards (income/expense/net, budget progress), spending-by-category chart.
-- [ ] Category icons; filters on transaction list.
-- [ ] Budget warning banner at `warningThresholdPercent`.
-- [ ] Split `AppScreens.kt` into per-feature screen files; add theme/typography tokens.
+## Phase 4 — GUI Polish ✅ (pending local build verification)
+- [x] Dashboard for the current month: hero net figure, income/expense tiles, spending-by-category chart (Vico) + value list.
+- [x] Category icons (24 built-in) with a picker; icons in rows, the chart list, and budgets.
+- [x] Budget meters + warning banner at `warningThresholdPercent` / over limit.
+- [x] Light + dark theme; data-viz color roles.
+- [x] Split `AppScreens.kt` into per-screen files.
+- [x] Filtering transactions is covered by the Search tab (no separate list filter).
+- [ ] Verify locally: `./gradlew testDebugUnitTest connectedAndroidTest assembleRelease`.
+- Later: chart tooltip/marker; upgrade Vico to 2.x with the Kotlin 2 toolchain.
 
 ## Phase 5 — Code Quality & Scalability
 - [ ] Replace string `type` with enum/sealed class + Room `TypeConverter`.
 - [ ] Money as `Long` cents (or `BigDecimal`) — decide before adding migrations.
 - [x] ~~Feature modules~~ — not required; keep single `:app` module with package-level separation.
-- [ ] Upgrade toolchain (Kotlin 2.x, compileSdk 35+) and SQLCipher 4.1x.
+- [ ] Upgrade toolchain (Kotlin 2.x, compileSdk 35+), SQLCipher 4.1x, and Vico 2.x.
 - [ ] Clean `libs.versions.toml` (duplicate activity-compose aliases, unused navigation-fragment/ui, recyclerview, constraintlayout).
 - [ ] Configure or remove detekt/ktlint/jacoco/dependency-check/sonar in Gradle; align CI/CD JDK versions.
 - [ ] Rewrite `NOTICE`; add license headers per `CONTRIBUTING.md`.
