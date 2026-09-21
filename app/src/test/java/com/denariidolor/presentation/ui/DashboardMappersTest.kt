@@ -22,6 +22,7 @@ import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.data.local.db.entity.TransactionEntity
 import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.presentation.ui.common.buildTransactionRows
+import com.denariidolor.presentation.ui.dashboard.BudgetProgress
 import com.denariidolor.presentation.ui.dashboard.BudgetStatus
 import com.denariidolor.presentation.ui.dashboard.budgetProgress
 import com.denariidolor.presentation.ui.dashboard.budgetStatus
@@ -179,5 +180,12 @@ class DashboardMappersTest {
         assertEquals("$12.5", compactMoney(12.5f))
         assertEquals("$1.5K", compactMoney(1_500f))
         assertEquals("$2.0M", compactMoney(2_000_000f))
+    }
+
+    @Test
+    fun percentUsedUsesIntegerMath() {
+        // 0.95f * 100 truncates to 94 in floating point; the displayed value must be 95.
+        assertEquals(95, BudgetProgress(1, "Dining", "dining", spentCents = 9_500, limitCents = 10_000, warningPercent = 80).percentUsed)
+        assertEquals(0, BudgetProgress(1, "Dining", "dining", spentCents = 500, limitCents = 0, warningPercent = 80).percentUsed)
     }
 }

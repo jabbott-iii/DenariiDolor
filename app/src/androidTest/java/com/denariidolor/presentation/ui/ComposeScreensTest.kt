@@ -28,6 +28,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.espresso.Espresso
 import com.denariidolor.R
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
 import com.denariidolor.presentation.ui.common.PickerOption
@@ -213,43 +214,41 @@ class ComposeScreensTest {
 
     @Test
     fun loginScreenPrimaryActionLabelMatchesMode() {
-        fun setLoginContent(mode: LoginScreenMode) {
-            composeRule.setContent {
-                DenariiDolorTheme {
-                    LoginScreen(
-                        mode = mode,
-                        pin = "",
-                        pinConfirmation = "",
-                        securityQuestion = "",
-                        securityAnswer = "",
-                        recoveryQuestion = "Recovery prompt",
-                        signInEnabled = true,
-                        biometricAvailable = false,
-                        showWipeConfirmation = false,
-                        feedbackMessage = null,
-                        onPinChange = {},
-                        onPinConfirmationChange = {},
-                        onSecurityQuestionChange = {},
-                        onSecurityAnswerChange = {},
-                        onPrimaryAction = {},
-                        onForgotPin = {},
-                        onBackToSignIn = {},
-                        onBiometricLogin = {},
-                        onRequestWipeData = {},
-                        onCancelWipeData = {},
-                        onConfirmWipeData = {}
-                    )
-                }
+        var mode by mutableStateOf(LoginScreenMode.SIGN_IN)
+        composeRule.setContent {
+            DenariiDolorTheme {
+                LoginScreen(
+                    mode = mode,
+                    pin = "",
+                    pinConfirmation = "",
+                    securityQuestion = "",
+                    securityAnswer = "",
+                    recoveryQuestion = "Recovery prompt",
+                    signInEnabled = true,
+                    biometricAvailable = false,
+                    showWipeConfirmation = false,
+                    feedbackMessage = null,
+                    onPinChange = {},
+                    onPinConfirmationChange = {},
+                    onSecurityQuestionChange = {},
+                    onSecurityAnswerChange = {},
+                    onPrimaryAction = {},
+                    onForgotPin = {},
+                    onBackToSignIn = {},
+                    onBiometricLogin = {},
+                    onRequestWipeData = {},
+                    onCancelWipeData = {},
+                    onConfirmWipeData = {}
+                )
             }
         }
 
-        setLoginContent(LoginScreenMode.SIGN_IN)
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.sign_in)).assertIsDisplayed()
 
-        setLoginContent(LoginScreenMode.SETUP)
+        mode = LoginScreenMode.SETUP
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.create_security_profile)).assertIsDisplayed()
 
-        setLoginContent(LoginScreenMode.RECOVER_PIN)
+        mode = LoginScreenMode.RECOVER_PIN
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.reset_pin)).assertIsDisplayed()
     }
 
@@ -365,9 +364,8 @@ class ComposeScreensTest {
             }
         }
 
-        composeRule.runOnIdle {
-            composeRule.activity.onBackPressedDispatcher.onBackPressed()
-        }
+        // The dialog is its own window; a key-level back press reaches it (the activity dispatcher does not).
+        Espresso.pressBack()
         composeRule.runOnIdle {
             assertTrue(cancelTriggered)
         }

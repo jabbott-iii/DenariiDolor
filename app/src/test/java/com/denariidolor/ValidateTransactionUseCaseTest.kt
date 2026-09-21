@@ -40,7 +40,7 @@ class ValidateTransactionUseCaseTest {
     )
 
     @Test
-    fun expenseFailsWhenBudgetExceeded() = runBlocking {
+    fun expenseFailsWhenBudgetExceeded() = runBlocking<Unit> {
         transactions.expenseTotalCents = 9_000
 
         val result = useCase(TestData.expense(amountCents = 2_000))
@@ -50,7 +50,7 @@ class ValidateTransactionUseCaseTest {
     }
 
     @Test
-    fun editedExpenseExcludesItsOwnPreviousAmountFromBudget() = runBlocking {
+    fun editedExpenseExcludesItsOwnPreviousAmountFromBudget() = runBlocking<Unit> {
         transactions.expenseTotalCents = 8_000
 
         val result = useCase(TestData.expense(id = 7, amountCents = 2_000))
@@ -60,7 +60,7 @@ class ValidateTransactionUseCaseTest {
     }
 
     @Test
-    fun transferFailsWhenDestinationMatchesSource() = runBlocking {
+    fun transferFailsWhenDestinationMatchesSource() = runBlocking<Unit> {
         val result = useCase(
             TestData.expense().copy(type = TransactionType.TRANSFER, categoryId = 3, accountId = 1, transferAccountId = 1)
         )
@@ -69,7 +69,7 @@ class ValidateTransactionUseCaseTest {
     }
 
     @Test
-    fun transferFailsWhenDestinationAccountMissing() = runBlocking {
+    fun transferFailsWhenDestinationAccountMissing() = runBlocking<Unit> {
         val result = useCase(
             TestData.expense().copy(type = TransactionType.TRANSFER, categoryId = 3, accountId = 1, transferAccountId = 99)
         )
@@ -78,13 +78,13 @@ class ValidateTransactionUseCaseTest {
     }
 
     @Test
-    fun failsWhenCategoryOrAccountMissing() = runBlocking {
+    fun failsWhenCategoryOrAccountMissing() = runBlocking<Unit> {
         assertEquals("Category not found", useCase(TestData.expense(categoryId = 99)).exceptionOrNull()?.message)
         assertEquals("Account not found", useCase(TestData.expense(accountId = 99)).exceptionOrNull()?.message)
     }
 
     @Test
-    fun expenseExactlyAtLimitIsAllowed() = runBlocking {
+    fun expenseExactlyAtLimitIsAllowed() = runBlocking<Unit> {
         transactions.expenseTotalCents = 8_000
 
         assertTrue(useCase(TestData.expense(amountCents = 2_000)).isSuccess)

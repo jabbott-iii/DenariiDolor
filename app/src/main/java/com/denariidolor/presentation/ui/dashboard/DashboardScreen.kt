@@ -67,6 +67,7 @@ import com.denariidolor.presentation.ui.common.TransactionRowItem
 import com.denariidolor.presentation.ui.common.UiMessageEffect
 import com.denariidolor.util.formatMoney
 
+const val DASHBOARD_LIST_TAG = "dashboardList"
 const val BUDGET_ALERT_BANNER_TAG = "budgetAlertBanner"
 const val BUDGET_METER_TAG_PREFIX = "budgetMeter_"
 
@@ -87,7 +88,9 @@ fun DashboardScreen(state: DashboardUiState, onEditTransaction: (Long) -> Unit, 
     val otherLabel = stringResource(R.string.spending_other)
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag(DASHBOARD_LIST_TAG),
         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 88.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -238,7 +241,7 @@ private fun BudgetMeter(progress: BudgetProgress) {
             Icon(imageVector = icon, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = stringResource(R.string.budget_status_line, statusLabel, (progress.fraction * 100).toInt()),
+                text = stringResource(R.string.budget_status_line, statusLabel, progress.percentUsed),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

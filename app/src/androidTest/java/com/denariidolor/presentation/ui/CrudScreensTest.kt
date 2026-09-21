@@ -26,6 +26,7 @@ import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -33,6 +34,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextReplacement
 import com.denariidolor.data.local.db.entity.BudgetEntity
 import com.denariidolor.data.local.db.entity.CategoryEntity
@@ -48,6 +50,7 @@ import com.denariidolor.presentation.ui.common.TransactionRow
 import com.denariidolor.presentation.ui.dashboard.BUDGET_ALERT_BANNER_TAG
 import com.denariidolor.presentation.ui.dashboard.BudgetProgress
 import com.denariidolor.presentation.ui.dashboard.CategorySpend
+import com.denariidolor.presentation.ui.dashboard.DASHBOARD_LIST_TAG
 import com.denariidolor.presentation.ui.dashboard.DashboardScreen
 import com.denariidolor.presentation.ui.dashboard.DashboardUiState
 import com.denariidolor.presentation.ui.dashboard.SPENDING_CHART_TAG
@@ -265,8 +268,10 @@ class CrudScreensTest {
 
         composeRule.onNodeWithTag(BUDGET_ALERT_BANNER_TAG).assertIsDisplayed()
         composeRule.onNodeWithText("1 budget is near or over its limit.").assertIsDisplayed()
+        composeRule.onNodeWithTag(DASHBOARD_LIST_TAG).performScrollToNode(hasTestTag(SPENDING_CHART_TAG))
         composeRule.onNodeWithTag(SPENDING_CHART_TAG).assertExists()
-        composeRule.onNodeWithText("Near limit · 95% used").assertExists()
+        composeRule.onNodeWithTag(DASHBOARD_LIST_TAG).performScrollToNode(hasText("Near limit · 95% used"))
+        composeRule.onNodeWithText("Near limit · 95% used").assertIsDisplayed()
     }
 
     @Test
@@ -286,7 +291,8 @@ class CrudScreensTest {
         }
 
         composeRule.onNodeWithTag(BUDGET_ALERT_BANNER_TAG).assertDoesNotExist()
-        composeRule.onNodeWithText("On track · 10% used").assertExists()
+        composeRule.onNodeWithTag(DASHBOARD_LIST_TAG).performScrollToNode(hasText("On track · 10% used"))
+        composeRule.onNodeWithText("On track · 10% used").assertIsDisplayed()
     }
 
     @Test

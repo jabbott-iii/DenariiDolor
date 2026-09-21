@@ -55,7 +55,7 @@ class TransactionCrudUseCaseTest {
     )
 
     @Test
-    fun addIgnoresCallerSuppliedId() = runBlocking {
+    fun addIgnoresCallerSuppliedId() = runBlocking<Unit> {
         val id = add(expense(id = 1, amountCents = 500)).getOrThrow()
 
         assertEquals(2L, id)
@@ -63,7 +63,7 @@ class TransactionCrudUseCaseTest {
     }
 
     @Test
-    fun updateReplacesExistingTransaction() = runBlocking {
+    fun updateReplacesExistingTransaction() = runBlocking<Unit> {
         val result =
             update(Income(id = 1, description = "Refund", amountCents = 3_000, categoryId = 2, accountId = 1, dateEpochMillis = 1L))
 
@@ -73,19 +73,19 @@ class TransactionCrudUseCaseTest {
     }
 
     @Test
-    fun updateRejectsMissingIdAndUnknownTransaction() = runBlocking {
+    fun updateRejectsMissingIdAndUnknownTransaction() = runBlocking<Unit> {
         assertEquals("Transaction ID is required", update(expense(id = 0, amountCents = 500)).exceptionOrNull()?.message)
         assertTrue(update(expense(id = 42, amountCents = 500)).exceptionOrNull() is NoSuchElementException)
     }
 
     @Test
-    fun updateRunsValidation() = runBlocking {
+    fun updateRunsValidation() = runBlocking<Unit> {
         assertEquals("Invalid amount", update(expense(id = 1, amountCents = -100)).exceptionOrNull()?.message)
         assertEquals(1_000L, transactions.items.single().amountCents)
     }
 
     @Test
-    fun deleteRemovesTransactionAndReportsMissing() = runBlocking {
+    fun deleteRemovesTransactionAndReportsMissing() = runBlocking<Unit> {
         assertTrue(delete(1).isSuccess)
         assertTrue(transactions.items.isEmpty())
         assertTrue(delete(1).exceptionOrNull() is NoSuchElementException)

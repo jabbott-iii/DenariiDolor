@@ -39,7 +39,7 @@ class ManageReferenceDataUseCaseTest {
     private val budgets = BudgetUseCases(budgetRepo, categoryRepo)
 
     @Test
-    fun categoryAddTrimsAndRejectsDuplicatesCaseInsensitively() = runBlocking {
+    fun categoryAddTrimsAndRejectsDuplicatesCaseInsensitively() = runBlocking<Unit> {
         assertTrue(categories.add("  Dining  ").isSuccess)
         assertEquals("Dining", categoryRepo.items.last().name)
         assertTrue(categories.add("groceries").isFailure)
@@ -47,14 +47,14 @@ class ManageReferenceDataUseCaseTest {
     }
 
     @Test
-    fun categoryRenameAllowsKeepingOwnName() = runBlocking {
+    fun categoryRenameAllowsKeepingOwnName() = runBlocking<Unit> {
         assertTrue(categories.update(4, "GROCERIES").isSuccess)
         assertTrue(categories.update(4, "Transfer").isFailure)
         assertTrue(categories.update(99, "Other").exceptionOrNull() is NoSuchElementException)
     }
 
     @Test
-    fun categoryRenamePreservesIcon() = runBlocking {
+    fun categoryRenamePreservesIcon() = runBlocking<Unit> {
         val id = categories.add("Pets", "ic_pets").getOrThrow()
         categories.update(id, "Pet Care")
 
@@ -62,7 +62,7 @@ class ManageReferenceDataUseCaseTest {
     }
 
     @Test
-    fun categoryDeleteBlockedWhenDefaultOrInUse() = runBlocking {
+    fun categoryDeleteBlockedWhenDefaultOrInUse() = runBlocking<Unit> {
         assertEquals("Default categories cannot be deleted", categories.delete(1).exceptionOrNull()?.message)
         assertEquals("Category is used by 1 transaction(s)", categories.delete(4).exceptionOrNull()?.message)
         val id = categories.add("Temp").getOrThrow()
@@ -70,14 +70,14 @@ class ManageReferenceDataUseCaseTest {
     }
 
     @Test
-    fun accountAddValidatesNameAndBalance() = runBlocking {
+    fun accountAddValidatesNameAndBalance() = runBlocking<Unit> {
         assertTrue(accounts.add("Credit Card", -25_000).isSuccess)
         assertEquals(-25_000L, accountRepo.items.last().balanceCents)
         assertTrue(accounts.add("cash").isFailure)
     }
 
     @Test
-    fun accountDeleteBlockedWhenDefaultOrInUse() = runBlocking {
+    fun accountDeleteBlockedWhenDefaultOrInUse() = runBlocking<Unit> {
         assertTrue(accounts.delete(1).isFailure)
         assertEquals("Account is used by 1 transaction(s)", accounts.delete(3).exceptionOrNull()?.message)
         val id = accounts.add("Temp").getOrThrow()
@@ -85,7 +85,7 @@ class ManageReferenceDataUseCaseTest {
     }
 
     @Test
-    fun budgetSetValidatesAndReplacesExisting() = runBlocking {
+    fun budgetSetValidatesAndReplacesExisting() = runBlocking<Unit> {
         val firstId = budgets.set(4, 20_000).getOrThrow()
         val secondId = budgets.set(4, 30_000, 90).getOrThrow()
 
@@ -98,7 +98,7 @@ class ManageReferenceDataUseCaseTest {
     }
 
     @Test
-    fun budgetDelete() = runBlocking {
+    fun budgetDelete() = runBlocking<Unit> {
         budgets.set(4, 20_000)
         assertTrue(budgets.delete(4).isSuccess)
         assertTrue(budgets.delete(4).isFailure)

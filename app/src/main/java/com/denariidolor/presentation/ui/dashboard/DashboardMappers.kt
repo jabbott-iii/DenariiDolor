@@ -43,6 +43,9 @@ data class BudgetProgress(
     val warningPercent: Int
 ) {
     val fraction: Float get() = if (limitCents > 0) (spentCents.toDouble() / limitCents).toFloat() else 0f
+
+    /** Whole percent, computed in integer math so 95% never renders as 94% from float error. */
+    val percentUsed: Int get() = if (limitCents > 0) (spentCents * PERCENT / limitCents).toInt() else 0
     val status: BudgetStatus get() = budgetStatus(spentCents, limitCents, warningPercent)
 }
 

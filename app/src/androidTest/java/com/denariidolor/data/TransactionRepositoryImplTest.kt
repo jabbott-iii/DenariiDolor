@@ -41,7 +41,7 @@ class TransactionRepositoryImplTest {
     private lateinit var repository: TransactionRepositoryImpl
 
     @Before
-    fun setUp() = runBlocking {
+    fun setUp() = runBlocking<Unit> {
         db = Room.inMemoryDatabaseBuilder(
             InstrumentationRegistry.getInstrumentation().targetContext,
             AppDatabase::class.java
@@ -68,7 +68,7 @@ class TransactionRepositoryImplTest {
     )
 
     @Test
-    fun addUpdateDeleteKeepBalancesInSync() = runBlocking {
+    fun addUpdateDeleteKeepBalancesInSync() = runBlocking<Unit> {
         val id = repository.add(expense(3_000))
         assertEquals(7_000L, balance(1))
 
@@ -82,7 +82,7 @@ class TransactionRepositoryImplTest {
     }
 
     @Test
-    fun transferDebitsSourceAndCreditsDestination() = runBlocking {
+    fun transferDebitsSourceAndCreditsDestination() = runBlocking<Unit> {
         repository.add(expense(4_000).copy(type = TransactionType.TRANSFER, transferAccountId = 2))
 
         assertEquals(6_000L, balance(1))
@@ -90,7 +90,7 @@ class TransactionRepositoryImplTest {
     }
 
     @Test
-    fun updatePreservesCreatedAt() = runBlocking {
+    fun updatePreservesCreatedAt() = runBlocking<Unit> {
         val id = repository.add(expense(1_000).copy(createdAtEpochMillis = 5L))
         repository.update(expense(1_200).copy(id = id, createdAtEpochMillis = 999L))
 
@@ -98,7 +98,7 @@ class TransactionRepositoryImplTest {
     }
 
     @Test
-    fun missingAccountRollsBackWholeOperation() = runBlocking {
+    fun missingAccountRollsBackWholeOperation() = runBlocking<Unit> {
         val result = runCatching { repository.add(expense(1_000).copy(type = TransactionType.TRANSFER, transferAccountId = 99)) }
 
         assertTrue(result.isFailure)
@@ -107,7 +107,7 @@ class TransactionRepositoryImplTest {
     }
 
     @Test
-    fun updateAndDeleteReturnFalseForUnknownId() = runBlocking {
+    fun updateAndDeleteReturnFalseForUnknownId() = runBlocking<Unit> {
         assertFalse(repository.update(expense(100).copy(id = 42)))
         assertFalse(repository.delete(42))
     }

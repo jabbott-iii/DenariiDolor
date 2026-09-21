@@ -92,7 +92,7 @@ class GenerateReportUseCaseTest {
     )
 
     @Test
-    fun reportHasTitlePeriodTimestampAndTotals() = runBlocking {
+    fun reportHasTitlePeriodTimestampAndTotals() = runBlocking<Unit> {
         val report = useCase(september)
 
         assertEquals(ReportText.TITLE, report.title)
@@ -104,7 +104,7 @@ class GenerateReportUseCaseTest {
     }
 
     @Test
-    fun rowsAreChronologicalWithNamesAndPaymentMethod() = runBlocking {
+    fun rowsAreChronologicalWithNamesAndPaymentMethod() = runBlocking<Unit> {
         val rows = useCase(september).rows
 
         assertEquals(listOf(2L, 1L, 3L), rows.map { it.transactionId })
@@ -114,7 +114,7 @@ class GenerateReportUseCaseTest {
     }
 
     @Test
-    fun unknownCategoryFallsBackToId() = runBlocking {
+    fun unknownCategoryFallsBackToId() = runBlocking<Unit> {
         val august = useCase(YearMonth.of(2026, 8)).rows.single()
 
         assertEquals("#99", august.categoryName)

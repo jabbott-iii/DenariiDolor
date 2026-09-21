@@ -292,3 +292,13 @@ CI run failed at **ktlint** (`ktlintAndroidTestSourceSetCheck`, `ktlintTestSourc
 - **Cause:** the Compose BOM was applied only to `implementation`; `androidTestImplementation` Compose artifacts had no version.
 - **Fix:** `androidTestImplementation(platform(libs.androidx.compose.bom))` in `app/build.gradle.kts`. (`debugImplementation` already inherits from `implementation`.)
 - **Also:** `local.properties` (machine-specific `sdk.dir`) was committed, which produced the "sdk.dir … does not exist" warning on CI. It's now in `.gitignore`; untrack it with `git rm --cached local.properties`.
+
+## 2026-09-21 — CI fix: instrumented test failures (API 26 emulator, 4 of 39)
+| Failure | Cause | Fix |
+|---|---|---|
+| `EncryptedDatabaseTest > initializationError` | `@Test fun … = runBlocking { … }` whose last expression returned `AppDatabase`, so the method wasn't `void` and JUnit rejected the whole class. | All 30 `= runBlocking {` test bodies (unit + instrumented) → `runBlocking<Unit>`. |
+| `CrudScreensTest.dashboardShowsBudgetAlertAndMeterStatus` ("Near limit · 95% used" not found) | **Real bug:** `(0.95f * 100).toInt()` = 94 from float error, so the app showed "94%". The meter was also below the fold of a `LazyColumn`, so it wasn't composed. | New `BudgetProgress.percentUsed` (integer math) used by the meter label; dashboard list tagged `DASHBOARD_LIST_TAG`; tests `performScrollToNode` before asserting. Unit test `percentUsedUsesIntegerMath` added. |
+| `ComposeScreensTest.loginScreenPrimaryActionLabelMatchesMode` ("Cannot call setContent twice") | Pre-existing test called `setContent` once per mode. | One `setContent` driven by a `mutableStateOf(mode)`. |
+| `ComposeScreensTest.loginScreenWipeDialogDismissRequestTriggersCancelCallback` | Pre-existing test pressed back on the activity's dispatcher, which never reaches the `AlertDialog` window. | `Espresso.pressBack()` (key-level back to the focused dialog window). |
+
+ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented tests can't run here; re-run CI.

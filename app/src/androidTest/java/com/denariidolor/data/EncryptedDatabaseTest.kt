@@ -55,7 +55,7 @@ class EncryptedDatabaseTest {
         .build()
 
     @Test
-    fun databaseFileIsEncryptedAndReadableWithSameKey() = runBlocking {
+    fun databaseFileIsEncryptedAndReadableWithSameKey() = runBlocking<Unit> {
         val key = DatabaseKeys.generateHexKey(SecureRandom())
         open(key).apply {
             accountDao().insert(AccountEntity(name = "Cash", balanceCents = 1_250))
@@ -70,7 +70,7 @@ class EncryptedDatabaseTest {
     }
 
     @Test
-    fun wrongKeyCannotReadDatabase() = runBlocking {
+    fun wrongKeyCannotReadDatabase() = runBlocking<Unit> {
         open(DatabaseKeys.generateHexKey(SecureRandom())).apply {
             accountDao().insert(AccountEntity(name = "Cash", balanceCents = 0))
             close()
