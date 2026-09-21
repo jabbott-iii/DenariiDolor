@@ -10,4 +10,6 @@ data class Transfer(
     override val dateEpochMillis: Long
 ) : Transaction(id, description, amount, categoryId, accountId, dateEpochMillis) {
     override fun balanceImpact(): Double = 0.0
+
+    override fun accountImpacts(): Map<Long, Double> = mapOf(accountId to -amount, transferAccountId to amount)
 }

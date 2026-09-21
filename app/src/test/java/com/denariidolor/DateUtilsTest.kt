@@ -17,4 +17,10 @@ class DateUtilsTest {
     fun parseIsoDateToEndOfDayEpochMillisUsesInclusiveEnd() {
         assertEquals(1_725_235_199_999L, DateUtils.parseIsoDateToEndOfDayEpochMillis("2024-09-01", zoneId))
     }
+
+    @Test
+    fun formatLocalDateUsesZone() {
+        assertEquals("2024-09-01", DateUtils.formatLocalDate(1_725_148_800_000L, zoneId))
+        assertEquals("2024-08-31", DateUtils.formatLocalDate(1_725_148_800_000L, ZoneId.of("America/Phoenix")))
+    }
 }

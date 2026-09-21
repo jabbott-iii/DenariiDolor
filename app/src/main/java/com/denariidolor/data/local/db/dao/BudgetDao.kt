@@ -17,4 +17,7 @@ interface BudgetDao {
 
     @Query("SELECT * FROM budgets WHERE categoryId = :categoryId LIMIT 1")
     suspend fun getByCategoryId(categoryId: Long): BudgetEntity?
+
+    @Query("DELETE FROM budgets WHERE categoryId = :categoryId")
+    suspend fun deleteByCategoryId(categoryId: Long): Int
 }

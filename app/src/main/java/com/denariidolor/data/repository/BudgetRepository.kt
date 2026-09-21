@@ -10,6 +10,7 @@ interface BudgetRepository {
     suspend fun upsert(budget: BudgetEntity): Long
     fun getAll(): Flow<List<BudgetEntity>>
     suspend fun getByCategoryId(categoryId: Long): BudgetEntity?
+    suspend fun deleteByCategoryId(categoryId: Long): Boolean
 }
 
 @Singleton
@@ -21,4 +22,6 @@ class BudgetRepositoryImpl @Inject constructor(
     override fun getAll(): Flow<List<BudgetEntity>> = budgetDao.getAll()
 
     override suspend fun getByCategoryId(categoryId: Long): BudgetEntity? = budgetDao.getByCategoryId(categoryId)
+
+    override suspend fun deleteByCategoryId(categoryId: Long): Boolean = budgetDao.deleteByCategoryId(categoryId) > 0
 }

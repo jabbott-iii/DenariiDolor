@@ -1,0 +1,92 @@
+# Denarii Dolor — Project Notes
+
+Running log of context, decisions, clarifications, and preferences. Read this (and `plan.md`) before making changes.
+
+## Project Summary
+Personal budget and expense tracker for Android. Users log income, expenses, transfers, categories, budgets, and accounts; search transactions; and generate monthly reports. Built to satisfy course requirements: OOP (inheritance/polymorphism/encapsulation), multi-row search, secure CRUD database, multi-column timestamped reports, validation, industry-appropriate security, scalable design, and a user-friendly GUI.
+
+## Tech Stack (as built)
+| Area | Choice |
+|---|---|
+| Language | Kotlin 1.9.24, JVM toolchain 17 |
+| UI | Jetpack Compose (Material 3, BOM 2024.09.03, compiler ext 1.5.14), Navigation Compose |
+| Architecture | MVVM + Repository + use cases (`domain/usecase`) |
+| DI | Hilt 2.52 (KSP) |
+| Database | Room 2.6.1, DB `denarii_dolor.db`, schema v1 |
+| Async | Coroutines + Flow/StateFlow |
+| Auth | PIN (PBKDF2) + BiometricPrompt (`BIOMETRIC_WEAK`) |
+| Secure storage | `EncryptedSharedPreferences` (security-crypto 1.1.0-alpha06), AES256-GCM master key |
+| SDK | minSdk 26, target/compile 34, AGP 8.5.2 |
+
+## Package Layout (`app/src/main/java/com/denariidolor`)
+- `domain/model` — `Transaction` (abstract) → `Expense`, `Income`, `Transfer`; `Account`, `Budget`, `Category`, `SearchFilters`, `MonthlyReport`/`ReportRow`, entity↔domain mappings.
+- `domain/usecase` — `AddTransaction`, `ValidateTransaction`, `SearchTransaction`, `GenerateReport`.
+- `data/local/db` — `AppDatabase`, entities, DAOs, `DefaultDataInitializer` (seeds Cash/Savings accounts and 3 default categories).
+- `data/local/preferences` — `EncryptedPreferencesManager` (Android wrapper) + `SecurityProfileService` (pure-Kotlin, unit-testable PIN/recovery logic behind a `SecurityProfileStore` interface).
+- `data/repository` — interface + `Impl` per aggregate (Transaction, Category, Budget, Account).
+- `di` — `AppModule` (Clock), `DatabaseModule`, `RepositoryModule`.
+- `presentation/ui` — `AppScreens.kt` (all Compose screens, ~900 lines), per-feature ViewModels, `auth/LoginActivity` (launcher), `search/SearchFilterParser`.
+- `util` — `Constants`, `DateUtils`, `SessionManager`, `Validators`.
+
+## Key Design Decisions (observed in code)
+- **Polymorphism:** each `Transaction` subclass overrides `balanceImpact()` — Expense `-amount`, Income `+amount`, Transfer `0.0` (net-neutral across accounts). Dashboard and reports sum `balanceImpact()` for net.
+- **Persistence model:** single `transactions` table with a `type` discriminator string (`EXPENSE`/`INCOME`/`TRANSFER`) and nullable `transferAccountId`. FKs to categories/accounts use `RESTRICT`; budgets cascade on category delete; unique index on category name and account name; one budget per category.
+- **Validation:** `Validators` (amount > 0 and finite, non-blank description, positive epoch, sane ranges) + `ValidateTransactionUseCase` (valid account/category, transfer destination required and different, expense must not push monthly category spend over `Budget.monthlyLimit`). Returns `Result` rather than throwing.
+- **Search:** single parameterized Room query with nullable filters (description LIKE, category, amount range, date range). UI inputs parsed by `SearchFilterParser` (ISO dates → start/end of day in the device zone).
+- **Reports:** `GenerateReportUseCase(year, month)` → rows, totals, net, `generatedAt`, and a CSV string (RFC-4180-style quoting on description).
+- **Auth / PIN lifecycle:** single-user profile. First launch = setup (PIN 4–12 digits + security question/answer). PIN and answer stored as PBKDF2-HMAC-SHA256 hashes (210k iterations, 16-byte salt, 256-bit key) inside encrypted prefs; constant-time comparisons. Recovery via security answer. Legacy plaintext `key_pin` migrates on setup. "Wipe all data" clears Room tables, secure prefs, cache, then reseeds defaults.
+- **Session:** `SessionManager` singleton, 5-minute inactivity timeout; `MainActivity` checks every 30s, on resume, and on each user interaction, then redirects to `LoginActivity` with a cleared task.
+
+## Tooling & Process
+- CI (`.github/workflows/ci.yml`): lint, `assembleDebug`, `testDebugUnitTest`, emulator `connectedAndroidTest` (API 33), plus detekt/ktlint/sonar/dependency-check steps (currently non-blocking).
+- Security workflow: CodeQL (java-kotlin) weekly + on push/PR.
+- CD: tag `vX.Y.Z` (`make release VERSION=vX.Y.Z`) → signed release APK/AAB, GitHub Release, Play internal track.
+- Contribution rules: issue first, approval before PR, license header required on every source file.
+- Recent work lands via Copilot branches (`copilot/*`) merged into `main`.
+
+## Known Gaps / Observations (from review 2026-09-20)
+1. ~~**CRUD incomplete**~~ — done in Phases 1a/1b (see `history.md`).
+2. **Room DB is not encrypted** — only preferences are. Financial data sits in plaintext SQLite. Consider SQLCipher (`net.zetetic:sqlcipher-android`) with a Keystore-wrapped passphrase.
+3. `android:allowBackup="true"` with template `backup_rules.xml` / `data_extraction_rules.xml` — DB and prefs may be included in cloud backup/device transfer.
+4. `release` build has `isMinifyEnabled = false`; `keepRules/rules.keep` is the default template.
+5. `DatabaseModule` uses `fallbackToDestructiveMigration()` and `exportSchema = false` — schema changes will silently wipe user data.
+6. ~~Account balances never updated~~ — fixed in Phase 1a (stored balances updated atomically). Data created before then may be out of sync.
+7. ~~Duplicate-category validation / empty ViewModels~~ — done in Phases 1a/1b.
+8. Budget warning threshold (`warningThresholdPercent`) is stored but unused — only the hard limit blocks.
+9. Report rows lack **Category name** and **Payment Method** columns called for in the spec; `ReportRow` shows `categoryId`. No CSV export/share action.
+10. Search results are rendered as `"description: amount"` strings rather than a multi-column row model (can reuse `TransactionRow` from the Dashboard in Phase 3).
+11. Transaction `type` is a raw string in several places — candidate for an enum / sealed type.
+12. Money uses `Double`; consider `Long` minor units (cents) or `BigDecimal` to avoid rounding errors.
+13. No audit log or role checks (listed in the recommended stack).
+14. `BiometricAuthManager` uses `BIOMETRIC_WEAK` and the prompt has no `CryptoObject`; biometric success bypasses any key unlock.
+15. `SessionManager` state is in-memory only; process death resets to unauthenticated (safe), but `LoginActivity` launch is the only gate.
+16. Dependency hygiene: `libs.versions.toml` has five unused `activity-compose` version aliases; `app/build.gradle.kts` pulls both `activity-compose` 1.9.0 and 1.9.2, plus unused `navigation-fragment`/`navigation-ui` (XML-era).
+17. `NOTICE` file was copied from another project ("Cryptare", Go dependencies) and needs rewriting for this app.
+18. No source file currently has a license header, contrary to `CONTRIBUTING.md`.
+19. CI uses JDK 21, CD uses JDK 17; detekt/ktlint/sonar/dependencyCheck/jacoco/publishBundle plugins are referenced but not configured in Gradle.
+20. `AppScreens.kt` is ~950 lines (new screens now go in per-feature files); split per feature as screens grow. Spec calls for separate feature modules — currently single `:app` module.
+
+## Preferences & Conventions
+- Pair-programming style: minimal, clean, tested, secure code; no filler comments.
+- Ask up to 3 clarifying questions when requirements are ambiguous; never guess architectural decisions.
+- Outline a plan before multi-file changes; present per-file changes and get confirmation before finalizing.
+- Record plans, clarifications, rationale, and confirmed preferences in this file.
+- User reviews diffs and commits changes themselves; Claude leaves work uncommitted.
+
+## Decision Log
+| Date | Decision | Rationale |
+|---|---|---|
+| 2026-09-20 | Created `notes.md` and `plan.md` from a codebase review. | Establish shared context for future sessions. |
+| 2026-09-20 | Account balances are stored and updated from transaction calculations (`balanceImpact()`). | User confirmed; fast dashboard reads, must stay consistent via DB transactions on add/edit/delete. |
+| 2026-09-20 | SQLCipher is permitted for Room encryption. | User confirmed; resolves gap #2. |
+| 2026-09-20 | Reports must export to both PDF and CSV. | User confirmed. |
+| 2026-09-20 | Multi-module split not required; stay single `:app` module. | User confirmed; gap #20 reduced to splitting `AppScreens.kt`. |
+| 2026-09-20 | Balance sync lives in `TransactionRepositoryImpl` inside `withTransaction`, driven by the pure `Ledger.balanceDeltas()`, which uses polymorphic `accountImpacts()`. | Atomic (no half-applied edits); logic is unit-testable without Room; showcases polymorphism. |
+| 2026-09-20 | Deleting a category or account that is still referenced is **blocked** (no reassignment); seeded default categories/accounts cannot be deleted. | Safest reversible default; the Add Transaction screen relies on default IDs. Revisit if reassign-on-delete is wanted. |
+| 2026-09-20 | No schema change for Phase 1a (DB stays v1). | Avoids a migration while `fallbackToDestructiveMigration()` is still in place. |
+| 2026-09-20 | Use cases return `Result`; `runSuspendCatching` used instead of `runCatching`. | Keeps coroutine cancellation working. |
+| 2026-09-20 | Context files: `notes.md` (decisions), `plan.md` (roadmap), `history.md` (session log). | User request. |
+| 2026-09-20 | User approved Phase 1a decisions (block delete when in use, protect defaults). | Confirmed. |
+| 2026-09-20 | Transaction list lives on the **Dashboard** as "Recent transactions" (tap = edit, delete with confirm). | User choice. |
+| 2026-09-20 | Category / Account / Budget management screens open from **Settings**. | User choice. |
+| 2026-09-20 | Phase 1b plan: shared UI components in `presentation/ui/common`; one Add/Edit screen (edit via `edit_transaction/{transactionId}` + `SavedStateHandle`); one-shot VM events via `Channel` instead of `StateFlow<String>` (fixes repeat-save not resetting the form); new screens in per-feature files; logic kept in pure functions for JVM tests (no coroutines-test dependency added). | Keeps `AppScreens.kt` from growing; testable without new deps. |

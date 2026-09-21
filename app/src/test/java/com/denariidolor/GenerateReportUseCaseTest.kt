@@ -1,11 +1,9 @@
 package com.denariidolor
 
 import com.denariidolor.data.local.db.entity.TransactionEntity
-import com.denariidolor.data.repository.TransactionRepository
-import com.denariidolor.domain.model.SearchFilters
 import com.denariidolor.domain.usecase.GenerateReportUseCase
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
+import com.denariidolor.testutil.FakeTransactionRepository
+import com.denariidolor.util.DateUtils
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -14,18 +12,14 @@ import org.junit.Test
 class GenerateReportUseCaseTest {
     @Test
     fun reportCalculatesIncomeExpenseAndCsv() = runBlocking {
-        val repo = object : TransactionRepository {
-            override suspend fun add(transaction: TransactionEntity): Long = 0
-            override fun getAll(): Flow<List<TransactionEntity>> = emptyFlow()
-            override fun search(filters: SearchFilters): Flow<List<TransactionEntity>> = emptyFlow()
-            override suspend fun getByDateRange(startInclusive: Long, endInclusive: Long): List<TransactionEntity> = listOf(
-                TransactionEntity(type = "INCOME", description = "Salary", amount = 2000.0, categoryId = 1, accountId = 1, dateEpochMillis = startInclusive),
-                TransactionEntity(type = "EXPENSE", description = "Rent", amount = 900.0, categoryId = 2, accountId = 1, dateEpochMillis = startInclusive),
-                TransactionEntity(type = "TRANSFER", description = "Savings", amount = 300.0, categoryId = 3, accountId = 1, transferAccountId = 2, dateEpochMillis = startInclusive)
+        val date = DateUtils.monthRangeEpochMillis(2026, 9).first
+        val repo = FakeTransactionRepository(
+            listOf(
+                TransactionEntity(id = 1, type = "INCOME", description = "Salary", amount = 2000.0, categoryId = 1, accountId = 1, dateEpochMillis = date),
+                TransactionEntity(id = 2, type = "EXPENSE", description = "Rent", amount = 900.0, categoryId = 2, accountId = 1, dateEpochMillis = date),
+                TransactionEntity(id = 3, type = "TRANSFER", description = "Savings", amount = 300.0, categoryId = 3, accountId = 1, transferAccountId = 2, dateEpochMillis = date)
             )
-
-            override suspend fun getExpenseTotalForCategory(categoryId: Long, startInclusive: Long, endInclusive: Long): Double = 0.0
-        }
+        )
 
         val report = GenerateReportUseCase(repo).invoke(2026, 9)
 

@@ -40,6 +40,8 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -62,16 +64,27 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.denariidolor.R
-import com.denariidolor.presentation.ui.dashboard.DashboardViewModel
+import com.denariidolor.presentation.ui.account.ManageAccountsRoute
+import com.denariidolor.presentation.ui.budget.ManageBudgetsRoute
+import com.denariidolor.presentation.ui.category.ManageCategoriesRoute
+import com.denariidolor.presentation.ui.common.PickerOption
+import com.denariidolor.presentation.ui.common.ReferencePicker
+import com.denariidolor.presentation.ui.common.ScreenHeader
+import com.denariidolor.presentation.ui.dashboard.DashboardRoute
 import com.denariidolor.presentation.ui.report.ReportViewModel
 import com.denariidolor.presentation.ui.search.SearchFilterParser
 import com.denariidolor.presentation.ui.search.SearchViewModel
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
+import com.denariidolor.presentation.ui.transaction.TransactionEvent
+import com.denariidolor.presentation.ui.transaction.TransactionFormInput
+import com.denariidolor.presentation.ui.transaction.TransactionFormState
 import com.denariidolor.presentation.ui.transaction.TransactionViewModel
 import com.denariidolor.util.Constants
 import com.denariidolor.util.DateUtils
@@ -81,6 +94,9 @@ internal const val LoginButtonTag = "loginButton"
 internal const val BiometricButtonTag = "biometricButton"
 internal const val TransactionTypeFieldTag = "transactionTypeField"
 internal const val TransferAccountFieldTag = "transferAccountField"
+internal const val CategoryPickerTag = "categoryPicker"
+internal const val AccountPickerTag = "accountPicker"
+internal const val SaveTransactionButtonTag = "saveTransactionButton"
 
 enum class LoginScreenMode {
     SETUP,
@@ -97,8 +113,18 @@ private enum class MainDestination(
     Search("search", R.string.search, android.R.drawable.ic_menu_search),
     Report("report", R.string.reports, android.R.drawable.ic_menu_info_details),
     Settings("settings", R.string.settings, android.R.drawable.ic_menu_preferences),
-    AddTransaction("add_transaction", R.string.add_transaction, android.R.drawable.ic_input_add)
+    AddTransaction("add_transaction", R.string.add_transaction, android.R.drawable.ic_input_add),
+    EditTransaction(
+        "edit_transaction/{${TransactionViewModel.ARG_TRANSACTION_ID}}",
+        R.string.edit_transaction,
+        android.R.drawable.ic_menu_edit
+    ),
+    ManageCategories("manage_categories", R.string.manage_categories, android.R.drawable.ic_menu_sort_by_size),
+    ManageAccounts("manage_accounts", R.string.manage_accounts, android.R.drawable.ic_menu_agenda),
+    ManageBudgets("manage_budgets", R.string.manage_budgets, android.R.drawable.ic_menu_manage)
 }
+
+private fun editTransactionRoute(id: Long) = "edit_transaction/$id"
 
 private val bottomDestinations = listOf(
     MainDestination.Dashboard,
@@ -143,7 +169,7 @@ fun MainActivityContent(
             }
         },
         floatingActionButton = {
-            if (currentRoute != MainDestination.AddTransaction.route) {
+            if (bottomDestinations.any { it.route == currentRoute }) {
                 FloatingActionButton(
                     onClick = { navController.navigate(MainDestination.AddTransaction.route) { launchSingleTop = true } }
                 ) {
@@ -162,17 +188,39 @@ fun MainActivityContent(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            composable(MainDestination.Dashboard.route) { DashboardRoute() }
+            composable(MainDestination.Dashboard.route) {
+                DashboardRoute(onEditTransaction = { id -> navController.navigate(editTransactionRoute(id)) })
+            }
             composable(MainDestination.Search.route) { SearchRoute() }
             composable(MainDestination.Report.route) { ReportRoute() }
             composable(MainDestination.Settings.route) {
                 SettingsScreen(
                     state = settingsState,
                     onSignOut = { onSettingsAction(false) },
-                    onResetSecurityProfile = { onSettingsAction(true) }
+                    onResetSecurityProfile = { onSettingsAction(true) },
+                    onManageCategories = { navController.navigate(MainDestination.ManageCategories.route) },
+                    onManageAccounts = { navController.navigate(MainDestination.ManageAccounts.route) },
+                    onManageBudgets = { navController.navigate(MainDestination.ManageBudgets.route) }
                 )
             }
-            composable(MainDestination.AddTransaction.route) { AddTransactionRoute() }
+            composable(MainDestination.AddTransaction.route) {
+                AddTransactionRoute(onFinished = { navController.popBackStack() })
+            }
+            composable(
+                route = MainDestination.EditTransaction.route,
+                arguments = listOf(navArgument(TransactionViewModel.ARG_TRANSACTION_ID) { type = NavType.LongType })
+            ) {
+                AddTransactionRoute(onFinished = { navController.popBackStack() })
+            }
+            composable(MainDestination.ManageCategories.route) {
+                ManageCategoriesRoute(onBack = { navController.popBackStack() })
+            }
+            composable(MainDestination.ManageAccounts.route) {
+                ManageAccountsRoute(onBack = { navController.popBackStack() })
+            }
+            composable(MainDestination.ManageBudgets.route) {
+                ManageBudgetsRoute(onBack = { navController.popBackStack() })
+            }
         }
     }
 }
@@ -418,25 +466,6 @@ fun LoginScreen(
 }
 
 @Composable
-private fun DashboardRoute(viewModel: DashboardViewModel = hiltViewModel()) {
-    val summary by viewModel.summary.collectAsStateWithLifecycle()
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = stringResource(R.string.dashboard_income, summary.income),
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = stringResource(R.string.dashboard_expense, summary.expense))
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = stringResource(R.string.dashboard_net, summary.net))
-    }
-}
-
-@Composable
 private fun SearchRoute(viewModel: SearchViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val results by viewModel.results.collectAsStateWithLifecycle()
@@ -582,7 +611,10 @@ private fun ReportRoute(viewModel: ReportViewModel = hiltViewModel()) {
 fun SettingsScreen(
     state: SettingsScreenState,
     onSignOut: () -> Unit,
-    onResetSecurityProfile: () -> Unit
+    onResetSecurityProfile: () -> Unit,
+    onManageCategories: () -> Unit = {},
+    onManageAccounts: () -> Unit = {},
+    onManageBudgets: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -605,6 +637,20 @@ fun SettingsScreen(
             )
         )
         Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = onManageCategories, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.manage_categories))
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = onManageAccounts, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.manage_accounts))
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = onManageBudgets, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.manage_budgets))
+        }
+        Spacer(modifier = Modifier.height(24.dp))
+        HorizontalDivider()
+        Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.sign_out))
         }
@@ -616,78 +662,86 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun AddTransactionRoute(viewModel: TransactionViewModel = hiltViewModel()) {
+private fun AddTransactionRoute(
+    onFinished: () -> Unit,
+    viewModel: TransactionViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
-    val statusMessage by viewModel.status.collectAsStateWithLifecycle()
-    AddTransactionScreen(
-        statusMessage = statusMessage,
-        onSave = { type, description, amount, categoryId, accountId, transferAccountId, dateEpochMillis ->
-            viewModel.addTransaction(
-                type = type,
-                description = description,
-                amount = amount,
-                categoryId = categoryId,
-                accountId = accountId,
-                transferAccountId = transferAccountId,
-                dateEpochMillis = dateEpochMillis
+    val formState by viewModel.formState.collectAsStateWithLifecycle()
+    val categories by viewModel.categoryOptions.collectAsStateWithLifecycle()
+    val accounts by viewModel.accountOptions.collectAsStateWithLifecycle()
+    var formKey by rememberSaveable { mutableIntStateOf(0) }
+    val savedMessage = stringResource(R.string.transaction_saved)
+    val errorMessage = stringResource(R.string.generic_error)
+    val notFoundMessage = stringResource(R.string.transaction_not_found)
+
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                TransactionEvent.Saved -> {
+                    Toast.makeText(context, savedMessage, Toast.LENGTH_SHORT).show()
+                    if (viewModel.isEditMode) onFinished() else formKey++
+                }
+                is TransactionEvent.Failed ->
+                    Toast.makeText(context, event.message ?: errorMessage, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    when (val state = formState) {
+        TransactionFormState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        TransactionFormState.NotFound -> LaunchedEffect(Unit) {
+            Toast.makeText(context, notFoundMessage, Toast.LENGTH_SHORT).show()
+            onFinished()
+        }
+        is TransactionFormState.Ready -> key(formKey) {
+            AddTransactionScreen(
+                onSave = viewModel::saveTransaction,
+                onShowMessage = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() },
+                categories = categories,
+                accounts = accounts,
+                initial = state.initial,
+                onBack = if (viewModel.isEditMode) onFinished else null
             )
-        },
-        onShowMessage = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
-    )
+        }
+    }
 }
 
 @Composable
 fun AddTransactionScreen(
-    statusMessage: String?,
     onSave: (String, String, Double, Long, Long, Long?, Long) -> Unit,
-    onShowMessage: (String) -> Unit
+    onShowMessage: (String) -> Unit,
+    categories: List<PickerOption> = emptyList(),
+    accounts: List<PickerOption> = emptyList(),
+    initial: TransactionFormInput? = null,
+    onBack: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val transactionTypes = stringArrayResource(R.array.transaction_types)
-    val initialType = transactionTypes.firstOrNull().orEmpty()
-    val initialDefaults = remember(initialType) {
+    val startType = initial?.type ?: transactionTypes.firstOrNull().orEmpty()
+    val startDefaults = remember(startType) {
         applyTransactionTypeDefaults(
-            selectedType = initialType,
+            selectedType = startType,
             currentCategoryId = "",
             lastAutoCategoryId = null,
             accountId = "",
             transferAccountId = ""
         )
     }
-    var description by rememberSaveable { mutableStateOf("") }
-    var selectedType by rememberSaveable { mutableStateOf(initialType) }
-    var amount by rememberSaveable { mutableStateOf("") }
-    var categoryId by rememberSaveable { mutableStateOf(initialDefaults.categoryId) }
-    var accountId by rememberSaveable { mutableStateOf(initialDefaults.accountId) }
-    var transferAccountId by rememberSaveable { mutableStateOf(initialDefaults.transferAccountId) }
-    var lastAutoCategoryId by rememberSaveable { mutableStateOf(initialDefaults.lastAutoCategoryId) }
-    var dateText by rememberSaveable { mutableStateOf("") }
+    var description by rememberSaveable { mutableStateOf(initial?.description.orEmpty()) }
+    var selectedType by rememberSaveable { mutableStateOf(startType) }
+    var amount by rememberSaveable { mutableStateOf(initial?.amount.orEmpty()) }
+    var categoryId by rememberSaveable { mutableStateOf(initial?.categoryId ?: startDefaults.categoryId) }
+    var accountId by rememberSaveable { mutableStateOf(initial?.accountId ?: startDefaults.accountId) }
+    var transferAccountId by rememberSaveable { mutableStateOf(initial?.transferAccountId ?: startDefaults.transferAccountId) }
+    var lastAutoCategoryId by rememberSaveable { mutableStateOf(startDefaults.lastAutoCategoryId) }
+    var dateText by rememberSaveable { mutableStateOf(initial?.dateText.orEmpty()) }
     var dropdownExpanded by rememberSaveable { mutableStateOf(false) }
     val invalidDateMessage = stringResource(R.string.invalid_date_message)
     val referenceRequiredMessage = stringResource(R.string.transaction_reference_required_message)
     val datePlaceholder = stringResource(R.string.date_hint)
-
-    LaunchedEffect(statusMessage) {
-        if (!statusMessage.isNullOrBlank()) {
-            onShowMessage(statusMessage)
-            if (statusMessage == TransactionViewModel.STATUS_SAVED) {
-                description = ""
-                amount = ""
-                dateText = ""
-                val defaults = applyTransactionTypeDefaults(
-                    selectedType = selectedType,
-                    currentCategoryId = "",
-                    lastAutoCategoryId = null,
-                    accountId = "",
-                    transferAccountId = ""
-                )
-                categoryId = defaults.categoryId
-                accountId = defaults.accountId
-                transferAccountId = defaults.transferAccountId
-                lastAutoCategoryId = defaults.lastAutoCategoryId
-            }
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -695,6 +749,9 @@ fun AddTransactionScreen(
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
+        if (initial != null) {
+            ScreenHeader(title = stringResource(R.string.edit_transaction), onBack = onBack)
+        }
         OutlinedTextField(
             value = description,
             onValueChange = { description = it },
@@ -754,34 +811,29 @@ fun AddTransactionScreen(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
         )
         Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(
-            value = categoryId,
-            onValueChange = { categoryId = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.transaction_category_id_hint)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        ReferencePicker(
+            label = stringResource(R.string.transaction_category_label),
+            options = categories,
+            selectedId = categoryId,
+            onSelected = { categoryId = it },
+            fieldModifier = Modifier.testTag(CategoryPickerTag)
         )
         Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(
-            value = accountId,
-            onValueChange = { accountId = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.transaction_account_id_hint)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        ReferencePicker(
+            label = stringResource(R.string.transaction_account_label),
+            options = accounts,
+            selectedId = accountId,
+            onSelected = { accountId = it },
+            fieldModifier = Modifier.testTag(AccountPickerTag)
         )
         if (selectedType == "TRANSFER") {
             Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = transferAccountId,
-                onValueChange = { transferAccountId = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag(TransferAccountFieldTag),
-                label = { Text(stringResource(R.string.transaction_transfer_account_id_hint)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            ReferencePicker(
+                label = stringResource(R.string.transaction_transfer_account_label),
+                options = accounts,
+                selectedId = transferAccountId,
+                onSelected = { transferAccountId = it },
+                fieldModifier = Modifier.testTag(TransferAccountFieldTag)
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -803,10 +855,12 @@ fun AddTransactionScreen(
                 } else {
                     null
                 }
-                val dateEpochMillis = if (dateText.isBlank()) {
-                    System.currentTimeMillis()
-                } else {
-                    runCatching { DateUtils.parseIsoDateToStartOfDayEpochMillis(dateText) }.getOrElse {
+                val dateEpochMillis = when {
+                    dateText.isBlank() -> System.currentTimeMillis()
+                    else -> runCatching {
+                        initial?.resolveDateEpochMillis(dateText, DateUtils::parseIsoDateToStartOfDayEpochMillis)
+                            ?: DateUtils.parseIsoDateToStartOfDayEpochMillis(dateText)
+                    }.getOrElse {
                         onShowMessage(invalidDateMessage)
                         return@Button
                     }
@@ -821,9 +875,11 @@ fun AddTransactionScreen(
                     dateEpochMillis
                 )
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(SaveTransactionButtonTag)
         ) {
-            Text(stringResource(R.string.save_transaction))
+            Text(stringResource(if (initial == null) R.string.save_transaction else R.string.update_transaction))
         }
     }
 }

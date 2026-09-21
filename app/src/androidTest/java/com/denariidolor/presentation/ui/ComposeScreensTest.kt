@@ -8,13 +8,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.denariidolor.R
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
+import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.util.Constants
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -64,9 +65,12 @@ class ComposeScreensTest {
         composeRule.setContent {
             DenariiDolorTheme {
                 AddTransactionScreen(
-                    statusMessage = null,
                     onSave = { _, _, _, _, _, _, _ -> },
-                    onShowMessage = {}
+                    onShowMessage = {},
+                    accounts = listOf(
+                        PickerOption(Constants.DEFAULT_CASH_ACCOUNT_ID, "Cash"),
+                        PickerOption(Constants.DEFAULT_SAVINGS_ACCOUNT_ID, "Savings")
+                    )
                 )
             }
         }
@@ -76,7 +80,7 @@ class ComposeScreensTest {
         composeRule.onNodeWithText("TRANSFER").performClick()
         composeRule.onNodeWithTag(TransferAccountFieldTag)
             .assertIsDisplayed()
-            .assertTextEquals(Constants.DEFAULT_SAVINGS_ACCOUNT_ID.toString())
+            .assertTextContains("Savings")
     }
 
     @Test

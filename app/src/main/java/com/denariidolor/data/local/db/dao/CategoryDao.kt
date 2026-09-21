@@ -18,8 +18,17 @@ interface CategoryDao {
     @Query("SELECT * FROM categories ORDER BY name ASC")
     fun getAll(): Flow<List<CategoryEntity>>
 
-    @Query("SELECT COUNT(*) FROM categories WHERE LOWER(name) = LOWER(:name)")
-    suspend fun countByName(name: String): Int
+    @Query("SELECT COUNT(*) FROM categories WHERE LOWER(name) = LOWER(:name) AND id != :excludeId")
+    suspend fun countByName(name: String, excludeId: Long): Int
+
+    @Query("SELECT * FROM categories WHERE id = :id")
+    suspend fun getById(id: Long): CategoryEntity?
+
+    @Query("UPDATE categories SET name = :name, iconName = :iconName WHERE id = :id")
+    suspend fun update(id: Long, name: String, iconName: String): Int
+
+    @Query("DELETE FROM categories WHERE id = :id")
+    suspend fun deleteById(id: Long): Int
 
     @Query("SELECT COUNT(*) FROM categories")
     suspend fun count(): Int

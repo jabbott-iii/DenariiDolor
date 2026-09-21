@@ -9,6 +9,14 @@ object Validators {
 
     fun isValidDateEpoch(epochMillis: Long): Boolean = epochMillis > 0
 
+    const val MAX_NAME_LENGTH = 50
+
+    fun isValidName(name: String): Boolean = name.trim().length in 1..MAX_NAME_LENGTH
+
+    fun isValidPercent(percent: Int): Boolean = percent in 1..100
+
+    fun isValidBalance(balance: Double): Boolean = balance.isFinite()
+
     fun isValidSearchRange(filters: SearchFilters): Boolean {
         val amountOk = (filters.minAmount == null || filters.maxAmount == null || filters.minAmount <= filters.maxAmount)
         val dateOk = (filters.startDateEpochMillis == null || filters.endDateEpochMillis == null ||

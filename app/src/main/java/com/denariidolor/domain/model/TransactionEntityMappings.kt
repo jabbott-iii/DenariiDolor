@@ -35,3 +35,22 @@ fun TransactionEntity.toDomainTransaction(): Transaction {
         else -> throw IllegalArgumentException("Unsupported transaction type: $type")
     }
 }
+
+fun Transaction.toEntity(): TransactionEntity {
+    val type = when (this) {
+        is Expense -> "EXPENSE"
+        is Income -> "INCOME"
+        is Transfer -> "TRANSFER"
+        else -> throw IllegalArgumentException("Unsupported transaction type: ${this::class.simpleName}")
+    }
+    return TransactionEntity(
+        id = id,
+        type = type,
+        description = description,
+        amount = amount,
+        categoryId = categoryId,
+        accountId = accountId,
+        transferAccountId = (this as? Transfer)?.transferAccountId,
+        dateEpochMillis = dateEpochMillis
+    )
+}

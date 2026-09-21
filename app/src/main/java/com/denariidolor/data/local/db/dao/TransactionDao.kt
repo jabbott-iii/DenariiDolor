@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.denariidolor.data.local.db.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -50,11 +51,28 @@ interface TransactionDao {
         SELECT COALESCE(SUM(amount), 0) FROM transactions
         WHERE type = 'EXPENSE' AND categoryId = :categoryId
           AND dateEpochMillis BETWEEN :startInclusive AND :endInclusive
+          AND id != :excludeTransactionId
         """
     )
     suspend fun getExpenseTotalForCategory(
         categoryId: Long,
         startInclusive: Long,
-        endInclusive: Long
+        endInclusive: Long,
+        excludeTransactionId: Long
     ): Double
+
+    @Query("SELECT * FROM transactions WHERE id = :id")
+    suspend fun getById(id: Long): TransactionEntity?
+
+    @Update
+    suspend fun update(transaction: TransactionEntity): Int
+
+    @Query("DELETE FROM transactions WHERE id = :id")
+    suspend fun deleteById(id: Long): Int
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE categoryId = :categoryId")
+    suspend fun countByCategory(categoryId: Long): Int
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE accountId = :accountId OR transferAccountId = :accountId")
+    suspend fun countByAccount(accountId: Long): Int
 }

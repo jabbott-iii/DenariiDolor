@@ -21,4 +21,15 @@ class ValidatorsTest {
         assertFalse(Validators.isValidSearchRange(SearchFilters(startDateEpochMillis = 2L, endDateEpochMillis = 1L)))
         assertTrue(Validators.isValidSearchRange(SearchFilters(minAmount = 1.0, maxAmount = 2.0)))
     }
+
+    @Test
+    fun nameAndPercentValidation() {
+        assertTrue(Validators.isValidName("Groceries"))
+        assertFalse(Validators.isValidName("   "))
+        assertFalse(Validators.isValidName("x".repeat(Validators.MAX_NAME_LENGTH + 1)))
+        assertTrue(Validators.isValidPercent(80))
+        assertFalse(Validators.isValidPercent(0))
+        assertFalse(Validators.isValidPercent(101))
+        assertFalse(Validators.isValidBalance(Double.NaN))
+    }
 }

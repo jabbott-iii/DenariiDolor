@@ -15,6 +15,9 @@ object DateUtils {
 
     fun formatIso(epochMillis: Long): String = Instant.ofEpochMilli(epochMillis).toString()
 
+    fun formatLocalDate(epochMillis: Long, zoneId: ZoneId = ZoneId.systemDefault()): String =
+        Instant.ofEpochMilli(epochMillis).atZone(zoneId).toLocalDate().toString()
+
     fun parseIsoDateToStartOfDayEpochMillis(
         value: String,
         zoneId: ZoneId = ZoneId.systemDefault()

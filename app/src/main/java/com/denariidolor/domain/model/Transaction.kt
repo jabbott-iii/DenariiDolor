@@ -9,4 +9,6 @@ abstract class Transaction(
     open val dateEpochMillis: Long
 ) {
     abstract fun balanceImpact(): Double
+
+    open fun accountImpacts(): Map<Long, Double> = mapOf(accountId to balanceImpact())
 }
