@@ -367,3 +367,12 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
 - **Fix:** the failing fake in TC-15 now calls `error("database closed")` instead of `throw IllegalStateException("database closed")`. `error()` throws the same exception type with the same message, so the test's behaviour and assertions are unchanged.
 - **Root cause of the miss:** my local detekt-cli check ran without `--build-upon-default-config`, but Gradle's `detekt { buildUponDefaultConfig = true }` enables the default rule set. With that flag, the local CLI reproduces the CI finding on the old code and reports 0 findings after the fix. ktlint is still clean.
 - Testing PDFs regenerated to show the corrected line and this finding (`test-changes.pdf` #12).
+
+## 2026-09-21 — CI fix: flaky `recoveryModeBackButtonAndSystemBackReturnToSignIn` (API 26)
+- **Failure:** `NullPointerException: Cannot run onActivity since Activity has been destroyed already` (40/41 passed).
+- **Cause:** a test timing race, not an app bug. The test clicked **Forgot PIN?** and immediately sent a system back press with `UiDevice.pressBack()`. UiAutomator doesn't wait for Compose, so on the slow API 26 emulator the back press arrived before recovery mode had recomposed. The `BackHandler` wasn't enabled yet, so the press reached the activity and finished it.
+- **Fix (test only):**
+  - Wait for the recovery screen (`Back to Sign In` visible) and call `waitForIdle()`.
+  - Then send the back press through the activity's `onBackPressedDispatcher` on the UI thread. That is the dispatcher `BackHandler` registers with, so the result is deterministic.
+  - The wipe-dialog test keeps `UiDevice.pressBack()`, because dialogs need a real key event.
+- ktlint and detekt (with the default rule set, as Gradle runs it) report 0 findings. Re-run CI to confirm 41/41.

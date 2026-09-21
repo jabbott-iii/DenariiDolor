@@ -412,7 +412,11 @@ class ComposeScreensTest {
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.sign_in)).assertIsDisplayed()
 
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.forgot_pin)).performClick()
-        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).pressBack()
+        // Wait until recovery mode is composed so its BackHandler is registered and enabled;
+        // otherwise the back press reaches the activity and finishes it.
+        composeRule.onNodeWithText(composeRule.activity.getString(R.string.back_to_sign_in)).assertIsDisplayed()
+        composeRule.waitForIdle()
+        composeRule.runOnUiThread { composeRule.activity.onBackPressedDispatcher.onBackPressed() }
         composeRule.onNodeWithText(composeRule.activity.getString(R.string.sign_in)).assertIsDisplayed()
         composeRule.runOnIdle { assertTrue(backCalls == 2) }
     }
