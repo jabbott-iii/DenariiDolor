@@ -17,6 +17,9 @@
 package com.denariidolor
 
 import com.denariidolor.data.local.db.entity.BudgetEntity
+import com.denariidolor.data.local.db.entity.CategoryEntity
+import com.denariidolor.data.local.db.entity.TransactionEntity
+import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.usecase.ValidateTransactionUseCase
 import com.denariidolor.testutil.FakeAccountRepository
@@ -26,6 +29,7 @@ import com.denariidolor.testutil.FakeTransactionRepository
 import com.denariidolor.testutil.TestData
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -90,4 +94,70 @@ class ValidateTransactionUseCaseTest {
         assertTrue(useCase(TestData.expense(amountCents = 2_000)).isSuccess)
         assertTrue(useCase(TestData.expense(amountCents = 2_001)).isFailure)
     }
+
+    @Test
+    fun rejectsZeroOrNegativeAmount() = runBlocking<Unit> {
+        assertEquals("Invalid amount", messageFor(TestData.expense(amountCents = 0)))
+        assertEquals("Invalid amount", messageFor(TestData.expense(amountCents = -1)))
+    }
+
+    @Test
+    fun rejectsBlankDescription() = runBlocking<Unit> {
+        assertEquals("Description cannot be blank", messageFor(TestData.expense().copy(description = "   ")))
+    }
+
+    @Test
+    fun rejectsNonPositiveDate() = runBlocking<Unit> {
+        assertEquals("Invalid date", messageFor(TestData.expense().copy(dateEpochMillis = 0)))
+    }
+
+    @Test
+    fun rejectsNonPositiveAccountOrCategoryIds() = runBlocking<Unit> {
+        assertEquals("Invalid account", messageFor(TestData.expense(accountId = 0)))
+        assertEquals("Invalid category", messageFor(TestData.expense(categoryId = 0)))
+    }
+
+    @Test
+    fun transferRequiresDestination() = runBlocking<Unit> {
+        val transfer = TestData.expense().copy(type = TransactionType.TRANSFER, categoryId = 3, transferAccountId = null)
+
+        assertEquals("Transfer destination is required", messageFor(transfer))
+    }
+
+    @Test
+    fun validTransferPasses() = runBlocking<Unit> {
+        val transfer = TestData.expense().copy(type = TransactionType.TRANSFER, categoryId = 3, accountId = 1, transferAccountId = 2)
+
+        assertTrue(useCase(transfer).isSuccess)
+    }
+
+    @Test
+    fun budgetOnlyLimitsExpenses() = runBlocking<Unit> {
+        transactions.expenseTotalCents = 9_000
+        val income = TestData.expense(amountCents = 5_000).copy(type = TransactionType.INCOME)
+
+        assertTrue(useCase(income).isSuccess)
+    }
+
+    @Test
+    fun expenseWithoutBudgetIsNotLimited() = runBlocking<Unit> {
+        transactions.expenseTotalCents = 1_000_000
+
+        assertTrue(useCase(TestData.expense(amountCents = 500_000, categoryId = 1)).isSuccess)
+    }
+
+    @Test
+    fun repositoryErrorBecomesFailureInsteadOfCrash() = runBlocking<Unit> {
+        val failingCategories = object : CategoryRepository by FakeCategoryRepository(TestData.categories) {
+            override suspend fun getById(id: Long): CategoryEntity? = throw IllegalStateException("database closed")
+        }
+        val failingUseCase = ValidateTransactionUseCase(failingCategories, FakeAccountRepository(TestData.accounts), budgets, transactions)
+
+        val result = failingUseCase(TestData.expense())
+
+        assertFalse(result.isSuccess)
+        assertEquals("database closed", result.exceptionOrNull()?.message)
+    }
+
+    private suspend fun messageFor(transaction: TransactionEntity): String? = useCase(transaction).exceptionOrNull()?.message
 }

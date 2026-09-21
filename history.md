@@ -349,3 +349,15 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
   - worked examples (a sample month, a search, and the exact CSV export format from `ReportCsvFormatter`);
   - a developer section (stack, architecture diagram, commands, layout, CI/CD, signing secrets), security, and license.
 - The standalone docs (`diagram.md`, the guides) are no longer in the repo, so the README is self-contained and doesn't link to them.
+
+## 2026-09-21 — Unit test plan, scripts, results and change summary
+- **Test plan focus:** transaction validation (`ValidateTransactionUseCase` + `Validators` + `Money.parseToCents`). 20 cases, TC-01 – TC-20.
+- **Gap analysis:** 6 of the 11 `failure(...)` branches had no test. Added 9 tests to `ValidateTransactionUseCaseTest.kt`:
+  - invalid amount, blank description, invalid date, invalid IDs;
+  - transfer without a destination; a valid transfer;
+  - income in a budgeted category; a category with no budget;
+  - a repository error becoming `Result.failure`.
+  
+  The class went from 6 to 15 tests, and the unit suite from 107 to 116. ktlint and detekt report 0 findings.
+- **Local run** (2026-09-21 11:33, `./gradlew testDebugUnitTest createDebugUnitTestCoverageReport`): **116/116 passed**, 0 failures. `ValidateTransactionUseCase` coverage: 97.4 % of lines, 94.4 % of branches. The only gaps are a compiler artifact, a coroutine-resume branch, and an unreachable guard on line 56. No production code changes were needed.
+- **Deliverables** in `testing/`: `test-plan.pdf`, `test-scripts.pdf`, `test-results.pdf`, `test-changes.pdf`. The screenshots in them come from the real Gradle and JaCoCo HTML reports, rendered in headless Chromium, plus source and diff views. The Mermaid diagrams are rendered to SVG.
