@@ -50,7 +50,7 @@
 **Requirements:** Android 8.0 (API 26) or newer.
 
 1. Download the latest `.apk` from [**Releases**](https://github.com/jabbott-iii/DenariiDolor/releases).
-2. *(Optional)* Verify it: `sha256sum app-release.apk` should match the entry in `SHA256SUMS.txt`.
+2. *(Optional)* Verify it: `sha256sum DenariiDolor-<version>.apk` should match the entry in `SHA256SUMS.txt`.
 3. Open the file on your phone. If Android asks, allow the browser or file manager to install unknown apps. Then tap **Install**.
 
 ## User guide
@@ -118,7 +118,7 @@ Open **Reports** and use **‹ Prev** / **Next ›** to pick the month. **Save C
 | Sep 3 | EXPENSE | Groceries | Weekly shop | 86.40 | Cash |
 | Sep 5 | EXPENSE | Dining | Pizza night | 32.15 | Cash |
 
-The Dashboard shows **Income $2,400.00 · Expenses $118.55 · Net $2,281.45**. The transfer changes the balances (Cash −300, Savings +300) but not the net. With a Dining budget of $50 and an 80% warning, the Dining meter reads *Near limit · 64% used*… no, *On track*, until spending reaches $40.
+The Dashboard shows **Income $2,400.00 · Expenses $118.55 · Net $2,281.45**. The transfer changes the balances (Cash −300, Savings +300) but not the net. With a Dining budget of $50 and an 80% warning, the Dining meter reads *On track · 64% used*. It changes to *Near limit* when Dining spending reaches $40.
 
 **Search**
 

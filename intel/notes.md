@@ -1,6 +1,6 @@
 # Denarii Dolor — Project Notes
 
-Running log of context, decisions, clarifications, and preferences. Read this (and `plan.md`, `cysec.md`) before making changes.
+Running log of context, decisions, clarifications, and preferences. Read this (and `maint.md`, `map.md`, `plan.md`, `cybersec.md`) before making changes. `maint.md` is the authoritative architecture guide; this file records decisions and their rationale.
 
 ## Project Summary
 Personal budget and expense tracker for Android. Users log income, expenses, transfers, categories, budgets, and accounts; search transactions; and generate monthly reports. Built to satisfy course requirements: OOP (inheritance/polymorphism/encapsulation), multi-row search, secure CRUD database, multi-column timestamped reports, validation, industry-appropriate security, scalable design, and a user-friendly GUI.
@@ -14,19 +14,21 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 | DI | Hilt 2.52 (KSP) |
 | Database | Room 2.6.1 + SQLCipher 4.6.1, DB `denarii_dolor.db`, schema v2 (Long cents) |
 | Async | Coroutines + Flow/StateFlow |
-| Auth | PIN (PBKDF2) + BiometricPrompt (`BIOMETRIC_WEAK`) |
+| Auth | PIN (PBKDF2, 6–12 digits) + BiometricPrompt (`BIOMETRIC_STRONG`) |
 | Secure storage | `EncryptedSharedPreferences` (security-crypto 1.1.0-alpha06), AES256-GCM master key |
 | SDK | minSdk 26, target/compile 35, AGP 8.7.3, Gradle 8.11.1 |
 
 ## Package Layout (`app/src/main/java/com/denariidolor`)
 - `domain/model` — `Transaction` (abstract) → `Expense`, `Income`, `Transfer`; `Account`, `Budget`, `Category`, `SearchFilters`, `MonthlyReport`/`ReportRow`, entity↔domain mappings.
-- `domain/usecase` — `AddTransaction`, `ValidateTransaction`, `SearchTransaction`, `GenerateReport`.
+- `domain/usecase` — `Add`/`Update`/`Delete`/`Validate`/`SearchTransactionUseCase`, `GenerateReportUseCase`, `CategoryUseCases`, `AccountUseCases`, `BudgetUseCases`.
+- `domain/report` — `ReportCsvFormatter`, `ReportText`.
 - `data/local/db` — `AppDatabase`, entities, DAOs, `DefaultDataInitializer` (seeds Cash/Savings accounts and 3 default categories).
 - `data/local/preferences` — `EncryptedPreferencesManager` (Android wrapper) + `SecurityProfileService` (pure-Kotlin, unit-testable PIN/recovery logic behind a `SecurityProfileStore` interface).
 - `data/repository` — interface + `Impl` per aggregate (Transaction, Category, Budget, Account).
+- `data/export` — `ReportExporter` (save/share) and `ReportPdfRenderer`.
 - `di` — `AppModule` (Clock), `DatabaseModule`, `RepositoryModule`.
-- `presentation/ui` — `AppScreens.kt` (all Compose screens, ~900 lines), per-feature ViewModels, `auth/LoginActivity` (launcher), `search/SearchFilterParser`.
-- `util` — `Constants`, `DateUtils`, `SessionManager`, `Validators`.
+- `presentation/ui` — `AppScreens.kt` (NavHost only), `LoginScreen.kt`, `TransactionFormScreen.kt`, `SettingsScreen.kt`, and one package per feature (screens + ViewModels), `common/` shared composables, `auth/LoginActivity` (launcher), `search/SearchFilterParser`.
+- `util` — `Constants`, `DateUtils`, `Money`, `ResultExt` (`runSuspendCatching`), `SessionManager`, `Validators`.
 
 ## Key Design Decisions (observed in code)
 - **Polymorphism:** each `Transaction` subclass overrides `balanceImpact()` — Expense `-amount`, Income `+amount`, Transfer `0.0` (net-neutral across accounts). Dashboard and reports sum `balanceImpact()` for net.
@@ -38,11 +40,11 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 - **Session:** `SessionManager` singleton, 5-minute inactivity timeout; `MainActivity` checks every 30s, on resume, and on each user interaction, then redirects to `LoginActivity` with a cleared task.
 
 ## Tooling & Process
-- CI (`.github/workflows/ci.yml`): lint, `assembleDebug`, `testDebugUnitTest`, emulator `connectedAndroidTest` (API 33), plus detekt/ktlint/sonar/dependency-check steps (currently non-blocking).
-- Security workflow: CodeQL (java-kotlin) weekly + on push/PR.
-- CD: tag `vX.Y.Z` (`make release VERSION=vX.Y.Z`) → signed release APK/AAB, GitHub Release, Play internal track.
+- CI (`.github/workflows/ci.yml`): blocking ktlint, detekt, `lintDebug`, `testDebugUnitTest`, JaCoCo coverage and `assembleRelease`; then `connectedDebugAndroidTest` on API 26 and 35 emulators.
+- Security workflow: CodeQL (`security-extended`), dependency graph submission, dependency review (fails on high) and gitleaks; on push/PR and weekly (Mondays 02:00 UTC).
+- CD: tag `vX.Y.Z` (`make release VERSION=vX.Y.Z`) → unit tests, signed release APK/AAB, signature verification, GitHub Release with `SHA256SUMS.txt` (no Play Store upload).
 - Contribution rules: issue first, approval before PR, license header required on every source file.
-- Recent work lands via Copilot branches (`copilot/*`) merged into `main`.
+- Early work landed via Copilot branches (`copilot/*`) merged into `main`; recent commits go directly to `main`.
 
 ## Known Gaps / Observations (from review 2026-09-20)
 1. ~~**CRUD incomplete**~~ — done in Phases 1a/1b (see `history.md`).
@@ -60,7 +62,7 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 13. No audit log or role checks (listed in the recommended stack).
 14. Biometrics now `BIOMETRIC_STRONG` (Phase 2); still no `CryptoObject` (deferred).
 15. `SessionManager` state is in-memory only; process death resets to unauthenticated (safe), but `LoginActivity` launch is the only gate.
-16. Dependency hygiene: `libs.versions.toml` has five unused `activity-compose` version aliases; `app/build.gradle.kts` pulls both `activity-compose` 1.9.0 and 1.9.2, plus unused `navigation-fragment`/`navigation-ui` (XML-era).
+16. ~~Dependency hygiene~~ — resolved in Phase 5 (single `activity` version in the catalog; XML-era navigation artifacts removed). Original note: `libs.versions.toml` has five unused `activity-compose` version aliases; `app/build.gradle.kts` pulls both `activity-compose` 1.9.0 and 1.9.2, plus unused `navigation-fragment`/`navigation-ui` (XML-era).
 17. ~~NOTICE~~ — rewritten (Phase 5).
 18. ~~License headers~~ — added to all Kotlin files (Phase 5); add them to new files going forward.
 19. ~~CI JDK mismatch / unconfigured tools~~ — JDK 17 everywhere; ktlint/detekt/JaCoCo configured (Phase 5). CD `publishBundle` still unconfigured (Phase 6).
@@ -72,8 +74,8 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 - Outline a plan before multi-file changes; present per-file changes and get confirmation before finalizing.
 - Record plans, clarifications, rationale, and confirmed preferences in this file.
 - User reviews diffs and commits changes themselves; Claude leaves work uncommitted.
-- Context files live in `intel/` at the repo root: `notes.md` (decisions), `plan.md` (roadmap), `history.md` (session log), `cysec.md` (security findings). Read them before making changes.
-- `intel/cysec.md` is updated continuously: every change that touches auth, storage, exports, build or CI records new findings, fixes (keeping stable `CS-NN` IDs) or accepted risks.
+- Context files live in `intel/` at the repo root: `maint.md` (architecture, authoritative), `map.md` (structure and diagrams), `notes.md` (decisions), `plan.md` (roadmap), `history.md` (session log), `cybersec.md` (security findings). Read them before making changes.
+- `intel/cybersec.md` is updated continuously: every change that touches auth, storage, exports, build or CI records new findings, fixes (keeping stable `CS-NN` IDs) or accepted risks.
 
 ## Decision Log
 | Date | Decision | Rationale |
@@ -112,3 +114,4 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 | 2026-09-21 | Security review: fixed CS-01 (monotonic session clock), CS-02 (session check before UI in `MainActivity.onCreate`), CS-03 (`persist-credentials: false` in CI), CS-04 (share cache cleared at session end), CS-05 (Dependabot). Two decisions are left to you: CS-06 FLAG_SECURE (previously declined) and CS-10 (6-digit PIN minimum). | Low-risk fixes applied; UX-affecting changes need confirmation. |
 | 2026-09-21 | **CS-06 FLAG_SECURE declined** (accepted risk CS-A4): this is a productivity app, not a finance app. **CS-10 applied:** PINs must be 6–12 digits for setup, reset and sign-in; existing short PINs are not supported (reset through Forgot PIN). | User decisions. |
 | 2026-09-21 | PDF deliverables (docs, testing, references) are no longer needed; don't regenerate them. | User decision. |
+| 2026-09-22 | `intel/cysec.md` renamed to `intel/cybersec.md` to match `AGENTS.md`. | User decision. |

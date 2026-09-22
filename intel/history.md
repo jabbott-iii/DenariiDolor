@@ -393,3 +393,33 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
 - **CS-10 (PIN length):** PINs must now be **6–12 digits** (`^[0-9]{6,12}$`) in `SecurityProfileService` (setup and reset) and `LoginActivity` (sign-in). The error message is now "PIN must be 6 to 12 digits." As you chose, existing 4–5-digit PINs no longer work; those users reset through **Forgot PIN?**.
 - Tests: `SecurityProfileServiceTest` now uses 6-digit PINs, and there is a new `pinMustBeSixToTwelveDigits` test, so the unit suite has 117 tests. `ComposeScreensTest` sample PIN is now 6 digits. `README.md` says 6–12 digits.
 - ktlint and detekt (with the default rule set) report 0 findings. Not compiled here; CI will verify.
+
+## 2026-09-22 — Security log renamed to `intel/cybersec.md`
+- Renamed `intel/cysec.md` to `intel/cybersec.md`, the name `AGENTS.md` requires. Content unchanged apart from the title line.
+- Updated the current references in `notes.md` (intro, conventions, new decision-log row) and `plan.md`. Earlier dated entries in `notes.md` and this file still say `cysec.md` and are left as written.
+
+## 2026-09-22 — `intel/maint.md`, `intel/map.md`, security-log format, doc fixes
+- **New `intel/maint.md`** (authoritative architecture guide), built from the current code, build files and workflows. It covers:
+  - layers and dependency rules, and the domain invariants (cents, atomic `Ledger` balance updates, validation before writes, protected defaults, `Result`/`runSuspendCatching`);
+  - the migration procedure, the security-sensitive files, the testing split, the quality gates;
+  - the pinned toolchain and why each pin exists, the release flow, and known maintainability debt.
+  - It records that `transactions.transferAccountId` has no foreign key; account deletion relies on `AccountUseCases` counting transfer references.
+- **New `intel/map.md`:** repository layout, package map, CI/CD table, and four Mermaid diagrams (layer dependencies, sign-in and session, saving a transaction, schema v2). All four were rendered with mermaid-cli to check the syntax.
+- **`intel/cybersec.md`** aligned with the item format in `AGENTS.md`:
+  - every open and remediated item has a Validation entry, and statuses use `Open`, `In Progress`, `Blocked` or `Closed`;
+  - "Fixed on 2026-09-21" is now "Remediated on 2026-09-21". CS-01, CS-02, CS-04, CS-05 and CS-10 are `In Progress` until their validation is recorded;
+  - **CS-03 closed** after a static check: 7 `actions/checkout` steps, 7 `persist-credentials: false`, and no `git push` or `git commit` in any workflow;
+  - the update procedure (section 5) now describes these statuses.
+- **`intel/notes.md`:** corrected stale facts. Biometrics are `BIOMETRIC_STRONG` and PINs 6–12 digits; the package layout now lists all use cases, `domain/report`, `data/export`, the split screens and `util`; the CI, security and CD descriptions match the workflows (no Play upload); gap #16 is marked resolved. It also points to `maint.md` and `map.md`.
+- **`intel/plan.md`:** added a task to run the remaining `cybersec.md` validations.
+- **`README.md`:**
+  - Fixed the Dining budget example, which read "*Near limit · 64% used*… no, *On track*". It now reads *On track · 64% used* and says the meter changes to *Near limit* at $40.
+  - The checksum step now names the real release asset, `DenariiDolor-<version>.apk`, rather than `app-release.apk`.
+- Documentation only; no code, build or CI changes. GitHub was not reachable from this session, so CI results were not checked.
+
+## 2026-09-22 — `CONTRIBUTING.md` expanded
+- Kept the four existing contribution rules word for word, and added:
+  - a Code of Conduct link and the private security-advisory route;
+  - setup (JDK 17 toolchain and the foojay resolver, a JDK 21 Gradle daemon, Android SDK platform 35, `local.properties`, a device on API 26+);
+  - the workflow, the full validation command list matching `ci.yml`, coding expectations summarized from `intel/maint.md`, and pull-request expectations.
+- Documentation only. The commands were taken from the workflows and the Gradle configuration, not run here.

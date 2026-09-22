@@ -1,6 +1,6 @@
 # Denarii Dolor — Plan
 
-Roadmap derived from the project requirements and the 2026-09-20 code review. See `notes.md` for rationale and the full gap list, and `cysec.md` for security findings. Items are proposals until confirmed.
+Roadmap derived from the project requirements and the 2026-09-20 code review. See `notes.md` for rationale and the full gap list, and `cybersec.md` for security findings. Items are proposals until confirmed.
 
 ## Requirement Status
 | Requirement | Status | Notes |
@@ -95,9 +95,10 @@ Roadmap derived from the project requirements and the 2026-09-20 code review. Se
 3. Export — both PDF and CSV required.
 4. Multi-module split — not required.
 
-## Security (tracked in `cysec.md`)
+## Security (tracked in `cybersec.md`)
 - [x] CS-01 – CS-05 fixed 2026-09-21 (session clock, session gate, CI token persistence, share-cache cleanup, Dependabot).
 - [ ] Verify: `./gradlew testDebugUnitTest connectedDebugAndroidTest assembleRelease`, plus the manual clock-rollback check.
+- [ ] Run the validation listed for CS-01, CS-02, CS-04, CS-05 and CS-10 in `cybersec.md`, then mark each `Closed` (CS-03 closed 2026-09-22).
 - [x] CS-06 FLAG_SECURE — declined (accepted risk CS-A4).
 - [x] CS-10 6–12 digit PIN, enforced for setup, reset and sign-in (2026-09-21).
 - [ ] CS-07 biometric `CryptoObject` bound to a Keystore key.
