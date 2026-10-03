@@ -75,7 +75,12 @@ private val bottomDestinations = listOf(
 )
 
 @Composable
-fun MainActivityContent(settingsState: SettingsScreenState, onSignOut: () -> Unit, onDarkModeChange: (Boolean) -> Unit) {
+fun MainActivityContent(
+    settingsState: SettingsScreenState,
+    onSignOut: () -> Unit,
+    onDarkModeChange: (Boolean) -> Unit,
+    onBiometricChange: (Boolean) -> Unit
+) {
     val navController = rememberNavController()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
@@ -139,6 +144,7 @@ fun MainActivityContent(settingsState: SettingsScreenState, onSignOut: () -> Uni
                     state = settingsState,
                     onSignOut = onSignOut,
                     onDarkModeChange = onDarkModeChange,
+                    onBiometricChange = onBiometricChange,
                     onManageCategories = { navController.navigate(MainDestination.ManageCategories.route) },
                     onManageAccounts = { navController.navigate(MainDestination.ManageAccounts.route) },
                     onManageBudgets = { navController.navigate(MainDestination.ManageBudgets.route) }

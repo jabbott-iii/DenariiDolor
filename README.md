@@ -33,7 +33,7 @@
 | **Search** | Filter by description text, category, amount range and date range. The results show as a multi-row list, and you tap a row to edit it. |
 | **Reports** | A monthly spending report with a title, a generated timestamp, totals, and a 6-column table (Date, Type, Category, Description, Amount, Payment Method). **Save** or **Share** it as **CSV** or **PDF**. |
 | **Validation** | Rejects zero or negative amounts, amounts with more than 2 decimals, blank descriptions, invalid dates, transfers to the same account, duplicate names, and inverted search ranges. |
-| **Security** | PIN (6–12 digits) with escalating lockout; strong biometrics; SQLCipher-encrypted database; encrypted preferences; 5-minute session timeout; no cloud backup. |
+| **Security** | SQLCipher-encrypted database whose key only your PIN, your security answer or (optionally) your biometrics can unlock; PIN (6–12 digits) with an escalating lockout that changing the date can't skip; 5-minute session timeout; no cloud backup. |
 | **Look & feel** | Material 3, a dark mode switch, bottom navigation, and a floating **+** button for quick entry. |
 
 ## Use cases
@@ -58,16 +58,17 @@
 ### 1. First launch
 
 1. Choose a **PIN** (6–12 digits) and confirm it.
-2. Write a **security question** only you can answer, and give its **answer**. You'll need the answer if you forget your PIN.
+2. Write a **security question** only you can answer, and give its **answer**. You'll need the answer if you forget your PIN. The answer needs at least 6 characters, can't appear in the question and can't be your PIN; capital letters and extra spaces don't matter.
 3. Tap **Create Security Profile**, then sign in.
 
 ### 2. Signing in
 
-- Enter your PIN and tap **Sign In**, or tap **Sign In with Biometrics**. The biometrics button appears only when a strong fingerprint or face is enrolled on the phone.
-- After **5 wrong attempts**, sign-in locks for 30 seconds, and each further lockout doubles the wait (up to 15 minutes).
+- Enter your PIN and tap **Sign In**, or tap **Sign In with Biometrics**. That button appears after you turn on **Biometric sign-in** in Settings, on a phone with a strong fingerprint or face enrolled. If the phone's enrolled biometrics change, biometric sign-in turns itself off: sign in with your PIN and turn it on again.
+- After **5 wrong attempts**, sign-in locks for 30 seconds, and each further lockout doubles the wait (up to 15 minutes). Changing the phone's date or time doesn't shorten the wait, and restarting the phone starts it again.
 - After **5 minutes** without using the app, you're returned to the sign-in screen.
 - **Forgot PIN?** Answer your security question and choose a new PIN. Tap **Back to Sign In** (or use the back gesture) to cancel.
-- **Wipe All App Data** permanently erases everything and starts fresh. Use it only if you can't recover your PIN.
+- **Wipe All App Data** permanently erases everything, including the keys, and starts fresh. Use it only if you can't recover your PIN. To confirm, type `WIPE` and wait for the 10-second countdown.
+- **Updating from 1.0.x:** your first sign-in asks you to choose a security question and answer under the new rules; your data is kept. Turn biometric sign-in back on in Settings if you used it.
 
 ### 3. Getting around
 
@@ -76,7 +77,7 @@
 | **Dashboard** | This month's totals, chart, budgets, balances and recent transactions |
 | **Search** | Find transactions by text, category, amount or date |
 | **Reports** | Monthly report; save or share it as CSV or PDF |
-| **Settings** | Dark mode; manage categories, accounts and budgets; sign out |
+| **Settings** | Dark mode; biometric sign-in; manage categories, accounts and budgets; sign out |
 
 Tap the round **+** button to add a transaction. The **Back** button on that form returns you to the screen you came from.
 
@@ -85,7 +86,7 @@ Tap the round **+** button to add a transaction. The **Back** button on that for
 1. Tap **+** and choose **EXPENSE**, **INCOME** or **TRANSFER**.
 2. Fill in:
    - **Description**
-   - **Amount** (e.g. `12.50`)
+   - **Amount** (e.g. `12.50`, or `12,50` with a decimal comma)
    - **Date** (from the calendar)
    - **Account** and **Category**
    - For a transfer, a different **Transfer to account**
@@ -167,7 +168,7 @@ make release VERSION=v1.2.3            # tag and push → CD builds a signed Git
 | Path | Contents |
 |---|---|
 | `app/src/main/java/com/denariidolor/domain` | Models, use cases, report formatting |
-| `…/data` | Room entities/DAOs/migrations, repositories, encrypted preferences, export |
+| `…/data` | Room entities/DAOs/migrations, repositories, the vault (database key, sign-in and Keystore), export |
 | `…/presentation/ui` | Compose screens and ViewModels, one package per feature |
 | `…/di` | Hilt modules |
 | `app/schemas` | Exported Room schemas (commit a new one with every schema change) |
@@ -177,10 +178,15 @@ Release signing needs four repository secrets: `ANDROID_SIGNING_KEY` (the base64
 
 ## Security
 
-- **Encryption at rest:** SQLCipher database with a random 256-bit key, which is held in EncryptedSharedPreferences under an Android Keystore AES-256-GCM master key.
-- **Credentials:** the PIN and security answer are stored only as PBKDF2-HMAC-SHA256 hashes and compared in constant time. Failed PIN and recovery attempts share the escalating lockout.
-- **Biometrics:** `BIOMETRIC_STRONG` only, with the PIN as the fallback.
+- **Encryption at rest:** SQLCipher database with a random 256-bit key that is never stored as is. Copies of it are wrapped with AES-256-GCM:
+  - by your PIN, and by your security answer, each stretched with PBKDF2-HMAC-SHA256 and mixed with a non-exportable Android Keystore key, so guesses can only be checked on the phone itself;
+  - by a biometric-bound Keystore key, if you turn on biometric sign-in.
+
+  The database opens only after sign-in and closes again on sign-out or timeout. The rest of the profile is encrypted with another Keystore key.
+- **Credentials:** no PIN or answer hash is stored: a wrong PIN or answer simply can't unwrap the key. Failed PIN and recovery attempts share an escalating lockout timed on the phone's elapsed-time clock, which the date setting doesn't affect.
+- **Biometrics:** `BIOMETRIC_STRONG` only, through `BiometricPrompt` with a Keystore `CryptoObject`. Off until you turn it on in Settings; the PIN is the fallback.
 - **Other controls:**
+  - **Wipe All App Data** deletes the database and every key.
   - 5-minute session timeout.
   - `allowBackup=false`, with data-extraction rules.
   - Parameterized Room queries only.

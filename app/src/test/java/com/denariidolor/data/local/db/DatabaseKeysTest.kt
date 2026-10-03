@@ -18,6 +18,7 @@ package com.denariidolor.data.local.db
 
 import com.denariidolor.data.local.db.security.DatabaseKeys
 import java.security.SecureRandom
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -67,14 +68,11 @@ class DatabaseKeysTest {
     }
 
     @Test
-    fun discardsPlaintextOrOrphanedDatabasesOnly() {
-        val plaintext = temp.newFile("plain.db").apply { writeBytes("SQLite format 3\u0000".toByteArray() + ByteArray(100)) }
-        val encrypted = temp.newFile("enc.db").apply { writeBytes(ByteArray(116) { 1 }) }
-        val missing = temp.root.resolve("missing.db")
+    fun rawKeysRoundTripThroughHex() {
+        val key = ByteArray(32) { (it * 9 - 128).toByte() }
+        val hex = DatabaseKeys.toHex(key)
 
-        assertTrue(DatabaseKeys.shouldDiscard(plaintext, keyNewlyCreated = false))
-        assertTrue(DatabaseKeys.shouldDiscard(encrypted, keyNewlyCreated = true))
-        assertFalse(DatabaseKeys.shouldDiscard(encrypted, keyNewlyCreated = false))
-        assertFalse(DatabaseKeys.shouldDiscard(missing, keyNewlyCreated = true))
+        assertTrue(DatabaseKeys.isValidHexKey(hex))
+        assertArrayEquals(key, DatabaseKeys.fromHex(hex))
     }
 }

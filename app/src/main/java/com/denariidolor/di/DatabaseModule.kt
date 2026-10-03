@@ -16,41 +16,32 @@
 
 package com.denariidolor.di
 
-import android.content.Context
-import androidx.room.Room
 import com.denariidolor.data.local.db.AppDatabase
-import com.denariidolor.data.local.db.MIGRATION_1_2
+import com.denariidolor.data.local.db.DatabaseHolder
 import com.denariidolor.data.local.db.dao.AccountDao
 import com.denariidolor.data.local.db.dao.BudgetDao
 import com.denariidolor.data.local.db.dao.CategoryDao
 import com.denariidolor.data.local.db.dao.TransactionDao
-import com.denariidolor.data.local.db.security.DatabaseKeyProvider
-import com.denariidolor.data.local.db.security.DatabaseKeys
-import com.denariidolor.util.Constants
+import com.denariidolor.data.local.vault.VaultConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
     @Provides
     @Singleton
-    fun provideAppDatabase(@ApplicationContext context: Context, keyProvider: DatabaseKeyProvider): AppDatabase {
-        System.loadLibrary("sqlcipher")
-        val key = keyProvider.getOrCreate()
-        if (DatabaseKeys.shouldDiscard(context.getDatabasePath(Constants.APP_DB_NAME), key.newlyCreated)) {
-            context.deleteDatabase(Constants.APP_DB_NAME)
-        }
-        return Room.databaseBuilder(context, AppDatabase::class.java, Constants.APP_DB_NAME)
-            .openHelperFactory(SupportOpenHelperFactory(key.passphrase))
-            .addMigrations(MIGRATION_1_2)
-            .build()
-    }
+    fun provideVaultConfig(): VaultConfig = VaultConfig()
+
+    /**
+     * The database opened at the latest sign-in. Unscoped on purpose: inject it (or a repository) only into screens shown
+     * after sign-in. While the vault is locked this throws instead of handing out data.
+     */
+    @Provides
+    fun provideAppDatabase(holder: DatabaseHolder): AppDatabase = holder.database
 
     @Provides fun provideTransactionDao(db: AppDatabase): TransactionDao = db.transactionDao()
 

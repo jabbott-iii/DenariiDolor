@@ -17,21 +17,19 @@
 package com.denariidolor.data.local.db
 
 import androidx.room.withTransaction
-import com.denariidolor.data.local.db.dao.AccountDao
-import com.denariidolor.data.local.db.dao.CategoryDao
 import com.denariidolor.data.local.db.entity.AccountEntity
 import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.util.Constants
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/** Seeds the default accounts and categories into the unlocked database; runs after every sign-in and is idempotent. */
 @Singleton
-class DefaultDataInitializer @Inject constructor(
-    private val appDatabase: AppDatabase,
-    private val accountDao: AccountDao,
-    private val categoryDao: CategoryDao
-) {
+class DefaultDataInitializer @Inject constructor(private val databaseHolder: DatabaseHolder) {
     suspend fun seedDefaults() {
+        val appDatabase = databaseHolder.database
+        val accountDao = appDatabase.accountDao()
+        val categoryDao = appDatabase.categoryDao()
         appDatabase.withTransaction {
             if (accountDao.count() == 0) {
                 Constants.DEFAULT_ACCOUNTS.forEach { account ->

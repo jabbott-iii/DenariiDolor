@@ -30,8 +30,9 @@ A concise map of the repository and its main flows. The architecture rules are i
 | `domain/model` | `Transaction` → `Expense` / `Income` / `Transfer`; `TransactionType`; `Account`, `Category`, `Budget`; `Ledger`; `SearchFilters`; `MonthlyReport`; entity ↔ domain mappings |
 | `domain/usecase` | `Add`/`Update`/`Delete`/`Validate`/`SearchTransactionUseCase`, `GenerateReportUseCase`, `Category`/`Account`/`BudgetUseCases` |
 | `domain/report` | `ReportCsvFormatter` (formula-injection guard), `ReportText` |
-| `data/local/db` | `AppDatabase` (v2), `entity/`, `dao/`, `Migrations.kt` (`MIGRATION_1_2`), `DefaultDataInitializer`, `security/` (`DatabaseKeyProvider`, `DatabaseKeys`) |
-| `data/local/preferences` | `SecurityProfileService` (PIN/answer hashing, lockout; pure Kotlin), `EncryptedPreferencesManager` (`secure_prefs`), `ThemePreferences` (`ui_prefs`) |
+| `data/local/db` | `AppDatabase` (v2), `entity/`, `dao/`, `Migrations.kt` (`MIGRATION_1_2`), `DatabaseHolder` (opens Room after sign-in, closes it at lock), `DefaultDataInitializer`, `security/DatabaseKeys` |
+| `data/local/preferences` | `SecurityProfileService` (wrapped database key, recovery rules, elapsed-time lockout; pure Kotlin), `LegacySecurityProfile` (v1.0.x hashes, for the upgrade), `ThemePreferences` (`ui_prefs`) |
+| `data/local/vault` | `Vault` (setup, sign-in, recovery, v1.0.x upgrade, biometrics, lock, wipe), `KeystoreSecrets`, `KeystoreProfileStore` (`vault_profile`), `LegacyProfileStorage` (`secure_prefs`, `db_key_prefs`), `VaultConfig` |
 | `data/repository` | `Transaction`/`Category`/`Budget`/`AccountRepository` + `Impl` |
 | `data/export` | `ReportExporter` (SAF save, FileProvider share, share-cache cleanup), `ReportPdfRenderer` |
 | `di` | `AppModule`, `DatabaseModule`, `RepositoryModule` |
@@ -44,6 +45,7 @@ A concise map of the repository and its main flows. The architecture rules are i
 flowchart LR
     subgraph Presentation
         UI[Compose screens] --> VM[ViewModels]
+        LA[LoginActivity]
     end
     subgraph Domain
         UC[Use cases]
@@ -53,7 +55,9 @@ flowchart LR
         R[Repository interfaces] -.implemented by.-> RI[Repository Impls]
         RI --> DAO[DAOs] --> DB[(Room + SQLCipher<br/>denarii_dolor.db)]
         EX[ReportExporter]
-        P[Encrypted prefs]
+        V[Vault] --> SPS[SecurityProfileService<br/>wrapped key + lockout]
+        V --> KS[Android Keystore keys]
+        V --> H[DatabaseHolder] --> DB
     end
     VM --> UC
     VM --> R
@@ -61,23 +65,25 @@ flowchart LR
     UC --> R
     UC --> M
     RI --> M
-    DI[Hilt modules] -.wires.-> RI & DB
-    KP[DatabaseKeyProvider<br/>db_key_prefs] --> DB
+    LA --> V
+    DI[Hilt modules] -.unlocked database.-> DAO
 ```
 
 ## Sign-in and session
 
 ```mermaid
 flowchart TD
-    L[LoginActivity<br/>clears share cache, seeds defaults] --> S{Profile configured?}
-    S -- no --> SETUP[Setup: PIN 6–12 digits<br/>+ security question] --> SI
-    S -- yes --> SI[Sign in]
-    SI -- PIN ok / strong biometric --> AUTH[SessionManager.markAuthenticated]
-    SI -- 5 failures --> LOCK[Lockout 30 s, doubling to 15 min]
-    SI -- Forgot PIN --> REC[Answer question + new PIN] --> SI
-    SI -- Wipe --> WIPE[Clear DB, secure prefs, cache<br/>reseed defaults] --> S
-    AUTH --> MAIN[MainActivity]
-    MAIN -- no session in onCreate / onResume,<br/>idle > 5 min, sign-out --> OUT[invalidate + clear share cache] --> L
+    L[LoginActivity<br/>clears share cache] --> S{Vault state}
+    S -- no profile --> SETUP[Setup: PIN 6–12 digits<br/>+ question, answer of 6+ characters] --> SI
+    S -- profile --> SI[Sign in]
+    S -- unreadable --> ERR[Storage error:<br/>try again or wipe]
+    SI -- PIN or biometric unwraps the key --> OPEN[DatabaseHolder opens Room<br/>+ seeds defaults]
+    SI -- v1.0.x PIN verified --> UP[New question and answer] --> OPEN
+    SI -- 5 failures --> LOCK[Lockout 30 s, doubling to 15 min<br/>timed on elapsed time]
+    SI -- Forgot PIN --> REC[Answer unwraps the key<br/>+ new PIN] --> SI
+    SI -- Wipe: type WIPE, wait 10 s --> WIPE[Delete database, profile<br/>and every key] --> S
+    OPEN --> AUTH[SessionManager.markAuthenticated] --> MAIN[MainActivity]
+    MAIN -- no session or locked vault,<br/>idle over 5 min, sign-out --> OUT[Vault.lock closes the database<br/>+ clear share cache] --> L
 ```
 
 ## Saving a transaction

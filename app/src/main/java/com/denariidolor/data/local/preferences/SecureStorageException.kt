@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package com.denariidolor.presentation.ui.settings
+package com.denariidolor.data.local.preferences
 
-data class SettingsScreenState(
-    val sessionTimeoutMinutes: Long,
-    val pinConfigured: Boolean,
-    val darkMode: Boolean,
-    val biometricAvailable: Boolean = false,
-    val biometricEnabled: Boolean = false
-)
+/**
+ * The encrypted profile, or a Keystore key it depends on, can't be read (BUG-05). Sign-in can't continue; the user can
+ * retry, or wipe the app to start again.
+ */
+class SecureStorageException(message: String, cause: Throwable? = null) : Exception(message, cause)

@@ -21,6 +21,7 @@ import java.security.SecureRandom
 
 object DatabaseKeys {
     private const val KEY_BYTES = 32
+    private const val HEX_RADIX = 16
     private val HEX_KEY_REGEX = Regex("^[0-9a-f]{${KEY_BYTES * 2}}$")
     private val SQLITE_PLAINTEXT_HEADER = "SQLite format 3\u0000".toByteArray(Charsets.US_ASCII)
 
@@ -35,6 +36,12 @@ object DatabaseKeys {
 
     fun isValidHexKey(value: String): Boolean = HEX_KEY_REGEX.matches(value)
 
+    fun toHex(key: ByteArray): String = key.joinToString("") { "%02x".format(it) }
+
+    fun fromHex(hexKey: String): ByteArray = ByteArray(hexKey.length / 2) { index ->
+        hexKey.substring(index * 2, index * 2 + 2).toInt(HEX_RADIX).toByte()
+    }
+
     /** SQLCipher raw-key syntax: skips PBKDF2 because the key is already 256 bits of randomness. */
     fun toRawKeyPassphrase(hexKey: String): ByteArray = "x'$hexKey'".toByteArray(Charsets.US_ASCII)
 
@@ -47,7 +54,4 @@ object DatabaseKeys {
         val read = file.inputStream().use { it.read(header) }
         return read == header.size && hasPlaintextHeader(header)
     }
-
-    /** Plaintext (pre-encryption) or orphaned (key lost) databases cannot be opened and are discarded. */
-    fun shouldDiscard(file: File, keyNewlyCreated: Boolean): Boolean = file.exists() && (keyNewlyCreated || isPlaintextDatabase(file))
 }

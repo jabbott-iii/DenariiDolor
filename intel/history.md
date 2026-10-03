@@ -423,3 +423,22 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
   - setup (JDK 17 toolchain and the foojay resolver, a JDK 21 Gradle daemon, Android SDK platform 35, `local.properties`, a device on API 26+);
   - the workflow, the full validation command list matching `ci.yml`, coding expectations summarized from `intel/maint.md`, and pull-request expectations.
 - Documentation only. The commands were taken from the workflows and the Gradle configuration, not run here.
+
+## 2026-10-03 — Bug and security review; remediation plan
+- Reviewed every `app/src/main` source file, the Gradle build, the three workflows and the repository contents, following `AGENTS.md`. No app, build or CI changes were made.
+- **Baseline:**
+  - `./gradlew testDebugUnitTest --offline` passed 117/117.
+  - CI on `4abfc8e` (2026-09-27) was green, including the instrumented tests on API 26 and 35.
+  - CD published v1.0.1.
+- **Reproduced against the compiled classes** with a throwaway jshell probe (not added to the repo):
+  - `Money.parseToCents("12,50")` returns 125 000 cents ($1,250.00). Logged as BUG-01.
+  - Moving the injected wall clock forward skipped 240 minutes of lockout: all 25 wrong PINs were checked, and the correct PIN still worked. Logged as CS-13.
+- **`cybersec.md`:**
+  - Added CS-13 – CS-22, and pointed CS-07 and CS-09 to CS-15.
+  - Closed CS-05, because Dependabot opened PRs #12–#17.
+  - Closed CS-10 on CI run 36357715389.
+  - CS-01 has its CI evidence but still needs the manual clock check.
+- **`plan.md`:** new Phase 7 with BUG-01 – BUG-12, the order of work and the decisions needed. The signing-secrets task is marked done, because CD signed v1.0.1.
+- **Also found:**
+  - A release-signed APK committed in `908ec5c` under `app/release/`. Logged as CS-18.
+  - Dependabot's security update for the build-time `netty`, `protobuf-java`, `commons-io` and `logback-core` failed on 2026-09-27. None of them is in `releaseRuntimeClasspath`. Logged as CS-22.

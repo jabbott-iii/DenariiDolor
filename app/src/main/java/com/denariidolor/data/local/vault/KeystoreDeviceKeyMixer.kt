@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.denariidolor.presentation.ui.settings
+package com.denariidolor.data.local.vault
 
-data class SettingsScreenState(
-    val sessionTimeoutMinutes: Long,
-    val pinConfigured: Boolean,
-    val darkMode: Boolean,
-    val biometricAvailable: Boolean = false,
-    val biometricEnabled: Boolean = false
-)
+import com.denariidolor.data.local.preferences.DeviceKeyMixer
+
+/** Binds PIN and answer derivation to this device through a non-exportable Keystore HMAC key. */
+class KeystoreDeviceKeyMixer(private val secrets: KeystoreSecrets) : DeviceKeyMixer {
+    override fun prepare() = secrets.ensureDeviceKey()
+
+    override fun mix(input: ByteArray): ByteArray = secrets.hmacWithDeviceKey(input)
+}

@@ -55,11 +55,12 @@ If you run detekt-cli outside Gradle, pass `--build-upon-default-config` so that
   - Composables talk only to ViewModels.
   - Transaction writes go through the use cases, so validation and balance updates always run.
   - Code outside `data` and `di` depends on repository interfaces, not on the `Impl` classes.
+  - The database exists only after sign-in. Don't inject `AppDatabase`, a DAO or a repository into anything that runs before sign-in (`LoginActivity`, singletons); sign-in, recovery and wipe go through `Vault`.
 - **Money:** amounts are `Long` cents. Parse input with `Money.parseToCents`. Never store or compare amounts as `Double`.
 - **Errors:** use cases return `Result`. In suspend code, use `runSuspendCatching` rather than `runCatching`.
 - **Database changes:**
   1. Bump the version.
-  2. Add a `Migration` and register it in `DatabaseModule`.
+  2. Add a `Migration` and register it in `DatabaseHolder`.
   3. Commit the new schema JSON in `app/schemas/`.
   4. Extend `MigrationTest`.
 

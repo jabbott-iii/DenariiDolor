@@ -9,6 +9,11 @@
     <string name="biometric_sign_in_failed">Biometric authentication failed. Try again or use your PIN.</string>
     <string name="biometric_sign_in_error">Biometric sign-in is currently unavailable. Use your PIN instead.</string>
     <string name="use_pin_instead">Use PIN instead</string>
+    <string name="biometric_sign_in_invalidated">Biometric sign-in was turned off because the biometrics on this device changed. Sign in with your PIN, then turn it on again in Settings.</string>
+    <string name="biometric_enroll_title">Turn on biometric sign-in</string>
+    <string name="biometric_enroll_subtitle">Confirm with your fingerprint or face</string>
+    <string name="biometric_enabled">Biometric sign-in is on.</string>
+    <string name="biometric_enable_failed">Couldn\'t turn on biometric sign-in.</string>
     <string name="pin_hint">PIN</string>
     <string name="show_pin">Show</string>
     <string name="hide_pin">Hide</string>
@@ -25,12 +30,25 @@
     <string name="wipe_data_title">Delete all app data?</string>
     <string name="wipe_data_warning">This permanently deletes all app data, financial records, PIN, and recovery settings. This cannot be undone.</string>
     <string name="wipe_data_confirm">Delete Everything</string>
+    <string name="wipe_data_confirm_countdown">Delete Everything (%1$d)</string>
+    <string name="wipe_data_confirmation_word" translatable="false">WIPE</string>
+    <string name="wipe_data_type_to_confirm">Type %1$s to confirm</string>
     <string name="wipe_data_confirm_destructive_label">Destructive confirmation: delete all app data permanently</string>
     <string name="wipe_data_cancel">Cancel</string>
     <string name="pin_format_error">PIN must be 6 to 12 digits.</string>
     <string name="pin_confirmation_mismatch">PIN and confirmation must match.</string>
     <string name="security_question_required">Security question is required.</string>
     <string name="security_answer_required">Security answer is required.</string>
+    <string name="security_question_too_long">Keep the security question to %1$d characters or fewer.</string>
+    <string name="security_answer_too_short">The security answer needs at least %1$d characters. Capital letters and extra spaces don\'t count.</string>
+    <string name="security_answer_too_long">Keep the security answer to %1$d characters or fewer.</string>
+    <string name="security_answer_in_question">The answer can\'t appear in the question.</string>
+    <string name="security_answer_matches_pin">The answer can\'t be the same as your PIN.</string>
+    <string name="security_answer_rules">At least %1$d characters. Capital letters and extra spaces are ignored. Choose an answer others can\'t guess or look up.</string>
+    <string name="upgrade_recovery_intro">Denarii Dolor now protects your data with your PIN and a stronger recovery answer. Set a security question and answer to finish signing in.</string>
+    <string name="save_and_continue">Save and Continue</string>
+    <string name="storage_error_message">Secure storage on this device can\'t be read, so your data can\'t be unlocked. Try again, or wipe all app data to start over.</string>
+    <string name="try_again">Try Again</string>
     <string name="profile_setup_success">Security profile created. Sign in with your PIN.</string>
     <string name="profile_already_configured">Security profile is already configured.</string>
     <string name="profile_not_configured">Set up a security profile before recovering a PIN.</string>
@@ -38,10 +56,7 @@
     <string name="pin_recovery_success">PIN reset successful. Sign in with your new PIN.</string>
     <string name="wipe_data_success">All app data was deleted. Set up a new security profile.</string>
     <string name="wipe_data_error">Unable to wipe app data. Please try again.</string>
-    <string name="wipe_data_reseed_error">App data was deleted, but default setup failed. Reopen the app to finish setup.</string>
-    <string name="login_initialization_error">Login initialization failed. Please retry.</string>
     <string name="security_question_unavailable">Security question unavailable.</string>
-    <string name="legacy_pin_migration_mismatch">Enter your existing PIN to complete secure migration.</string>
     <string name="add_transaction">Add Transaction</string>
     <string name="transaction_description_hint">Description</string>
     <string name="transaction_type_label">Transaction type</string>
@@ -71,6 +86,7 @@
     <string name="sign_out">Sign Out</string>
     <string name="reset_pin">Reset PIN</string>
     <string name="settings_dark_mode">Dark mode</string>
+    <string name="settings_biometric_sign_in">Biometric sign-in</string>
     <string name="transaction_category_label">Category</string>
     <string name="transaction_account_label">Account</string>
     <string name="transaction_transfer_account_label">Transfer to account</string>

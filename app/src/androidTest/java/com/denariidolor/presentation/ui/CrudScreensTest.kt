@@ -204,6 +204,32 @@ class CrudScreensTest {
     }
 
     @Test
+    fun settingsBiometricSwitchShowsOnlyWhenAvailableAndReportsChanges() {
+        var available by mutableStateOf(false)
+        val changes = mutableListOf<Boolean>()
+        composeRule.setContent {
+            DenariiDolorTheme {
+                SettingsScreen(
+                    state = SettingsScreenState(
+                        sessionTimeoutMinutes = 5,
+                        pinConfigured = true,
+                        darkMode = false,
+                        biometricAvailable = available,
+                        biometricEnabled = false
+                    ),
+                    onSignOut = {},
+                    onBiometricChange = { changes += it }
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(BIOMETRIC_SWITCH_TAG).assertDoesNotExist()
+        available = true
+        composeRule.onNodeWithTag(BIOMETRIC_SWITCH_TAG).assertIsOff().performClick()
+        composeRule.runOnIdle { assertEquals(listOf(true), changes) }
+    }
+
+    @Test
     fun settingsManageButtonsInvokeCallbacks() {
         val opened = mutableListOf<String>()
         composeRule.setContent {

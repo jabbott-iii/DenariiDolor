@@ -44,12 +44,14 @@ import com.denariidolor.R
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
 
 internal const val DARK_MODE_SWITCH_TAG = "darkModeSwitch"
+internal const val BIOMETRIC_SWITCH_TAG = "biometricSwitch"
 
 @Composable
 fun SettingsScreen(
     state: SettingsScreenState,
     onSignOut: () -> Unit,
     onDarkModeChange: (Boolean) -> Unit = {},
+    onBiometricChange: (Boolean) -> Unit = {},
     onManageCategories: () -> Unit = {},
     onManageAccounts: () -> Unit = {},
     onManageBudgets: () -> Unit = {}
@@ -85,6 +87,19 @@ fun SettingsScreen(
         ) {
             Text(text = stringResource(R.string.settings_dark_mode), modifier = Modifier.weight(1f))
             Switch(checked = state.darkMode, onCheckedChange = null)
+        }
+        if (state.biometricAvailable) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .toggleable(value = state.biometricEnabled, role = Role.Switch, onValueChange = onBiometricChange)
+                    .padding(vertical = 8.dp)
+                    .testTag(BIOMETRIC_SWITCH_TAG),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = stringResource(R.string.settings_biometric_sign_in), modifier = Modifier.weight(1f))
+                Switch(checked = state.biometricEnabled, onCheckedChange = null)
+            }
         }
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = onManageCategories, modifier = Modifier.fillMaxWidth()) {

@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-package com.denariidolor.presentation.ui.settings
+package com.denariidolor.data.local.vault
 
-data class SettingsScreenState(
-    val sessionTimeoutMinutes: Long,
-    val pinConfigured: Boolean,
-    val darkMode: Boolean,
-    val biometricAvailable: Boolean = false,
-    val biometricEnabled: Boolean = false
+import com.denariidolor.util.Constants
+
+/** Where the vault keeps its data. Instrumented tests pass their own names so they never touch the app's real data. */
+data class VaultConfig(
+    val databaseName: String = Constants.APP_DB_NAME,
+    val profilePrefsName: String = "vault_profile",
+    val keyAliasPrefix: String = "denarii_vault_",
+    val legacySecurePrefsName: String = "secure_prefs",
+    val legacyDatabaseKeyPrefsName: String = "db_key_prefs",
+    val legacyMasterKeyAlias: String = "_androidx_security_master_key_"
 )

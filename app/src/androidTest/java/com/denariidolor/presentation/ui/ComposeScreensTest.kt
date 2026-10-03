@@ -17,20 +17,24 @@
 package com.denariidolor.presentation.ui
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.denariidolor.R
+import com.denariidolor.data.local.preferences.SecurityProfileService
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
 import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.util.Constants
@@ -42,6 +46,100 @@ import org.junit.Test
 class ComposeScreensTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    private fun text(id: Int, vararg args: Any) = composeRule.activity.getString(id, *args)
+
+    @Composable
+    private fun TestLoginScreen(mode: LoginScreenMode, showWipeConfirmation: Boolean = false, onConfirmWipeData: () -> Unit = {}) {
+        DenariiDolorTheme {
+            LoginScreen(
+                mode = mode,
+                pin = "",
+                pinConfirmation = "",
+                securityQuestion = "",
+                securityAnswer = "",
+                recoveryQuestion = null,
+                signInEnabled = true,
+                biometricAvailable = false,
+                showWipeConfirmation = showWipeConfirmation,
+                feedbackMessage = null,
+                onPinChange = {},
+                onPinConfirmationChange = {},
+                onSecurityQuestionChange = {},
+                onSecurityAnswerChange = {},
+                onPrimaryAction = {},
+                onForgotPin = {},
+                onBackToSignIn = {},
+                onBiometricLogin = {},
+                onRequestWipeData = {},
+                onCancelWipeData = {},
+                onConfirmWipeData = onConfirmWipeData
+            )
+        }
+    }
+
+    @Test
+    fun loginScreenWipeNeedsTypedWordAndCountdown() {
+        var confirmed = false
+        composeRule.mainClock.autoAdvance = false
+        composeRule.setContent {
+            TestLoginScreen(mode = LoginScreenMode.SIGN_IN, showWipeConfirmation = true, onConfirmWipeData = { confirmed = true })
+        }
+
+        composeRule.onNodeWithText(text(R.string.wipe_data_confirm_countdown, WIPE_COUNTDOWN_SECONDS)).assertIsDisplayed()
+        composeRule.onNodeWithTag(WIPE_CONFIRM_BUTTON_TAG).assertIsNotEnabled()
+
+        composeRule.onNodeWithTag(WIPE_CONFIRMATION_FIELD_TAG).performTextReplacement("wipe")
+        composeRule.mainClock.advanceTimeByFrame()
+        composeRule.onNodeWithTag(WIPE_CONFIRM_BUTTON_TAG).assertIsNotEnabled()
+
+        composeRule.mainClock.advanceTimeBy(WIPE_COUNTDOWN_SECONDS * 1_000L)
+        composeRule.onNodeWithText(text(R.string.wipe_data_confirm)).assertIsDisplayed()
+        composeRule.onNodeWithTag(WIPE_CONFIRM_BUTTON_TAG).assertIsEnabled().performClick()
+        composeRule.runOnIdle { assertTrue(confirmed) }
+    }
+
+    @Test
+    fun loginScreenWipeStaysDisabledForTheWrongWord() {
+        composeRule.mainClock.autoAdvance = false
+        composeRule.setContent { TestLoginScreen(mode = LoginScreenMode.SIGN_IN, showWipeConfirmation = true) }
+
+        composeRule.onNodeWithTag(WIPE_CONFIRMATION_FIELD_TAG).performTextReplacement("delete")
+        composeRule.mainClock.advanceTimeBy(WIPE_COUNTDOWN_SECONDS * 1_000L)
+
+        composeRule.onNodeWithTag(WIPE_CONFIRM_BUTTON_TAG).assertIsNotEnabled()
+    }
+
+    @Test
+    fun loginScreenSetupShowsRecoveryAnswerRules() {
+        composeRule.setContent { TestLoginScreen(mode = LoginScreenMode.SETUP) }
+
+        composeRule.onNodeWithText(text(R.string.security_answer_rules, SecurityProfileService.MIN_ANSWER_LENGTH)).assertIsDisplayed()
+    }
+
+    @Test
+    fun loginScreenUpgradeModeAsksForNewQuestionWithoutPin() {
+        composeRule.setContent { TestLoginScreen(mode = LoginScreenMode.UPGRADE_RECOVERY) }
+
+        composeRule.onNodeWithText(text(R.string.upgrade_recovery_intro)).assertIsDisplayed()
+        composeRule.onNodeWithText(text(R.string.security_question_hint)).assertIsDisplayed()
+        composeRule.onNodeWithText(text(R.string.security_answer_rules, SecurityProfileService.MIN_ANSWER_LENGTH)).assertIsDisplayed()
+        composeRule.onNodeWithText(text(R.string.save_and_continue)).assertIsDisplayed()
+        composeRule.onNodeWithText(text(R.string.back_to_sign_in)).assertIsDisplayed()
+        composeRule.onNodeWithText(text(R.string.pin_hint)).assertDoesNotExist()
+        composeRule.onNodeWithText(text(R.string.wipe_all_data)).assertDoesNotExist()
+    }
+
+    @Test
+    fun loginScreenStorageErrorOffersRetryAndWipeOnly() {
+        composeRule.setContent { TestLoginScreen(mode = LoginScreenMode.STORAGE_ERROR) }
+
+        composeRule.onNodeWithText(text(R.string.storage_error_message)).assertIsDisplayed()
+        composeRule.onNodeWithText(text(R.string.try_again)).assertIsDisplayed()
+        composeRule.onNodeWithText(text(R.string.wipe_all_data)).assertIsDisplayed()
+        composeRule.onNodeWithText(text(R.string.pin_hint)).assertDoesNotExist()
+        composeRule.onNodeWithText(text(R.string.forgot_pin)).assertDoesNotExist()
+    }
 
     @Test
     fun loginScreenHidesBiometricButtonWhenUnavailable() {
@@ -322,7 +420,9 @@ class ComposeScreensTest {
             }
         }
 
-        composeRule.onNodeWithText(composeRule.activity.getString(R.string.wipe_data_confirm)).performClick()
+        composeRule.onNodeWithTag(WIPE_CONFIRMATION_FIELD_TAG).performTextReplacement("WIPE")
+        composeRule.mainClock.advanceTimeBy(WIPE_COUNTDOWN_SECONDS * 1_000L)
+        composeRule.onNodeWithTag(WIPE_CONFIRM_BUTTON_TAG).assertIsEnabled().performClick()
         composeRule.runOnIdle {
             assertTrue(confirmTriggered)
             assertFalse(cancelTriggered)
@@ -370,7 +470,7 @@ class ComposeScreensTest {
         composeRule.runOnIdle {
             assertTrue(cancelTriggered)
         }
-        composeRule.onNodeWithText(composeRule.activity.getString(R.string.wipe_data_confirm)).assertDoesNotExist()
+        composeRule.onNodeWithTag(WIPE_CONFIRM_BUTTON_TAG).assertDoesNotExist()
     }
 
     @Test
