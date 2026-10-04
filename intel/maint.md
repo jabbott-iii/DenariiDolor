@@ -100,7 +100,7 @@ Standing rules:
 - Compose tests select elements with `testTag` constants defined next to the screen, such as `BIOMETRIC_BUTTON_TAG`.
 - UiAutomator does not wait for Compose. Wait for the target state (`waitUntil` or `waitForIdle`) before sending system events, because CI runs the API 26 emulator slowly. Before a real key event aimed at a dialog, also wait for the dialog's window (`UiDevice.wait(Until.hasObject(...))`).
 - On Android 8.x (API 26–27) a new window gets initial focus even in touch mode. A dialog whose first focusable element is a text field therefore opens with that field focused and the keyboard up, and the first Back only closes the keyboard. Call `Espresso.closeSoftKeyboard()` before testing a dialog's Back behaviour.
-- With Espresso 3.6.1, Compose tests fail on API 37 emulator images (`NoSuchMethodException: InputManager.getInstance`). Run them on API 26–35, as CI does; the non-UI instrumented tests run on any image.
+- Espresso 3.7.0 runs on API 37 emulator images; 3.6.1 failed there (`NoSuchMethodException: InputManager.getInstance`). CI runs the instrumented tests on API 26 (minSdk) and API 36 (targetSdk).
 
 ## 7. Code quality gates
 
@@ -123,12 +123,13 @@ Versions live only in `gradle/libs.versions.toml`, and every reference goes thro
 
 | Pin | Constraint |
 |---|---|
-| Kotlin 2.0.21 / KSP 2.0.21-1.0.28 | Hilt 2.52 reads Kotlin metadata only up to 2.0. Kotlin 2.1+ needs a Hilt release verified to support it. CVE-2026-53914 in the Kotlin Gradle plugin (CS-24) is fixed only in Kotlin 2.4.20+. |
-| Room 2.6.1 | Moving to Room 2.7 or 3 goes together with KSP2 and SQLCipher. |
-| SQLCipher 4.6.1 + `androidx.sqlite` 2.4.0 | Newer SQLCipher needs compileSdk 37 or Room 3. 4.6.1 supports 16 KB page sizes. |
+| Kotlin 2.4.20 / KSP 2.3.12 | AGP 9 compiles Kotlin itself (built-in Kotlin) and brings KGP 2.2.10; the root `buildscript` puts `kotlin-gradle-plugin` on the classpath to raise it to the catalog version, which the Compose compiler plugin also uses. Don't apply `org.jetbrains.kotlin.android`. Hilt 2.60.1 reads Kotlin metadata through `kotlin-metadata-jvm` 2.3.21; check Hilt support before moving past Kotlin 2.4. Kotlin 2.4.20 is the first release that fixes CVE-2026-53914 (CS-24). |
+| Room 2.8.5 (KSP2) | `room-ktx` is merged into `room-runtime`. Room still opens SQLCipher through `openHelperFactory` (the `SupportSQLite` API). Room 3 changes the package and the driver API, so it's a separate step. |
+| SQLCipher 4.19.1 + `androidx.sqlite` 2.7.1 | SQLCipher 4.18+ needs compileSdk 37. A database created by an older release must still open after an update; check that by updating an installed release build (`plan.md`). |
 | `security-crypto` 1.1.0-alpha06 | Deprecated. Used only by `LegacyProfileStorage` to read v1.0.x installs during their upgrade (CS-09); remove it once those have upgraded. |
-| AGP 8.7.3, Gradle 8.11.1, JDK 17, compileSdk/targetSdk 35, minSdk 26 | CI and CD use Temurin 17. |
-| `build*` versions (netty BOM, protobuf-java, commons-io, logback, Bouncy Castle, commons-compress, jdom2, jose4j) | Not app dependencies. They raise build-tool libraries with known advisories to patched versions (CS-22, CS-23): the root `buildscript` constrains the plugin classpath, and `app/build.gradle.kts` constrains AGP's `_internal-unified-test-platform*` configurations and `ktlint`. Check `./gradlew buildEnvironment` and `:app:dependencies` after a change. Keep the three Bouncy Castle modules on the one `buildBouncyCastle` version. Remove them when AGP 9 and a newer ktlint bring patched versions. |
+| AGP 9.4.1, Gradle 9.6.1, JDK 17, compileSdk 37, targetSdk 36, minSdk 26 | AGP 9.4 needs Gradle 9.6 or later. targetSdk 36 is Google Play's requirement for new apps and updates since 2026-08-31. CI and CD use Temurin 17. |
+| detekt 1.23.8, ktlint 1.3.1, Vico 2.0.0 | Left behind on purpose in the toolchain upgrade. detekt 1.23.8 embeds Kotlin 2.0.21, so `app/build.gradle.kts` keeps the `detekt` configuration on that version (detekt 2.0 is still alpha). A newer ktlint reformats code (run `./gradlew ktlintFormat`). Vico 3 rewrites the chart API. |
+| `build*` versions (netty BOM, protobuf-java, commons-io, logback, Bouncy Castle, commons-compress, jdom2, jose4j) | Not app dependencies. They raise build-tool libraries with known advisories to patched versions (CS-22, CS-23): the root `buildscript` constrains the plugin classpath, and `app/build.gradle.kts` constrains AGP's `_internal-unified-test-platform*` configurations and `ktlint`. Check `./gradlew buildEnvironment` and `:app:dependencies` after a change. Keep the three Bouncy Castle modules on the one `buildBouncyCastle` version. Remove each one when the dependency graph shows AGP or ktlint brings a patched version itself. |
 
 Dependabot proposes weekly Gradle and Actions updates. Each one must pass CI and the security workflow. Workflow actions are pinned to commit SHAs with a `# vX.Y.Z` comment (CS-08); keep that form when adding or updating one.
 
@@ -147,7 +148,7 @@ Dependabot proposes weekly Gradle and Actions updates. Each one must pass CI and
 - `LoginActivity` holds its screen state in the activity rather than in a ViewModel. Its vault operations run off the main thread, but one in flight when the activity is recreated loses its result (the user signs in again).
 - `security-crypto` stays only for the v1.0.x upgrade path.
 - `SessionManager` state is in memory only. Process death safely resets it to signed out.
-- The pinned toolchain in section 8 blocks newer Kotlin, Room and SQLCipher. Upgrade those together.
+- detekt, ktlint and Vico are behind their latest releases on purpose (section 8).
 - `.idea/` project files are tracked in git.
 - The schema doesn't stop a TRANSFER row without `transferAccountId`; the read paths tolerate one (BUG-06). Add a trigger and a repair step with the next migration.
-- The CS-22 and CS-23 build-time constraints and the API 37 Espresso limit all go away with the toolchain upgrade.
+- The CS-22 and CS-23 build-time constraints stay until the dependency graph shows AGP and ktlint bring patched versions.

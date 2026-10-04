@@ -28,8 +28,7 @@ All twelve bugs (BUG-01 – BUG-12) from the 2026-10-03 review are fixed, and ev
 
    Then handle the open Dependabot PRs:
    - **#17** (Actions): close it; the SHA pins replace it.
-   - **#14** (ktlint-gradle 14.2.0): CI passes. Merge it together with a newer `ktlint` version, then run `./gradlew ktlintFormat`.
-   - **#12, #13, #15, #16:** hold them for the toolchain upgrade below; each fails CI on the current pins.
+   - **#12 – #16:** the toolchain upgrade below includes all of them (ktlint-gradle 14.2.0 from #14, with ktlint itself still 1.3.1). Close them once it's merged.
 4. **CS-07 / CS-15 biometric checks:** on a device with an enrolled fingerprint, turn on biometric sign-in, then:
    - sign in with the fingerprint;
    - enroll another fingerprint and confirm that biometric sign-in turns off with a message, the PIN still works, and the data is intact.
@@ -38,8 +37,14 @@ All twelve bugs (BUG-01 – BUG-12) from the 2026-10-03 review are fixed, and ev
 
 ## Follow-on work
 - **Next schema migration (v3), BUG-06 follow-up:** reject TRANSFER rows without `transferAccountId` in the database itself. Use a `BEFORE INSERT/UPDATE` trigger created both in the migration and for new installs, because SQLite can't add a CHECK to an existing table. Add a repair step that reports existing malformed rows. Until then, such rows have no balance impact and show as `Account → ?`.
-- **Toolchain upgrade:** AGP 9 with Gradle 9 (PR #15), Hilt 2.60+ (#13), Kotlin 2.4.20+ (needed to fix CS-24), Room 2.7 with KSP2, SQLCipher 4.1x (compileSdk 37 / Room 3), coroutines 1.11 (#12) and core-ktx 1.19 (#16), as one step (`maint.md` §8). Then:
-  - remove the CS-22 and CS-23 build-time constraints (root `buildscript`, the block in `app/build.gradle.kts`, and the `build*` catalog versions) if the new versions are patched;
-  - move to an Espresso version that supports API 37, so UI tests run on current emulator images.
+- **Toolchain upgrade (in the working tree, 2026-10-03, not built yet):**
+  - **Versions:** AGP 9.4.1 with Gradle 9.6.1, Kotlin 2.4.20 (built-in Kotlin), KSP 2.3.12, Hilt 2.60.1, Room 2.8.5, SQLCipher 4.19.1, `androidx.sqlite` 2.7.1, Compose BOM 2026.09.00, activity 1.13.0, lifecycle 2.11.0, navigation 2.10.2, core-ktx 1.19.1, coroutines 1.11.0, Espresso 3.7.0, ext-junit 1.3.0 and ktlint-gradle 14.2.0.
+  - **SDK:** compileSdk 37 and targetSdk 36. CI's emulator matrix moves from API 35 to API 36.
+  - **Still to do:**
+    - Push it to a branch and open a pull request, then iterate until CI and the security workflow are green.
+    - Install the current release build with some data, update to the new build, and confirm that the database still opens with its data (SQLCipher 4.6.1 → 4.19.1, Room 2.6.1 → 2.8.5).
+    - Commit the regenerated Room schema JSON if the first build rewrites `app/schemas/`.
+    - Read the dependency graph and remove the CS-22 and CS-23 constraints that AGP 9.4.1 no longer needs.
+    - Optionally refresh the wrapper JAR and scripts with `./gradlew wrapper --gradle-version 9.6.1`.
 - **Drop `security-crypto`** (CS-09) once v1.0.x installs have had time to upgrade. It is used only by `LegacyProfileStorage`.
 - **Later:** a chart tooltip/marker; optionally protect the `production` environment with required reviewers (a GitHub setting).

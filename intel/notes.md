@@ -8,15 +8,15 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 ## Tech Stack (as built)
 | Area | Choice |
 |---|---|
-| Language | Kotlin 2.0.21 (Phase 6), JVM toolchain 17 |
+| Language | Kotlin 2.4.20 (AGP built-in Kotlin, 2026-10-03 toolchain upgrade), JVM toolchain 17 |
 | UI | Jetpack Compose (Material 3, BOM 2024.12.01, Kotlin Compose compiler plugin), Navigation Compose, Vico 2.0.0 charts |
 | Architecture | MVVM + Repository + use cases (`domain/usecase`) |
-| DI | Hilt 2.52 (KSP) |
-| Database | Room 2.6.1 + SQLCipher 4.6.1, DB `denarii_dolor.db`, schema v2 (Long cents) |
+| DI | Hilt 2.60.1 (KSP2) |
+| Database | Room 2.8.5 + SQLCipher 4.19.1, DB `denarii_dolor.db`, schema v2 (Long cents) |
 | Async | Coroutines + Flow/StateFlow |
 | Auth | PIN (6–12 digits) and security answer, each wrapping the database key (PBKDF2 + Keystore HMAC); BiometricPrompt (`BIOMETRIC_STRONG`) with a `CryptoObject` |
 | Secure storage | `Vault`: Android Keystore AES-GCM keys and the `vault_profile` prefs file; `security-crypto` 1.1.0-alpha06 only to read v1.0.x installs during their upgrade |
-| SDK | minSdk 26, target/compile 35, AGP 8.7.3, Gradle 8.11.1 |
+| SDK | minSdk 26, targetSdk 36, compileSdk 37, AGP 9.4.1, Gradle 9.6.1 |
 
 ## Package Layout (`app/src/main/java/com/denariidolor`)
 - `domain/model` — `Transaction` (abstract) → `Expense`, `Income`, `Transfer`; `Account`, `Budget`, `Category`, `SearchFilters`, `MonthlyReport`/`ReportRow`, entity↔domain mappings.
@@ -123,3 +123,4 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 | 2026-10-03 | Build-time advisories (CS-22) are handled with catalog-versioned constraints on the plugin classpath, AGP's test-platform configurations and the `ktlint` configuration, until the AGP 9 toolchain upgrade. | The vulnerable libraries never ship in the app; constraints avoid a premature toolchain jump. |
 | 2026-10-03 | Compose UI tests run on CI (API 26 and 35) only: Espresso 3.6.1 fails on API 37 emulator images. | Local instrumented runs on API 37 cover the non-UI tests. |
 | 2026-10-03 | Dependabot alert #60 (the Kotlin Gradle plugin, CS-24) was dismissed on GitHub as a tolerable risk until the toolchain upgrade. | User decision. |
+| 2026-10-03 | Toolchain upgrade: targetSdk 36 (Play's requirement) with compileSdk 37; only the plan's list (AGP 9.4.1, Gradle 9.6.1, Kotlin 2.4.20, KSP 2.3.12, Hilt 2.60.1, Room 2.8.5, SQLCipher 4.19.1, Compose BOM 2026.09.00 with the AndroidX libraries that go with it, coroutines 1.11, core-ktx 1.19 and test libraries that support API 37). detekt 1.23.8, ktlint 1.3.1 and Vico 2.0.0 stay. It's validated on a branch and pull request through CI. | User decisions. |

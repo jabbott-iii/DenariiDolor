@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
@@ -18,12 +17,12 @@ ksp {
 
 android {
     namespace = "com.denariidolor"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.denariidolor"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         // CD passes -PversionCode / -PversionName derived from the release tag.
         versionCode = (findProperty("versionCode") as String?)?.toInt() ?: 1
         versionName = (findProperty("versionName") as String?) ?: "1.0.0-dev"
@@ -60,7 +59,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     sourceSets {
-        getByName("androidTest").assets.srcDir("$projectDir/schemas")
+        getByName("androidTest").assets.directories += "$projectDir/schemas"
     }
     buildFeatures {
         compose = true
@@ -83,7 +82,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.security.crypto)
     implementation(libs.androidx.sqlite)
@@ -132,6 +130,15 @@ dependencies {
     constraints {
         add("ktlint", libs.build.logback.classic)
         add("ktlint", libs.build.logback.core)
+    }
+}
+
+// detekt 1.23.8 embeds the Kotlin 2.0.21 compiler; keep its own classpath on that version under the newer Kotlin toolchain.
+configurations.matching { it.name == "detekt" }.configureEach {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlin") {
+            useVersion(io.gitlab.arturbosch.detekt.getSupportedKotlinVersion())
+        }
     }
 }
 

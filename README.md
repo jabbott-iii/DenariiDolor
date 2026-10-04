@@ -146,7 +146,7 @@ The same report exported as **PDF** has the title, period, timestamp, totals and
 
 ## For developers
 
-**Stack:** Kotlin 2.0 · Jetpack Compose (Material 3) · MVVM + use cases + repositories · Hilt · Room + SQLCipher · Coroutines/Flow · Vico charts · minSdk 26 / targetSdk 35 · AGP 8.7 · JDK 17.
+**Stack:** Kotlin 2.4 · Jetpack Compose (Material 3) · MVVM + use cases + repositories · Hilt · Room + SQLCipher · Coroutines/Flow · Vico charts · minSdk 26 / targetSdk 36 · AGP 9.4 · JDK 17.
 
 ```mermaid
 flowchart LR
@@ -172,7 +172,7 @@ make release VERSION=v1.2.3            # tag and push → once CI passes on that
 | `…/presentation/ui` | Compose screens and ViewModels, one package per feature |
 | `…/di` | Hilt modules |
 | `app/schemas` | Exported Room schemas (commit a new one with every schema change) |
-| `.github/workflows` | `ci.yml` (lint, tests, build, emulator tests on API 26 and 35), `security.yml` (CodeQL, dependency review, gitleaks), `cd.yml` (signed release on `v*` tags, after CI passes on the tagged commit) |
+| `.github/workflows` | `ci.yml` (lint, tests, build, emulator tests on API 26 and 36), `security.yml` (CodeQL, dependency review, gitleaks), `cd.yml` (signed release on `v*` tags, after CI passes on the tagged commit) |
 
 Release signing needs four repository secrets: `ANDROID_SIGNING_KEY` (the base64-encoded keystore), `ANDROID_SIGNING_KEYSTORE_PASSWORD`, `ANDROID_SIGNING_KEY_ALIAS` and `ANDROID_SIGNING_KEY_PASSWORD`. For contribution rules, see [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
 

@@ -514,3 +514,17 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
 - **Root cause** (from the run's `instrumented-results-api-26` artifact): the assertion that failed was `assertTrue(cancelTriggered)` at line 480, after Back. The logcat shows the keyboard attaching to an input field as the dialog opened, then handling the Back press. On Android 8.x the platform gives a new window initial focus even in touch mode. Since CS-16, the wipe dialog's first focusable element is the "type WIPE" field, so the field took focus and the keyboard opened, and the first Back only closed the keyboard. API 28+ doesn't assign initial focus in touch mode, which is why API 35 passed. On real Android 8.x devices this is standard behaviour, so the app is unchanged.
 - **Fix (test only):** the test calls `Espresso.closeSoftKeyboard()` (a no-op when no keyboard is shown) before `pressBack()`, and the assertion now has a message. `maint.md` §6 records the API 26–27 focus behaviour.
 - **Validation:** not run yet. It needs the API 26 CI job. The change is limited to that one test.
+
+## 2026-10-03 — Toolchain upgrade (working tree)
+- **Decisions (yours):** targetSdk 36, which Google Play has required for new apps and updates since 2026-08-31, with compileSdk 37; only the plan's list of upgrades; validation on a branch and pull request through CI. detekt 1.23.8, ktlint 1.3.1 and Vico 2.0.0 stay.
+- **Build:**
+  - Gradle 8.11.1 → 9.6.1. The wrapper checksum `9c0f7fae…9e14` matches gradle.org's checksum page, the release notes and the GitHub release asset.
+  - AGP 8.7.3 → 9.4.1, which needs Gradle 9.6 or later (Dependabot PR #15 failed on exactly that).
+  - Built-in Kotlin: `org.jetbrains.kotlin.android` is removed from both build files and from the `pluginManagement` mapping. The root `buildscript` adds `kotlin-gradle-plugin` 2.4.20, because AGP 9 otherwise brings KGP 2.2.10.
+  - The androidTest schema assets use `assets.directories`. `room-ktx` is dropped, because it's merged into `room-runtime`.
+  - detekt's own classpath is pinned to the Kotlin version it embeds (`getSupportedKotlinVersion()`).
+  - CI's emulator matrix is API 26 and 36 (minSdk and targetSdk).
+- **Versions:** Kotlin 2.0.21 → 2.4.20, KSP → 2.3.12, Hilt 2.52 → 2.60.1, Room 2.6.1 → 2.8.5, SQLCipher 4.6.1 → 4.19.1, `androidx.sqlite` 2.4.0 → 2.7.1, Compose BOM 2024.12.01 → 2026.09.00 (UI 1.12.1, Material 3 1.4.0), activity → 1.13.0, lifecycle → 2.11.0, navigation → 2.10.2, core-ktx → 1.19.1, coroutines → 1.11.0, Espresso → 3.7.0, ext-junit → 1.3.0, ktlint-gradle → 14.2.0.
+- **Checked against the AGP 9 defaults:** the R8 keep rules use `{ *; }`, so the stricter full mode still keeps constructors, and nothing loads resources by name, so optimized resource shrinking is safe. The code already uses the current Material 3 APIs. Room's Kotlin code generation is safe because the non-null scalar DAO queries use `COUNT` or `COALESCE`. CodeQL's current release supports Kotlin up to 2.4.20.
+- **Security log:** CS-22 and CS-23 closed on CI run 37178965892 (`f8e3fc7`). CS-24 moved back from the accepted risks to In Progress.
+- **Validation:** nothing was built. Neither environment could reach Maven Central, Google Maven or the Gradle distribution server. Versions came from Maven Central metadata and the AndroidX release pages. What's still to do is in `plan.md`, Follow-on work.

@@ -10,8 +10,8 @@ Security vulnerabilities are the exception: report them through a private securi
 
 - Git.
 - A JDK to run Gradle. The project compiles with a JDK 17 toolchain (`jvmToolchain(17)`), which the foojay resolver in `settings.gradle.kts` can download if it's missing. CI uses Temurin 17. `gradle/gradle-daemon-jvm.properties` requests JDK 21 for the Gradle daemon.
-- The Android SDK with platform 35 (`compileSdk = 35`). Point Gradle at it with `ANDROID_HOME` or with `sdk.dir` in `local.properties`, which is git-ignored.
-- For instrumented tests, a device or emulator running API 26 or newer. CI runs API 26 and 35. The Compose UI tests need API 35 or lower for now: with the pinned Espresso 3.6.1 they fail on API 37 images (`InputManager.getInstance`), while the database and vault tests run anywhere.
+- The Android SDK with platform 37 (`compileSdk = 37`). Point Gradle at it with `ANDROID_HOME` or with `sdk.dir` in `local.properties`, which is git-ignored.
+- For instrumented tests, a device or emulator running API 26 or newer. CI runs API 26 and 36. With Espresso 3.7.0 the Compose UI tests also run on API 37 images.
 
 Use the Gradle wrapper (`./gradlew`); don't install Gradle separately.
 
@@ -74,7 +74,7 @@ If you run detekt-cli outside Gradle, pass `--build-upon-default-config` so that
   - Composables are PascalCase, with a `…Route` wrapper that wires the ViewModel.
   - Add comments only for intent that isn't obvious.
   - Don't suppress a warning without a comment explaining why.
-- **Dependencies:** add a new library only when an existing dependency or the platform can't do the job. Set versions only in `gradle/libs.versions.toml`. Some versions are pinned for compatibility (Kotlin 2.0.21, Room 2.6.1, SQLCipher 4.6.1); check `intel/maint.md` section 8 before bumping one.
+- **Dependencies:** add a new library only when an existing dependency or the platform can't do the job. Set versions only in `gradle/libs.versions.toml`. Some versions are pinned or held back on purpose (Kotlin and KSP move together; detekt 1.23.8, ktlint 1.3.1, Vico 2.0.0); check `intel/maint.md` section 8 before bumping one.
 - **Security:**
   - Don't add logging (`Log`, `println`, `printStackTrace`), network access, or secrets of any kind.
   - Don't weaken authentication, encryption, validation, lint or tests to get a change through.
