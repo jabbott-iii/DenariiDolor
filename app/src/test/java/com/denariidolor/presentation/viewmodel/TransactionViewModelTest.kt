@@ -18,9 +18,11 @@ package com.denariidolor.presentation.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
 import com.denariidolor.R
+import com.denariidolor.data.local.db.entity.BudgetEntity
 import com.denariidolor.data.local.db.entity.TransactionEntity
 import com.denariidolor.data.repository.TransactionRepository
 import com.denariidolor.domain.usecase.AddTransactionUseCase
+import com.denariidolor.domain.usecase.BudgetOverage
 import com.denariidolor.domain.usecase.UpdateTransactionUseCase
 import com.denariidolor.domain.usecase.ValidateTransactionUseCase
 import com.denariidolor.presentation.ui.common.UiMessage
@@ -39,6 +41,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -49,10 +52,14 @@ class TransactionViewModelTest {
 
     private val transactions = FakeTransactionRepository(listOf(TestData.expense(id = 7, amountCents = 450)))
 
-    private fun viewModel(transactionId: Long? = null, repository: TransactionRepository = transactions): TransactionViewModel {
+    private fun viewModel(
+        transactionId: Long? = null,
+        repository: TransactionRepository = transactions,
+        budgets: FakeBudgetRepository = FakeBudgetRepository()
+    ): TransactionViewModel {
         val categories = FakeCategoryRepository(TestData.categories)
         val accounts = FakeAccountRepository(TestData.accounts)
-        val validate = ValidateTransactionUseCase(categories, accounts, FakeBudgetRepository(), repository, Clock.systemDefaultZone())
+        val validate = ValidateTransactionUseCase(categories, accounts, budgets, repository, Clock.systemDefaultZone())
         return TransactionViewModel(
             AddTransactionUseCase(validate, repository),
             UpdateTransactionUseCase(validate, repository),
@@ -129,6 +136,51 @@ class TransactionViewModelTest {
         assertEquals(TransactionEvent.Saved, vm.events.first())
         assertTrue(vm.isSaving.value)
     }
+
+    @Test
+    fun overBudgetExpenseAsksBeforeSaving() = runTest {
+        val vm = viewModel(budgets = groceriesBudget(limitCents = 1_000))
+
+        vm.saveTransaction("EXPENSE", "Lunch", 1_299, categoryId = 4, accountId = 1, transferAccountId = null, dateEpochMillis = 1L)
+
+        assertEquals(BudgetOverage("Groceries", overByCents = 299, limitCents = 1_000), vm.overBudget.first { it != null })
+        assertEquals(0, transactions.items.count { it.description == "Lunch" })
+        assertFalse(vm.isSaving.value)
+    }
+
+    @Test
+    fun confirmingOverBudgetSavesTheExpense() = runTest {
+        val vm = viewModel(budgets = groceriesBudget(limitCents = 1_000))
+        vm.saveTransaction("EXPENSE", "Lunch", 1_299, categoryId = 4, accountId = 1, transferAccountId = null, dateEpochMillis = 1L)
+        vm.overBudget.first { it != null }
+
+        vm.confirmOverBudget()
+
+        assertEquals(TransactionEvent.Saved, vm.events.first())
+        assertNull(vm.overBudget.value)
+        assertEquals(listOf(1_299L), transactions.items.filter { it.description == "Lunch" }.map { it.amountCents })
+    }
+
+    @Test
+    fun dismissingOverBudgetSavesNothingAndAsksAgainNextTime() = runTest {
+        val vm = viewModel(budgets = groceriesBudget(limitCents = 1_000))
+        vm.saveTransaction("EXPENSE", "Lunch", 1_299, categoryId = 4, accountId = 1, transferAccountId = null, dateEpochMillis = 1L)
+        vm.overBudget.first { it != null }
+
+        vm.dismissOverBudget()
+        vm.confirmOverBudget()
+
+        assertNull(vm.overBudget.value)
+        assertFalse(vm.isSaving.value)
+        assertEquals(0, transactions.items.count { it.description == "Lunch" })
+
+        vm.saveTransaction("EXPENSE", "Lunch", 1_299, categoryId = 4, accountId = 1, transferAccountId = null, dateEpochMillis = 1L)
+
+        assertEquals(299L, vm.overBudget.first { it != null }?.overByCents)
+    }
+
+    private fun groceriesBudget(limitCents: Long) =
+        FakeBudgetRepository(listOf(BudgetEntity(id = 1, categoryId = 4, monthlyLimitCents = limitCents)))
 
     @Test
     fun failedSaveCanBeRetried() = runTest {

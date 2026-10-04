@@ -21,6 +21,7 @@ import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.data.local.db.entity.TransactionEntity
 import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.domain.model.TransactionType
+import com.denariidolor.domain.usecase.BudgetOverage
 import com.denariidolor.domain.usecase.DomainError
 import com.denariidolor.domain.usecase.DomainException
 import com.denariidolor.domain.usecase.ValidateTransactionUseCase
@@ -59,6 +60,27 @@ class ValidateTransactionUseCaseTest {
 
         assertTrue(result.isFailure)
         assertEquals("Budget threshold violated", result.exceptionOrNull()?.message)
+        val error = result.exceptionOrNull() as DomainException
+        assertEquals(DomainError.BUDGET_EXCEEDED, error.error)
+        assertEquals(BudgetOverage(categoryName = "Groceries", overByCents = 1_000, limitCents = 10_000), error.arg)
+    }
+
+    @Test
+    fun confirmedExpenseMayExceedTheBudget() = runBlocking<Unit> {
+        transactions.expenseTotalCents = 9_000
+
+        assertTrue(useCase(TestData.expense(amountCents = 2_000), allowOverBudget = true).isSuccess)
+    }
+
+    @Test
+    fun confirmingTheBudgetStillChecksEverythingElse() = runBlocking<Unit> {
+        transactions.expenseTotalCents = 9_000
+
+        assertEquals("Invalid amount", useCase(TestData.expense(amountCents = 0), allowOverBudget = true).exceptionOrNull()?.message)
+        assertEquals(
+            "Category not found",
+            useCase(TestData.expense(categoryId = 99), allowOverBudget = true).exceptionOrNull()?.message
+        )
     }
 
     @Test

@@ -61,6 +61,8 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.denariidolor.R
 import com.denariidolor.domain.model.TransactionType
+import com.denariidolor.domain.usecase.BudgetOverage
+import com.denariidolor.presentation.ui.common.ConfirmDialog
 import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.presentation.ui.common.ReferencePicker
 import com.denariidolor.presentation.ui.common.ScreenHeader
@@ -72,6 +74,7 @@ import com.denariidolor.util.Constants
 import com.denariidolor.util.DateUtils
 import com.denariidolor.util.Money
 import com.denariidolor.util.Validators
+import com.denariidolor.util.formatMoney
 import java.time.LocalDate
 
 internal const val TRANSACTION_TYPE_FIELD_TAG = "transactionTypeField"
@@ -85,6 +88,7 @@ internal fun AddTransactionRoute(onFinished: () -> Unit, viewModel: TransactionV
     val context = LocalContext.current
     val formState by viewModel.formState.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
+    val overBudget by viewModel.overBudget.collectAsStateWithLifecycle()
     val categories by viewModel.categoryOptions.collectAsStateWithLifecycle()
     val accounts by viewModel.accountOptions.collectAsStateWithLifecycle()
     var formKey by rememberSaveable { mutableIntStateOf(0) }
@@ -126,6 +130,27 @@ internal fun AddTransactionRoute(onFinished: () -> Unit, viewModel: TransactionV
             )
         }
     }
+
+    overBudget?.let { overage ->
+        OverBudgetDialog(overage, onConfirm = viewModel::confirmOverBudget, onDismiss = viewModel::dismissOverBudget)
+    }
+}
+
+/** Asks before saving an expense that takes its category past the monthly budget; Save anyway still records it. */
+@Composable
+internal fun OverBudgetDialog(overage: BudgetOverage, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    ConfirmDialog(
+        title = stringResource(R.string.over_budget_title),
+        message = stringResource(
+            R.string.over_budget_message,
+            overage.categoryName,
+            formatMoney(overage.overByCents),
+            formatMoney(overage.limitCents)
+        ),
+        confirmLabel = stringResource(R.string.over_budget_confirm),
+        onConfirm = onConfirm,
+        onDismiss = onDismiss
+    )
 }
 
 @Composable

@@ -26,9 +26,10 @@ class AddTransactionUseCase @Inject constructor(
     private val validateTransactionUseCase: ValidateTransactionUseCase,
     private val transactionRepository: TransactionRepository
 ) {
-    suspend operator fun invoke(transaction: Transaction): Result<Long> {
+    /** [allowOverBudget] is true once the user has confirmed an expense that goes past its category's budget. */
+    suspend operator fun invoke(transaction: Transaction, allowOverBudget: Boolean = false): Result<Long> {
         val entity = runSuspendCatching { transaction.toEntity().copy(id = 0L) }.getOrElse { return Result.failure(it) }
-        validateTransactionUseCase(entity).getOrElse { return Result.failure(it) }
+        validateTransactionUseCase(entity, allowOverBudget).getOrElse { return Result.failure(it) }
         return runSuspendCatching { transactionRepository.add(entity) }
     }
 }

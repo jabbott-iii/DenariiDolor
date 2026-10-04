@@ -9,7 +9,7 @@ Active and follow-on work only. Finished work is recorded in `history.md`, decis
 | Search with multi-row results | ✅ Done | Typed multi-row results with count; tap to edit; `%` and `_` match literally |
 | Secure DB add / edit / delete | ✅ Done | Full add/edit/delete in UI; SQLCipher database that opens only after sign-in |
 | Reports (multi-column, rows, timestamp, title) | ✅ Done | 6 columns, title, period, timestamp, totals; CSV + PDF save/share |
-| Validation | ✅ Done | Amount, description (trimmed, at most 200 characters), date, references, budget limit, duplicate names (category/account) |
+| Validation | ✅ Done | Amount, description (trimmed, at most 200 characters), date, references, budget limit (confirmed, not blocked, when exceeded), duplicate names (category/account) |
 | Security | ✅ Done | Database key wrapped by the PIN, the security answer and strong biometrics (`Vault`); elapsed-time lockout; Keystore-encrypted profile; no backups; R8; session timeout; tapjacking guard |
 | Scalability | ✅ Done | MVVM, repositories, use cases, Hilt, typed enums, cents, explicit migrations + exported schema, lint/static analysis/coverage in CI |
 | GUI | ✅ Done | Bottom nav, FAB, monthly dashboard (hero, tiles, chart, budget meters, alerts), category icons, dark mode, manage screens |

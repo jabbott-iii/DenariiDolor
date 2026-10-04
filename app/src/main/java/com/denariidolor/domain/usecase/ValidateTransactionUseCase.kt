@@ -29,6 +29,9 @@ import java.time.Clock
 import java.time.Instant
 import javax.inject.Inject
 
+/** How far an expense would take its category past the monthly budget; the `arg` of a [DomainError.BUDGET_EXCEEDED] failure. */
+data class BudgetOverage(val categoryName: String, val overByCents: Long, val limitCents: Long)
+
 class ValidateTransactionUseCase @Inject constructor(
     private val categoryRepository: CategoryRepository,
     private val accountRepository: AccountRepository,
@@ -36,7 +39,12 @@ class ValidateTransactionUseCase @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val clock: Clock
 ) {
-    suspend operator fun invoke(transaction: TransactionEntity): Result<Unit> {
+    /**
+     * Checks [transaction] before it is written. An expense that would take its category past the monthly budget fails with
+     * [DomainError.BUDGET_EXCEEDED] and a [BudgetOverage], unless [allowOverBudget] says the user has confirmed it.
+     * Every other rule still applies when it does.
+     */
+    suspend operator fun invoke(transaction: TransactionEntity, allowOverBudget: Boolean = false): Result<Unit> {
         if (!Validators.isValidAmount(transaction.amountCents)) return failure(DomainError.INVALID_AMOUNT, "Invalid amount")
         if (transaction.description.isBlank()) return failure(DomainError.BLANK_DESCRIPTION, "Description cannot be blank")
         if (!Validators.isValidDescription(transaction.description)) {
@@ -58,11 +66,12 @@ class ValidateTransactionUseCase @Inject constructor(
                 return failure(DomainError.TRANSFER_DESTINATION_SAME, "Transfer destination must be different")
             }
         }
-        return runSuspendCatching { checkReferencesAndBudget(transaction) }.getOrElse { Result.failure(it) }
+        return runSuspendCatching { checkReferencesAndBudget(transaction, allowOverBudget) }.getOrElse { Result.failure(it) }
     }
 
-    private suspend fun checkReferencesAndBudget(transaction: TransactionEntity): Result<Unit> {
-        if (categoryRepository.getById(transaction.categoryId) == null) return failure(DomainError.CATEGORY_NOT_FOUND, "Category not found")
+    private suspend fun checkReferencesAndBudget(transaction: TransactionEntity, allowOverBudget: Boolean): Result<Unit> {
+        val category = categoryRepository.getById(transaction.categoryId)
+            ?: return failure(DomainError.CATEGORY_NOT_FOUND, "Category not found")
         if (accountRepository.getById(transaction.accountId) == null) return failure(DomainError.ACCOUNT_NOT_FOUND, "Account not found")
         val transferAccountId = transaction.transferAccountId
         if (transaction.type == TransactionType.TRANSFER &&
@@ -71,7 +80,7 @@ class ValidateTransactionUseCase @Inject constructor(
         ) {
             return failure(DomainError.TRANSFER_DESTINATION_NOT_FOUND, "Transfer destination account not found")
         }
-        if (transaction.type == TransactionType.EXPENSE) {
+        if (transaction.type == TransactionType.EXPENSE && !allowOverBudget) {
             val budget = budgetRepository.getByCategoryId(transaction.categoryId)
             if (budget != null) {
                 val (start, end) = monthBounds(transaction.dateEpochMillis)
@@ -81,8 +90,10 @@ class ValidateTransactionUseCase @Inject constructor(
                     endInclusive = end,
                     excludeTransactionId = transaction.id
                 )
-                if (spent + transaction.amountCents > budget.monthlyLimitCents) {
-                    return failure(DomainError.BUDGET_EXCEEDED, "Budget threshold violated")
+                val overByCents = spent + transaction.amountCents - budget.monthlyLimitCents
+                if (overByCents > 0) {
+                    val overage = BudgetOverage(category.name, overByCents, budget.monthlyLimitCents)
+                    return failure(DomainError.BUDGET_EXCEEDED, "Budget threshold violated", overage)
                 }
             }
         }

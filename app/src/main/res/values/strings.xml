@@ -188,6 +188,9 @@
     <string name="error_category_not_found">That category no longer exists. Choose another.</string>
     <string name="error_account_not_found">That account no longer exists. Choose another.</string>
     <string name="error_budget_exceeded">This expense would put the category over its monthly budget.</string>
+    <string name="over_budget_title">Over budget</string>
+    <string name="over_budget_message">This expense puts %1$s %2$s over its monthly budget of %3$s.</string>
+    <string name="over_budget_confirm">Save anyway</string>
     <string name="error_invalid_name">Name must be 1 to %1$d characters.</string>
     <string name="error_duplicate_category_name">A category named \"%1$s\" already exists.</string>
     <string name="error_duplicate_account_name">An account named \"%1$s\" already exists.</string>

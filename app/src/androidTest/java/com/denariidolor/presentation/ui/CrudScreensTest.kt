@@ -40,6 +40,7 @@ import androidx.compose.ui.test.performTextReplacement
 import com.denariidolor.data.local.db.entity.BudgetEntity
 import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.domain.model.TransactionType
+import com.denariidolor.domain.usecase.BudgetOverage
 import com.denariidolor.presentation.ui.budget.BudgetRow
 import com.denariidolor.presentation.ui.budget.ManageBudgetsScreen
 import com.denariidolor.presentation.ui.category.CATEGORY_ICON_OPTION_TAG_PREFIX
@@ -274,6 +275,27 @@ class CrudScreensTest {
         composeRule.onNodeWithText("Save").performClick()
 
         assertEquals("Dining" to "dining", added)
+    }
+
+    @Test
+    fun overBudgetDialogShowsTheOverageAndLetsTheUserChoose() {
+        var confirmed = false
+        var dismissed = false
+        composeRule.setContent {
+            DenariiDolorTheme {
+                OverBudgetDialog(
+                    BudgetOverage(categoryName = "Dining", overByCents = 5_000, limitCents = 20_000),
+                    onConfirm = { confirmed = true },
+                    onDismiss = { dismissed = true }
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("This expense puts Dining $50.00 over its monthly budget of $200.00.").assertIsDisplayed()
+        composeRule.onNodeWithText("Cancel").performClick()
+        assertTrue(dismissed)
+        composeRule.onNodeWithText("Save anyway").performClick()
+        assertTrue(confirmed)
     }
 
     @Test

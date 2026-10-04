@@ -28,7 +28,7 @@
 | **Transactions** | Add, edit and delete **expenses**, **income** and **transfers**. Account balances update automatically and atomically. |
 | **Accounts** | Starts with Cash and Savings. Add your own accounts with an opening balance, and rename or delete them. |
 | **Categories** | 24 built-in icons (Groceries, Dining, Fuel, Housing, Utilities, Travel, …). Names must be unique. |
-| **Budgets** | A monthly limit per category with a warning threshold. The Dashboard meters show *On track*, *Near limit* or *Over budget*, and an expense that would exceed a limit is blocked. |
+| **Budgets** | A monthly limit per category with a warning threshold. The Dashboard meters show *On track*, *Near limit* or *Over budget*, and an expense that would exceed a limit asks you to confirm (**Save anyway** or **Cancel**) before it's saved. |
 | **Dashboard** | Monthly net, income and expense totals; a spending-by-category chart; budget meters and alerts; account balances; recent transactions. |
 | **Search** | Filter by description text, category, amount range and date range. The results show as a multi-row list, and you tap a row to edit it. |
 | **Reports** | A monthly spending report with a title, a generated timestamp, totals, and a 6-column table (Date, Type, Category, Description, Amount, Payment Method). **Save** or **Share** it as **CSV** or **PDF**. |
@@ -39,7 +39,7 @@
 ## Use cases
 
 - **Everyday spending log:** record the coffee, the groceries and the fuel as they happen, then see at a glance where the month's money went.
-- **Staying under budget:** give Dining a $200 monthly limit with an 80% warning. The Dashboard flags it as *Near limit* at $160, and the app refuses an expense that would push it past $200.
+- **Staying under budget:** give Dining a $200 monthly limit with an 80% warning. The Dashboard flags it as *Near limit* at $160, and an expense that would push it past $200 asks you to confirm before it's saved, so you can still record what you actually spent.
 - **Moving money between accounts:** a transfer from Cash to Savings moves the balance without counting as income or spending.
 - **Finding a past purchase:** search "pharmacy" between two dates to find what you paid and when.
 - **Month-end review or taxes:** export the month's report to CSV for a spreadsheet, or to PDF to print or share with a partner or accountant.

@@ -555,3 +555,20 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
   - Fix: `app/build.gradle.kts` adds a component metadata rule, `RaiseBuildToolDependencies`. It covers detached configurations as well as named ones, and wherever a dependency asks for an older version it raises Bouncy Castle to 1.86, commons-lang3 to 3.18.0 and HttpClient to 4.5.14 (catalog `buildBouncyCastle`, `buildCommonsLang3`, `buildHttpClient`).
 - **Checks:** ktlint 1.3.1, the same version CI uses, run with your approval in Claude's workspace, passes on `app/build.gradle.kts` and `build.gradle.kts`. It flagged an existing trailing space at the end of `settings.gradle.kts`, which CI's ktlint doesn't check; left unchanged. The catalog parses. Not run: Gradle; this needs the next CI run and dependency snapshot.
 - Also updated: `cybersec.md`, `maint.md` (the `build*` row) and `plan.md` (the toolchain upgrade's remaining items).
+
+## 2026-10-04 — Production-readiness review; CS-26 and CS-27
+- Read-only review of `8a09fc6` (sign-in, vault, Keystore, database holder, session, exports, repositories, validation, the Gradle build and the three workflows) to answer whether the app is production ready. No code changed.
+- **Security log:** CS-26 (Low, the vault stays unlocked while the app is in the background) and CS-27 (Medium, on-device PIN brute force on a rooted device; decision needed) added as open findings. CS-18 closed: the removal of `app/release/` was committed in `288ff67`, and no APK, AAB or DM file is tracked on `8a09fc6`.
+- **Not run:** Gradle (neither the workstation shell nor the cloud workspace can reach Maven Central, Google Maven or the Gradle distribution server), device or emulator checks, and the GitHub API (no access in this session).
+
+## 2026-10-04 — Over-budget expenses are confirmed, not blocked
+- **Why:** the production-readiness review found that an expense past its category's monthly budget was rejected with no way to record it, so the records drifted from what was actually spent. Your choice: confirm before saving.
+- **Change:**
+  - `ValidateTransactionUseCase` takes `allowOverBudget` (default `false`). Without it, the budget failure now carries a `BudgetOverage` (category name, amount over, limit). With it, only the budget check is skipped.
+  - `Add`/`UpdateTransactionUseCase` pass the flag through.
+  - `TransactionViewModel` turns `BUDGET_EXCEEDED` into an `overBudget` `StateFlow` (kept across rotation) plus `confirmOverBudget()` and `dismissOverBudget()`. Save is ignored while the prompt is open.
+  - `TransactionFormScreen` shows `OverBudgetDialog` (the shared `ConfirmDialog`): "This expense puts Dining $50.00 over its monthly budget of $200.00." with **Save anyway** / **Cancel**.
+  - New strings `over_budget_title`, `over_budget_message` and `over_budget_confirm`. `error_budget_exceeded` stays as the `UiMessage` fallback for `BUDGET_EXCEEDED`.
+- **Tests:** `ValidateTransactionUseCaseTest` (the failure carries the overage; a confirmed expense passes; confirming still runs every other check), `TransactionViewModelTest` (asks before saving, confirm saves, dismiss saves nothing and asks again), `CrudScreensTest.overBudgetDialogShowsTheOverageAndLetsTheUserChoose`.
+- Also updated: `README.md`, `maint.md`, `map.md`, `notes.md`, `plan.md`.
+- **Validation:** not run here; Gradle can't reach its repositories from either environment. It needs CI (`testDebugUnitTest`, and the instrumented tests for the dialog).

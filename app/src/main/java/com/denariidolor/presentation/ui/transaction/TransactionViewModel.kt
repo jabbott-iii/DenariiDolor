@@ -28,6 +28,7 @@ import com.denariidolor.domain.model.Transaction
 import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.model.Transfer
 import com.denariidolor.domain.usecase.AddTransactionUseCase
+import com.denariidolor.domain.usecase.BudgetOverage
 import com.denariidolor.domain.usecase.DomainError
 import com.denariidolor.domain.usecase.DomainException
 import com.denariidolor.domain.usecase.UpdateTransactionUseCase
@@ -92,6 +93,14 @@ class TransactionViewModel @Inject constructor(
     /** True while a save is in flight, and after a successful edit while the screen closes (BUG-02). */
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
 
+    private val _overBudget = MutableStateFlow<BudgetOverage?>(null)
+
+    /** Set while the form asks whether to save an expense that goes past its category's budget. */
+    val overBudget: StateFlow<BudgetOverage?> = _overBudget.asStateFlow()
+
+    // The transaction waiting on that answer; kept here so the dialog survives a configuration change.
+    private var pendingOverBudget: Transaction? = null
+
     init {
         transactionId?.let { id ->
             viewModelScope.launch {
@@ -111,10 +120,10 @@ class TransactionViewModel @Inject constructor(
         transferAccountId: Long?,
         dateEpochMillis: Long
     ) {
-        if (_isSaving.value) return
+        if (_isSaving.value || _overBudget.value != null) return
         _isSaving.value = true
         viewModelScope.launch {
-            val result = runSuspendCatching {
+            val transaction = runSuspendCatching {
                 buildTransaction(
                     id = transactionId ?: 0L,
                     type = TransactionType.parse(type),
@@ -125,16 +134,52 @@ class TransactionViewModel @Inject constructor(
                     transferAccountId = transferAccountId,
                     dateEpochMillis = dateEpochMillis
                 )
-            }.fold(
-                onSuccess = { transaction ->
-                    if (transactionId == null) addTransactionUseCase(transaction).map { } else updateTransactionUseCase(transaction)
-                },
-                onFailure = { Result.failure(it) }
-            )
-            if (result.isFailure || !isEditMode) _isSaving.value = false
-            _events.send(result.exceptionOrNull()?.let { TransactionEvent.Failed(UiMessage.fromError(it)) } ?: TransactionEvent.Saved)
+            }.getOrElse { error ->
+                finishSave(Result.failure(error))
+                return@launch
+            }
+            val result = persist(transaction, allowOverBudget = false)
+            val overage = result.exceptionOrNull()?.budgetOverage()
+            if (overage == null) {
+                finishSave(result)
+            } else {
+                // Ask instead of failing: the user may really have spent it (a budget is a target, not a hard limit).
+                pendingOverBudget = transaction
+                _overBudget.value = overage
+                _isSaving.value = false
+            }
         }
     }
+
+    /** Saves the expense the over-budget prompt asked about. */
+    fun confirmOverBudget() {
+        val transaction = pendingOverBudget ?: return
+        if (_isSaving.value) return
+        pendingOverBudget = null
+        _overBudget.value = null
+        _isSaving.value = true
+        viewModelScope.launch { finishSave(persist(transaction, allowOverBudget = true)) }
+    }
+
+    /** Leaves the form as it was, so the amount or category can be changed. */
+    fun dismissOverBudget() {
+        pendingOverBudget = null
+        _overBudget.value = null
+    }
+
+    private suspend fun persist(transaction: Transaction, allowOverBudget: Boolean): Result<Unit> = if (transactionId == null) {
+        addTransactionUseCase(transaction, allowOverBudget).map { }
+    } else {
+        updateTransactionUseCase(transaction, allowOverBudget)
+    }
+
+    private suspend fun finishSave(result: Result<Unit>) {
+        if (result.isFailure || !isEditMode) _isSaving.value = false
+        _events.send(result.exceptionOrNull()?.let { TransactionEvent.Failed(UiMessage.fromError(it)) } ?: TransactionEvent.Saved)
+    }
+
+    private fun Throwable.budgetOverage(): BudgetOverage? =
+        (this as? DomainException)?.takeIf { it.error == DomainError.BUDGET_EXCEEDED }?.arg as? BudgetOverage
 
     @Suppress("LongParameterList")
     private fun buildTransaction(

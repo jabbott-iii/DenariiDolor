@@ -107,6 +107,12 @@ sequenceDiagram
     R-->>UC: id or ok
     UC-->>VM: Result
     VM-->>F: Saved, or Failed with a UiMessage
+    opt expense over its monthly budget (BUDGET_EXCEEDED)
+        VM-->>F: overBudget prompt instead of Failed
+        F->>VM: confirmOverBudget() (Save anyway)
+        VM->>UC: same transaction, allowOverBudget = true
+        Note over V: every check except the budget
+    end
 ```
 
 ## Data model (schema v2)

@@ -26,10 +26,11 @@ class UpdateTransactionUseCase @Inject constructor(
     private val validateTransactionUseCase: ValidateTransactionUseCase,
     private val transactionRepository: TransactionRepository
 ) {
-    suspend operator fun invoke(transaction: Transaction): Result<Unit> {
+    /** [allowOverBudget] is true once the user has confirmed an expense that goes past its category's budget. */
+    suspend operator fun invoke(transaction: Transaction, allowOverBudget: Boolean = false): Result<Unit> {
         if (transaction.id <= 0L) return Result.failure(DomainException(DomainError.ID_REQUIRED, "Transaction ID is required"))
         val entity = runSuspendCatching { transaction.toEntity() }.getOrElse { return Result.failure(it) }
-        validateTransactionUseCase(entity).getOrElse { return Result.failure(it) }
+        validateTransactionUseCase(entity, allowOverBudget).getOrElse { return Result.failure(it) }
         val updated = runSuspendCatching { transactionRepository.update(entity) }.getOrElse { return Result.failure(it) }
         return if (updated) Result.success(Unit) else Result.failure(NoSuchElementException("Transaction not found"))
     }
