@@ -57,6 +57,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.denariidolor.R
 import com.denariidolor.domain.model.TransactionType
@@ -70,6 +71,7 @@ import com.denariidolor.presentation.ui.transaction.TransactionViewModel
 import com.denariidolor.util.Constants
 import com.denariidolor.util.DateUtils
 import com.denariidolor.util.Money
+import com.denariidolor.util.Validators
 import java.time.LocalDate
 
 internal const val TRANSACTION_TYPE_FIELD_TAG = "transactionTypeField"
@@ -82,11 +84,11 @@ internal const val SAVE_TRANSACTION_BUTTON_TAG = "saveTransactionButton"
 internal fun AddTransactionRoute(onFinished: () -> Unit, viewModel: TransactionViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val formState by viewModel.formState.collectAsStateWithLifecycle()
+    val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
     val categories by viewModel.categoryOptions.collectAsStateWithLifecycle()
     val accounts by viewModel.accountOptions.collectAsStateWithLifecycle()
     var formKey by rememberSaveable { mutableIntStateOf(0) }
     val savedMessage = stringResource(R.string.transaction_saved)
-    val errorMessage = stringResource(R.string.generic_error)
     val notFoundMessage = stringResource(R.string.transaction_not_found)
 
     LaunchedEffect(viewModel) {
@@ -97,7 +99,7 @@ internal fun AddTransactionRoute(onFinished: () -> Unit, viewModel: TransactionV
                     if (viewModel.isEditMode) onFinished() else formKey++
                 }
                 is TransactionEvent.Failed ->
-                    Toast.makeText(context, event.message ?: errorMessage, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, event.message.resolve(context), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -106,9 +108,11 @@ internal fun AddTransactionRoute(onFinished: () -> Unit, viewModel: TransactionV
         TransactionFormState.Loading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
-        TransactionFormState.NotFound -> LaunchedEffect(Unit) {
+        // Wait for the resumed state: onFinished ignores calls made before it (BUG-03).
+        TransactionFormState.NotFound -> LifecycleResumeEffect(Unit) {
             Toast.makeText(context, notFoundMessage, Toast.LENGTH_SHORT).show()
             onFinished()
+            onPauseOrDispose { }
         }
         is TransactionFormState.Ready -> key(formKey) {
             AddTransactionScreen(
@@ -117,7 +121,8 @@ internal fun AddTransactionRoute(onFinished: () -> Unit, viewModel: TransactionV
                 categories = categories,
                 accounts = accounts,
                 initial = state.initial,
-                onBack = onFinished
+                onBack = onFinished,
+                isSaving = isSaving
             )
         }
     }
@@ -138,7 +143,8 @@ fun AddTransactionScreen(
     categories: List<PickerOption> = emptyList(),
     accounts: List<PickerOption> = emptyList(),
     initial: TransactionFormInput? = null,
-    onBack: (() -> Unit)? = null
+    onBack: (() -> Unit)? = null,
+    isSaving: Boolean = false
 ) {
     val context = LocalContext.current
     val transactionTypes = stringArrayResource(R.array.transaction_types)
@@ -180,7 +186,7 @@ fun AddTransactionScreen(
         }
         OutlinedTextField(
             value = description,
-            onValueChange = { description = it },
+            onValueChange = { description = it.take(Validators.MAX_DESCRIPTION_LENGTH) },
             modifier = Modifier.fillMaxWidth(),
             label = { Text(stringResource(R.string.transaction_description_hint)) },
             singleLine = true
@@ -302,6 +308,7 @@ fun AddTransactionScreen(
                     dateEpochMillis
                 )
             },
+            enabled = !isSaving,
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag(SAVE_TRANSACTION_BUTTON_TAG)

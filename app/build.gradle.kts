@@ -122,6 +122,19 @@ ktlint {
     }
 }
 
+// CS-22: the same build-time patches for AGP's test platform runner (netty through gRPC) and for ktlint (logback).
+configurations.matching { it.name.startsWith("_internal-unified-test-platform") }.configureEach {
+    dependencies.add(project.dependencies.platform(libs.build.netty.bom.get()))
+    dependencyConstraints.add(project.dependencies.constraints.create(libs.build.protobuf.java.get()))
+    dependencyConstraints.add(project.dependencies.constraints.create(libs.build.commons.io.get()))
+}
+dependencies {
+    constraints {
+        add("ktlint", libs.build.logback.classic)
+        add("ktlint", libs.build.logback.core)
+    }
+}
+
 detekt {
     buildUponDefaultConfig = true
     config.setFrom(rootProject.file("config/detekt/detekt.yml"))

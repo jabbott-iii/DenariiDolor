@@ -14,29 +14,30 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 | DI | Hilt 2.52 (KSP) |
 | Database | Room 2.6.1 + SQLCipher 4.6.1, DB `denarii_dolor.db`, schema v2 (Long cents) |
 | Async | Coroutines + Flow/StateFlow |
-| Auth | PIN (PBKDF2, 6–12 digits) + BiometricPrompt (`BIOMETRIC_STRONG`) |
-| Secure storage | `EncryptedSharedPreferences` (security-crypto 1.1.0-alpha06), AES256-GCM master key |
+| Auth | PIN (6–12 digits) and security answer, each wrapping the database key (PBKDF2 + Keystore HMAC); BiometricPrompt (`BIOMETRIC_STRONG`) with a `CryptoObject` |
+| Secure storage | `Vault`: Android Keystore AES-GCM keys and the `vault_profile` prefs file; `security-crypto` 1.1.0-alpha06 only to read v1.0.x installs during their upgrade |
 | SDK | minSdk 26, target/compile 35, AGP 8.7.3, Gradle 8.11.1 |
 
 ## Package Layout (`app/src/main/java/com/denariidolor`)
 - `domain/model` — `Transaction` (abstract) → `Expense`, `Income`, `Transfer`; `Account`, `Budget`, `Category`, `SearchFilters`, `MonthlyReport`/`ReportRow`, entity↔domain mappings.
-- `domain/usecase` — `Add`/`Update`/`Delete`/`Validate`/`SearchTransactionUseCase`, `GenerateReportUseCase`, `CategoryUseCases`, `AccountUseCases`, `BudgetUseCases`.
+- `domain/usecase` — `Add`/`Update`/`Delete`/`Validate`/`SearchTransactionUseCase`, `GenerateReportUseCase`, `CategoryUseCases`, `AccountUseCases`, `BudgetUseCases`; `DomainException`/`DomainError` for rule violations.
 - `domain/report` — `ReportCsvFormatter`, `ReportText`.
-- `data/local/db` — `AppDatabase`, entities, DAOs, `DefaultDataInitializer` (seeds Cash/Savings accounts and 3 default categories).
-- `data/local/preferences` — `EncryptedPreferencesManager` (Android wrapper) + `SecurityProfileService` (pure-Kotlin, unit-testable PIN/recovery logic behind a `SecurityProfileStore` interface).
+- `data/local/db` — `AppDatabase`, entities, DAOs, `DatabaseHolder` (opens the database after sign-in), `DefaultDataInitializer` (seeds Cash/Savings accounts and 3 default categories).
+- `data/local/preferences` — `SecurityProfileService` (pure-Kotlin, unit-testable key wrapping, recovery rules and lockout behind `SecurityProfileStore`, `DeviceKeyMixer` and `MonotonicClock`), `LegacySecurityProfile` (v1.0.x upgrade), `ThemePreferences`.
+- `data/local/vault` — `Vault` (setup, sign-in, recovery, biometrics, lock, wipe) and its Keystore and storage classes.
 - `data/repository` — interface + `Impl` per aggregate (Transaction, Category, Budget, Account).
 - `data/export` — `ReportExporter` (save/share) and `ReportPdfRenderer`.
-- `di` — `AppModule` (Clock), `DatabaseModule`, `RepositoryModule`.
+- `di` — `AppModule` (`Clock` = `DeviceClock`), `DatabaseModule`, `RepositoryModule`.
 - `presentation/ui` — `AppScreens.kt` (NavHost only), `LoginScreen.kt`, `TransactionFormScreen.kt`, `SettingsScreen.kt`, and one package per feature (screens + ViewModels), `common/` shared composables, `auth/LoginActivity` (launcher), `search/SearchFilterParser`.
-- `util` — `Constants`, `DateUtils`, `Money`, `ResultExt` (`runSuspendCatching`), `SessionManager`, `Validators`.
+- `util` — `Constants`, `DateUtils`, `DeviceClock`, `Money`, `ResultExt` (`runSuspendCatching`), `SessionManager`, `Validators`.
 
 ## Key Design Decisions (observed in code)
 - **Polymorphism:** each `Transaction` subclass overrides `balanceImpact()` — Expense `-amount`, Income `+amount`, Transfer `0.0` (net-neutral across accounts). Dashboard and reports sum `balanceImpact()` for net.
 - **Persistence model:** single `transactions` table with a `type` discriminator string (`EXPENSE`/`INCOME`/`TRANSFER`) and nullable `transferAccountId`. FKs to categories/accounts use `RESTRICT`; budgets cascade on category delete; unique index on category name and account name; one budget per category.
-- **Validation:** `Validators` (amount > 0 and finite, non-blank description, positive epoch, sane ranges) + `ValidateTransactionUseCase` (valid account/category, transfer destination required and different, expense must not push monthly category spend over `Budget.monthlyLimit`). Returns `Result` rather than throwing.
-- **Search:** single parameterized Room query with nullable filters (description LIKE, category, amount range, date range). UI inputs parsed by `SearchFilterParser` (ISO dates → start/end of day in the device zone).
+- **Validation:** `Validators` (amount > 0 and finite, description of 1–200 characters after trimming, positive epoch, sane ranges) + `ValidateTransactionUseCase` (valid account/category, transfer destination required and different, expense must not push monthly category spend over `Budget.monthlyLimit`). Returns `Result` rather than throwing; failures are `DomainException`s that the UI maps to string resources.
+- **Search:** single parameterized Room query with nullable filters (description LIKE with `%`, `_` and `\` escaped, category, amount range, date range). UI inputs parsed by `SearchFilterParser` (ISO dates → start/end of day in the device zone).
 - **Reports:** `GenerateReportUseCase(year, month)` → rows, totals, net, `generatedAt`, and a CSV string (RFC-4180-style quoting on description).
-- **Auth / PIN lifecycle:** single-user profile. First launch = setup (PIN 6–12 digits + security question/answer). PIN and answer stored as PBKDF2-HMAC-SHA256 hashes (210k iterations, 16-byte salt, 256-bit key) inside encrypted prefs; constant-time comparisons. Recovery via security answer. Legacy plaintext `key_pin` migrates on setup. "Wipe all data" clears Room tables, secure prefs, cache, then reseeds defaults.
+- **Auth / PIN lifecycle:** single-user profile. First launch = setup (PIN 6–12 digits + security question and an answer of at least 6 normalized characters). The PIN and the answer each wrap the random database key (`Vault`; see `maint.md` §4), so no hash of either is stored. Recovery via the security answer. v1.0.x installs upgrade at their next sign-in. "Wipe all data" is a crypto-erase (database files, profile and every key), behind a typed `WIPE` and a 10-second countdown.
 - **Session:** `SessionManager` singleton, 5-minute inactivity timeout; `MainActivity` checks every 30s, on resume, and on each user interaction, then redirects to `LoginActivity` with a cleared task.
 
 ## Tooling & Process
@@ -60,7 +61,7 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 11. ~~String transaction types~~ — `TransactionType` enum (Phase 5).
 12. ~~Money as Double~~ — Long cents + DB v2 migration (Phase 5).
 13. No audit log or role checks (listed in the recommended stack).
-14. Biometrics now `BIOMETRIC_STRONG` (Phase 2); still no `CryptoObject` (deferred).
+14. ~~No `CryptoObject`~~ — biometric sign-in unwraps the database key through a `CryptoObject` (CS-07, `9f967c6`).
 15. `SessionManager` state is in-memory only; process death resets to unauthenticated (safe), but `LoginActivity` launch is the only gate.
 16. ~~Dependency hygiene~~ — resolved in Phase 5 (single `activity` version in the catalog; XML-era navigation artifacts removed). Original note: `libs.versions.toml` has five unused `activity-compose` version aliases; `app/build.gradle.kts` pulls both `activity-compose` 1.9.0 and 1.9.2, plus unused `navigation-fragment`/`navigation-ui` (XML-era).
 17. ~~NOTICE~~ — rewritten (Phase 5).
@@ -115,3 +116,9 @@ Personal budget and expense tracker for Android. Users log income, expenses, tra
 | 2026-09-21 | **CS-06 FLAG_SECURE declined** (accepted risk CS-A4): this is a productivity app, not a finance app. **CS-10 applied:** PINs must be 6–12 digits for setup, reset and sign-in; existing short PINs are not supported (reset through Forgot PIN). | User decisions. |
 | 2026-09-21 | PDF deliverables (docs, testing, references) are no longer needed; don't regenerate them. | User decision. |
 | 2026-09-22 | `intel/cysec.md` renamed to `intel/cybersec.md` to match `AGENTS.md`. | User decision. |
+| 2026-10-03 | Phase 7 decisions, resolved in `9f967c6`: **CS-14** option B (a stricter question: at least 6 normalized characters); **CS-15** done now (the database key is wrapped by the PIN, the answer and biometrics); **CS-16** friction (typed `WIPE` + 10-second countdown) rather than an accepted risk; **BUG-01** both `.` and `,` accepted as the decimal mark, with the locale settling `1,234`. | Recorded from the implementation; the plan's "Decisions needed" list was removed. |
+| 2026-10-03 | Use cases report rule violations as `DomainException(DomainError)`; the UI maps each `DomainError` to a string resource and never shows exception text (BUG-11). | Localizable messages; no SQLite or English-only text in the UI. |
+| 2026-10-03 | Read paths map rows with `toDomainTransactionOrNull()`: a TRANSFER row without a destination has no balance impact and shows as `Account → ?`. Enforcing this in the database waits for the next schema migration (v3). | Fixes the crash without a migration of its own (BUG-06). |
+| 2026-10-03 | The injected `Clock` is `DeviceClock`, whose zone follows the device's current zone; the Dashboard recomputes its month and zone on resume. | Budget checks, Dashboard and reports agree on month boundaries after a time-zone change (BUG-09, BUG-10). |
+| 2026-10-03 | Build-time advisories (CS-22) are handled with catalog-versioned constraints on the plugin classpath, AGP's test-platform configurations and the `ktlint` configuration, until the AGP 9 toolchain upgrade. | The vulnerable libraries never ship in the app; constraints avoid a premature toolchain jump. |
+| 2026-10-03 | Compose UI tests run on CI (API 26 and 35) only: Espresso 3.6.1 fails on API 37 emulator images. | Local instrumented runs on API 37 cover the non-UI tests. |

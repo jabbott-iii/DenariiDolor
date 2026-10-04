@@ -178,4 +178,29 @@
     <string name="edit_category">Edit Category</string>
     <string name="category_icon_label">Icon: %1$s</string>
     <string name="invalid_amount_message">Enter an amount greater than 0 with at most 2 decimals.</string>
+    <string name="error_id_required">This item could not be found. Go back and try again.</string>
+    <string name="error_item_not_found">This item no longer exists.</string>
+    <string name="error_blank_description">Enter a description.</string>
+    <string name="error_description_too_long">Description must be at most %1$d characters.</string>
+    <string name="error_invalid_date">Choose a valid date.</string>
+    <string name="error_transfer_destination_required">Choose the account to transfer to.</string>
+    <string name="error_transfer_destination_same">Choose a different account to transfer to.</string>
+    <string name="error_category_not_found">That category no longer exists. Choose another.</string>
+    <string name="error_account_not_found">That account no longer exists. Choose another.</string>
+    <string name="error_budget_exceeded">This expense would put the category over its monthly budget.</string>
+    <string name="error_invalid_name">Name must be 1 to %1$d characters.</string>
+    <string name="error_duplicate_category_name">A category named \"%1$s\" already exists.</string>
+    <string name="error_duplicate_account_name">An account named \"%1$s\" already exists.</string>
+    <string name="error_default_category">Default categories can\'t be deleted.</string>
+    <string name="error_default_account">Default accounts can\'t be deleted.</string>
+    <plurals name="error_category_in_use">
+        <item quantity="one">This category is used by %d transaction.</item>
+        <item quantity="other">This category is used by %d transactions.</item>
+    </plurals>
+    <plurals name="error_account_in_use">
+        <item quantity="one">This account is used by %d transaction.</item>
+        <item quantity="other">This account is used by %d transactions.</item>
+    </plurals>
+    <string name="error_invalid_warning_percent">Warning threshold must be from 1 to 100 percent.</string>
+    <string name="dashboard_load_failed">Your transactions couldn\'t be loaded. Leave the app and come back to try again.</string>
 </resources>

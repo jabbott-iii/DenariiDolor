@@ -61,7 +61,6 @@ import com.denariidolor.R
 import com.denariidolor.data.export.ReportFormat
 import com.denariidolor.domain.model.ReportRow
 import com.denariidolor.domain.report.ReportText
-import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.DateUtils
 import com.denariidolor.util.formatMoney
 import com.denariidolor.util.formatSignedAmount
@@ -95,13 +94,7 @@ fun ReportRoute(viewModel: ReportViewModel = hiltViewModel()) {
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
-                is ReportEvent.Message -> {
-                    val text = when (val message = event.message) {
-                        is UiMessage.Resource -> context.getString(message.resId)
-                        is UiMessage.Text -> message.text
-                    }
-                    Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
-                }
+                is ReportEvent.Message -> Toast.makeText(context, event.message.resolve(context), Toast.LENGTH_SHORT).show()
                 is ReportEvent.Share -> {
                     val send = Intent(Intent.ACTION_SEND).apply {
                         type = event.mimeType
@@ -175,7 +168,7 @@ fun ReportScreen(
             )
         )
         Spacer(modifier = Modifier.height(8.dp))
-        ExportButtons(enabled = !state.loading, onSave = onSave, onShare = onShare)
+        ExportButtons(enabled = !state.loading && !state.exporting, onSave = onSave, onShare = onShare)
         Spacer(modifier = Modifier.height(8.dp))
         if (report.rows.isEmpty()) {
             Text(text = stringResource(R.string.report_empty))

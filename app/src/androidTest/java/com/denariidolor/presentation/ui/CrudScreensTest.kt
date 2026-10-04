@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
@@ -344,5 +345,16 @@ class CrudScreensTest {
         composeRule.onNode(hasText("Remove") and hasAnyAncestor(isDialog())).performClick()
 
         assertTrue(removed)
+    }
+
+    @Test
+    fun saveButtonIsDisabledWhileSaving() {
+        composeRule.setContent {
+            DenariiDolorTheme {
+                AddTransactionScreen(onSave = { _, _, _, _, _, _, _ -> }, onShowMessage = {}, isSaving = true)
+            }
+        }
+
+        composeRule.onNodeWithTag(SAVE_TRANSACTION_BUTTON_TAG).assertIsNotEnabled()
     }
 }

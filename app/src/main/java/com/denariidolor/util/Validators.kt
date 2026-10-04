@@ -21,11 +21,12 @@ import com.denariidolor.domain.model.SearchFilters
 object Validators {
     fun isValidAmount(amountCents: Long): Boolean = amountCents > 0
 
-    fun isValidDescription(description: String): Boolean = description.isNotBlank()
+    fun isValidDescription(description: String): Boolean = description.trim().length in 1..MAX_DESCRIPTION_LENGTH
 
     fun isValidDateEpoch(epochMillis: Long): Boolean = epochMillis > 0
 
     const val MAX_NAME_LENGTH = 50
+    const val MAX_DESCRIPTION_LENGTH = 200
     private const val MAX_PERCENT = 100
 
     fun isValidName(name: String): Boolean = name.trim().length in 1..MAX_NAME_LENGTH

@@ -29,9 +29,13 @@ class BudgetUseCases @Inject constructor(
 ) {
     suspend fun set(categoryId: Long, monthlyLimitCents: Long, warningThresholdPercent: Int = DEFAULT_WARNING_PERCENT): Result<Long> =
         runSuspendCatching {
-            require(Validators.isValidAmount(monthlyLimitCents)) { "Monthly limit must be greater than zero" }
-            require(Validators.isValidPercent(warningThresholdPercent)) { "Warning threshold must be between 1 and 100" }
-            requireNotNull(categoryRepository.getById(categoryId)) { "Category not found" }
+            if (!Validators.isValidAmount(monthlyLimitCents)) {
+                domainFailure(DomainError.INVALID_BUDGET_LIMIT, "Monthly limit must be greater than zero")
+            }
+            if (!Validators.isValidPercent(warningThresholdPercent)) {
+                domainFailure(DomainError.INVALID_WARNING_PERCENT, "Warning threshold must be between 1 and 100")
+            }
+            categoryRepository.getById(categoryId) ?: domainFailure(DomainError.CATEGORY_NOT_FOUND, "Category not found")
             val existingId = budgetRepository.getByCategoryId(categoryId)?.id ?: 0L
             budgetRepository.upsert(
                 BudgetEntity(

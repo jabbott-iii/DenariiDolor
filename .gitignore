@@ -38,3 +38,9 @@ service-account*.json
 
 # Machine-specific SDK path (CI uses ANDROID_HOME)
 local.properties
+
+# Release outputs are published only by CD (CS-18)
+/app/release/
+*.apk
+*.aab
+*.dm

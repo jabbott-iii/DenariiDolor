@@ -28,16 +28,16 @@ A concise map of the repository and its main flows. The architecture rules are i
 |---|---|
 | (root) | `App` (`@HiltAndroidApp`), `MainActivity` (session gate + Compose host) |
 | `domain/model` | `Transaction` → `Expense` / `Income` / `Transfer`; `TransactionType`; `Account`, `Category`, `Budget`; `Ledger`; `SearchFilters`; `MonthlyReport`; entity ↔ domain mappings |
-| `domain/usecase` | `Add`/`Update`/`Delete`/`Validate`/`SearchTransactionUseCase`, `GenerateReportUseCase`, `Category`/`Account`/`BudgetUseCases` |
+| `domain/usecase` | `Add`/`Update`/`Delete`/`Validate`/`SearchTransactionUseCase`, `GenerateReportUseCase`, `Category`/`Account`/`BudgetUseCases`, `DomainException`/`DomainError` |
 | `domain/report` | `ReportCsvFormatter` (formula-injection guard), `ReportText` |
 | `data/local/db` | `AppDatabase` (v2), `entity/`, `dao/`, `Migrations.kt` (`MIGRATION_1_2`), `DatabaseHolder` (opens Room after sign-in, closes it at lock), `DefaultDataInitializer`, `security/DatabaseKeys` |
 | `data/local/preferences` | `SecurityProfileService` (wrapped database key, recovery rules, elapsed-time lockout; pure Kotlin), `LegacySecurityProfile` (v1.0.x hashes, for the upgrade), `ThemePreferences` (`ui_prefs`) |
 | `data/local/vault` | `Vault` (setup, sign-in, recovery, v1.0.x upgrade, biometrics, lock, wipe), `KeystoreSecrets`, `KeystoreProfileStore` (`vault_profile`), `LegacyProfileStorage` (`secure_prefs`, `db_key_prefs`), `VaultConfig` |
-| `data/repository` | `Transaction`/`Category`/`Budget`/`AccountRepository` + `Impl` |
+| `data/repository` | `Transaction`/`Category`/`Budget`/`AccountRepository` + `Impl`; `escapeLike` for search |
 | `data/export` | `ReportExporter` (SAF save, FileProvider share, share-cache cleanup), `ReportPdfRenderer` |
-| `di` | `AppModule`, `DatabaseModule`, `RepositoryModule` |
-| `presentation/ui` | `AppScreens.kt` (NavHost), `LoginScreen.kt`, `TransactionFormScreen.kt`, `SettingsScreen.kt`; feature packages `auth`, `dashboard`, `search`, `report`, `transaction`, `category`, `account`, `budget`, `settings`, `common` |
-| `util` | `Money`, `Validators`, `DateUtils`, `SessionManager`, `Constants`, `ResultExt` |
+| `di` | `AppModule` (`Clock` = `DeviceClock`), `DatabaseModule`, `RepositoryModule` |
+| `presentation/ui` | `AppScreens.kt` (NavHost, `popBackOnce`), `LoginScreen.kt`, `TransactionFormScreen.kt`, `SettingsScreen.kt`; feature packages `auth`, `dashboard`, `search`, `report`, `transaction`, `category`, `account`, `budget`, `settings`, `common` |
+| `util` | `Money`, `Validators`, `DateUtils`, `DeviceClock`, `SessionManager`, `Constants`, `ResultExt` |
 
 ## Layer dependencies
 
@@ -97,6 +97,7 @@ sequenceDiagram
     participant R as TransactionRepositoryImpl
     participant DB as Room (SQLCipher)
     F->>VM: saveTransaction(...)
+    Note over VM: ignored while isSaving
     VM->>UC: Expense / Income / Transfer
     UC->>V: validate(entity)
     V->>DB: check references + monthly budget
@@ -105,7 +106,7 @@ sequenceDiagram
     R->>DB: withTransaction: write row, apply Ledger.balanceDeltas
     R-->>UC: id or ok
     UC-->>VM: Result
-    VM-->>F: event Saved / Failed
+    VM-->>F: Saved, or Failed with a UiMessage
 ```
 
 ## Data model (schema v2)
@@ -143,4 +144,6 @@ erDiagram
 |---|---|---|
 | `ci.yml` | push/PR to `main`, manual | ktlint → detekt → lint → unit tests → JaCoCo → `assembleRelease`; then emulator tests on API 26 and 35 |
 | `security.yml` | push/PR to `main`, Mondays 02:00 UTC, manual | CodeQL (`security-extended`), dependency graph (push/schedule), dependency review (PR, fails on high), gitleaks |
-| `cd.yml` | `v*` tag | unit tests → signed AAB/APK → signature check → GitHub Release with `SHA256SUMS.txt`; private R8 mapping artifact |
+| `cd.yml` | `v*` tag | **ci-gate** (needs green `ci.yml` on the tagged commit) → **build** (only job with signing secrets: unit tests, signed AAB/APK, signature check, `dist/` and private R8 mapping artifacts) → **publish** (only job that can write: checks `SHA256SUMS.txt`, creates the GitHub Release) |
+
+All jobs run on `ubuntu-24.04`, and every action is pinned to a commit SHA (CS-08).

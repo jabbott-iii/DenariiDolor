@@ -28,8 +28,11 @@ import com.denariidolor.domain.model.Transaction
 import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.model.Transfer
 import com.denariidolor.domain.usecase.AddTransactionUseCase
+import com.denariidolor.domain.usecase.DomainError
+import com.denariidolor.domain.usecase.DomainException
 import com.denariidolor.domain.usecase.UpdateTransactionUseCase
 import com.denariidolor.presentation.ui.common.PickerOption
+import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.runSuspendCatching
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -52,7 +55,7 @@ sealed interface TransactionFormState {
 
 sealed interface TransactionEvent {
     data object Saved : TransactionEvent
-    data class Failed(val message: String?) : TransactionEvent
+    data class Failed(val message: UiMessage) : TransactionEvent
 }
 
 @HiltViewModel
@@ -84,6 +87,11 @@ class TransactionViewModel @Inject constructor(
     private val _events = Channel<TransactionEvent>(Channel.BUFFERED)
     val events: Flow<TransactionEvent> = _events.receiveAsFlow()
 
+    private val _isSaving = MutableStateFlow(false)
+
+    /** True while a save is in flight, and after a successful edit while the screen closes (BUG-02). */
+    val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
+
     init {
         transactionId?.let { id ->
             viewModelScope.launch {
@@ -103,6 +111,8 @@ class TransactionViewModel @Inject constructor(
         transferAccountId: Long?,
         dateEpochMillis: Long
     ) {
+        if (_isSaving.value) return
+        _isSaving.value = true
         viewModelScope.launch {
             val result = runSuspendCatching {
                 buildTransaction(
@@ -121,9 +131,8 @@ class TransactionViewModel @Inject constructor(
                 },
                 onFailure = { Result.failure(it) }
             )
-            _events.send(
-                if (result.isSuccess) TransactionEvent.Saved else TransactionEvent.Failed(result.exceptionOrNull()?.message)
-            )
+            if (result.isFailure || !isEditMode) _isSaving.value = false
+            _events.send(result.exceptionOrNull()?.let { TransactionEvent.Failed(UiMessage.fromError(it)) } ?: TransactionEvent.Saved)
         }
     }
 
@@ -146,7 +155,8 @@ class TransactionViewModel @Inject constructor(
             amountCents = amountCents,
             categoryId = categoryId,
             accountId = accountId,
-            transferAccountId = transferAccountId ?: throw IllegalArgumentException("Transfer destination is required"),
+            transferAccountId = transferAccountId
+                ?: throw DomainException(DomainError.TRANSFER_DESTINATION_REQUIRED, "Transfer destination is required"),
             dateEpochMillis = dateEpochMillis
         )
     }

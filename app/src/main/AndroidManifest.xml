@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Lets LoginActivity hide other apps' overlays on API 31+ (tapjacking, CS-11). Install-time, no prompt. -->
+    <uses-permission android:name="android.permission.HIDE_OVERLAY_WINDOWS" />
+
     <application
         android:name=".App"
         android:allowBackup="false"
@@ -14,7 +17,8 @@
         android:theme="@style/Theme.DenariiDolor">
         <activity
             android:name=".presentation.ui.auth.LoginActivity"
-            android:exported="true">
+            android:exported="true"
+            android:taskAffinity="">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -23,6 +27,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="false"
+            android:taskAffinity=""
             android:windowSoftInputMode="adjustResize" />
         <provider
             android:name="androidx.core.content.FileProvider"

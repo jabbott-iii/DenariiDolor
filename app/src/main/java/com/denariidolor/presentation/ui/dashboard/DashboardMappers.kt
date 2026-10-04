@@ -20,7 +20,7 @@ import com.denariidolor.data.local.db.entity.BudgetEntity
 import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.data.local.db.entity.TransactionEntity
 import com.denariidolor.domain.model.TransactionType
-import com.denariidolor.domain.model.toDomainTransaction
+import com.denariidolor.domain.model.toDomainTransactionOrNull
 import com.denariidolor.presentation.ui.common.CategoryIcons
 import com.denariidolor.presentation.ui.common.TransactionRow
 import java.time.YearMonth
@@ -55,7 +55,8 @@ data class DashboardUiState(
     val spending: List<CategorySpend> = emptyList(),
     val budgets: List<BudgetProgress> = emptyList(),
     val balances: List<AccountBalance> = emptyList(),
-    val recent: List<TransactionRow> = emptyList()
+    val recent: List<TransactionRow> = emptyList(),
+    val failed: Boolean = false
 ) {
     val budgetAlerts: Int get() = budgets.count { it.status != BudgetStatus.OK }
 }
@@ -63,7 +64,7 @@ data class DashboardUiState(
 fun summarize(transactions: List<TransactionEntity>): DashboardSummary {
     val income = transactions.filter { it.type == TransactionType.INCOME }.sumOf { it.amountCents }
     val expense = transactions.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amountCents }
-    val net = transactions.sumOf { it.toDomainTransaction().balanceImpact() }
+    val net = transactions.mapNotNull { it.toDomainTransactionOrNull() }.sumOf { it.balanceImpact() }
     return DashboardSummary(income, expense, net)
 }
 

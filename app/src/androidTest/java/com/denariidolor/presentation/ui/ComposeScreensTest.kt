@@ -32,7 +32,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.Until
 import com.denariidolor.R
 import com.denariidolor.data.local.preferences.SecurityProfileService
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
@@ -42,6 +44,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+
+private const val DIALOG_TIMEOUT_MILLIS = 5_000L
 
 class ComposeScreensTest {
     @get:Rule
@@ -465,8 +469,13 @@ class ComposeScreensTest {
             }
         }
 
-        // A real system back key goes to the focused window, which is the dialog (not the activity behind it).
-        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).pressBack()
+        // A real system back key goes to the focused window, which is the dialog (not the activity behind it). UiAutomator
+        // doesn't wait for Compose, so wait until the dialog window is on screen first; the API 26 emulator is slow to show it.
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        composeRule.onNodeWithTag(WIPE_CONFIRM_BUTTON_TAG).assertIsDisplayed()
+        assertTrue(device.wait(Until.hasObject(By.text(text(R.string.wipe_data_title))), DIALOG_TIMEOUT_MILLIS))
+        device.waitForIdle()
+        device.pressBack()
         composeRule.runOnIdle {
             assertTrue(cancelTriggered)
         }

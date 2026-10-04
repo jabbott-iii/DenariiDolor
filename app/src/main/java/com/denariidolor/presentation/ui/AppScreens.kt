@@ -32,6 +32,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.dropUnlessResumed
+import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -66,6 +68,13 @@ private enum class MainDestination(val route: String, val titleRes: Int, val ico
 }
 
 private fun editTransactionRoute(id: Long) = "edit_transaction/$id"
+
+/**
+ * Pops the current destination at most once. Later calls, such as a double tap on Back or a second `Saved` event, arrive after
+ * the destination has left the resumed state and are dropped, so they can't pop the start destination and blank the NavHost (BUG-03).
+ */
+@Composable
+internal fun NavController.popBackOnce(): () -> Unit = dropUnlessResumed { popBackStack() }
 
 private val bottomDestinations = listOf(
     MainDestination.Dashboard,
@@ -151,22 +160,22 @@ fun MainActivityContent(
                 )
             }
             composable(MainDestination.AddTransaction.route) {
-                AddTransactionRoute(onFinished = { navController.popBackStack() })
+                AddTransactionRoute(onFinished = navController.popBackOnce())
             }
             composable(
                 route = MainDestination.EditTransaction.route,
                 arguments = listOf(navArgument(TransactionViewModel.ARG_TRANSACTION_ID) { type = NavType.LongType })
             ) {
-                AddTransactionRoute(onFinished = { navController.popBackStack() })
+                AddTransactionRoute(onFinished = navController.popBackOnce())
             }
             composable(MainDestination.ManageCategories.route) {
-                ManageCategoriesRoute(onBack = { navController.popBackStack() })
+                ManageCategoriesRoute(onBack = navController.popBackOnce())
             }
             composable(MainDestination.ManageAccounts.route) {
-                ManageAccountsRoute(onBack = { navController.popBackStack() })
+                ManageAccountsRoute(onBack = navController.popBackOnce())
             }
             composable(MainDestination.ManageBudgets.route) {
-                ManageBudgetsRoute(onBack = { navController.popBackStack() })
+                ManageBudgetsRoute(onBack = navController.popBackOnce())
             }
         }
     }

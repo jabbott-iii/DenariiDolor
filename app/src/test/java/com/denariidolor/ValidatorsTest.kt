@@ -48,4 +48,11 @@ class ValidatorsTest {
         assertFalse(Validators.isValidPercent(0))
         assertFalse(Validators.isValidPercent(101))
     }
+
+    @Test
+    fun descriptionIsTrimmedAndCapped() {
+        assertTrue(Validators.isValidDescription("x".repeat(Validators.MAX_DESCRIPTION_LENGTH)))
+        assertTrue(Validators.isValidDescription("  " + "x".repeat(Validators.MAX_DESCRIPTION_LENGTH) + "  "))
+        assertFalse(Validators.isValidDescription("x".repeat(Validators.MAX_DESCRIPTION_LENGTH + 1)))
+    }
 }

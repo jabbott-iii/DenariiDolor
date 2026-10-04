@@ -56,6 +56,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.denariidolor.R
 import com.denariidolor.domain.report.ReportText
@@ -69,12 +70,17 @@ import com.denariidolor.util.formatMoney
 
 const val DASHBOARD_LIST_TAG = "dashboardList"
 const val BUDGET_ALERT_BANNER_TAG = "budgetAlertBanner"
+const val DASHBOARD_ERROR_TAG = "dashboardError"
 const val BUDGET_METER_TAG_PREFIX = "budgetMeter_"
 
 @Composable
 fun DashboardRoute(onEditTransaction: (Long) -> Unit, viewModel: DashboardViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     UiMessageEffect(viewModel.messages)
+    LifecycleResumeEffect(viewModel) {
+        viewModel.refreshPeriod()
+        onPauseOrDispose { }
+    }
     DashboardScreen(
         state = state,
         onEditTransaction = onEditTransaction,
@@ -94,6 +100,15 @@ fun DashboardScreen(state: DashboardUiState, onEditTransaction: (Long) -> Unit, 
         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 88.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
+        if (state.failed) {
+            item {
+                Text(
+                    text = stringResource(R.string.dashboard_load_failed),
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.testTag(DASHBOARD_ERROR_TAG)
+                )
+            }
+        }
         item { SummarySection(state) }
         if (state.budgetAlerts > 0) {
             item { BudgetAlertBanner(state.budgetAlerts) }

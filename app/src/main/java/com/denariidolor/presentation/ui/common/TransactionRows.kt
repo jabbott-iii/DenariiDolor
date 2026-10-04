@@ -38,6 +38,7 @@ import com.denariidolor.data.local.db.entity.AccountEntity
 import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.data.local.db.entity.TransactionEntity
 import com.denariidolor.domain.model.TransactionType
+import com.denariidolor.domain.model.isMalformedTransfer
 import com.denariidolor.util.DateUtils
 import com.denariidolor.util.formatSignedAmount
 import java.time.ZoneId
@@ -77,7 +78,12 @@ fun buildTransactionRows(
                 type = transaction.type,
                 amountText = formatSignedAmount(transaction.type, transaction.amountCents),
                 categoryName = categoriesById[transaction.categoryId]?.name ?: "#${transaction.categoryId}",
-                accountLabel = transaction.transferAccountId?.let { "$source → ${accountName(it)}" } ?: source,
+                accountLabel = when {
+                    transaction.transferAccountId != null -> "$source → ${accountName(transaction.transferAccountId)}"
+                    // Flags a malformed transfer (BUG-06); editing the row to pick a destination repairs it.
+                    transaction.isMalformedTransfer -> "$source → ?"
+                    else -> source
+                },
                 dateText = DateUtils.formatLocalDate(transaction.dateEpochMillis, zoneId),
                 categoryIcon = categoriesById[transaction.categoryId]?.iconName ?: CategoryIcons.DEFAULT_KEY
             )

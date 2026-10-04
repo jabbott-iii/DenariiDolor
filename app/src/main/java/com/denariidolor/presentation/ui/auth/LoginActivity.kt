@@ -17,7 +17,9 @@
 package com.denariidolor.presentation.ui.auth
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.view.Window
 import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
@@ -77,6 +79,7 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.guardAgainstOverlays()
         // Cold start or return after sign-out: no unencrypted share copies should outlive a session.
         ReportExporter.clearShareCache(this)
         setThemedContent(themePreferences) {
@@ -341,5 +344,17 @@ class LoginActivity : AppCompatActivity() {
 
     private companion object {
         const val MILLIS_PER_SECOND = 1_000L
+    }
+}
+
+/**
+ * Tapjacking (CS-11): another app's overlay must not trick taps onto the PIN or wipe controls. API 31+ hides such overlays
+ * while this window is shown; older versions drop touches that pass through one instead.
+ */
+internal fun Window.guardAgainstOverlays() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        setHideOverlayWindows(true)
+    } else {
+        decorView.filterTouchesWhenObscured = true
     }
 }

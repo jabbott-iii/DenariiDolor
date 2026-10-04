@@ -25,6 +25,7 @@ import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.data.local.db.entity.TransactionEntity
 import com.denariidolor.data.repository.TransactionRepositoryImpl
 import com.denariidolor.domain.model.TransactionType
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -102,7 +103,7 @@ class TransactionRepositoryImplTest {
         val result = runCatching { repository.add(expense(1_000).copy(type = TransactionType.TRANSFER, transferAccountId = 99)) }
 
         assertTrue(result.isFailure)
-        assertEquals(0, db.transactionDao().getByDateRange(0L, Long.MAX_VALUE).size)
+        assertEquals(0, db.transactionDao().observeByDateRange(0L, Long.MAX_VALUE).first().size)
         assertEquals(10_000L, balance(1))
     }
 
@@ -110,5 +111,13 @@ class TransactionRepositoryImplTest {
     fun updateAndDeleteReturnFalseForUnknownId() = runBlocking<Unit> {
         assertFalse(repository.update(expense(100).copy(id = 42)))
         assertFalse(repository.delete(42))
+    }
+
+    @Test
+    fun malformedTransferCanBeDeletedWithoutTouchingBalances() = runBlocking<Unit> {
+        val id = db.transactionDao().insert(expense(500).copy(type = TransactionType.TRANSFER, transferAccountId = null))
+
+        assertTrue(repository.delete(id))
+        assertEquals(10_000L, balance(1))
     }
 }

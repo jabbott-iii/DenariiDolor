@@ -24,6 +24,7 @@ import com.denariidolor.data.local.db.entity.TransactionEntity
 import com.denariidolor.domain.model.Ledger
 import com.denariidolor.domain.model.SearchFilters
 import com.denariidolor.domain.model.toDomainTransaction
+import com.denariidolor.domain.model.toDomainTransactionOrNull
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 
@@ -32,9 +33,9 @@ interface TransactionRepository {
     suspend fun update(transaction: TransactionEntity): Boolean
     suspend fun delete(id: Long): Boolean
     suspend fun getById(id: Long): TransactionEntity?
-    fun getAll(): Flow<List<TransactionEntity>>
+    fun observeByDateRange(startInclusive: Long, endInclusive: Long): Flow<List<TransactionEntity>>
+    fun observeRecent(limit: Int): Flow<List<TransactionEntity>>
     fun search(filters: SearchFilters): Flow<List<TransactionEntity>>
-    suspend fun getByDateRange(startInclusive: Long, endInclusive: Long): List<TransactionEntity>
     suspend fun getExpenseTotalForCategory(
         categoryId: Long,
         startInclusive: Long,
@@ -59,32 +60,32 @@ class TransactionRepositoryImpl @Inject constructor(
     override suspend fun update(transaction: TransactionEntity): Boolean = database.withTransaction {
         val previous = transactionDao.getById(transaction.id) ?: return@withTransaction false
         transactionDao.update(transaction.copy(createdAtEpochMillis = previous.createdAtEpochMillis))
-        applyBalanceDeltas(Ledger.balanceDeltas(previous.toDomainTransaction(), transaction.toDomainTransaction()))
+        applyBalanceDeltas(Ledger.balanceDeltas(previous.toDomainTransactionOrNull(), transaction.toDomainTransaction()))
         true
     }
 
     override suspend fun delete(id: Long): Boolean = database.withTransaction {
         val previous = transactionDao.getById(id) ?: return@withTransaction false
         transactionDao.deleteById(id)
-        applyBalanceDeltas(Ledger.balanceDeltas(previous = previous.toDomainTransaction(), current = null))
+        applyBalanceDeltas(Ledger.balanceDeltas(previous = previous.toDomainTransactionOrNull(), current = null))
         true
     }
 
     override suspend fun getById(id: Long): TransactionEntity? = transactionDao.getById(id)
 
-    override fun getAll(): Flow<List<TransactionEntity>> = transactionDao.getAll()
+    override fun observeByDateRange(startInclusive: Long, endInclusive: Long): Flow<List<TransactionEntity>> =
+        transactionDao.observeByDateRange(startInclusive, endInclusive)
+
+    override fun observeRecent(limit: Int): Flow<List<TransactionEntity>> = transactionDao.observeRecent(limit)
 
     override fun search(filters: SearchFilters): Flow<List<TransactionEntity>> = transactionDao.search(
-        description = filters.description,
+        description = filters.description?.let(::escapeLike),
         categoryId = filters.categoryId,
         minAmountCents = filters.minAmountCents,
         maxAmountCents = filters.maxAmountCents,
         startDate = filters.startDateEpochMillis,
         endDate = filters.endDateEpochMillis
     )
-
-    override suspend fun getByDateRange(startInclusive: Long, endInclusive: Long): List<TransactionEntity> =
-        transactionDao.getByDateRange(startInclusive, endInclusive)
 
     override suspend fun getExpenseTotalForCategory(
         categoryId: Long,
@@ -103,3 +104,9 @@ class TransactionRepositoryImpl @Inject constructor(
         }
     }
 }
+
+/** Makes `%`, `_` and the escape character itself match literally in a `LIKE … ESCAPE '\'` pattern (BUG-07). */
+internal fun escapeLike(text: String): String = text
+    .replace("\\", "\\\\")
+    .replace("%", "\\%")
+    .replace("_", "\\_")

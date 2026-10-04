@@ -23,8 +23,12 @@ import java.time.ZoneId
 import java.util.Locale
 
 object ReportCsvFormatter {
-    private val FORMULA_PREFIXES = setOf('=', '+', '-', '@', '\t', '\r')
-    private val QUOTE_TRIGGERS = setOf(',', '"', '\n', '\r')
+    private val FORMULA_TRIGGERS = setOf('=', '+', '-', '@')
+    private val FORMULA_PREFIXES = FORMULA_TRIGGERS + setOf('\t', '\r')
+    private val QUOTE_TRIGGERS = setOf(',', '"', '\n', '\r', ';', '\t')
+
+    // A spreadsheet that splits on `;` or tab starts a new cell after one, so a trigger there needs the same guard (CS-20).
+    private val INNER_FORMULA = Regex("(?<=[;\t])(\\s*)([=+\\-@][^;\t]*)")
 
     fun format(report: MonthlyReport, zoneId: ZoneId = ZoneId.systemDefault(), locale: Locale = Locale.getDefault()): String = buildString {
         appendRow("title", report.title)
@@ -47,10 +51,18 @@ object ReportCsvFormatter {
         }
     }
 
-    /** RFC 4180 quoting plus a leading apostrophe on text that spreadsheets would evaluate as a formula. */
+    /**
+     * RFC 4180 quoting plus an apostrophe before text that spreadsheets would evaluate as a formula: at the start of the value,
+     * after leading whitespace, and after a `;` or tab inside it.
+     */
     fun escape(value: String): String {
-        val looksLikeFormula = value.firstOrNull() in FORMULA_PREFIXES && value.toDoubleOrNull() == null
-        val safe = if (looksLikeFormula) "'$value" else value
+        val startsLikeFormula = value.firstOrNull() in FORMULA_PREFIXES || value.trimStart().firstOrNull() in FORMULA_TRIGGERS
+        val looksLikeFormula = startsLikeFormula && value.trim().toDoubleOrNull() == null
+        val inner = INNER_FORMULA.replace(value) { match ->
+            val (space, cell) = match.destructured
+            if (cell.trim().toDoubleOrNull() == null) "$space'$cell" else match.value
+        }
+        val safe = if (looksLikeFormula) "'$inner" else inner
         return if (looksLikeFormula || safe.any { it in QUOTE_TRIGGERS }) {
             "\"" + safe.replace("\"", "\"\"") + "\""
         } else {

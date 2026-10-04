@@ -30,52 +30,75 @@ import com.denariidolor.util.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.YearMonth
+import java.time.ZoneId
 import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    transactionRepository: TransactionRepository,
-    categoryRepository: CategoryRepository,
-    accountRepository: AccountRepository,
-    budgetRepository: BudgetRepository,
+    private val transactionRepository: TransactionRepository,
+    private val categoryRepository: CategoryRepository,
+    private val accountRepository: AccountRepository,
+    private val budgetRepository: BudgetRepository,
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
     private val clock: Clock
 ) : ViewModel() {
-    val uiState: StateFlow<DashboardUiState> = combine(
-        transactionRepository.getAll(),
-        categoryRepository.getAll(),
-        accountRepository.getAll(),
-        budgetRepository.getAll()
-    ) { transactions, categories, accounts, budgets ->
-        val period = YearMonth.now(clock)
-        val (start, end) = DateUtils.monthRangeEpochMillis(period.year, period.monthValue, clock.zone)
-        val monthTransactions = transactions.filter { it.dateEpochMillis in start..end }
-        DashboardUiState(
-            period = period,
-            summary = summarize(monthTransactions),
-            spending = spendingByCategory(monthTransactions, categories),
-            budgets = budgetProgress(budgets, categories, monthTransactions),
-            balances = accounts.map { AccountBalance(it.id, it.name, it.balanceCents) },
-            recent = buildTransactionRows(transactions, categories, accounts, RECENT_LIMIT, clock.zone)
-        )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUiState())
+    private val period = MutableStateFlow(currentPeriod())
+
+    /** Loads only the current month and the latest rows; a failure shows an error instead of crashing (BUG-06, BUG-10). */
+    val uiState: StateFlow<DashboardUiState> = period
+        .flatMapLatest { period -> observe(period).catch { emit(DashboardUiState(period = period.month, failed = true)) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUiState())
 
     private val _messages = Channel<UiMessage>(Channel.BUFFERED)
     val messages: Flow<UiMessage> = _messages.receiveAsFlow()
+
+    /** Called on resume, so the Dashboard rolls over to a new month (or time zone) without waiting for a data change. */
+    fun refreshPeriod() {
+        period.value = currentPeriod()
+    }
 
     fun deleteTransaction(id: Long) {
         viewModelScope.launch {
             _messages.send(UiMessage.fromResult(deleteTransactionUseCase(id), R.string.transaction_deleted))
         }
     }
+
+    private fun currentPeriod() = Period(YearMonth.now(clock), clock.zone)
+
+    private fun observe(period: Period): Flow<DashboardUiState> {
+        val (start, end) = DateUtils.monthRangeEpochMillis(period.month.year, period.month.monthValue, period.zone)
+        return combine(
+            transactionRepository.observeByDateRange(start, end),
+            transactionRepository.observeRecent(RECENT_LIMIT),
+            categoryRepository.getAll(),
+            accountRepository.getAll(),
+            budgetRepository.getAll()
+        ) { monthTransactions, recent, categories, accounts, budgets ->
+            DashboardUiState(
+                period = period.month,
+                summary = summarize(monthTransactions),
+                spending = spendingByCategory(monthTransactions, categories),
+                budgets = budgetProgress(budgets, categories, monthTransactions),
+                balances = accounts.map { AccountBalance(it.id, it.name, it.balanceCents) },
+                recent = buildTransactionRows(recent, categories, accounts, RECENT_LIMIT, period.zone)
+            )
+        }
+    }
+
+    private data class Period(val month: YearMonth, val zone: ZoneId)
 
     private companion object {
         const val RECENT_LIMIT = 20

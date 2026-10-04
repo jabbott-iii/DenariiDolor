@@ -25,38 +25,51 @@ import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.util.DateUtils
 import com.denariidolor.util.Validators
 import com.denariidolor.util.runSuspendCatching
+import java.time.Clock
 import java.time.Instant
-import java.time.ZoneId
 import javax.inject.Inject
 
 class ValidateTransactionUseCase @Inject constructor(
     private val categoryRepository: CategoryRepository,
     private val accountRepository: AccountRepository,
     private val budgetRepository: BudgetRepository,
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val clock: Clock
 ) {
     suspend operator fun invoke(transaction: TransactionEntity): Result<Unit> {
-        if (!Validators.isValidAmount(transaction.amountCents)) return failure("Invalid amount")
-        if (!Validators.isValidDescription(transaction.description)) return failure("Description cannot be blank")
-        if (!Validators.isValidDateEpoch(transaction.dateEpochMillis)) return failure("Invalid date")
-        if (transaction.accountId <= 0L) return failure("Invalid account")
-        if (transaction.categoryId <= 0L) return failure("Invalid category")
+        if (!Validators.isValidAmount(transaction.amountCents)) return failure(DomainError.INVALID_AMOUNT, "Invalid amount")
+        if (transaction.description.isBlank()) return failure(DomainError.BLANK_DESCRIPTION, "Description cannot be blank")
+        if (!Validators.isValidDescription(transaction.description)) {
+            return failure(
+                DomainError.DESCRIPTION_TOO_LONG,
+                "Description must be at most ${Validators.MAX_DESCRIPTION_LENGTH} characters",
+                Validators.MAX_DESCRIPTION_LENGTH
+            )
+        }
+        if (!Validators.isValidDateEpoch(transaction.dateEpochMillis)) return failure(DomainError.INVALID_DATE, "Invalid date")
+        if (transaction.accountId <= 0L) return failure(DomainError.INVALID_ACCOUNT, "Invalid account")
+        if (transaction.categoryId <= 0L) return failure(DomainError.INVALID_CATEGORY, "Invalid category")
         if (transaction.type == TransactionType.TRANSFER) {
-            val transferAccountId = transaction.transferAccountId ?: return failure("Transfer destination is required")
-            if (transferAccountId == transaction.accountId) return failure("Transfer destination must be different")
+            val transferAccountId = transaction.transferAccountId ?: return failure(
+                DomainError.TRANSFER_DESTINATION_REQUIRED,
+                "Transfer destination is required"
+            )
+            if (transferAccountId == transaction.accountId) {
+                return failure(DomainError.TRANSFER_DESTINATION_SAME, "Transfer destination must be different")
+            }
         }
         return runSuspendCatching { checkReferencesAndBudget(transaction) }.getOrElse { Result.failure(it) }
     }
 
     private suspend fun checkReferencesAndBudget(transaction: TransactionEntity): Result<Unit> {
-        if (categoryRepository.getById(transaction.categoryId) == null) return failure("Category not found")
-        if (accountRepository.getById(transaction.accountId) == null) return failure("Account not found")
+        if (categoryRepository.getById(transaction.categoryId) == null) return failure(DomainError.CATEGORY_NOT_FOUND, "Category not found")
+        if (accountRepository.getById(transaction.accountId) == null) return failure(DomainError.ACCOUNT_NOT_FOUND, "Account not found")
         val transferAccountId = transaction.transferAccountId
         if (transaction.type == TransactionType.TRANSFER &&
             transferAccountId != null &&
             accountRepository.getById(transferAccountId) == null
         ) {
-            return failure("Transfer destination account not found")
+            return failure(DomainError.TRANSFER_DESTINATION_NOT_FOUND, "Transfer destination account not found")
         }
         if (transaction.type == TransactionType.EXPENSE) {
             val budget = budgetRepository.getByCategoryId(transaction.categoryId)
@@ -69,17 +82,19 @@ class ValidateTransactionUseCase @Inject constructor(
                     excludeTransactionId = transaction.id
                 )
                 if (spent + transaction.amountCents > budget.monthlyLimitCents) {
-                    return Result.failure(IllegalStateException("Budget threshold violated"))
+                    return failure(DomainError.BUDGET_EXCEEDED, "Budget threshold violated")
                 }
             }
         }
         return Result.success(Unit)
     }
 
-    private fun failure(message: String): Result<Unit> = Result.failure(IllegalArgumentException(message))
+    private fun failure(error: DomainError, message: String, arg: Any? = null): Result<Unit> =
+        Result.failure(DomainException(error, message, arg))
 
     private fun monthBounds(epochMillis: Long): Pair<Long, Long> {
-        val date = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalDate()
-        return DateUtils.monthRangeEpochMillis(date.year, date.monthValue)
+        val zone = clock.zone
+        val date = Instant.ofEpochMilli(epochMillis).atZone(zone).toLocalDate()
+        return DateUtils.monthRangeEpochMillis(date.year, date.monthValue, zone)
     }
 }

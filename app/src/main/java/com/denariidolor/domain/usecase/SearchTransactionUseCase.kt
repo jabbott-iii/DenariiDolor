@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.Flow
 
 class SearchTransactionUseCase @Inject constructor(private val transactionRepository: TransactionRepository) {
     operator fun invoke(filters: SearchFilters): Flow<List<TransactionEntity>> {
-        require(Validators.isValidSearchRange(filters)) { "Invalid search ranges" }
+        if (!Validators.isValidSearchRange(filters)) domainFailure(DomainError.INVALID_SEARCH_RANGE, "Invalid search ranges")
         return transactionRepository.search(filters)
     }
 }

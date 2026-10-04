@@ -33,6 +33,7 @@ class FakeTransactionRepository(initial: List<TransactionEntity> = emptyList()) 
     val items = initial.toMutableList()
     var expenseTotalCents = 0L
     var lastExcludedTransactionId: Long? = null
+    var lastExpenseRange: Pair<Long, Long>? = null
     private var nextId = (initial.maxOfOrNull { it.id } ?: 0L) + 1
 
     override suspend fun add(transaction: TransactionEntity): Long {
@@ -50,10 +51,13 @@ class FakeTransactionRepository(initial: List<TransactionEntity> = emptyList()) 
 
     override suspend fun delete(id: Long): Boolean = items.removeAll { it.id == id }
     override suspend fun getById(id: Long): TransactionEntity? = items.firstOrNull { it.id == id }
-    override fun getAll(): Flow<List<TransactionEntity>> = flowOf(items.toList())
+    override fun observeByDateRange(startInclusive: Long, endInclusive: Long): Flow<List<TransactionEntity>> =
+        flowOf(items.filter { it.dateEpochMillis in startInclusive..endInclusive })
+
+    override fun observeRecent(limit: Int): Flow<List<TransactionEntity>> =
+        flowOf(items.sortedWith(compareByDescending<TransactionEntity> { it.dateEpochMillis }.thenByDescending { it.id }).take(limit))
+
     override fun search(filters: SearchFilters): Flow<List<TransactionEntity>> = flowOf(items.toList())
-    override suspend fun getByDateRange(startInclusive: Long, endInclusive: Long): List<TransactionEntity> =
-        items.filter { it.dateEpochMillis in startInclusive..endInclusive }
 
     override suspend fun getExpenseTotalForCategory(
         categoryId: Long,
@@ -62,6 +66,7 @@ class FakeTransactionRepository(initial: List<TransactionEntity> = emptyList()) 
         excludeTransactionId: Long
     ): Long {
         lastExcludedTransactionId = excludeTransactionId
+        lastExpenseRange = startInclusive to endInclusive
         return expenseTotalCents
     }
 

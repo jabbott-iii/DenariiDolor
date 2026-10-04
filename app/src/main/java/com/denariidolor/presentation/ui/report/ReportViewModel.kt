@@ -44,7 +44,8 @@ data class ReportUiState(
     val period: YearMonth,
     val report: MonthlyReport? = null,
     val loading: Boolean = false,
-    val failed: Boolean = false
+    val failed: Boolean = false,
+    val exporting: Boolean = false
 )
 
 sealed interface ReportEvent {
@@ -88,20 +89,29 @@ class ReportViewModel @Inject constructor(
 
     fun nextMonth() = changePeriod(_state.value.period.plusMonths(1))
 
-    fun save(uri: Uri, format: ReportFormat) {
-        val report = _state.value.report ?: return
-        viewModelScope.launch {
-            val result = runSuspendCatching { reportExporter.writeTo(uri, report, format) }
-            _events.send(ReportEvent.Message(exportMessage(result, R.string.report_saved)))
-        }
+    fun save(uri: Uri, format: ReportFormat) = export { report ->
+        val result = runSuspendCatching { reportExporter.writeTo(uri, report, format) }
+        _events.send(ReportEvent.Message(exportMessage(result, R.string.report_saved)))
     }
 
-    fun share(format: ReportFormat) {
-        val report = _state.value.report ?: return
+    fun share(format: ReportFormat) = export { report ->
+        runSuspendCatching { reportExporter.createShareUri(report, format) }
+            .onSuccess { _events.send(ReportEvent.Share(it, format.mimeType)) }
+            .onFailure { _events.send(ReportEvent.Message(UiMessage.Resource(R.string.report_export_failed))) }
+    }
+
+    /** Runs one export at a time; repeated taps while one is in flight are ignored (BUG-02). */
+    private fun export(action: suspend (MonthlyReport) -> Unit) {
+        val current = _state.value
+        val report = current.report ?: return
+        if (current.exporting) return
+        _state.update { it.copy(exporting = true) }
         viewModelScope.launch {
-            runSuspendCatching { reportExporter.createShareUri(report, format) }
-                .onSuccess { _events.send(ReportEvent.Share(it, format.mimeType)) }
-                .onFailure { _events.send(ReportEvent.Message(UiMessage.Resource(R.string.report_export_failed))) }
+            try {
+                action(report)
+            } finally {
+                _state.update { it.copy(exporting = false) }
+            }
         }
     }
 

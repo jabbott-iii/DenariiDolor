@@ -24,6 +24,7 @@ import com.denariidolor.data.local.db.dao.TransactionDao
 import com.denariidolor.data.local.db.entity.AccountEntity
 import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.data.local.db.entity.TransactionEntity
+import com.denariidolor.data.repository.escapeLike
 import com.denariidolor.domain.model.TransactionType
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -101,5 +102,20 @@ class TransactionDaoTest {
     fun countByAccountIncludesTransferDestinations() = runTest {
         assertEquals(1, dao.countByAccount(2))
         assertEquals(4, dao.countByAccount(1))
+    }
+
+    @Test
+    fun searchMatchesWildcardsLiterally() = runTest {
+        dao.insert(txn(5, TransactionType.EXPENSE, "Tip 50% off", 100, categoryId = 1, date = 5_000))
+        dao.insert(txn(6, TransactionType.EXPENSE, "snake_case", 100, categoryId = 1, date = 6_000))
+
+        assertEquals(listOf(5L), search(description = escapeLike("50%")))
+        assertEquals(listOf(6L), search(description = escapeLike("_")))
+    }
+
+    @Test
+    fun dashboardQueriesReturnTheMonthAndTheLatestRows() = runTest {
+        assertEquals(listOf(3L, 2L), dao.observeByDateRange(2_000, 3_000).first().map { it.id })
+        assertEquals(listOf(4L, 3L), dao.observeRecent(2).first().map { it.id })
     }
 }

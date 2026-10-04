@@ -71,4 +71,14 @@ class ReportFormattingTest {
         assertEquals("-12.50", ReportCsvFormatter.escape("-12.50"))
         assertEquals("plain", ReportCsvFormatter.escape("plain"))
     }
+
+    @Test
+    fun csvNeutralizesFormulasAfterWhitespaceSemicolonsAndTabs() {
+        assertEquals("\"x;'=1+1\"", ReportCsvFormatter.escape("x;=1+1"))
+        assertEquals("\"x\t'=1+1\"", ReportCsvFormatter.escape("x\t=1+1"))
+        assertEquals("\"' =1+1\"", ReportCsvFormatter.escape(" =1+1"))
+        assertEquals("\"Lunch; '@cmd; ok\"", ReportCsvFormatter.escape("Lunch; @cmd; ok"))
+        assertEquals("\"Refund;-5\"", ReportCsvFormatter.escape("Refund;-5"))
+        assertEquals("\"a;b\"", ReportCsvFormatter.escape("a;b"))
+    }
 }

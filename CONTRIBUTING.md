@@ -11,7 +11,7 @@ Security vulnerabilities are the exception: report them through a private securi
 - Git.
 - A JDK to run Gradle. The project compiles with a JDK 17 toolchain (`jvmToolchain(17)`), which the foojay resolver in `settings.gradle.kts` can download if it's missing. CI uses Temurin 17. `gradle/gradle-daemon-jvm.properties` requests JDK 21 for the Gradle daemon.
 - The Android SDK with platform 35 (`compileSdk = 35`). Point Gradle at it with `ANDROID_HOME` or with `sdk.dir` in `local.properties`, which is git-ignored.
-- For instrumented tests, a device or emulator running API 26 or newer. CI runs API 26 and 35.
+- For instrumented tests, a device or emulator running API 26 or newer. CI runs API 26 and 35. The Compose UI tests need API 35 or lower for now: with the pinned Espresso 3.6.1 they fail on API 37 images (`InputManager.getInstance`), while the database and vault tests run anywhere.
 
 Use the Gradle wrapper (`./gradlew`); don't install Gradle separately.
 

@@ -34,22 +34,26 @@ class AccountUseCases @Inject constructor(
     }
 
     suspend fun rename(id: Long, name: String): Result<Unit> = runSuspendCatching {
-        require(id > 0L) { "Account ID is required" }
+        if (id <= 0L) domainFailure(DomainError.ID_REQUIRED, "Account ID is required")
         val validName = requireValidName(name, excludeId = id)
         if (!accountRepository.rename(id, validName)) throw NoSuchElementException("Account not found")
     }
 
     suspend fun delete(id: Long): Result<Unit> = runSuspendCatching {
-        check(id !in PROTECTED_IDS) { "Default accounts cannot be deleted" }
+        if (id in PROTECTED_IDS) domainFailure(DomainError.DEFAULT_ACCOUNT, "Default accounts cannot be deleted")
         val usage = transactionRepository.countByAccount(id)
-        check(usage == 0) { "Account is used by $usage transaction(s)" }
+        if (usage != 0) domainFailure(DomainError.ACCOUNT_IN_USE, "Account is used by $usage transaction(s)", usage)
         if (!accountRepository.delete(id)) throw NoSuchElementException("Account not found")
     }
 
     private suspend fun requireValidName(name: String, excludeId: Long): String {
         val trimmed = name.trim()
-        require(Validators.isValidName(trimmed)) { "Name must be 1-${Validators.MAX_NAME_LENGTH} characters" }
-        require(!accountRepository.isDuplicateName(trimmed, excludeId)) { "An account named \"$trimmed\" already exists" }
+        if (!Validators.isValidName(trimmed)) {
+            domainFailure(DomainError.INVALID_NAME, "Name must be 1-${Validators.MAX_NAME_LENGTH} characters", Validators.MAX_NAME_LENGTH)
+        }
+        if (accountRepository.isDuplicateName(trimmed, excludeId)) {
+            domainFailure(DomainError.DUPLICATE_ACCOUNT_NAME, "An account named \"$trimmed\" already exists", trimmed)
+        }
         return trimmed
     }
 

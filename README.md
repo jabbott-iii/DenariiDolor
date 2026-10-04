@@ -32,7 +32,7 @@
 | **Dashboard** | Monthly net, income and expense totals; a spending-by-category chart; budget meters and alerts; account balances; recent transactions. |
 | **Search** | Filter by description text, category, amount range and date range. The results show as a multi-row list, and you tap a row to edit it. |
 | **Reports** | A monthly spending report with a title, a generated timestamp, totals, and a 6-column table (Date, Type, Category, Description, Amount, Payment Method). **Save** or **Share** it as **CSV** or **PDF**. |
-| **Validation** | Rejects zero or negative amounts, amounts with more than 2 decimals, blank descriptions, invalid dates, transfers to the same account, duplicate names, and inverted search ranges. |
+| **Validation** | Rejects zero or negative amounts, amounts with more than 2 decimals, blank descriptions or ones longer than 200 characters, invalid dates, transfers to the same account, duplicate names, and inverted search ranges. |
 | **Security** | SQLCipher-encrypted database whose key only your PIN, your security answer or (optionally) your biometrics can unlock; PIN (6–12 digits) with an escalating lockout that changing the date can't skip; 5-minute session timeout; no cloud backup. |
 | **Look & feel** | Material 3, a dark mode switch, bottom navigation, and a floating **+** button for quick entry. |
 
@@ -162,7 +162,7 @@ git clone https://github.com/jabbott-iii/DenariiDolor.git && cd DenariiDolor
 ./gradlew testDebugUnitTest            # unit tests
 ./gradlew connectedDebugAndroidTest    # instrumented tests (device required)
 ./gradlew ktlintFormat detekt lintDebug  # format and static analysis
-make release VERSION=v1.2.3            # tag and push → CD builds a signed GitHub Release
+make release VERSION=v1.2.3            # tag and push → once CI passes on that commit, CD publishes a signed GitHub Release
 ```
 
 | Path | Contents |
@@ -172,7 +172,7 @@ make release VERSION=v1.2.3            # tag and push → CD builds a signed Git
 | `…/presentation/ui` | Compose screens and ViewModels, one package per feature |
 | `…/di` | Hilt modules |
 | `app/schemas` | Exported Room schemas (commit a new one with every schema change) |
-| `.github/workflows` | `ci.yml` (lint, tests, build, emulator tests on API 26 and 35), `security.yml` (CodeQL, dependency review, gitleaks), `cd.yml` (signed release on `v*` tags) |
+| `.github/workflows` | `ci.yml` (lint, tests, build, emulator tests on API 26 and 35), `security.yml` (CodeQL, dependency review, gitleaks), `cd.yml` (signed release on `v*` tags, after CI passes on the tagged commit) |
 
 Release signing needs four repository secrets: `ANDROID_SIGNING_KEY` (the base64-encoded keystore), `ANDROID_SIGNING_KEYSTORE_PASSWORD`, `ANDROID_SIGNING_KEY_ALIAS` and `ANDROID_SIGNING_KEY_PASSWORD`. For contribution rules, see [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
 
@@ -187,6 +187,7 @@ Release signing needs four repository secrets: `ANDROID_SIGNING_KEY` (the base64
 - **Biometrics:** `BIOMETRIC_STRONG` only, through `BiometricPrompt` with a Keystore `CryptoObject`. Off until you turn it on in Settings; the PIN is the fallback.
 - **Other controls:**
   - **Wipe All App Data** deletes the database and every key.
+  - The sign-in screen hides other apps' overlays (Android 12+) and ignores touches that pass through one on older versions.
   - 5-minute session timeout.
   - `allowBackup=false`, with data-extraction rules.
   - Parameterized Room queries only.

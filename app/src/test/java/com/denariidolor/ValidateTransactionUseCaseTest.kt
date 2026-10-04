@@ -21,12 +21,19 @@ import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.data.local.db.entity.TransactionEntity
 import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.domain.model.TransactionType
+import com.denariidolor.domain.usecase.DomainError
+import com.denariidolor.domain.usecase.DomainException
 import com.denariidolor.domain.usecase.ValidateTransactionUseCase
 import com.denariidolor.testutil.FakeAccountRepository
 import com.denariidolor.testutil.FakeBudgetRepository
 import com.denariidolor.testutil.FakeCategoryRepository
 import com.denariidolor.testutil.FakeTransactionRepository
 import com.denariidolor.testutil.TestData
+import com.denariidolor.util.DateUtils
+import com.denariidolor.util.Validators
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -40,7 +47,8 @@ class ValidateTransactionUseCaseTest {
         FakeCategoryRepository(TestData.categories),
         FakeAccountRepository(TestData.accounts),
         budgets,
-        transactions
+        transactions,
+        Clock.systemDefaultZone()
     )
 
     @Test
@@ -151,7 +159,13 @@ class ValidateTransactionUseCaseTest {
         val failingCategories = object : CategoryRepository by FakeCategoryRepository(TestData.categories) {
             override suspend fun getById(id: Long): CategoryEntity? = error("database closed")
         }
-        val failingUseCase = ValidateTransactionUseCase(failingCategories, FakeAccountRepository(TestData.accounts), budgets, transactions)
+        val failingUseCase = ValidateTransactionUseCase(
+            failingCategories,
+            FakeAccountRepository(TestData.accounts),
+            budgets,
+            transactions,
+            Clock.systemDefaultZone()
+        )
 
         val result = failingUseCase(TestData.expense())
 
@@ -160,4 +174,31 @@ class ValidateTransactionUseCaseTest {
     }
 
     private suspend fun messageFor(transaction: TransactionEntity): String? = useCase(transaction).exceptionOrNull()?.message
+
+    @Test
+    fun descriptionOverTheLimitFails() = runBlocking<Unit> {
+        val error = useCase(TestData.expense().copy(description = "x".repeat(201))).exceptionOrNull() as DomainException
+
+        assertEquals(DomainError.DESCRIPTION_TOO_LONG, error.error)
+        assertEquals(Validators.MAX_DESCRIPTION_LENGTH, error.arg)
+        assertTrue(useCase(TestData.expense().copy(description = "x".repeat(200))).isSuccess)
+    }
+
+    @Test
+    fun budgetMonthFollowsTheClockZone() = runBlocking<Unit> {
+        val losAngeles = ZoneId.of("America/Los_Angeles")
+        val instant = Instant.parse("2026-10-01T03:00:00Z")
+        val useCaseInLosAngeles = ValidateTransactionUseCase(
+            FakeCategoryRepository(TestData.categories),
+            FakeAccountRepository(TestData.accounts),
+            budgets,
+            transactions,
+            Clock.fixed(instant, losAngeles)
+        )
+
+        // 03:00 UTC on October 1 is still September 30 in Los Angeles, so September's spending counts.
+        useCaseInLosAngeles(TestData.expense().copy(dateEpochMillis = instant.toEpochMilli()))
+
+        assertEquals(DateUtils.monthRangeEpochMillis(2026, 9, losAngeles), transactions.lastExpenseRange)
+    }
 }

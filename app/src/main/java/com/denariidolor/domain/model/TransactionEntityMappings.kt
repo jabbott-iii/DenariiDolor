@@ -32,10 +32,20 @@ fun TransactionEntity.toDomainTransaction(): Transaction = when (type) {
     )
 }
 
+/** A TRANSFER row without a destination. Validation never writes one, but the schema doesn't prevent it. */
+val TransactionEntity.isMalformedTransfer: Boolean get() = type == TransactionType.TRANSFER && transferAccountId == null
+
+/**
+ * The mapping for rows read back from the database. A malformed transfer maps to null and has no balance impact, so one bad row
+ * can't crash the screen or the edit that reads it (BUG-06).
+ */
+fun TransactionEntity.toDomainTransactionOrNull(): Transaction? = if (isMalformedTransfer) null else toDomainTransaction()
+
+/** The mapping for writes; it also trims the description (BUG-08). */
 fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     id = id,
     type = type,
-    description = description,
+    description = description.trim(),
     amountCents = amountCents,
     categoryId = categoryId,
     accountId = accountId,

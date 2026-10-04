@@ -16,6 +16,7 @@
 
 package com.denariidolor.di
 
+import com.denariidolor.util.DeviceClock
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -28,5 +29,5 @@ import javax.inject.Singleton
 object AppModule {
     @Provides
     @Singleton
-    fun provideClock(): Clock = Clock.systemDefaultZone()
+    fun provideClock(): Clock = DeviceClock
 }

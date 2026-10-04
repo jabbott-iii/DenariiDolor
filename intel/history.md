@@ -442,3 +442,60 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
 - **Also found:**
   - A release-signed APK committed in `908ec5c` under `app/release/`. Logged as CS-18.
   - Dependabot's security update for the build-time `netty`, `protobuf-java`, `commons-io` and `logback-core` failed on 2026-09-27. None of them is in `releaseRuntimeClasspath`. Logged as CS-22.
+
+## 2026-10-03 — Phase 7 remediation; `plan.md` trimmed to open work
+- **Reconciled with `9f967c6`.** That commit landed after the review entry above. Besides the review, it implemented most of the security work, but only `maint.md` and `map.md` were updated with it:
+  - the vault: the database key wrapped by the PIN, the answer and biometrics; `DatabaseHolder` opening the database only after sign-in (CS-15, CS-07);
+  - Keystore AES-GCM storage instead of `security-crypto`, with a retry-or-wipe screen for Keystore failures (CS-09, BUG-05);
+  - the elapsed-time lockout (CS-13), stricter recovery answers (CS-14, option B), wipe friction (CS-16) and crypto-erase (CS-17);
+  - decimal-comma parsing (BUG-01, accepting locale decimal separators), vault work off the main thread with serialized attempts (BUG-04), and removal of the plaintext `key_pin` path (BUG-12).
+  
+  `cybersec.md` and this entry now record all of it.
+- **Bugs fixed in this session** (uncommitted). The bug table has been removed from `plan.md`, so each fix is recorded here:
+  - **BUG-02 (double save):** `TransactionViewModel.isSaving` ignores a save while one is in flight. After a successful edit it stays set while the screen closes, and the Save button is disabled meanwhile. `ReportViewModel` runs one export at a time. The manage dialogs are unchanged: they close on the first tap, and a duplicate fails on the unique name. Tests:
+    - `TransactionViewModelTest.saveWhileOneIsInFlightIsIgnored`, `successfulEditKeepsSaveDisabledWhileTheScreenCloses` and `failedSaveCanBeRetried`;
+    - `CrudScreensTest.saveButtonIsDisabledWhileSaving`.
+  - **BUG-03 (double pop):** every `onFinished`/`onBack` goes through `NavController.popBackOnce()` (`dropUnlessResumed`). The edit screen's "not found" close waits for the resumed state (`LifecycleResumeEffect`). Test: `NavigationTest.repeatedBackPopsOnlyOnce`.
+  - **BUG-06 (malformed transfer):** read paths use `toDomainTransactionOrNull()`, so a TRANSFER row without a destination has no balance impact. Editing or deleting such a row reverses nothing, and its row shows `Account → ?`. A Dashboard load error now shows an error message instead of crashing. Enforcing this in the database is deferred to the next migration (`plan.md`). Tests:
+    - `DashboardMappersTest.malformedTransferHasNoImpactAndIsFlagged`;
+    - `TransactionEntityMappingsTest.readPathMappingSkipsMalformedTransfer`;
+    - `DashboardViewModelTest.loadErrorShowsErrorStateInsteadOfCrashing`;
+    - `TransactionRepositoryImplTest.malformedTransferCanBeDeletedWithoutTouchingBalances`.
+  - **BUG-07 (LIKE wildcards):** `escapeLike()` escapes `\`, `%` and `_`, and the search query uses `ESCAPE '\'`. Tests: `EscapeLikeTest` and `TransactionDaoTest.searchMatchesWildcardsLiterally`.
+  - **BUG-08 (description length):** descriptions are trimmed when written (`Transaction.toEntity()`), capped at 200 characters (`Validators.MAX_DESCRIPTION_LENGTH`), and the field stops at 200. Tests:
+    - `ValidatorsTest.descriptionIsTrimmedAndCapped`;
+    - `ValidateTransactionUseCaseTest.descriptionOverTheLimitFails`;
+    - `TransactionCrudUseCaseTest.addAndUpdateTrimTheDescription`.
+  - **BUG-09 (time zone):** `AppModule` now provides `DeviceClock`, whose zone follows the device's current zone. `ValidateTransactionUseCase` computes budget months in the injected clock's zone; it used `ZoneId.systemDefault()` twice. Tests: `DeviceClockTest` and `ValidateTransactionUseCaseTest.budgetMonthFollowsTheClockZone`.
+  - **BUG-10 (Dashboard loads):** the Dashboard loads only the current month (`observeByDateRange`) and the 20 latest rows (`observeRecent`). It recomputes the month and zone on resume. The unused transaction `getAll()` and `getByDateRange()` were removed; reports read `observeByDateRange(...).first()`. Tests:
+    - `DashboardViewModelTest.refreshPeriodRollsOverToTheNewMonth`;
+    - `TransactionDaoTest.dashboardQueriesReturnTheMonthAndTheLatestRows`.
+  - **BUG-11 (raw error text):** use cases throw `DomainException` with a `DomainError`, and `UiMessage.fromError()` maps it to a string resource. `NoSuchElementException` maps to "This item no longer exists", and anything else to the generic message. Exception text is never shown. Tests: `UiMessageTest`, plus the updated `TransactionViewModelTest.invalidTransferEmitsFailure`.
+- **Security fixes in this session** (details in `cybersec.md` section 2):
+  - CS-08: every action SHA-pinned, and all jobs on `ubuntu-24.04`;
+  - CS-11: overlay hiding / obscured-touch filtering on the sign-in window;
+  - CS-18: `app/release/` untracked (staged) and build outputs ignored;
+  - CS-19: CD split into `ci-gate` → `build` → `publish`;
+  - CS-20: CSV guard after whitespace, `;` and tabs;
+  - CS-21: empty `taskAffinity` on both activities;
+  - CS-22: build-time constraints for netty, protobuf-java, commons-io and logback, the duplicate Google repository removed, and PRs #12 – #17 triaged.
+- **CI fix:** CI run 37161706133 on `9f967c6` failed on API 26 in `ComposeScreensTest.loginScreenWipeDialogDismissRequestTriggersCancelCallback`; API 35 passed 58/58. This is the race recorded on 2026-09-21: UiAutomator pressed Back before the now heavier wipe dialog was on screen. The test now waits for the dialog window (`Until.hasObject`) and for idle before `pressBack()`. Test-only change.
+- **Device checks on the API 37 emulator** (read-only AVD, debug build):
+  - CS-01: with the clock set back an hour (`cmd alarm set-time`), the app signed out after 5 minutes without input.
+  - CS-02: after `am kill` in the background, restoring from Recents showed only the sign-in screen; `MainActivity` never drew.
+  - CS-04: `cache/reports` was gone after sign-out, and again after a timeout.
+  - CS-11: `HIDE_NON_SYSTEM_OVERLAY_WINDOWS` set on the sign-in window.
+  - CS-21: `taskAffinity=null`, and one task through sign-in, sign-out and timeout.
+  - BUG-02 / BUG-03: a simultaneous double tap on Save saved one row, and a double tap on Back stayed on the Dashboard.
+  - Phase 6: edge-to-edge insets are correct (content clears the status bar, and the navigation bar sits above the gesture bar).
+- **Validation run:**
+  - `./gradlew ktlintCheck detekt lintDebug testDebugUnitTest assembleRelease`: passed, with 149/149 unit tests (18 new).
+  - `connectedDebugAndroidTest` on the API 37 emulator: the 29 non-UI tests passed, including the 3 new DAO and repository tests and all of `VaultTest` (the v1.0.x upgrade tests among them). The 35 Compose tests can't run on API 37 with Espresso 3.6.1 (`NoSuchMethodException: InputManager.getInstance`), so they're left to CI on API 26 and 35. That includes the other 3 new instrumented tests (`NavigationTest`, `CrudScreensTest.saveButtonIsDisabledWhileSaving`, and `OverlayGuardTest`, which runs only below API 31).
+  - Not run: CD, Dependabot alerts (HTTP 403 for this token), and devices with API 26 or 35 or with an enrolled biometric.
+- **`plan.md` trimmed to open work.** Removed:
+  - the Phase 1–6 checklists and their "verify locally" items, which CI covered (green on `4abfc8e`; `9f967c6` passed everything except the API 26 test fixed above);
+  - the resolved questions and the Phase 7 "Decisions needed", now in `notes.md`;
+  - the finished Settings, CI/CD and security checklists, and the Phase 7 bug table and order of work, now recorded in this entry.
+  
+  The Phase 6 "later" items moved under **Follow-on work**.
+- Also updated: `cybersec.md`, `maint.md`, `map.md`, `notes.md`, `README.md` and `CONTRIBUTING.md`.

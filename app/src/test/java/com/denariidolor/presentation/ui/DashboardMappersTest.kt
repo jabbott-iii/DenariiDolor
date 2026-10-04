@@ -188,4 +188,12 @@ class DashboardMappersTest {
         assertEquals(95, BudgetProgress(1, "Dining", "dining", spentCents = 9_500, limitCents = 10_000, warningPercent = 80).percentUsed)
         assertEquals(0, BudgetProgress(1, "Dining", "dining", spentCents = 500, limitCents = 0, warningPercent = 80).percentUsed)
     }
+
+    @Test
+    fun malformedTransferHasNoImpactAndIsFlagged() {
+        val malformed = txn(2, TransactionType.TRANSFER, 2_000, transferTo = null, categoryId = 3)
+
+        assertEquals(-1_000L, summarize(listOf(txn(1, TransactionType.EXPENSE, 1_000), malformed)).netCents)
+        assertEquals("Cash → ?", buildTransactionRows(listOf(malformed), categories, accounts, zoneId = utc).single().accountLabel)
+    }
 }

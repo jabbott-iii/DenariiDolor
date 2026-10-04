@@ -29,13 +29,23 @@ interface TransactionDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(transaction: TransactionEntity): Long
 
-    @Query("SELECT * FROM transactions ORDER BY dateEpochMillis DESC")
-    fun getAll(): Flow<List<TransactionEntity>>
-
     @Query(
         """
         SELECT * FROM transactions
-        WHERE (:description IS NULL OR description LIKE '%' || :description || '%')
+        WHERE dateEpochMillis BETWEEN :startInclusive AND :endInclusive
+        ORDER BY dateEpochMillis DESC, id DESC
+        """
+    )
+    fun observeByDateRange(startInclusive: Long, endInclusive: Long): Flow<List<TransactionEntity>>
+
+    @Query("SELECT * FROM transactions ORDER BY dateEpochMillis DESC, id DESC LIMIT :limit")
+    fun observeRecent(limit: Int): Flow<List<TransactionEntity>>
+
+    /** [description] must already be escaped for `LIKE … ESCAPE '\'` (see `escapeLike`). */
+    @Query(
+        """
+        SELECT * FROM transactions
+        WHERE (:description IS NULL OR description LIKE '%' || :description || '%' ESCAPE '\')
           AND (:categoryId IS NULL OR categoryId = :categoryId)
           AND (:minAmountCents IS NULL OR amountCents >= :minAmountCents)
           AND (:maxAmountCents IS NULL OR amountCents <= :maxAmountCents)
@@ -52,15 +62,6 @@ interface TransactionDao {
         startDate: Long?,
         endDate: Long?
     ): Flow<List<TransactionEntity>>
-
-    @Query(
-        """
-        SELECT * FROM transactions
-        WHERE dateEpochMillis BETWEEN :startInclusive AND :endInclusive
-        ORDER BY dateEpochMillis DESC
-        """
-    )
-    suspend fun getByDateRange(startInclusive: Long, endInclusive: Long): List<TransactionEntity>
 
     @Query(
         """

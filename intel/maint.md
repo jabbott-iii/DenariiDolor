@@ -27,7 +27,7 @@ Rules:
 1. Composables never touch DAOs, repositories or preferences directly. They go through a ViewModel.
 2. Writes to transactions go through a use case (`Add`, `Update` or `DeleteTransactionUseCase`), so that validation and balance updates always run. Reference data goes through `CategoryUseCases`, `AccountUseCases` and `BudgetUseCases`.
 3. Each aggregate has a repository interface with a `…RepositoryImpl` in the same file, bound in `RepositoryModule`. Code outside `data` and `di` depends on the interface.
-4. Inject time through `Clock` (from `AppModule`) wherever a result depends on "now", so that tests can fix the time. The one exception is `SessionManager`, which must use the monotonic `SystemClock.elapsedRealtime()` (CS-01).
+4. Inject time through `Clock` (from `AppModule`) wherever a result depends on "now", so that tests can fix the time. Take the time zone from the same `Clock` (`clock.zone`), never from `ZoneId.systemDefault()`. The app's `Clock` is `DeviceClock`, whose zone follows the device's current zone, so every screen and check agrees on month boundaries (BUG-09). The one exception is `SessionManager`, which must use the monotonic `SystemClock.elapsedRealtime()` (CS-01).
 5. Keep logic that doesn't need Android in pure Kotlin so that JVM unit tests can cover it. Existing examples are `Ledger`, `SecurityProfileService` (behind `SecurityProfileStore`, `DeviceKeyMixer` and `MonotonicClock`), `LegacySecurityProfile`, `DatabaseKeys`, `ReportCsvFormatter`, `SearchFilterParser` and `DashboardMappers`.
 6. The database exists only after sign-in. `AppDatabase`, the DAOs and the repositories are unscoped and come from `DatabaseHolder`, so each screen gets the database opened at the latest sign-in. Never inject them into code that runs before sign-in (`LoginActivity`, any `@Singleton`); go through `Vault`. `DefaultDataInitializer` reads the holder when it runs. While the vault is locked, `DatabaseHolder.database` throws.
 
@@ -36,10 +36,11 @@ Rules:
 - **Polymorphism carries the business rules.** `Transaction` is abstract. `Expense`, `Income` and `Transfer` override `balanceImpact()` and `accountImpacts()`. Totals and balances must call these methods rather than branch on `TransactionType`.
 - **Money is `Long` cents end to end** (`amountCents`, `balanceCents`, `monthlyLimitCents`). User input is parsed with `Money.parseToCents`, which uses `BigDecimal` and rejects more than 2 decimals. Never introduce `Double` for stored or compared amounts. Floating point is acceptable only for display, as in the chart values (`Money.toDouble`) and budget meter fractions.
 - **Stored balances stay atomic.** `TransactionRepositoryImpl` applies `Ledger.balanceDeltas(previous, current)` inside `database.withTransaction` on every add, edit and delete. Any new write path that changes a transaction's amount, type or accounts must do the same.
-- **Validation happens before writes.** `ValidateTransactionUseCase` checks the amount, description, date, account and category IDs, the transfer destination (required and different from the source) and that the referenced rows exist. It also blocks an expense that would exceed its category's monthly budget; on an edit, the edited row is excluded from the total.
+- **Validation happens before writes.** `ValidateTransactionUseCase` checks the amount, the description (1–200 characters; `Transaction.toEntity()` trims it), the date, account and category IDs, the transfer destination (required and different from the source) and that the referenced rows exist. It also blocks an expense that would exceed its category's monthly budget; on an edit, the edited row is excluded from the total.
 - **Seeded defaults are protected.** Cash and Savings (account IDs 1 and 2) and the three default categories (IDs 1–3) come from `Constants`. `DefaultDataInitializer` seeds them, and they cannot be deleted. A category or account that is still referenced cannot be deleted either (no reassignment).
-- **Errors are values.** Use cases return `Result`. Wrap suspend work in `runSuspendCatching`, not `runCatching`, so that `CancellationException` still propagates.
+- **Errors are values.** Use cases return `Result`. Wrap suspend work in `runSuspendCatching`, not `runCatching`, so that `CancellationException` still propagates. A broken business rule fails with `DomainException(DomainError, message, arg)`. The UI turns failures into text only through `UiMessage.fromError`, which maps each `DomainError` to a string resource and never shows an exception's message (BUG-11). A new `DomainError` needs an entry there; `UiMessageTest` fails without one.
 - **ViewModel output:** long-lived UI state goes in `StateFlow` (`stateIn(…, WhileSubscribed(5_000), …)`). One-shot events such as "saved" or "failed" go through a `Channel` exposed as a `Flow`, or through `UiMessage`.
+- **One write at a time.** A ViewModel action that writes or exports ignores repeat calls while one is in flight and exposes that state so the button is disabled (`TransactionViewModel.isSaving`, `ReportUiState.exporting`; BUG-02). Leaving a screen goes through `NavController.popBackOnce()`, which drops calls once the destination is no longer resumed (BUG-03).
 
 ## 4. Persistence and migrations
 
@@ -49,7 +50,9 @@ Rules:
   - Foreign keys from `transactions.categoryId` and `transactions.accountId` use `RESTRICT`. `transactions.transferAccountId` has **no** foreign key: `AccountUseCases` prevents deleting an account a transfer points to, because `countByAccount` also counts `transferAccountId`. Keep that check if account deletion changes.
   - A budget cascades when its category is deleted, and there is one budget per category (unique index).
   - Category and account names have unique indexes. The duplicate-name checks in the use cases are also case-insensitive (`LOWER(name)`).
-- All queries are Room `@Query` with bound parameters. Never build SQL strings.
+- All queries are Room `@Query` with bound parameters. Never build SQL strings. A `LIKE` on user text escapes it with `escapeLike()` and declares `ESCAPE '\'` (BUG-07).
+- Read paths map rows with `toDomainTransactionOrNull()`, which tolerates a TRANSFER row without a destination (no balance impact). `toDomainTransaction()` is for rows that were just validated (BUG-06).
+- Screens load only what they show: the Dashboard reads the current month (`observeByDateRange`) and the latest rows (`observeRecent`), never the whole table (BUG-10).
 - **Changing the schema:**
   1. Bump `version` in `AppDatabase`.
   2. Add a `Migration` in `Migrations.kt` and register it in `DatabaseHolder.open` (`addMigrations(...)`).
@@ -76,7 +79,7 @@ Changes to the files below are security-sensitive. Flag them for human review an
 | Encryption at rest | `data/local/vault/*`, `data/local/db/DatabaseHolder.kt`, `data/local/db/security/*`, `di/DatabaseModule.kt` |
 | Exports | `data/export/*`, `domain/report/ReportCsvFormatter.kt`, `res/xml/file_paths.xml` |
 | Platform surface | `AndroidManifest.xml`, `res/xml/backup_rules.xml`, `res/xml/data_extraction_rules.xml`, `app/proguard-rules.pro` |
-| Supply chain | `.github/workflows/*`, `.github/dependabot.yml`, `gradle/libs.versions.toml`, `gradle/wrapper/*` |
+| Supply chain | `.github/workflows/*`, `.github/dependabot.yml`, `gradle/libs.versions.toml`, `gradle/wrapper/*`, `settings.gradle.kts` (repositories), the CS-22 constraints in `build.gradle.kts` and `app/build.gradle.kts` |
 
 Standing rules:
 
@@ -95,7 +98,8 @@ Standing rules:
 - New business logic needs unit tests. New DAO queries, migrations or screens need instrumented tests.
 - `VaultTest` runs the vault on the real Keystore and SQLCipher under test-only names (`VaultConfig`), so it never touches the app's own data. Biometric sign-in needs an enrolled biometric, so it is checked by hand.
 - Compose tests select elements with `testTag` constants defined next to the screen, such as `BIOMETRIC_BUTTON_TAG`.
-- UiAutomator does not wait for Compose. Wait for the target state (`waitUntil` or `waitForIdle`) before sending system events, because CI runs the API 26 emulator slowly.
+- UiAutomator does not wait for Compose. Wait for the target state (`waitUntil` or `waitForIdle`) before sending system events, because CI runs the API 26 emulator slowly. Before a real key event aimed at a dialog, also wait for the dialog's window (`UiDevice.wait(Until.hasObject(...))`).
+- With Espresso 3.6.1, Compose tests fail on API 37 emulator images (`NoSuchMethodException: InputManager.getInstance`). Run them on API 26–35, as CI does; the non-UI instrumented tests run on any image.
 
 ## 7. Code quality gates
 
@@ -123,18 +127,17 @@ Versions live only in `gradle/libs.versions.toml`, and every reference goes thro
 | SQLCipher 4.6.1 + `androidx.sqlite` 2.4.0 | Newer SQLCipher needs compileSdk 37 or Room 3. 4.6.1 supports 16 KB page sizes. |
 | `security-crypto` 1.1.0-alpha06 | Deprecated. Used only by `LegacyProfileStorage` to read v1.0.x installs during their upgrade (CS-09); remove it once those have upgraded. |
 | AGP 8.7.3, Gradle 8.11.1, JDK 17, compileSdk/targetSdk 35, minSdk 26 | CI and CD use Temurin 17. |
+| `build*` versions (netty BOM, protobuf-java, commons-io, logback) | Not app dependencies. They raise build-tool libraries with known advisories to patched versions (CS-22): the root `buildscript` constrains the plugin classpath, and `app/build.gradle.kts` constrains AGP's `_internal-unified-test-platform*` configurations and `ktlint`. Check `./gradlew buildEnvironment` and `:app:dependencies` after a change. Remove them when AGP 9 and a newer ktlint bring patched versions. |
 
-Dependabot proposes weekly Gradle and Actions updates. Each one must pass CI and the security workflow.
+Dependabot proposes weekly Gradle and Actions updates. Each one must pass CI and the security workflow. Workflow actions are pinned to commit SHAs with a `# vX.Y.Z` comment (CS-08); keep that form when adding or updating one.
 
 ## 9. Build and release
 
 - Release signing uses only environment variables set by `cd.yml`. Keystores and `local.properties` are git-ignored and must never be committed.
-- `make release VERSION=vX.Y.Z` checks for a clean `main` and pushes an annotated tag. `cd.yml` then does the following:
-  1. Runs the unit tests.
-  2. Builds a signed AAB and APK.
-  3. Verifies the signatures.
-  4. Publishes `DenariiDolor-<version>.apk`, `.aab` and `SHA256SUMS.txt` to a GitHub Release.
-  5. Keeps the R8 mapping as a private workflow artifact.
+- `make release VERSION=vX.Y.Z` checks for a clean `main` and pushes an annotated tag. `cd.yml` then runs three jobs (CS-19):
+  1. **ci-gate** waits for, and requires, a successful `ci.yml` run for the tagged commit.
+  2. **build** (the only job with the signing secrets, in the `production` environment, read-only token) runs the unit tests, builds a signed AAB and APK with `--no-daemon`, deletes the keystore, verifies the signatures, and uploads `dist/` plus the private R8 mapping as workflow artifacts.
+  3. **publish** (the only job that can write, with no secrets) checks `SHA256SUMS.txt` and publishes `DenariiDolor-<version>.apk`, `.aab` and `SHA256SUMS.txt` to a GitHub Release.
 - `versionCode` = `MAJOR*1_000_000 + MINOR*1_000 + PATCH`, derived from the tag.
 
 ## 10. Known maintainability debt
@@ -145,3 +148,5 @@ Dependabot proposes weekly Gradle and Actions updates. Each one must pass CI and
 - `SessionManager` state is in memory only. Process death safely resets it to signed out.
 - The pinned toolchain in section 8 blocks newer Kotlin, Room and SQLCipher. Upgrade those together.
 - `.idea/` project files are tracked in git.
+- The schema doesn't stop a TRANSFER row without `transferAccountId`; the read paths tolerate one (BUG-06). Add a trigger and a repair step with the next migration.
+- The CS-22 build-time constraints and the API 37 Espresso limit both go away with the toolchain upgrade.

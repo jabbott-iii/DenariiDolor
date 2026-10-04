@@ -27,7 +27,7 @@ class UpdateTransactionUseCase @Inject constructor(
     private val transactionRepository: TransactionRepository
 ) {
     suspend operator fun invoke(transaction: Transaction): Result<Unit> {
-        if (transaction.id <= 0L) return Result.failure(IllegalArgumentException("Transaction ID is required"))
+        if (transaction.id <= 0L) return Result.failure(DomainException(DomainError.ID_REQUIRED, "Transaction ID is required"))
         val entity = runSuspendCatching { transaction.toEntity() }.getOrElse { return Result.failure(it) }
         validateTransactionUseCase(entity).getOrElse { return Result.failure(it) }
         val updated = runSuspendCatching { transactionRepository.update(entity) }.getOrElse { return Result.failure(it) }

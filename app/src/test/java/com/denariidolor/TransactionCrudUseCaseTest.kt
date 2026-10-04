@@ -28,6 +28,7 @@ import com.denariidolor.testutil.FakeBudgetRepository
 import com.denariidolor.testutil.FakeCategoryRepository
 import com.denariidolor.testutil.FakeTransactionRepository
 import com.denariidolor.testutil.TestData
+import java.time.Clock
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -39,7 +40,8 @@ class TransactionCrudUseCaseTest {
         FakeCategoryRepository(TestData.categories),
         FakeAccountRepository(TestData.accounts),
         FakeBudgetRepository(),
-        transactions
+        transactions,
+        Clock.systemDefaultZone()
     )
     private val add = AddTransactionUseCase(validate, transactions)
     private val update = UpdateTransactionUseCase(validate, transactions)
@@ -90,5 +92,14 @@ class TransactionCrudUseCaseTest {
         assertTrue(transactions.items.isEmpty())
         assertTrue(delete(1).exceptionOrNull() is NoSuchElementException)
         assertTrue(delete(0).isFailure)
+    }
+
+    @Test
+    fun addAndUpdateTrimTheDescription() = runBlocking<Unit> {
+        val id = add(expense(id = 0, amountCents = 500).copy(description = "  Lunch  ")).getOrThrow()
+        assertEquals("Lunch", transactions.items.single { it.id == id }.description)
+
+        update(expense(id = id, amountCents = 500).copy(description = " Dinner ")).getOrThrow()
+        assertEquals("Dinner", transactions.items.single { it.id == id }.description)
     }
 }
