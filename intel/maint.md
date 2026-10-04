@@ -79,7 +79,7 @@ Changes to the files below are security-sensitive. Flag them for human review an
 | Encryption at rest | `data/local/vault/*`, `data/local/db/DatabaseHolder.kt`, `data/local/db/security/*`, `di/DatabaseModule.kt` |
 | Exports | `data/export/*`, `domain/report/ReportCsvFormatter.kt`, `res/xml/file_paths.xml` |
 | Platform surface | `AndroidManifest.xml`, `res/xml/backup_rules.xml`, `res/xml/data_extraction_rules.xml`, `app/proguard-rules.pro` |
-| Supply chain | `.github/workflows/*`, `.github/dependabot.yml`, `gradle/libs.versions.toml`, `gradle/wrapper/*`, `settings.gradle.kts` (repositories), the CS-22 constraints in `build.gradle.kts` and `app/build.gradle.kts` |
+| Supply chain | `.github/workflows/*`, `.github/dependabot.yml`, `gradle/libs.versions.toml`, `gradle/wrapper/*`, `settings.gradle.kts` (repositories), the CS-22 and CS-23 constraints in `build.gradle.kts` and `app/build.gradle.kts` |
 
 Standing rules:
 
@@ -122,12 +122,12 @@ Versions live only in `gradle/libs.versions.toml`, and every reference goes thro
 
 | Pin | Constraint |
 |---|---|
-| Kotlin 2.0.21 / KSP 2.0.21-1.0.28 | Hilt 2.52 reads Kotlin metadata only up to 2.0. Kotlin 2.1+ needs a Hilt release verified to support it. |
+| Kotlin 2.0.21 / KSP 2.0.21-1.0.28 | Hilt 2.52 reads Kotlin metadata only up to 2.0. Kotlin 2.1+ needs a Hilt release verified to support it. CVE-2026-53914 in the Kotlin Gradle plugin (CS-24) is fixed only in Kotlin 2.4.20+. |
 | Room 2.6.1 | Moving to Room 2.7 or 3 goes together with KSP2 and SQLCipher. |
 | SQLCipher 4.6.1 + `androidx.sqlite` 2.4.0 | Newer SQLCipher needs compileSdk 37 or Room 3. 4.6.1 supports 16 KB page sizes. |
 | `security-crypto` 1.1.0-alpha06 | Deprecated. Used only by `LegacyProfileStorage` to read v1.0.x installs during their upgrade (CS-09); remove it once those have upgraded. |
 | AGP 8.7.3, Gradle 8.11.1, JDK 17, compileSdk/targetSdk 35, minSdk 26 | CI and CD use Temurin 17. |
-| `build*` versions (netty BOM, protobuf-java, commons-io, logback) | Not app dependencies. They raise build-tool libraries with known advisories to patched versions (CS-22): the root `buildscript` constrains the plugin classpath, and `app/build.gradle.kts` constrains AGP's `_internal-unified-test-platform*` configurations and `ktlint`. Check `./gradlew buildEnvironment` and `:app:dependencies` after a change. Remove them when AGP 9 and a newer ktlint bring patched versions. |
+| `build*` versions (netty BOM, protobuf-java, commons-io, logback, Bouncy Castle, commons-compress, jdom2, jose4j) | Not app dependencies. They raise build-tool libraries with known advisories to patched versions (CS-22, CS-23): the root `buildscript` constrains the plugin classpath, and `app/build.gradle.kts` constrains AGP's `_internal-unified-test-platform*` configurations and `ktlint`. Check `./gradlew buildEnvironment` and `:app:dependencies` after a change. Keep the three Bouncy Castle modules on the one `buildBouncyCastle` version. Remove them when AGP 9 and a newer ktlint bring patched versions. |
 
 Dependabot proposes weekly Gradle and Actions updates. Each one must pass CI and the security workflow. Workflow actions are pinned to commit SHAs with a `# vX.Y.Z` comment (CS-08); keep that form when adding or updating one.
 
@@ -149,4 +149,4 @@ Dependabot proposes weekly Gradle and Actions updates. Each one must pass CI and
 - The pinned toolchain in section 8 blocks newer Kotlin, Room and SQLCipher. Upgrade those together.
 - `.idea/` project files are tracked in git.
 - The schema doesn't stop a TRANSFER row without `transferAccountId`; the read paths tolerate one (BUG-06). Add a trigger and a repair step with the next migration.
-- The CS-22 build-time constraints and the API 37 Espresso limit both go away with the toolchain upgrade.
+- The CS-22 and CS-23 build-time constraints and the API 37 Espresso limit all go away with the toolchain upgrade.

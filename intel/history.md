@@ -499,3 +499,11 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
   
   The Phase 6 "later" items moved under **Follow-on work**.
 - Also updated: `cybersec.md`, `maint.md`, `map.md`, `notes.md`, `README.md` and `CONTRIBUTING.md`.
+
+## 2026-10-03 — Dependabot alerts triaged; CS-23 and CS-24
+- Read the Dependabot alerts and the dependency graph in the GitHub web UI, because this session had no GitHub API access to the repository. 65 alerts were open. All of them were on `settings.gradle.kts` (the Gradle dependency-graph snapshot), and none was for an app dependency.
+- **49 already fixed by CS-22.** The dependency graph for `288ff67` (SBOM export) lists only netty 4.1.138.Final, protobuf-java 3.25.9, commons-io 2.22.0 and logback 1.5.38, and shows no alerts on them. Their 41 netty, 1 protobuf-java, 1 commons-io and 6 logback-core alerts were still open about 20 minutes after the push, waiting for Dependabot to close them.
+- **CS-23 (15 alerts):** AGP 8.7.3 also brings Bouncy Castle 1.77, commons-compress 1.21, jdom2 2.0.6 and jose4j 0.9.5. The root `buildscript` now constrains them to Bouncy Castle 1.86 (all three modules), commons-compress 1.28.0, jdom2 2.0.6.1 and jose4j 0.9.6. The versions are in the catalog.
+- **CS-24 (alert #60):** the Kotlin Gradle plugin 2.0.21 is affected by CVE-2026-53914, which is fixed in Kotlin 2.4.20. Logged as open, because it needs the toolchain upgrade.
+- Also updated: `cybersec.md`, `plan.md` (Phase 7 item 3, and the toolchain upgrade) and `maint.md` (the supply-chain row, the pinned versions and the debt list).
+- **Validation:** nothing was built. Neither the session's cloud workspace nor the workstation shell it used could reach Maven Central, Google Maven or the Gradle distribution server, so `./gradlew` wasn't run. The versions and their POM dependencies were read from Maven Central in the browser. Still to do: `./gradlew buildEnvironment`, the usual checks, and then CI.

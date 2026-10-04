@@ -24,7 +24,12 @@ All twelve bugs (BUG-01 – BUG-12) from the 2026-10-03 review are fixed, and ev
    - CS-08 (SHA-pinned actions) and the `ubuntu-24.04` runners, before GitHub moves `ubuntu-latest` on 2026-10-19;
    - CS-18, once the removal of `app/release/` is committed.
 2. **CS-19:** push a pre-release tag (for example `v1.0.2-rc.1`) and confirm the split CD (`ci-gate` → `build` → `publish`) produces a verified release. Delete the pre-release afterwards if it isn't wanted.
-3. **CS-22:** after the push, check Security → Dependabot. The alerts for the build-time `netty`, `protobuf-java`, `commons-io` and `logback` versions should close. This session's token can't read them (HTTP 403). Then handle the open Dependabot PRs:
+3. **Dependabot alerts (CS-22, CS-23, CS-24).** On 2026-10-03, after `288ff67`, 65 alerts were open. All of them are for build tooling (`settings.gradle.kts`), and none is for an app dependency.
+   - **49 alerts (CS-22):** netty, protobuf-java, commons-io and logback. The dependency graph for `288ff67` already lists only the patched versions, so these should close by themselves. If they're still open after the next dependency snapshot, re-run the Security workflow on `main`.
+   - **15 alerts (CS-23):** Bouncy Castle, commons-compress, jdom2 and jose4j. These are fixed in the working tree but not built yet. Run `./gradlew buildEnvironment` and the usual checks, then commit, push, get a green CI and security run, and confirm the alerts close.
+   - **Alert #60 (CS-24):** the Kotlin Gradle plugin. It needs Kotlin 2.4.20 or later, so it waits for the toolchain upgrade below, unless you decide to dismiss it as a tolerable risk.
+
+   Then handle the open Dependabot PRs:
    - **#17** (Actions): close it; the SHA pins replace it.
    - **#14** (ktlint-gradle 14.2.0): CI passes. Merge it together with a newer `ktlint` version, then run `./gradlew ktlintFormat`.
    - **#12, #13, #15, #16:** hold them for the toolchain upgrade below; each fails CI on the current pins.
@@ -36,8 +41,8 @@ All twelve bugs (BUG-01 – BUG-12) from the 2026-10-03 review are fixed, and ev
 
 ## Follow-on work
 - **Next schema migration (v3), BUG-06 follow-up:** reject TRANSFER rows without `transferAccountId` in the database itself. Use a `BEFORE INSERT/UPDATE` trigger created both in the migration and for new installs, because SQLite can't add a CHECK to an existing table. Add a repair step that reports existing malformed rows. Until then, such rows have no balance impact and show as `Account → ?`.
-- **Toolchain upgrade:** AGP 9 with Gradle 9 (PR #15), Hilt 2.60+ (#13), Kotlin 2.1+, Room 2.7 with KSP2, SQLCipher 4.1x (compileSdk 37 / Room 3), coroutines 1.11 (#12) and core-ktx 1.19 (#16), as one step (`maint.md` §8). Then:
-  - remove the CS-22 build-time constraints (root `buildscript`, the block in `app/build.gradle.kts`, and the `build*` catalog versions) if the new versions are patched;
+- **Toolchain upgrade:** AGP 9 with Gradle 9 (PR #15), Hilt 2.60+ (#13), Kotlin 2.4.20+ (CS-24 needs at least that), Room 2.7 with KSP2, SQLCipher 4.1x (compileSdk 37 / Room 3), coroutines 1.11 (#12) and core-ktx 1.19 (#16), as one step (`maint.md` §8). Then:
+  - remove the CS-22 and CS-23 build-time constraints (root `buildscript`, the block in `app/build.gradle.kts`, and the `build*` catalog versions) if the new versions are patched;
   - move to an Espresso version that supports API 37, so UI tests run on current emulator images.
 - **Drop `security-crypto`** (CS-09) once v1.0.x installs have had time to upgrade. It is used only by `LegacyProfileStorage`.
 - **Later:** a chart tooltip/marker; optionally protect the `production` environment with required reviewers (a GitHub setting).
