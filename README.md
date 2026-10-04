@@ -145,7 +145,7 @@ date,type,category,description,amount,payment_method
 2026-09-05,EXPENSE,Dining,Pizza night,32.15,Cash
 ```
 
-The same report exported as **PDF** has the title, period, timestamp, totals and a paginated 6-column table.
+The same report exported as **PDF** has the title, period, timestamp, totals and a paginated 6-column table. Dates, types and amounts get columns as wide as their longest value; long descriptions, names and headers wrap onto more lines rather than being cut off.
 
 ## For developers
 

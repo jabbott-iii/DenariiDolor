@@ -35,7 +35,7 @@ A concise map of the repository and its main flows. The architecture rules are i
 | `data/local/preferences` | `SecurityProfileService` (wrapped database key, recovery rules, elapsed-time lockout; pure Kotlin), `LegacySecurityProfile` (v1.0.x hashes, for the upgrade), `ThemePreferences` and `CurrencyPreferences` (`ui_prefs`) |
 | `data/local/vault` | `Vault` (setup, sign-in, recovery, v1.0.x upgrade, biometrics, lock, wipe), `KeystoreSecrets`, `KeystoreProfileStore` (`vault_profile`), `LegacyProfileStorage` (`secure_prefs`, `db_key_prefs`), `VaultConfig` |
 | `data/repository` | `Transaction`/`Category`/`Budget`/`AccountRepository` + `Impl`; `escapeLike` for search |
-| `data/export` | `ReportExporter` (SAF save, FileProvider share, share-cache cleanup, translated report labels), `ReportPdfRenderer` (`ReportPdfLabels`) |
+| `data/export` | `ReportExporter` (SAF save, FileProvider share, share-cache cleanup, translated report labels), `ReportPdfRenderer` (`ReportPdfLabels`; wraps cells with `StaticLayout`), `PdfColumnWidths` (column sizing, pure Kotlin) |
 | `di` | `AppModule` (`Clock` = `DeviceClock`), `DatabaseModule`, `RepositoryModule` |
 | `presentation/ui` | `AppScreens.kt` (NavHost, `popBackOnce`), `LoginScreen.kt`, `TransactionFormScreen.kt`, `SettingsScreen.kt`; feature packages `auth`, `dashboard`, `search`, `report`, `transaction`, `category`, `account`, `budget`, `settings`, `common` |
 | `util` | `Money` (cents, `formatMoney`, digit normalization), `Currencies`, `TextDirection` (`transferRoute`), `TransactionTypeLabels`, `Validators`, `DateUtils`, `DeviceClock`, `SessionManager`, `Constants`, `ResultExt` |

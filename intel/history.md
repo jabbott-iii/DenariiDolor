@@ -603,3 +603,18 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
   - ar: label-then-number phrasing for minutes and seconds; the dual in plurals.
   - fr: "plafond" for limit; "%2$d % du budget utilisé" is long.
   - pt: "Saldo" for both "Net" and an account balance; "celular" for "device".
+
+## 2026-10-04 — PDF report: columns fit their content and text wraps
+- **Why:** the PDF table had fixed column widths and cut anything longer with "…". Translated headers ("Método de pago utilizado"), long descriptions and wide amounts lost text.
+- **Change:**
+  - `PdfColumnWidths` (new, pure Kotlin) sizes the columns. Date, type and amount are as wide as their widest value, so they never break. Category, description and payment method share the rest 1 : 2 : 1.2 and wrap. Every column is at least as wide as its header's longest word, so headers wrap between words.
+  - `ReportPdfRenderer` lays out every cell, header and heading line (title, generated, totals) with `StaticLayout`. Rows are as tall as their tallest cell, and pages break on real row heights; a row that doesn't fit starts the next page.
+  - Amounts stay right-aligned in any script. Arabic text aligns right within its cell.
+  - A 30-line cap per cell is only a safety net: a 200-character description needs about a dozen lines even in Chinese.
+- **Tests:**
+  - New: `PdfColumnWidthsTest` (4 JVM tests).
+  - `ReportPdfRendererTest`: `longTextWrapsInsteadOfBeingCutOff` (60 rows of 200-character descriptions need more pages than 60 short rows) and `longTranslatedLabelsAndRightToLeftTextRender`.
+- **Validation:**
+  - ktlint 1.3.1 and detekt 1.23.8 pass on the 4 changed files.
+  - `PdfColumnWidthsTest` passes (kotlinc 2.1.0, JDK 21).
+  - Not run: the Android build and the instrumented tests, which need CI.
