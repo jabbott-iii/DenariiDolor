@@ -1,3 +1,5 @@
+import javax.inject.Inject
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -135,6 +137,52 @@ dependencies {
     constraints {
         add("ktlint", libs.build.logback.classic)
         add("ktlint", libs.build.logback.core)
+    }
+}
+
+// CS-25: lint and AGP's test-engine worker resolve their own classpaths (lint's may be a detached configuration), which the
+// root `buildscript` constraints don't reach. A component metadata rule applies to every resolution in this module: it raises
+// the listed build-tool libraries wherever a dependency asks for an older version. None of them ships in the app.
+@CacheableRule
+abstract class RaiseBuildToolDependencies @Inject constructor(private val minimums: Map<String, String>) : ComponentMetadataRule {
+    override fun execute(context: ComponentMetadataContext) {
+        context.details.allVariants {
+            withDependencies {
+                forEach { dependency ->
+                    val minimum = minimums["${dependency.group}:${dependency.name}"]
+                    if (minimum != null && isOlder(dependency.versionConstraint.requiredVersion, minimum)) {
+                        dependency.version { require(minimum) }
+                        dependency.because("CS-25: patched build-tool version")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun isOlder(version: String, minimum: String): Boolean {
+        val have = version.split('.', '-').map { it.toIntOrNull() ?: 0 }
+        val need = minimum.split('.', '-').map { it.toIntOrNull() ?: 0 }
+        for (i in 0 until maxOf(have.size, need.size)) {
+            val difference = have.getOrElse(i) { 0 } - need.getOrElse(i) { 0 }
+            if (difference != 0) return difference < 0
+        }
+        return false
+    }
+}
+
+dependencies {
+    components {
+        all(RaiseBuildToolDependencies::class.java) {
+            params(
+                mapOf(
+                    "org.bouncycastle:bcprov-jdk18on" to libs.versions.buildBouncyCastle.get(),
+                    "org.bouncycastle:bcpkix-jdk18on" to libs.versions.buildBouncyCastle.get(),
+                    "org.bouncycastle:bcutil-jdk18on" to libs.versions.buildBouncyCastle.get(),
+                    "org.apache.commons:commons-lang3" to libs.versions.buildCommonsLang3.get(),
+                    "org.apache.httpcomponents:httpclient" to libs.versions.buildHttpClient.get()
+                )
+            )
+        }
     }
 }
 

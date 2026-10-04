@@ -546,3 +546,12 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
   - Netty is gone (AGP 9.4.1's new test engine no longer uses gRPC), so the netty BOM constraint was removed from the root `buildscript`, the test-platform block and the catalog.
   - Six Dependabot alerts opened against AGP 9.4.1 components outside the root plugin classpath: Bouncy Castle 1.80.2 through lint, HttpClient 4.5.6 and commons-lang3 3.16.0. Logged as CS-25 (open).
 - **Validation:** not run yet. It needs the next CI run.
+
+## 2026-10-04 — Toolchain upgrade green; CS-25 fix
+- **CI run 37183326846 on `2704d72` is fully green**, including the instrumented tests on API 26 and 36. The kotlinx-serialization alignment and the `@SdkSuppress` change fixed the two failures from `97d6cbe`. The dependency graph now has kotlinx-serialization-core 1.8.1 in the app, plus 1.4.1 on detekt's own classpath.
+- **CS-24 closed:** the graph lists only `kotlin-gradle-plugin` 2.4.20, and CI is green.
+- **CS-25 (six Dependabot alerts):**
+  - Cause: Bouncy Castle 1.80.2 (#29, #30, #64, #65), HttpClient 4.5.6 (#66) and commons-lang3 3.16.0 (#67) are still resolved next to the patched copies. They come from lint's tool classpath and AGP's test-engine worker classpath in the app module, which the root `buildscript` constraints don't reach.
+  - Fix: `app/build.gradle.kts` adds a component metadata rule, `RaiseBuildToolDependencies`. It covers detached configurations as well as named ones, and wherever a dependency asks for an older version it raises Bouncy Castle to 1.86, commons-lang3 to 3.18.0 and HttpClient to 4.5.14 (catalog `buildBouncyCastle`, `buildCommonsLang3`, `buildHttpClient`).
+- **Checks:** ktlint 1.3.1, the same version CI uses, run with your approval in Claude's workspace, passes on `app/build.gradle.kts` and `build.gradle.kts`. It flagged an existing trailing space at the end of `settings.gradle.kts`, which CI's ktlint doesn't check; left unchanged. The catalog parses. Not run: Gradle; this needs the next CI run and dependency snapshot.
+- Also updated: `cybersec.md`, `maint.md` (the `build*` row) and `plan.md` (the toolchain upgrade's remaining items).

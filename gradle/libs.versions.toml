@@ -37,6 +37,9 @@ buildBouncyCastle = "1.86"
 buildCommonsCompress = "1.28.0"
 buildJdom2 = "2.0.6.1"
 buildJose4j = "0.9.6"
+# CS-25: raised wherever lint or AGP's test-engine worker asks for older ones (rule in app/build.gradle.kts).
+buildCommonsLang3 = "3.18.0"
+buildHttpClient = "4.5.14"
 
 [libraries]
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activity" }

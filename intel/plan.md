@@ -37,15 +37,12 @@ All twelve bugs (BUG-01 – BUG-12) from the 2026-10-03 review are fixed, and ev
 
 ## Follow-on work
 - **Next schema migration (v3), BUG-06 follow-up:** reject TRANSFER rows without `transferAccountId` in the database itself. Use a `BEFORE INSERT/UPDATE` trigger created both in the migration and for new installs, because SQLite can't add a CHECK to an existing table. Add a repair step that reports existing malformed rows. Until then, such rows have no balance impact and show as `Account → ?`.
-- **Toolchain upgrade (committed as `97d6cbe`; fixes from its first CI run are in the working tree):**
-  - **Versions:** AGP 9.4.1 with Gradle 9.6.1, Kotlin 2.4.20 (built-in Kotlin), KSP 2.3.12, Hilt 2.60.1, Room 2.8.5, SQLCipher 4.19.1, `androidx.sqlite` 2.7.1, Compose BOM 2026.09.00, activity 1.13.0, lifecycle 2.11.0, navigation 2.10.2, core-ktx 1.19.1, coroutines 1.11.0, Espresso 3.7.0, ext-junit 1.3.0 and ktlint-gradle 14.2.0.
-  - **SDK:** compileSdk 37 and targetSdk 36. CI's emulator matrix moves from API 35 to API 36.
-  - **Still to do:**
-    - Commit and push the fixes from the first CI run (the kotlinx-serialization alignment and `OverlayGuardTest`), then iterate until the instrumented tests are green. The build job, CodeQL and the dependency graph already passed on `97d6cbe`.
-    - CS-25: find the configurations that still resolve Bouncy Castle 1.80.2, HttpClient 4.5.6 and commons-lang3 3.16.0, and constrain them.
-    - Install the current release build with some data, update to the new build, and confirm that the database still opens with its data (SQLCipher 4.6.1 → 4.19.1, Room 2.6.1 → 2.8.5).
-    - Commit the regenerated Room schema JSON if the first build rewrites `app/schemas/`.
-    - Read the dependency graph and remove the CS-22 and CS-23 constraints that AGP 9.4.1 no longer needs. Netty is done: AGP 9.4.1 no longer brings it, so its BOM was removed on 2026-10-04.
-    - Optionally refresh the wrapper JAR and scripts with `./gradlew wrapper --gradle-version 9.6.1`.
+- **Toolchain upgrade:** committed as `97d6cbe` and `2704d72`. CI run 37183326846 on `2704d72` is fully green, including the instrumented tests on API 26 and 36. Still to do:
+  - Install the current release build with some data, update to the new build, and confirm that the database still opens with its data (SQLCipher 4.6.1 → 4.19.1, Room 2.6.1 → 2.8.5).
+  - Commit the regenerated Room schema JSON if a local build rewrites `app/schemas/`.
+  - CS-25: push the component metadata rule (working tree), then confirm the six Dependabot alerts close. If any remain, the configuration that resolves them is outside the app module.
+  - Read the dependency graph and remove the CS-22 and CS-23 constraints that AGP 9.4.1 no longer needs. Netty is done.
+  - Close Dependabot PRs #12 – #17.
+  - Optionally refresh the wrapper JAR and scripts with `./gradlew wrapper --gradle-version 9.6.1`.
 - **Drop `security-crypto`** (CS-09) once v1.0.x installs have had time to upgrade. It is used only by `LegacyProfileStorage`.
 - **Later:** a chart tooltip/marker; optionally protect the `production` environment with required reviewers (a GitHub setting).
