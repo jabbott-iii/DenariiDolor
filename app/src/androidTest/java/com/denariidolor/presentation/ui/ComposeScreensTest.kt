@@ -31,6 +31,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
+import androidx.test.espresso.Espresso
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
@@ -474,10 +475,14 @@ class ComposeScreensTest {
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         composeRule.onNodeWithTag(WIPE_CONFIRM_BUTTON_TAG).assertIsDisplayed()
         assertTrue(device.wait(Until.hasObject(By.text(text(R.string.wipe_data_title))), DIALOG_TIMEOUT_MILLIS))
+        // Android 8.x gives a new window initial focus even in touch mode, so the dialog's "type WIPE" field is focused
+        // and the keyboard opens; the first Back would only close the keyboard. Close it first (a no-op when none is
+        // shown) so that the Back below is the dialog's dismiss request.
+        Espresso.closeSoftKeyboard()
         device.waitForIdle()
         device.pressBack()
         composeRule.runOnIdle {
-            assertTrue(cancelTriggered)
+            assertTrue("Back did not reach the wipe dialog's onDismissRequest", cancelTriggered)
         }
         composeRule.onNodeWithTag(WIPE_CONFIRM_BUTTON_TAG).assertDoesNotExist()
     }

@@ -99,6 +99,7 @@ Standing rules:
 - `VaultTest` runs the vault on the real Keystore and SQLCipher under test-only names (`VaultConfig`), so it never touches the app's own data. Biometric sign-in needs an enrolled biometric, so it is checked by hand.
 - Compose tests select elements with `testTag` constants defined next to the screen, such as `BIOMETRIC_BUTTON_TAG`.
 - UiAutomator does not wait for Compose. Wait for the target state (`waitUntil` or `waitForIdle`) before sending system events, because CI runs the API 26 emulator slowly. Before a real key event aimed at a dialog, also wait for the dialog's window (`UiDevice.wait(Until.hasObject(...))`).
+- On Android 8.x (API 26–27) a new window gets initial focus even in touch mode. A dialog whose first focusable element is a text field therefore opens with that field focused and the keyboard up, and the first Back only closes the keyboard. Call `Espresso.closeSoftKeyboard()` before testing a dialog's Back behaviour.
 - With Espresso 3.6.1, Compose tests fail on API 37 emulator images (`NoSuchMethodException: InputManager.getInstance`). Run them on API 26–35, as CI does; the non-UI instrumented tests run on any image.
 
 ## 7. Code quality gates
