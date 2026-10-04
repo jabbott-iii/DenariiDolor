@@ -4,6 +4,8 @@ Thank you for helping. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). 
 
 Security vulnerabilities are the exception: report them through a private security advisory on the repository, not a public issue.
 
+Denarii Dolor is proprietary software owned by Joseph Anthony Abbott III (see [LICENSE](LICENSE)). A contribution can be accepted only after its author signs a written agreement that assigns their rights in it to him.
+
 ## Setup
 
 **Prerequisites**
@@ -75,7 +77,8 @@ If you run detekt-cli outside Gradle, pass `--build-upon-default-config` so that
   - New DAO queries, migrations or screens need instrumented tests.
   - In Compose tests, find elements by `testTag`.
 - **Style:**
-  - Use the Apache 2.0 license header (copy it from an existing file) and ktlint's Android style.
+  - Start every source file with the proprietary copyright notice (copy it from an existing file), and follow ktlint's Android style.
+  - A new dependency must be added to `THIRD_PARTY_NOTICES.md`, with its license text in `licenses/` when that license requires it.
   - Composables are PascalCase, with a `…Route` wrapper that wires the ViewModel.
   - Add comments only for intent that isn't obvious.
   - Don't suppress a warning without a comment explaining why.

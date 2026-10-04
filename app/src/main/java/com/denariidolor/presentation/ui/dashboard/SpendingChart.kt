@@ -1,17 +1,7 @@
 /*
- * Copyright 2026 Joseph Anthony Abbott III
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) 2026 Joseph Anthony Abbott III. All rights reserved.
+ * Proprietary and confidential. Use is governed by the LICENSE file; copying, modifying or distributing this file without
+ * written permission is prohibited.
  */
 
 package com.denariidolor.presentation.ui.dashboard
@@ -23,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -47,7 +38,6 @@ import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.cartesian.data.ColumnCartesianLayerModel
 import com.patrykandpatrick.vico.core.cartesian.layer.ColumnCartesianLayer
 import com.patrykandpatrick.vico.core.common.shape.CorneredShape
-import java.util.Locale
 import kotlin.math.roundToInt
 
 const val SPENDING_CHART_TAG = "spendingChart"
@@ -64,7 +54,7 @@ fun SpendingChart(bars: List<Pair<String, Long>>, description: String, modifier:
     }
     val labels = remember(bars) { bars.map { (label, _) -> shorten(label) } }
     // Axis labels in the language's short form (`1.5K`, `1,5 k`, `1.5万`); the amounts listed under the chart carry the currency.
-    val locale = Locale.getDefault(Locale.Category.FORMAT)
+    val locale = LocalLocale.current.platformLocale
     val axisFormat = remember(locale) { CompactDecimalFormat.getInstance(locale, CompactDecimalFormat.CompactStyle.SHORT) }
     val yFormatter = remember(axisFormat) { CartesianValueFormatter { _, value, _ -> axisFormat.format(value) } }
     // Vico requires non-empty axis labels.

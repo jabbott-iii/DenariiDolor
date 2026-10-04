@@ -114,7 +114,8 @@ All of these run in CI (`ci.yml`) and are blocking:
 
 Conventions:
 
-- Every source file carries the Apache 2.0 license header.
+- Every source file starts with the proprietary copyright notice (copy it from an existing file). The project is proprietary: `LICENSE` is the perpetual end-user license for buyers.
+- Third-party attributions live in `THIRD_PARTY_NOTICES.md`, with license texts in `licenses/`. Update them whenever a dependency that ships in the app is added or removed.
 - Composables are PascalCase, and a screen is split into a `…Route` (ViewModel wiring) and a stateless screen.
 - Warnings are not suppressed without a reason next to the suppression, for example `@Suppress("TooGenericExceptionCaught") // Intentional: …`.
 
@@ -124,6 +125,7 @@ Languages and currency:
 - The currency is a saved setting (`CurrencyPreferences`, ISO code in `ui_prefs`), not part of a pack: a new profile takes the region's currency (`Currencies.regionDefault`), installs from before the setting keep US dollars, and Settings can change it. It is a label only; amounts are never converted. Only currencies with 2 decimals are allowed, because amounts are cents.
 - `Money.currency` holds the saved currency for `formatMoney`, which formats with `NumberFormat` for the device's locale. `Money.parseToCents` and `DateUtils.parseIsoDate` accept the currency's symbol or code and any Unicode digits (`Money.normalizeDigits`).
 - Changing the currency restarts `MainActivity`, because ViewModels hold amounts already formatted as text.
+- Inside a `@Composable`, read the locale with `LocalLocale.current.platformLocale`, never `Locale.getDefault()`, which isn't observable state. Compose's `NonObservableLocale` lint check is an error, so `lintDebug` fails on it. Code outside composables (`formatMoney`, `transferRoute`, the report formatters) keeps its `Locale.getDefault()` default arguments.
 - Stored values are never shown as text: `TransactionType.labelRes()` gives the label. Transfer routes use `transferRoute`, whose arrow follows the language's direction. The default accounts and categories are named in the device's language when they are seeded, then are ordinary data.
 
 ## 8. Toolchain and dependency constraints

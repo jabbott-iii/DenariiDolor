@@ -6,6 +6,8 @@ A concise map of the repository and its main flows. The architecture rules are i
 
 | Path | Contents |
 |---|---|
+| `LICENSE` | Proprietary perpetual end-user license (Joseph Anthony Abbott III, licensor; Arizona law) |
+| `THIRD_PARTY_NOTICES.md`, `licenses/` | Attributions for the open-source components in the app; Apache 2.0 and SQLCipher (BSD 3-Clause) license texts |
 | `app/build.gradle.kts` | Android config (min 26 / target 35), R8, env-based release signing, ktlint and detekt setup |
 | `app/proguard-rules.pro` | R8 keep rules (the only keep file AGP reads) |
 | `app/schemas/` | Exported Room schemas `1.json` and `2.json`; also an `androidTest` asset for `MigrationTest` |

@@ -50,4 +50,11 @@ All twelve bugs (BUG-01 – BUG-12) from the 2026-10-03 review are fixed, and ev
   - Optionally let users pick the app's language in system settings on Android 13+ (`localeConfig`), independent of the phone's language.
   - Look at a PDF on a device in each language. Columns now fit their content and text wraps instead of being cut (2026-10-04), but the table still runs left to right in Arabic.
   - Arabic with account names in a left-to-right script: the transfer arrow can point the wrong way, since it follows the app's language, not the names.
+- **Proprietary license (2026-10-04), before selling:**
+  - Have an attorney review `LICENSE`, especially for sales outside the United States and on app stores.
+  - Make the GitHub repository private, and stop CD from attaching signed APKs to public GitHub Releases. Anyone can download those today.
+  - Releases v1.0.0 and v1.0.1, and every commit published before this change, remain available under Apache 2.0 to anyone who has a copy. That can't be revoked.
+  - Generate the complete third-party list from the release build's dependency graph and reconcile `THIRD_PARTY_NOTICES.md` with it. The current list was written from the declared dependencies.
+  - Show the third-party notices inside the app, for example as an "Open-source licenses" screen in Settings, because the APK ships without these files.
+  - Confirm that no employer agreement or school policy claims rights in the app.
 - **Later:** a chart tooltip/marker; optionally protect the `production` environment with required reviewers (a GitHub setting).

@@ -618,3 +618,28 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
   - ktlint 1.3.1 and detekt 1.23.8 pass on the 4 changed files.
   - `PdfColumnWidthsTest` passes (kotlinc 2.1.0, JDK 21).
   - Not run: the Android build and the instrumented tests, which need CI.
+
+## 2026-10-04 — Proprietary license
+- **Your choices:** a perpetual end-user license for app buyers; Arizona law; a short ownership notice in each source file.
+- **Removed:**
+  - The Apache 2.0 `LICENSE`.
+  - `NOTICE`.
+  - The Apache header in all 147 Kotlin files, now a 4-line notice: copyright Joseph Anthony Abbott III, all rights reserved, proprietary and confidential, see `LICENSE`.
+  - The Apache badge and License section in `README.md`.
+  - The Apache header rule in `CONTRIBUTING.md` and `maint.md`.
+  - `gradlew` and `gradlew.bat` keep their Apache headers, because they are Gradle's own files.
+- **Added:**
+  - **`LICENSE`:** the Denarii Dolor Perpetual End-User License Agreement, version 1.0. It grants buyers a perpetual, non-exclusive, non-transferable license to use the app. It also covers restrictions, ownership, third-party components, local data and no backups, "not financial advice", the warranty disclaimer, a liability cap at the price paid, non-waivable consumer rights, termination, export, U.S. Government end users, Arizona law with Maricopa County courts, and assignment by the licensor (so the app can be sold).
+  - **`THIRD_PARTY_NOTICES.md`**, which replaces `NOTICE`'s list and adds Tink, kotlinx.serialization, and SQLite and LibTomCrypt inside SQLCipher.
+  - **`licenses/Apache-2.0.txt`:** the standard text, with its appendix reset to the template.
+  - **`licenses/SQLCipher-BSD-3-Clause.txt`:** verbatim from `sqlcipher/sqlcipher-android` at `db8a037`, 2026-09-29.
+- **Contributions:** `CONTRIBUTING.md` now requires a written rights assignment before a contribution is accepted, and requires notices for any new dependency.
+- **Not changed:** code behavior, CI and CD.
+- **Before selling:** see `plan.md`. Earlier Apache-licensed releases stay Apache-licensed.
+
+## 2026-10-04 — CI: `NonObservableLocale` lint errors
+- **Why:** CI has failed at **Android lint** since `355f491` (language packs); the last failure was run 37241190555 on `a14d315`. Compose UI 1.11's `NonObservableLocale` check (an error) flags `Locale.getDefault()` called inside a composable, because a locale change doesn't recompose it. Lint found 2 errors and 32 warnings.
+- **Change:** `SettingsScreen.currencyLabel` and `SpendingChart` read `LocalLocale.current.platformLocale` (`androidx.compose.ui.platform.LocalLocale`) instead of `Locale.getDefault()` and `Locale.getDefault(Locale.Category.FORMAT)`. Android sets both locale categories together, so the currency names and the chart's axis labels are unchanged. They now also update when the language changes while the app is open. `maint.md` §7 records the rule.
+- **Validation:**
+  - Read from CI's log: the first error was `SettingsScreen.kt:170`. The second wasn't printed, and `SpendingChart.kt` is the only other `Locale.getDefault` call inside a composable.
+  - Not run: `./gradlew lintDebug` and the build, because neither shell here can reach the Gradle or Google repositories. The 32 warnings weren't reviewed.

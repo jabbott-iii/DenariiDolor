@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/jabbott-iii/DenariiDolor/actions/workflows/ci.yml/badge.svg)](https://github.com/jabbott-iii/DenariiDolor/actions/workflows/ci.yml)
 [![Security](https://github.com/jabbott-iii/DenariiDolor/actions/workflows/security.yml/badge.svg)](https://github.com/jabbott-iii/DenariiDolor/actions/workflows/security.yml)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-proprietary-lightgrey.svg)](LICENSE)
 
 **A private, offline budget and expense tracker for Android.** Log income, expenses and transfers across your accounts, set monthly budgets per category, search your history, and export monthly reports as CSV or PDF. Everything stays on your phone, in an encrypted database, behind a PIN or biometric sign-in.
 
@@ -203,4 +203,6 @@ To report a vulnerability, open a private security advisory on this repository r
 
 ## License
 
-[Apache License 2.0](LICENSE). See [NOTICE](NOTICE).
+Proprietary. Copyright (c) 2026 Joseph Anthony Abbott III. All rights reserved.
+
+Buyers receive the [Denarii Dolor Perpetual End-User License Agreement](LICENSE): a perpetual, non-transferable license to install and use the app on their own devices. The source code is not licensed to anyone. The open-source components the app includes keep their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
