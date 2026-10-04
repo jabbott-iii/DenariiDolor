@@ -26,16 +26,25 @@ import com.denariidolor.presentation.ui.dashboard.BudgetProgress
 import com.denariidolor.presentation.ui.dashboard.BudgetStatus
 import com.denariidolor.presentation.ui.dashboard.budgetProgress
 import com.denariidolor.presentation.ui.dashboard.budgetStatus
-import com.denariidolor.presentation.ui.dashboard.compactMoney
 import com.denariidolor.presentation.ui.dashboard.spendingByCategory
 import com.denariidolor.presentation.ui.dashboard.summarize
-import com.denariidolor.util.formatMoney
-import com.denariidolor.util.formatSignedAmount
 import java.time.ZoneId
+import java.util.Locale
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 
 class DashboardMappersTest {
+    // Rows format money in the device's locale; pin it so the expected text doesn't depend on the machine running the tests.
+    private val savedLocale = Locale.getDefault()
+
+    @Before
+    fun pinLocale() = Locale.setDefault(Locale.US)
+
+    @After
+    fun restoreLocale() = Locale.setDefault(savedLocale)
+
     private val utc = ZoneId.of("UTC")
     private val categories = listOf(CategoryEntity(id = 1, name = "Dining"), CategoryEntity(id = 3, name = "Transfer"))
     private val accounts =
@@ -91,15 +100,6 @@ class DashboardMappersTest {
 
         assertEquals("#99", row.categoryName)
         assertEquals("#1", row.accountLabel)
-    }
-
-    @Test
-    fun signedAmountsReflectType() {
-        assertEquals("-$4.50", formatSignedAmount(TransactionType.EXPENSE, 450))
-        assertEquals("+$1200.00", formatSignedAmount(TransactionType.INCOME, 120_000))
-        assertEquals("$80.00", formatSignedAmount(TransactionType.TRANSFER, 8_000))
-        assertEquals("$0.50", formatMoney(50))
-        assertEquals("-$12.05", formatMoney(-1_205))
     }
 
     @Test
@@ -172,14 +172,6 @@ class DashboardMappersTest {
         assertEquals(2_000L, progress[0].spentCents)
         assertEquals(0L, progress[1].spentCents)
         assertEquals(BudgetStatus.OK, progress[0].status)
-    }
-
-    @Test
-    fun compactMoneyAxisLabels() {
-        assertEquals("$5", compactMoney(5f))
-        assertEquals("$12.5", compactMoney(12.5f))
-        assertEquals("$1.5K", compactMoney(1_500f))
-        assertEquals("$2.0M", compactMoney(2_000_000f))
     }
 
     @Test

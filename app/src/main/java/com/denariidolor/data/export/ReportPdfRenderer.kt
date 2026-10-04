@@ -23,12 +23,26 @@ import android.graphics.pdf.PdfDocument
 import android.text.TextPaint
 import android.text.TextUtils
 import com.denariidolor.domain.model.MonthlyReport
+import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.report.ReportText
 import com.denariidolor.util.DateUtils
 import com.denariidolor.util.formatMoney
 import com.denariidolor.util.formatSignedAmount
 import java.io.OutputStream
 import java.time.ZoneId
+
+/** The PDF's words. [ReportExporter] fills them from string resources; the defaults are the English ones. */
+data class ReportPdfLabels(
+    val title: String = ReportText.TITLE,
+    val columns: List<String> = listOf("Date", "Type", "Category", "Description", "Amount", "Payment Method"),
+    val type: (TransactionType) -> String = { it.name },
+    val empty: String = "No transactions in this month.",
+    val generated: (String) -> String = { "Generated $it" },
+    val totals: (income: String, expense: String, net: String) -> String = { income, expense, net ->
+        "Income $income · Expense $expense · Net $net"
+    },
+    val page: (Int) -> String = { "Page $it" }
+)
 
 /** Renders a [MonthlyReport] as a paginated US-Letter PDF table using the platform [PdfDocument]. */
 @Suppress("MagicNumber") // Layout coordinates and font sizes in PDF points; naming each would hurt readability.
@@ -39,18 +53,24 @@ object ReportPdfRenderer {
     private const val ROW_HEIGHT = 18f
     private const val CELL_PADDING = 4f
 
-    private data class Column(val header: String, val width: Float, val alignRight: Boolean = false)
+    private data class Column(val width: Float, val alignRight: Boolean = false)
 
+    // Date, type, category, description, amount, payment method; the headers come from ReportPdfLabels.columns.
     private val columns = listOf(
-        Column("Date", 64f),
-        Column("Type", 62f),
-        Column("Category", 90f),
-        Column("Description", 150f),
-        Column("Amount", 70f, alignRight = true),
-        Column("Payment Method", 104f)
+        Column(64f),
+        Column(62f),
+        Column(90f),
+        Column(150f),
+        Column(70f, alignRight = true),
+        Column(104f)
     )
 
-    fun render(report: MonthlyReport, out: OutputStream, zoneId: ZoneId = ZoneId.systemDefault()) {
+    fun render(
+        report: MonthlyReport,
+        out: OutputStream,
+        zoneId: ZoneId = ZoneId.systemDefault(),
+        labels: ReportPdfLabels = ReportPdfLabels()
+    ) {
         val titlePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
             textSize = 18f
             typeface = Typeface.DEFAULT_BOLD
@@ -71,7 +91,9 @@ object ReportPdfRenderer {
 
             fun finishPage() {
                 page?.let { current ->
-                    current.canvas.drawText("Page $pageNumber", PAGE_WIDTH - MARGIN - 40f, PAGE_HEIGHT - MARGIN / 2, metaPaint)
+                    val pageLabel = labels.page(pageNumber)
+                    val pageX = PAGE_WIDTH - MARGIN - metaPaint.measureText(pageLabel)
+                    current.canvas.drawText(pageLabel, pageX, PAGE_HEIGHT - MARGIN / 2, metaPaint)
                     document.finishPage(current)
                 }
             }
@@ -83,15 +105,15 @@ object ReportPdfRenderer {
                 page = newPage
                 y = MARGIN
                 if (pageNumber == 1) {
-                    y = drawHeader(newPage.canvas, report, zoneId, y, titlePaint, metaPaint)
+                    y = drawHeader(newPage.canvas, report, zoneId, labels, y, titlePaint, metaPaint)
                 }
-                y = drawRow(newPage.canvas, columns.map { it.header }, y, headerPaint)
+                y = drawRow(newPage.canvas, labels.columns, y, headerPaint)
                 newPage.canvas.drawLine(MARGIN, y - ROW_HEIGHT + 4f, PAGE_WIDTH - MARGIN, y - ROW_HEIGHT + 4f, linePaint)
             }
 
             startPage()
             if (report.rows.isEmpty()) {
-                page!!.canvas.drawText("No transactions in this period.", MARGIN, y + ROW_HEIGHT, metaPaint)
+                page!!.canvas.drawText(labels.empty, MARGIN, y + ROW_HEIGHT, metaPaint)
             }
             report.rows.forEach { row ->
                 if (y + ROW_HEIGHT > PAGE_HEIGHT - MARGIN) startPage()
@@ -99,7 +121,7 @@ object ReportPdfRenderer {
                     page!!.canvas,
                     listOf(
                         DateUtils.formatLocalDate(row.dateEpochMillis, zoneId),
-                        row.type.name,
+                        labels.type(row.type),
                         row.categoryName,
                         row.description,
                         formatSignedAmount(row.type, row.amountCents),
@@ -120,23 +142,22 @@ object ReportPdfRenderer {
         canvas: Canvas,
         report: MonthlyReport,
         zoneId: ZoneId,
+        labels: ReportPdfLabels,
         startY: Float,
         titlePaint: TextPaint,
         metaPaint: TextPaint
     ): Float {
         var y = startY + titlePaint.textSize
-        canvas.drawText("${report.title} — ${ReportText.periodLabel(report.period)}", MARGIN, y, titlePaint)
+        canvas.drawText("${labels.title} — ${ReportText.periodLabel(report.period)}", MARGIN, y, titlePaint)
         y += 16f
-        canvas.drawText("Generated: ${ReportText.generatedLabel(report.generatedAtEpochMillis, zoneId)}", MARGIN, y, metaPaint)
+        canvas.drawText(labels.generated(ReportText.generatedLabel(report.generatedAtEpochMillis, zoneId)), MARGIN, y, metaPaint)
         y += 14f
-        canvas.drawText(
-            "Income: ${formatMoney(
-                report.totalIncomeCents
-            )}   Expense: ${formatMoney(report.totalExpenseCents)}   Net: ${formatMoney(report.netCents)}",
-            MARGIN,
-            y,
-            metaPaint
+        val totals = labels.totals(
+            formatMoney(report.totalIncomeCents),
+            formatMoney(report.totalExpenseCents),
+            formatMoney(report.netCents)
         )
+        canvas.drawText(totals, MARGIN, y, metaPaint)
         return y + 20f
     }
 

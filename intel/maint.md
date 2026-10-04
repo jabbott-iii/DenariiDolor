@@ -85,7 +85,7 @@ Standing rules:
 
 - Add no logging (`Log`, `println`, `printStackTrace`) to `app/src/main`.
 - Add no network permission or network code.
-- Non-sensitive settings go in plain prefs, as `ThemePreferences` does. Anything about credentials or data goes in encrypted storage.
+- Non-sensitive settings go in plain prefs, as `ThemePreferences` and `CurrencyPreferences` (`ui_prefs`) do. Anything about credentials or data goes in encrypted storage.
 
 ## 6. Testing
 
@@ -117,6 +117,14 @@ Conventions:
 - Every source file carries the Apache 2.0 license header.
 - Composables are PascalCase, and a screen is split into a `…Route` (ViewModel wiring) and a stateless screen.
 - Warnings are not suppressed without a reason next to the suppression, for example `@Suppress("TooGenericExceptionCaught") // Intentional: …`.
+
+Languages and currency:
+
+- English is the source (`res/values`); six packs follow it: `values-zh-rCN` (Simplified Chinese), `values-hi`, `values-es` (Latin American), `values-ar` (Modern Standard Arabic, right to left), `values-fr` (France) and `values-pt` (Brazilian). Every translatable string is in every pack; `lintDebug` enforces it.
+- The currency is a saved setting (`CurrencyPreferences`, ISO code in `ui_prefs`), not part of a pack: a new profile takes the region's currency (`Currencies.regionDefault`), installs from before the setting keep US dollars, and Settings can change it. It is a label only; amounts are never converted. Only currencies with 2 decimals are allowed, because amounts are cents.
+- `Money.currency` holds the saved currency for `formatMoney`, which formats with `NumberFormat` for the device's locale. `Money.parseToCents` and `DateUtils.parseIsoDate` accept the currency's symbol or code and any Unicode digits (`Money.normalizeDigits`).
+- Changing the currency restarts `MainActivity`, because ViewModels hold amounts already formatted as text.
+- Stored values are never shown as text: `TransactionType.labelRes()` gives the label. Transfer routes use `transferRoute`, whose arrow follows the language's direction. The default accounts and categories are named in the device's language when they are seeded, then are ordinary data.
 
 ## 8. Toolchain and dependency constraints
 
@@ -154,3 +162,5 @@ Dependabot proposes weekly Gradle and Actions updates. Each one must pass CI and
 - `.idea/` project files are tracked in git.
 - The schema doesn't stop a TRANSFER row without `transferAccountId`; the read paths tolerate one (BUG-06). Add a trigger and a repair step with the next migration.
 - The CS-22 and CS-23 build-time constraints stay until the dependency graph shows AGP and ktlint bring patched versions.
+- The six language packs were drafted by Claude, not by native speakers. Have each one reviewed before a release that advertises it.
+- ViewModels format amounts and dates into text when they map rows. Changing the device's language while the app is open keeps the old formatting until those screens reload.

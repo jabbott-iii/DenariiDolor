@@ -17,6 +17,7 @@
 package com.denariidolor
 
 import com.denariidolor.util.DateUtils
+import java.time.LocalDate
 import java.time.ZoneId
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -32,6 +33,13 @@ class DateUtilsTest {
     @Test
     fun parseIsoDateToEndOfDayEpochMillisUsesInclusiveEnd() {
         assertEquals(1_725_235_199_999L, DateUtils.parseIsoDateToEndOfDayEpochMillis("2024-09-01", zoneId))
+    }
+
+    @Test
+    fun parsesDatesTypedWithArabicIndicOrDevanagariDigits() {
+        assertEquals(LocalDate.of(2024, 9, 1), DateUtils.parseIsoDate("٢٠٢٤-٠٩-٠١"))
+        assertEquals(LocalDate.of(2024, 9, 1), DateUtils.parseIsoDate(" २०२४-०९-०१ "))
+        assertEquals(1_725_148_800_000L, DateUtils.parseIsoDateToStartOfDayEpochMillis("٢٠٢٤-٠٩-٠١", zoneId))
     }
 
     @Test

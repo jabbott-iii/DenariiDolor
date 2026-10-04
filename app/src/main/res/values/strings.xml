@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Denarii Dolor</string>
+    <string name="app_name" translatable="false">Denarii Dolor</string>
     <string name="dashboard">Dashboard</string>
     <string name="sign_in">Sign In</string>
     <string name="sign_in_with_biometrics">Sign In with Biometrics</string>
@@ -64,11 +64,9 @@
     <string name="transaction_reference_required_message">Review the account and category IDs before saving this transaction.</string>
     <string name="date_hint">Date (YYYY-MM-DD)</string>
     <string name="save_transaction">Save Transaction</string>
-    <string-array name="transaction_types">
-        <item>EXPENSE</item>
-        <item>INCOME</item>
-        <item>TRANSFER</item>
-    </string-array>
+    <string name="transaction_type_expense">Expense</string>
+    <string name="transaction_type_income">Income</string>
+    <string name="transaction_type_transfer">Transfer</string>
     <string name="search">Search</string>
     <string name="search_description_hint">Description</string>
     <string name="search_min_amount_hint">Min amount</string>
@@ -87,6 +85,10 @@
     <string name="reset_pin">Reset PIN</string>
     <string name="settings_dark_mode">Dark mode</string>
     <string name="settings_biometric_sign_in">Biometric sign-in</string>
+    <string name="settings_currency">Currency</string>
+    <string name="settings_currency_value">%1$s (%2$s)</string>
+    <string name="settings_currency_title">Choose a currency</string>
+    <string name="settings_currency_note">Only the symbol changes. Amounts you\'ve already entered aren\'t converted.</string>
     <string name="transaction_category_label">Category</string>
     <string name="transaction_account_label">Account</string>
     <string name="transaction_transfer_account_label">Transfer to account</string>
@@ -142,7 +144,9 @@
     <string name="search_no_results">No matching transactions.</string>
     <string name="previous_month">‹ Prev</string>
     <string name="next_month">Next ›</string>
+    <string name="report_title">Monthly Spending Report</string>
     <string name="report_generated">Generated %1$s</string>
+    <string name="report_page">Page %1$d</string>
     <string name="report_totals">Income %1$s · Expense %2$s · Net %3$s</string>
     <string name="report_col_date">Date</string>
     <string name="report_col_type">Type</string>
@@ -177,6 +181,30 @@
     </plurals>
     <string name="edit_category">Edit Category</string>
     <string name="category_icon_label">Icon: %1$s</string>
+    <string name="category_icon_general">General</string>
+    <string name="category_icon_income">Income</string>
+    <string name="category_icon_transfer">Transfer</string>
+    <string name="category_icon_groceries">Groceries</string>
+    <string name="category_icon_dining">Dining</string>
+    <string name="category_icon_coffee">Coffee</string>
+    <string name="category_icon_housing">Housing</string>
+    <string name="category_icon_utilities">Utilities</string>
+    <string name="category_icon_internet">Internet</string>
+    <string name="category_icon_phone">Phone</string>
+    <string name="category_icon_car">Car</string>
+    <string name="category_icon_fuel">Fuel</string>
+    <string name="category_icon_transit">Transit</string>
+    <string name="category_icon_travel">Travel</string>
+    <string name="category_icon_health">Health</string>
+    <string name="category_icon_fitness">Fitness</string>
+    <string name="category_icon_shopping">Shopping</string>
+    <string name="category_icon_clothing">Clothing</string>
+    <string name="category_icon_entertainment">Entertainment</string>
+    <string name="category_icon_education">Education</string>
+    <string name="category_icon_pets">Pets</string>
+    <string name="category_icon_gifts">Gifts</string>
+    <string name="category_icon_savings">Savings</string>
+    <string name="category_icon_bank">Bank &amp; fees</string>
     <string name="invalid_amount_message">Enter an amount greater than 0 with at most 2 decimals.</string>
     <string name="error_id_required">This item could not be found. Go back and try again.</string>
     <string name="error_item_not_found">This item no longer exists.</string>
@@ -205,5 +233,10 @@
         <item quantity="other">This account is used by %d transactions.</item>
     </plurals>
     <string name="error_invalid_warning_percent">Warning threshold must be from 1 to 100 percent.</string>
+    <string name="default_account_cash">Cash</string>
+    <string name="default_account_savings">Savings</string>
+    <string name="default_category_expense">General Expense</string>
+    <string name="default_category_income">General Income</string>
+    <string name="default_category_transfer">Transfer</string>
     <string name="dashboard_load_failed">Your transactions couldn\'t be loaded. Leave the app and come back to try again.</string>
 </resources>

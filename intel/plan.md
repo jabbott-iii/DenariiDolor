@@ -45,4 +45,9 @@ All twelve bugs (BUG-01 – BUG-12) from the 2026-10-03 review are fixed, and ev
   - Close Dependabot PRs #12 – #17.
   - Optionally refresh the wrapper JAR and scripts with `./gradlew wrapper --gradle-version 9.6.1`.
 - **Drop `security-crypto`** (CS-09) once v1.0.x installs have had time to upgrade. It is used only by `LegacyProfileStorage`.
+- **Language packs (2026-10-04):**
+  - Have a native speaker review each pack; each translator's open questions are in `history.md` (2026-10-04).
+  - Optionally let users pick the app's language in system settings on Android 13+ (`localeConfig`), independent of the phone's language.
+  - Check the PDF on a device in each language: the column widths are fixed, so long headers and amounts are cut with an ellipsis.
+  - Arabic with account names in a left-to-right script: the transfer arrow can point the wrong way, since it follows the app's language, not the names.
 - **Later:** a chart tooltip/marker; optionally protect the `production` environment with required reviewers (a GitHub setting).

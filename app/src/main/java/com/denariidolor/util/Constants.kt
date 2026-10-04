@@ -16,6 +16,9 @@
 
 package com.denariidolor.util
 
+import androidx.annotation.StringRes
+import com.denariidolor.R
+
 object Constants {
     const val APP_DB_NAME = "denarii_dolor.db"
     const val SESSION_TIMEOUT_MILLIS = 5 * 60 * 1000L
@@ -26,17 +29,18 @@ object Constants {
     const val DEFAULT_TRANSFER_CATEGORY_ID = 3L
 
     val DEFAULT_ACCOUNTS = listOf(
-        SeedAccount(DEFAULT_CASH_ACCOUNT_ID, "Cash", 0L),
-        SeedAccount(DEFAULT_SAVINGS_ACCOUNT_ID, "Savings", 0L)
+        SeedAccount(DEFAULT_CASH_ACCOUNT_ID, R.string.default_account_cash, 0L),
+        SeedAccount(DEFAULT_SAVINGS_ACCOUNT_ID, R.string.default_account_savings, 0L)
     )
 
     val DEFAULT_CATEGORIES = listOf(
-        SeedCategory(DEFAULT_EXPENSE_CATEGORY_ID, "General Expense", "ic_category_default"),
-        SeedCategory(DEFAULT_INCOME_CATEGORY_ID, "General Income", "income"),
-        SeedCategory(DEFAULT_TRANSFER_CATEGORY_ID, "Transfer", "transfer")
+        SeedCategory(DEFAULT_EXPENSE_CATEGORY_ID, R.string.default_category_expense, "ic_category_default"),
+        SeedCategory(DEFAULT_INCOME_CATEGORY_ID, R.string.default_category_income, "income"),
+        SeedCategory(DEFAULT_TRANSFER_CATEGORY_ID, R.string.default_category_transfer, "transfer")
     )
 }
 
-data class SeedAccount(val id: Long, val name: String, val balanceCents: Long)
+/** A default account; its name is resolved in the device's language when it is seeded, and is ordinary data after that. */
+data class SeedAccount(val id: Long, @StringRes val nameRes: Int, val balanceCents: Long)
 
-data class SeedCategory(val id: Long, val name: String, val iconName: String)
+data class SeedCategory(val id: Long, @StringRes val nameRes: Int, val iconName: String)

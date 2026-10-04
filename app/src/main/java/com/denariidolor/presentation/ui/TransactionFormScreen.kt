@@ -52,7 +52,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -75,6 +74,7 @@ import com.denariidolor.util.DateUtils
 import com.denariidolor.util.Money
 import com.denariidolor.util.Validators
 import com.denariidolor.util.formatMoney
+import com.denariidolor.util.labelRes
 import java.time.LocalDate
 
 internal const val TRANSACTION_TYPE_FIELD_TAG = "transactionTypeField"
@@ -153,6 +153,11 @@ internal fun OverBudgetDialog(overage: BudgetOverage, onConfirm: () -> Unit, onD
     )
 }
 
+/** The translated label for [type], a [TransactionType] name; the name itself is what the form saves. */
+@Composable
+private fun typeLabel(type: String): String =
+    TransactionType.entries.firstOrNull { it.name == type }?.let { stringResource(it.labelRes()) } ?: type
+
 @Composable
 fun AddTransactionScreen(
     onSave: (
@@ -172,7 +177,7 @@ fun AddTransactionScreen(
     isSaving: Boolean = false
 ) {
     val context = LocalContext.current
-    val transactionTypes = stringArrayResource(R.array.transaction_types)
+    val transactionTypes = TransactionType.entries.map { it.name }
     val startType = initial?.type ?: transactionTypes.firstOrNull().orEmpty()
     val startDefaults = remember(startType) {
         applyTransactionTypeDefaults(
@@ -222,7 +227,7 @@ fun AddTransactionScreen(
             onExpandedChange = { dropdownExpanded = !dropdownExpanded }
         ) {
             OutlinedTextField(
-                value = selectedType,
+                value = typeLabel(selectedType),
                 onValueChange = {},
                 readOnly = true,
                 label = { Text(stringResource(R.string.transaction_type_label)) },
@@ -238,7 +243,7 @@ fun AddTransactionScreen(
             ) {
                 transactionTypes.forEach { type ->
                     DropdownMenuItem(
-                        text = { Text(type) },
+                        text = { Text(typeLabel(type)) },
                         onClick = {
                             dropdownExpanded = false
                             selectedType = type
@@ -352,7 +357,7 @@ private fun DateSelectorButton(text: String, onClick: () -> Unit, modifier: Modi
 
 private fun launchDatePicker(context: android.content.Context, value: String, onDateSelected: (String) -> Unit) {
     val selectedDate = value.takeIf { it.isNotBlank() }?.let {
-        runCatching { LocalDate.parse(it) }.getOrNull()
+        runCatching { DateUtils.parseIsoDate(it) }.getOrNull()
     } ?: LocalDate.now()
     DatePickerDialog(
         context,

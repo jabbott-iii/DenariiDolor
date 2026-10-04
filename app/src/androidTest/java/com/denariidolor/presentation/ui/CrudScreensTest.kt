@@ -254,6 +254,33 @@ class CrudScreensTest {
     }
 
     @Test
+    fun settingsCurrencyPickerReportsTheChosenCode() {
+        var chosen: String? = null
+        composeRule.setContent {
+            DenariiDolorTheme {
+                SettingsScreen(
+                    state = SettingsScreenState(
+                        sessionTimeoutMinutes = 5,
+                        pinConfigured = true,
+                        darkMode = false,
+                        currencyCode = "USD",
+                        currencyOptions = listOf("USD", "EUR", "INR")
+                    ),
+                    onSignOut = {},
+                    onCurrencyChange = { chosen = it }
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(CURRENCY_SETTING_TAG).performClick()
+        composeRule.onNodeWithText("Only the symbol changes. Amounts you've already entered aren't converted.").assertIsDisplayed()
+        composeRule.onNodeWithTag(CURRENCY_OPTION_TAG_PREFIX + "USD").assertIsSelected()
+        composeRule.onNodeWithTag(CURRENCY_OPTION_TAG_PREFIX + "INR").performClick()
+
+        assertEquals("INR", chosen)
+    }
+
+    @Test
     fun manageCategoriesAddDialogSubmitsNameAndIcon() {
         var added: Pair<String, String>? = null
         composeRule.setContent {

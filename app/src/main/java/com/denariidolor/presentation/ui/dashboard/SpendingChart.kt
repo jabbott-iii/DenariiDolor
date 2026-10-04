@@ -16,6 +16,7 @@
 
 package com.denariidolor.presentation.ui.dashboard
 
+import android.icu.text.CompactDecimalFormat
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
@@ -46,15 +47,11 @@ import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.cartesian.data.ColumnCartesianLayerModel
 import com.patrykandpatrick.vico.core.cartesian.layer.ColumnCartesianLayer
 import com.patrykandpatrick.vico.core.common.shape.CorneredShape
-import java.math.BigDecimal
-import java.math.RoundingMode
 import java.util.Locale
 import kotlin.math.roundToInt
 
 const val SPENDING_CHART_TAG = "spendingChart"
 private const val MAX_LABEL_CHARS = 9
-private const val THOUSAND = 1_000f
-private const val MILLION = 1_000_000f
 
 /** Single-series column chart (categorical slot 1). The title names the series, so no legend; values are listed below it. */
 @Composable
@@ -66,7 +63,10 @@ fun SpendingChart(bars: List<Pair<String, Long>>, description: String, modifier:
         CartesianChartModel(ColumnCartesianLayerModel.build { series(bars.map { (_, cents) -> Money.toDouble(cents) }) })
     }
     val labels = remember(bars) { bars.map { (label, _) -> shorten(label) } }
-    val yFormatter = remember { CartesianValueFormatter { _, value, _ -> compactMoney(value.toFloat()) } }
+    // Axis labels in the language's short form (`1.5K`, `1,5 k`, `1.5万`); the amounts listed under the chart carry the currency.
+    val locale = Locale.getDefault(Locale.Category.FORMAT)
+    val axisFormat = remember(locale) { CompactDecimalFormat.getInstance(locale, CompactDecimalFormat.CompactStyle.SHORT) }
+    val yFormatter = remember(axisFormat) { CartesianValueFormatter { _, value, _ -> axisFormat.format(value) } }
     // Vico requires non-empty axis labels.
     val xFormatter = remember(labels) { CartesianValueFormatter { _, x, _ -> labels.getOrNull(x.roundToInt()) ?: " " } }
 
@@ -104,10 +104,3 @@ fun SpendingChart(bars: List<Pair<String, Long>>, description: String, modifier:
 }
 
 private fun shorten(label: String): String = if (label.length <= MAX_LABEL_CHARS) label else label.take(MAX_LABEL_CHARS - 1) + "…"
-
-/** Axis labels in dollars: `$5`, `$12.5`, `$1.5K`, `$2.0M`. */
-internal fun compactMoney(dollars: Float): String = when {
-    dollars >= MILLION -> "$" + String.format(Locale.US, "%.1fM", dollars / MILLION)
-    dollars >= THOUSAND -> "$" + String.format(Locale.US, "%.1fK", dollars / THOUSAND)
-    else -> "$" + BigDecimal(dollars.toString()).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
-}

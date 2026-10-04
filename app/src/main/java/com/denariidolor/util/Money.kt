@@ -19,7 +19,10 @@ package com.denariidolor.util
 import com.denariidolor.domain.model.TransactionType
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
+import java.text.NumberFormat
+import java.util.Currency
 import java.util.Locale
 
 /** Money is stored and computed as whole cents (`Long`); these helpers are the only conversions to and from text. */
@@ -29,35 +32,77 @@ object Money {
     private const val GROUP_DIGITS = 3
     private val MAX_INPUT = BigDecimal("9999999999.99")
     private val DECIMAL_MARKS = setOf('.', ',')
+    private const val ARABIC_DECIMAL_SEPARATOR = '\u066B'
+    private const val ARABIC_THOUSANDS_SEPARATOR = '\u066C'
+    private const val MINUS_SIGN = '\u2212'
+    private const val DECIMAL_RADIX = 10
+
+    // Left-to-right, right-to-left and Arabic letter marks, which formatted Arabic and Hebrew amounts contain.
+    private val DIRECTION_MARKS = setOf('\u200E', '\u200F', '\u061C')
+
+    /** The currency amounts are shown in. `CurrencyPreferences` keeps it in step with the saved setting. */
+    @Volatile
+    var currency: Currency = Currencies.DEFAULT
 
     // Spaces (regular, no-break, narrow no-break) and apostrophes only ever group thousands, e.g. fr `1 234,5`, de-CH `1'234.5`.
     private val GROUP_ONLY_MARKS = setOf(' ', ' ', ' ', '\'', '’')
 
     /**
-     * Parses user input such as `12`, `12.5`, `$1,234.56`, `12,50`, `1.234,56` or `1 234,56` into cents.
+     * Parses user input such as `12`, `12.5`, `$1,234.56`, `12,50 €`, `1.234,56`, `1 234,56` or `١٢٫٥` into cents.
+     * The currency's symbol or code may come before or after the number, and any Unicode digits count (see [normalizeDigits]).
      *
      * Either `.` or `,` can be the decimal mark. With both present the last one is; a single mark followed by one or two
      * digits always is. Only a single mark followed by exactly three digits is ambiguous (`1,234`): it is the decimal mark
      * if it is [locale]'s decimal separator, and a thousands separator otherwise.
      * Returns null for blanks, malformed grouping, more than 2 decimals, or out-of-range values.
      */
-    fun parseToCents(text: String, locale: Locale = Locale.getDefault(Locale.Category.FORMAT)): Long? {
-        val (negative, body) = splitSign(text) ?: return null
-        val value = parseUnsigned(body, DecimalFormatSymbols.getInstance(locale).decimalSeparator) ?: return null
+    fun parseToCents(text: String, locale: Locale = Locale.getDefault(Locale.Category.FORMAT), currency: Currency = this.currency): Long? {
+        val (negative, body) = splitSign(normalizeDigits(text), locale, currency) ?: return null
+        val localeDecimal = normalizeDigits(DecimalFormatSymbols.getInstance(locale).decimalSeparator.toString()).single()
+        val value = parseUnsigned(body, localeDecimal) ?: return null
         if (value.stripTrailingZeros().scale() > SCALE || value > MAX_INPUT) return null
         val cents = value.movePointRight(SCALE).setScale(0, RoundingMode.UNNECESSARY).longValueExact()
         return if (negative) -cents else cents
     }
 
-    /** Accepts `-12`, `-$12`, `$-12` and `$12`; returns whether the amount is negative and the unsigned text. */
-    private fun splitSign(text: String): Pair<Boolean, String>? {
+    /**
+     * ASCII digits for any Unicode decimal digits (Arabic-Indic `٣`, Devanagari `३`, …), `.` and `,` for the Arabic decimal and
+     * thousands separators, `-` for the minus sign, and no direction marks.
+     */
+    fun normalizeDigits(text: String): String = buildString(text.length) {
+        text.forEach { char ->
+            when {
+                char in '0'..'9' -> append(char)
+                Character.isDigit(char) -> append('0' + Character.digit(char, DECIMAL_RADIX))
+                char == ARABIC_DECIMAL_SEPARATOR -> append('.')
+                char == ARABIC_THOUSANDS_SEPARATOR -> append(',')
+                char == MINUS_SIGN -> append('-')
+                char !in DIRECTION_MARKS -> append(char)
+            }
+        }
+    }
+
+    /** Accepts `-12`, `-$12`, `$-12`, `$12` and `12 €`; returns whether the amount is negative and the unsigned text. */
+    private fun splitSign(text: String, locale: Locale, currency: Currency): Pair<Boolean, String>? {
         var body = text.trim()
         val leadingMinus = body.startsWith('-')
         if (leadingMinus) body = body.drop(1)
-        body = body.removePrefix("$")
+        body = stripCurrency(body, locale, currency)
         val minusAfterSymbol = !leadingMinus && body.startsWith('-')
         if (minusAfterSymbol) body = body.drop(1)
         return if (body.isEmpty()) null else (leadingMinus || minusAfterSymbol) to body
+    }
+
+    /** Removes the currency's symbol or code (`R$`, `US$`, `EUR`, `ر.س.`) and any currency sign from either end. */
+    private fun stripCurrency(text: String, locale: Locale, currency: Currency): String {
+        val marks = listOf(currency.getSymbol(locale), currency.symbol, currency.currencyCode)
+            .map(::normalizeDigits)
+            .filter(String::isNotBlank)
+            .distinct()
+            .sortedByDescending(String::length)
+        var body = text.trim()
+        marks.forEach { mark -> body = body.removePrefix(mark).removeSuffix(mark).trim() }
+        return body.trim { it.isWhitespace() || Character.getType(it) == Character.CURRENCY_SYMBOL.toInt() }
     }
 
     private fun parseUnsigned(body: String, localeDecimal: Char): BigDecimal? {
@@ -108,16 +153,33 @@ object Money {
     fun toDouble(cents: Long): Double = cents / CENTS_PER_UNIT
 }
 
-fun formatMoney(cents: Long): String {
-    val sign = if (cents < 0) "-" else ""
-    return sign + "$" + Money.toPlain(kotlin.math.abs(cents))
+/**
+ * [cents] in [currency], written the way [locale] writes money: `$1,234.50` (en-US), `1 234,50 €` (fr-FR), `₹1,23,456.50`
+ * (hi-IN). [showPlus] adds a `+` to positive amounts.
+ */
+fun formatMoney(
+    cents: Long,
+    currency: Currency = Money.currency,
+    locale: Locale = Locale.getDefault(Locale.Category.FORMAT),
+    showPlus: Boolean = false
+): String {
+    val format = NumberFormat.getCurrencyInstance(locale).apply {
+        this.currency = currency
+        minimumFractionDigits = 2
+        maximumFractionDigits = 2
+    }
+    if (showPlus && cents > 0 && format is DecimalFormat) format.positivePrefix = "+" + format.positivePrefix
+    return format.format(BigDecimal.valueOf(cents, 2))
 }
 
-fun formatSignedAmount(type: TransactionType, cents: Long): String {
-    val sign = when (type) {
-        TransactionType.EXPENSE -> "-"
-        TransactionType.INCOME -> "+"
-        TransactionType.TRANSFER -> ""
-    }
-    return sign + formatMoney(cents)
+/** An amount as a row shows it: expenses negative, income with a `+`, transfers unsigned. */
+fun formatSignedAmount(
+    type: TransactionType,
+    cents: Long,
+    currency: Currency = Money.currency,
+    locale: Locale = Locale.getDefault(Locale.Category.FORMAT)
+): String = when (type) {
+    TransactionType.EXPENSE -> formatMoney(-cents, currency, locale)
+    TransactionType.INCOME -> formatMoney(cents, currency, locale, showPlus = true)
+    TransactionType.TRANSFER -> formatMoney(cents, currency, locale)
 }

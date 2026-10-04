@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-package com.denariidolor
+package com.denariidolor.util
 
-import android.app.Application
-import com.denariidolor.data.local.preferences.CurrencyPreferences
-import dagger.hilt.android.HiltAndroidApp
-import javax.inject.Inject
+import androidx.annotation.StringRes
+import com.denariidolor.R
+import com.denariidolor.domain.model.TransactionType
 
-@HiltAndroidApp
-class App : Application() {
-    @Inject
-    lateinit var currencyPreferences: CurrencyPreferences
-
-    override fun onCreate() {
-        super.onCreate()
-        currencyPreferences.applySaved()
-    }
+/** The user-facing name of a transaction type; [TransactionType.name] is what's stored, exported to CSV and passed around. */
+@StringRes
+fun TransactionType.labelRes(): Int = when (this) {
+    TransactionType.EXPENSE -> R.string.transaction_type_expense
+    TransactionType.INCOME -> R.string.transaction_type_income
+    TransactionType.TRANSFER -> R.string.transaction_type_transfer
 }

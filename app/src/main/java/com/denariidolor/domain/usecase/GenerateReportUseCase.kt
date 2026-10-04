@@ -25,6 +25,7 @@ import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.model.toDomainTransactionOrNull
 import com.denariidolor.domain.report.ReportText
 import com.denariidolor.util.DateUtils
+import com.denariidolor.util.transferRoute
 import java.time.Clock
 import java.time.YearMonth
 import javax.inject.Inject
@@ -53,7 +54,7 @@ class GenerateReportUseCase @Inject constructor(
                 categoryName = categoryNames[transaction.categoryId] ?: "#${transaction.categoryId}",
                 description = transaction.description,
                 amountCents = transaction.amountCents,
-                paymentMethod = transaction.transferAccountId?.let { "$source → ${accountName(it)}" } ?: source
+                paymentMethod = transaction.transferAccountId?.let { transferRoute(source, accountName(it)) } ?: source
             )
         }
         return MonthlyReport(

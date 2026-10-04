@@ -97,7 +97,7 @@ Each fix below is implemented. An item moves to `Closed` only after its validati
   - `denarii_dolor.db` is encrypted with SQLCipher. Its key is stored only wrapped by the PIN, the security answer and, optionally, a biometric-bound Keystore key (`Vault`), and the database is open only while signed in.
   - `vault_profile` holds the rest of the profile (question, salts, wraps, lockout state), encrypted with a Keystore AES-GCM key.
   - `secure_prefs` and `db_key_prefs` (EncryptedSharedPreferences) exist only on v1.0.x installs, until their first sign-in upgrades them.
-  - `ui_prefs` holds only the theme.
+  - `ui_prefs` holds only the theme and the currency code (neither is sensitive).
 - **Queries:** Room `@Query` with bound parameters only. Search escapes `%`, `_` and `\` (`LIKE … ESCAPE '\'`).
 - **Input validation:** `Validators`, `ValidateTransactionUseCase` and `Money.parseToCents`; descriptions are trimmed and at most 200 characters. See the unit test plan, TC-01 – TC-20.
 - **Error messages:** the UI never shows exception text. Use cases report a `DomainError`, which maps to a string resource; anything else shows a generic message.

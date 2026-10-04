@@ -11,6 +11,7 @@ A concise map of the repository and its main flows. The architecture rules are i
 | `app/schemas/` | Exported Room schemas `1.json` and `2.json`; also an `androidTest` asset for `MigrationTest` |
 | `app/src/main/AndroidManifest.xml` | `LoginActivity` (launcher), `MainActivity`, FileProvider; `allowBackup=false` |
 | `app/src/main/res/xml/` | Backup and data-extraction exclusions; FileProvider path `cache/reports/` |
+| `app/src/main/res/values*/` | `strings.xml` in English (`values`) and the six language packs: `values-zh-rCN`, `values-hi`, `values-es`, `values-ar`, `values-fr`, `values-pt` |
 | `app/src/main/java/com/denariidolor/` | App source (below) |
 | `app/src/test/` | JVM unit tests; fakes in `testutil/` |
 | `app/src/androidTest/` | Room/SQLCipher, migration, repository, PDF and Compose UI tests |
@@ -31,13 +32,13 @@ A concise map of the repository and its main flows. The architecture rules are i
 | `domain/usecase` | `Add`/`Update`/`Delete`/`Validate`/`SearchTransactionUseCase`, `GenerateReportUseCase`, `Category`/`Account`/`BudgetUseCases`, `DomainException`/`DomainError` |
 | `domain/report` | `ReportCsvFormatter` (formula-injection guard), `ReportText` |
 | `data/local/db` | `AppDatabase` (v2), `entity/`, `dao/`, `Migrations.kt` (`MIGRATION_1_2`), `DatabaseHolder` (opens Room after sign-in, closes it at lock), `DefaultDataInitializer`, `security/DatabaseKeys` |
-| `data/local/preferences` | `SecurityProfileService` (wrapped database key, recovery rules, elapsed-time lockout; pure Kotlin), `LegacySecurityProfile` (v1.0.x hashes, for the upgrade), `ThemePreferences` (`ui_prefs`) |
+| `data/local/preferences` | `SecurityProfileService` (wrapped database key, recovery rules, elapsed-time lockout; pure Kotlin), `LegacySecurityProfile` (v1.0.x hashes, for the upgrade), `ThemePreferences` and `CurrencyPreferences` (`ui_prefs`) |
 | `data/local/vault` | `Vault` (setup, sign-in, recovery, v1.0.x upgrade, biometrics, lock, wipe), `KeystoreSecrets`, `KeystoreProfileStore` (`vault_profile`), `LegacyProfileStorage` (`secure_prefs`, `db_key_prefs`), `VaultConfig` |
 | `data/repository` | `Transaction`/`Category`/`Budget`/`AccountRepository` + `Impl`; `escapeLike` for search |
-| `data/export` | `ReportExporter` (SAF save, FileProvider share, share-cache cleanup), `ReportPdfRenderer` |
+| `data/export` | `ReportExporter` (SAF save, FileProvider share, share-cache cleanup, translated report labels), `ReportPdfRenderer` (`ReportPdfLabels`) |
 | `di` | `AppModule` (`Clock` = `DeviceClock`), `DatabaseModule`, `RepositoryModule` |
 | `presentation/ui` | `AppScreens.kt` (NavHost, `popBackOnce`), `LoginScreen.kt`, `TransactionFormScreen.kt`, `SettingsScreen.kt`; feature packages `auth`, `dashboard`, `search`, `report`, `transaction`, `category`, `account`, `budget`, `settings`, `common` |
-| `util` | `Money`, `Validators`, `DateUtils`, `DeviceClock`, `SessionManager`, `Constants`, `ResultExt` |
+| `util` | `Money` (cents, `formatMoney`, digit normalization), `Currencies`, `TextDirection` (`transferRoute`), `TransactionTypeLabels`, `Validators`, `DateUtils`, `DeviceClock`, `SessionManager`, `Constants`, `ResultExt` |
 
 ## Layer dependencies
 

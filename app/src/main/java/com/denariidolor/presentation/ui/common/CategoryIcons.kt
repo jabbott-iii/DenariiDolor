@@ -16,6 +16,7 @@
 
 package com.denariidolor.presentation.ui.common
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -52,39 +53,41 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.denariidolor.R
 
-data class CategoryIconOption(val key: String, val label: String, val vector: ImageVector)
+data class CategoryIconOption(val key: String, @StringRes val labelRes: Int, val vector: ImageVector)
 
 object CategoryIcons {
     const val DEFAULT_KEY = "ic_category_default"
 
     val options: List<CategoryIconOption> = listOf(
-        CategoryIconOption(DEFAULT_KEY, "General", Icons.Filled.Category),
-        CategoryIconOption("income", "Income", Icons.Outlined.Payments),
-        CategoryIconOption("transfer", "Transfer", Icons.Outlined.SwapHoriz),
-        CategoryIconOption("groceries", "Groceries", Icons.Outlined.ShoppingCart),
-        CategoryIconOption("dining", "Dining", Icons.Outlined.Fastfood),
-        CategoryIconOption("coffee", "Coffee", Icons.Outlined.LocalCafe),
-        CategoryIconOption("housing", "Housing", Icons.Outlined.Home),
-        CategoryIconOption("utilities", "Utilities", Icons.Outlined.ElectricBolt),
-        CategoryIconOption("internet", "Internet", Icons.Outlined.Wifi),
-        CategoryIconOption("phone", "Phone", Icons.Outlined.PhoneAndroid),
-        CategoryIconOption("car", "Car", Icons.Outlined.DirectionsCar),
-        CategoryIconOption("fuel", "Fuel", Icons.Outlined.LocalGasStation),
-        CategoryIconOption("transit", "Transit", Icons.Outlined.DirectionsBus),
-        CategoryIconOption("travel", "Travel", Icons.Outlined.Flight),
-        CategoryIconOption("health", "Health", Icons.Outlined.LocalHospital),
-        CategoryIconOption("fitness", "Fitness", Icons.Outlined.FitnessCenter),
-        CategoryIconOption("shopping", "Shopping", Icons.Outlined.ShoppingBag),
-        CategoryIconOption("clothing", "Clothing", Icons.Outlined.Checkroom),
-        CategoryIconOption("entertainment", "Entertainment", Icons.Outlined.Movie),
-        CategoryIconOption("education", "Education", Icons.Outlined.School),
-        CategoryIconOption("pets", "Pets", Icons.Outlined.Pets),
-        CategoryIconOption("gifts", "Gifts", Icons.Outlined.Redeem),
-        CategoryIconOption("savings", "Savings", Icons.Outlined.Savings),
-        CategoryIconOption("bank", "Bank & fees", Icons.Outlined.AccountBalance)
+        CategoryIconOption(DEFAULT_KEY, R.string.category_icon_general, Icons.Filled.Category),
+        CategoryIconOption("income", R.string.category_icon_income, Icons.Outlined.Payments),
+        CategoryIconOption("transfer", R.string.category_icon_transfer, Icons.Outlined.SwapHoriz),
+        CategoryIconOption("groceries", R.string.category_icon_groceries, Icons.Outlined.ShoppingCart),
+        CategoryIconOption("dining", R.string.category_icon_dining, Icons.Outlined.Fastfood),
+        CategoryIconOption("coffee", R.string.category_icon_coffee, Icons.Outlined.LocalCafe),
+        CategoryIconOption("housing", R.string.category_icon_housing, Icons.Outlined.Home),
+        CategoryIconOption("utilities", R.string.category_icon_utilities, Icons.Outlined.ElectricBolt),
+        CategoryIconOption("internet", R.string.category_icon_internet, Icons.Outlined.Wifi),
+        CategoryIconOption("phone", R.string.category_icon_phone, Icons.Outlined.PhoneAndroid),
+        CategoryIconOption("car", R.string.category_icon_car, Icons.Outlined.DirectionsCar),
+        CategoryIconOption("fuel", R.string.category_icon_fuel, Icons.Outlined.LocalGasStation),
+        CategoryIconOption("transit", R.string.category_icon_transit, Icons.Outlined.DirectionsBus),
+        CategoryIconOption("travel", R.string.category_icon_travel, Icons.Outlined.Flight),
+        CategoryIconOption("health", R.string.category_icon_health, Icons.Outlined.LocalHospital),
+        CategoryIconOption("fitness", R.string.category_icon_fitness, Icons.Outlined.FitnessCenter),
+        CategoryIconOption("shopping", R.string.category_icon_shopping, Icons.Outlined.ShoppingBag),
+        CategoryIconOption("clothing", R.string.category_icon_clothing, Icons.Outlined.Checkroom),
+        CategoryIconOption("entertainment", R.string.category_icon_entertainment, Icons.Outlined.Movie),
+        CategoryIconOption("education", R.string.category_icon_education, Icons.Outlined.School),
+        CategoryIconOption("pets", R.string.category_icon_pets, Icons.Outlined.Pets),
+        CategoryIconOption("gifts", R.string.category_icon_gifts, Icons.Outlined.Redeem),
+        CategoryIconOption("savings", R.string.category_icon_savings, Icons.Outlined.Savings),
+        CategoryIconOption("bank", R.string.category_icon_bank, Icons.Outlined.AccountBalance)
     )
 
     private val byKey = options.associateBy { it.key }
@@ -104,6 +107,10 @@ fun CategoryIconBadge(iconKey: String?, modifier: Modifier = Modifier, size: Dp 
             .padding(size / 5),
         contentAlignment = Alignment.Center
     ) {
-        Icon(imageVector = option.vector, contentDescription = option.label, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+        Icon(
+            imageVector = option.vector,
+            contentDescription = stringResource(option.labelRes),
+            tint = MaterialTheme.colorScheme.onPrimaryContainer
+        )
     }
 }

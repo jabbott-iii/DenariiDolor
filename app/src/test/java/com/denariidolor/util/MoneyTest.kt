@@ -16,16 +16,25 @@
 
 package com.denariidolor.util
 
+import com.denariidolor.domain.model.TransactionType
+import java.util.Currency
 import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MoneyTest {
     private val germany = Locale.GERMANY
     private val swiss = Locale("de", "CH")
 
-    private fun us(text: String) = Money.parseToCents(text, Locale.US)
+    private val usd = Currencies.DEFAULT
+    private val euro = Currency.getInstance("EUR")
+    private val rupee = Currency.getInstance("INR")
+    private val india = Locale("hi", "IN")
+    private val saudiArabia = Locale("ar", "SA")
+
+    private fun us(text: String) = Money.parseToCents(text, Locale.US, usd)
 
     @Test
     fun parsesCommonInputsToCents() {
@@ -96,8 +105,44 @@ class MoneyTest {
         assertEquals("12.50", Money.toPlain(1_250))
         assertEquals("4.5", Money.toInput(450))
         assertEquals("250", Money.toInput(25_000))
-        assertEquals("$0.05", formatMoney(5))
-        assertEquals("-$1.00", formatMoney(-100))
+        assertEquals("$0.05", formatMoney(5, usd, Locale.US))
+        assertEquals("-$1.00", formatMoney(-100, usd, Locale.US))
+        assertEquals("$1,234.50", formatMoney(123_450, usd, Locale.US))
+        assertEquals("+$12.00", formatMoney(1_200, usd, Locale.US, showPlus = true))
+    }
+
+    @Test
+    fun formatsInTheSavedCurrencyTheLocaleWay() {
+        // French puts the symbol last and groups with a narrow no-break space; compare with plain spaces.
+        assertEquals("1 234,50 €", formatMoney(123_450, euro, Locale.FRANCE).replace('\u202F', ' ').replace('\u00A0', ' '))
+        assertEquals("€1,234.50", formatMoney(123_450, euro, Locale.US))
+        assertTrue(formatMoney(1_250, rupee, india).contains("₹"))
+        assertEquals("-$4.50", formatSignedAmount(TransactionType.EXPENSE, 450, usd, Locale.US))
+        assertEquals("+$1,200.00", formatSignedAmount(TransactionType.INCOME, 120_000, usd, Locale.US))
+        assertEquals("$80.00", formatSignedAmount(TransactionType.TRANSFER, 8_000, usd, Locale.US))
+    }
+
+    @Test
+    fun acceptsTheCurrencySymbolOrCodeOnEitherSide() {
+        assertEquals(1_250L, Money.parseToCents("12,50 €", Locale.FRANCE, euro))
+        assertEquals(1_250L, Money.parseToCents("€12.50", Locale.US, euro))
+        assertEquals(1_250L, Money.parseToCents("12.50 EUR", Locale.US, euro))
+        assertEquals(123_456L, Money.parseToCents("R$ 1.234,56", Locale("pt", "BR"), Currency.getInstance("BRL")))
+        assertEquals(-500L, Money.parseToCents("-₹5", india, rupee))
+        assertNull(Money.parseToCents("€", Locale.US, euro))
+    }
+
+    @Test
+    fun acceptsArabicIndicAndDevanagariDigits() {
+        assertEquals("12.50", Money.normalizeDigits("١٢٫٥٠"))
+        assertEquals("-5", Money.normalizeDigits("\u200F\u22125"))
+        assertEquals(1_250L, Money.parseToCents("١٢٫٥", saudiArabia, usd))
+        assertEquals(123_456L, Money.parseToCents("١٬٢٣٤٫٥٦", saudiArabia, usd))
+        assertEquals(1_250L, Money.parseToCents("۱۲.۵", saudiArabia, usd))
+        assertEquals(1_250L, Money.parseToCents("१२.५०", india, usd))
+        // What the app displays in Arabic parses back, direction marks and all.
+        val riyal = Currency.getInstance("SAR")
+        assertEquals(1_250L, Money.parseToCents(formatMoney(1_250, riyal, saudiArabia), saudiArabia, riyal))
     }
 
     @Test

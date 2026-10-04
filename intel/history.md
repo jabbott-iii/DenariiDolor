@@ -572,3 +572,34 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
 - **Tests:** `ValidateTransactionUseCaseTest` (the failure carries the overage; a confirmed expense passes; confirming still runs every other check), `TransactionViewModelTest` (asks before saving, confirm saves, dismiss saves nothing and asks again), `CrudScreensTest.overBudgetDialogShowsTheOverageAndLetsTheUserChoose`.
 - Also updated: `README.md`, `maint.md`, `map.md`, `notes.md`, `plan.md`.
 - **Validation:** not run here; Gradle can't reach its repositories from either environment. It needs CI (`testDebugUnitTest`, and the instrumented tests for the dialog).
+
+## 2026-10-04 — Language packs and a currency setting
+- **Your choices:** the currency is a saved setting, not part of a language; the most-spoken variant of each language; default account and category names translated on new installs only.
+- **Language packs:** `values-zh-rCN`, `values-hi`, `values-es` (Latin American), `values-ar`, `values-fr` and `values-pt` (Brazilian). Each has all 226 translatable strings and the 3 plurals, with every quantity the language needs (Arabic has six). They were drafted by Claude in parallel and checked with a script that compares names, format arguments, escaping and plural quantities against `values/strings.xml`. Arabic "Cash" was changed from نقدًا to النقد.
+- **Currency:**
+  - `CurrencyPreferences` saves an ISO code in `ui_prefs`. A new profile takes the region's currency (`Currencies.regionDefault`); installs from before the setting keep US dollars. Only currencies with 2 decimals are allowed.
+  - **Settings → Currency** lists 21 common currencies plus the saved one, and notes that amounts aren't converted. Changing it restarts `MainActivity`.
+  - `formatMoney` uses `NumberFormat` for the device's locale with the saved currency (`$1,234.50`, `1 234,50 €`, `R$ 1.234,56`, Arabic digits in Arabic). Positive income keeps its `+`.
+  - `Money.parseToCents` accepts the currency's symbol or code on either side and any Unicode digits, plus the Arabic decimal and thousands separators. `DateUtils.parseIsoDate` accepts non-ASCII digits too.
+  - The chart's axis uses the language's short number form (`android.icu.text.CompactDecimalFormat`) without a symbol, and `compactMoney` and its test were removed.
+- **Text moved out of the code:**
+  - The transaction type dropdown showed the stored values (`EXPENSE`…). It now shows `transaction_type_*` labels and still saves `TransactionType.name`, and the `transaction_types` array is gone.
+  - The report title, the PDF headers, page number, totals and empty text, the 24 category icon labels, and the default account and category names are now string resources.
+  - `app_name` is `translatable="false"`.
+- **Transfers:** routes use `transferRoute`; in right-to-left languages the arrow points left (`النقد ← المدخرات`).
+- **CSV:** unchanged keys, type codes and plain amounts; only the title is translated.
+- **Tests:**
+  - New: `CurrenciesTest`, `TextDirectionTest`; `MoneyTest` covers locale formatting, symbols on either side, and Arabic-Indic and Devanagari digits; `DateUtilsTest` covers non-ASCII dates; `CrudScreensTest.settingsCurrencyPickerReportsTheChosenCode`.
+  - Updated: `DashboardMappersTest` pins `Locale.US`; `ComposeScreensTest` picks "Transfer"; `VaultTest` passes a context to `DefaultDataInitializer`.
+- **Validation:**
+  - ktlint 1.3.1 and detekt 1.23.8 (repository config) pass on the 32 changed Kotlin files.
+  - `MoneyTest`, `CurrenciesTest`, `TextDirectionTest` and `DateUtilsTest` (20 tests) pass, compiled with kotlinc 2.1.0 on JDK 21 against a JUnit stand-in. CI uses JDK 17, whose locale data is older.
+  - Not run: Gradle, Android lint, the Android-dependent unit tests and the instrumented tests. No environment here can reach Maven.
+- **For a native speaker's review** (from the translators):
+  - All: `over_budget_message` word order.
+  - zh: 结余 for "Net"; 交易 for "Transaction".
+  - hi: "Capital letters … don't count" in the security-answer rules; colloquial category labels.
+  - es: "Informes" vs "Reportes"; "Auto"/"Supermercado".
+  - ar: label-then-number phrasing for minutes and seconds; the dual in plurals.
+  - fr: "plafond" for limit; "%2$d % du budget utilisé" is long.
+  - pt: "Saldo" for both "Net" and an account balance; "celular" for "device".

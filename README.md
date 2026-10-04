@@ -35,6 +35,7 @@
 | **Validation** | Rejects zero or negative amounts, amounts with more than 2 decimals, blank descriptions or ones longer than 200 characters, invalid dates, transfers to the same account, duplicate names, and inverted search ranges. |
 | **Security** | SQLCipher-encrypted database whose key only your PIN, your security answer or (optionally) your biometrics can unlock; PIN (6–12 digits) with an escalating lockout that changing the date can't skip; 5-minute session timeout; no cloud backup. |
 | **Look & feel** | Material 3, a dark mode switch, bottom navigation, and a floating **+** button for quick entry. |
+| **Languages & currency** | English, Simplified Chinese, Hindi, Spanish (Latin America), Arabic (right to left), French and Brazilian Portuguese, following the phone's language. Amounts show in the currency chosen in **Settings → Currency**, set at first launch from the phone's region and written the way the phone's language writes money (`$1,234.50`, `1 234,50 €`, `₹12,34,567.00`). Changing it relabels amounts; it doesn't convert them. |
 
 ## Use cases
 
@@ -59,7 +60,7 @@
 
 1. Choose a **PIN** (6–12 digits) and confirm it.
 2. Write a **security question** only you can answer, and give its **answer**. You'll need the answer if you forget your PIN. The answer needs at least 6 characters, can't appear in the question and can't be your PIN; capital letters and extra spaces don't matter.
-3. Tap **Create Security Profile**, then sign in.
+3. Tap **Create Security Profile**, then sign in. The app starts with your region's currency (US dollars where that currency doesn't use cents); change it in **Settings → Currency**.
 
 ### 2. Signing in
 
@@ -77,7 +78,7 @@
 | **Dashboard** | This month's totals, chart, budgets, balances and recent transactions |
 | **Search** | Find transactions by text, category, amount or date |
 | **Reports** | Monthly report; save or share it as CSV or PDF |
-| **Settings** | Dark mode; biometric sign-in; manage categories, accounts and budgets; sign out |
+| **Settings** | Dark mode; biometric sign-in; currency; manage categories, accounts and budgets; sign out |
 
 Tap the round **+** button to add a transaction. The **Back** button on that form returns you to the screen you came from.
 
@@ -105,6 +106,8 @@ Open **Settings**, then:
 ### 6. Reports
 
 Open **Reports** and use **‹ Prev** / **Next ›** to pick the month. **Save CSV** / **Save PDF** saves the file to a location you choose; **Share CSV** / **Share PDF** sends it to another app.
+
+The PDF is in the app's language. The CSV keeps English column names (`date`, `type`, …) and type codes (`EXPENSE`, `INCOME`, `TRANSFER`) and plain amounts without a currency symbol, so spreadsheets and scripts can rely on them.
 
 > Exported files are not encrypted. Store them somewhere safe.
 
@@ -171,6 +174,7 @@ make release VERSION=v1.2.3            # tag and push → once CI passes on that
 | `…/data` | Room entities/DAOs/migrations, repositories, the vault (database key, sign-in and Keystore), export |
 | `…/presentation/ui` | Compose screens and ViewModels, one package per feature |
 | `…/di` | Hilt modules |
+| `app/src/main/res/values*` | English strings (`values`) and the language packs (`values-zh-rCN`, `-hi`, `-es`, `-ar`, `-fr`, `-pt`); a new string goes into all of them |
 | `app/schemas` | Exported Room schemas (commit a new one with every schema change) |
 | `.github/workflows` | `ci.yml` (lint, tests, build, emulator tests on API 26 and 36), `security.yml` (CodeQL, dependency review, gitleaks), `cd.yml` (signed release on `v*` tags, after CI passes on the tagged commit) |
 

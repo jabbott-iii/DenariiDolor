@@ -64,6 +64,7 @@ import com.denariidolor.domain.report.ReportText
 import com.denariidolor.util.DateUtils
 import com.denariidolor.util.formatMoney
 import com.denariidolor.util.formatSignedAmount
+import com.denariidolor.util.labelRes
 
 const val REPORT_TABLE_TAG = "reportTable"
 
@@ -153,7 +154,7 @@ fun ReportScreen(
             }
             return@Column
         }
-        Text(text = report.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text(text = stringResource(R.string.report_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Text(
             text = stringResource(R.string.report_generated, ReportText.generatedLabel(report.generatedAtEpochMillis)),
             style = MaterialTheme.typography.bodySmall
@@ -221,7 +222,7 @@ private fun ReportTable(rows: List<ReportRow>, modifier: Modifier = Modifier) {
                     TableRow(
                         cells = listOf(
                             DateUtils.formatLocalDate(row.dateEpochMillis),
-                            row.type.name,
+                            stringResource(row.type.labelRes()),
                             row.categoryName,
                             row.description,
                             formatSignedAmount(row.type, row.amountCents),

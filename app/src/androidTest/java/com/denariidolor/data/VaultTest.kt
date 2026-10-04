@@ -72,7 +72,7 @@ class VaultTest {
     private val holder = DatabaseHolder(context, config)
     private var vault = newVault()
 
-    private fun newVault() = Vault(context, config, holder, DefaultDataInitializer(holder))
+    private fun newVault() = Vault(context, config, holder, DefaultDataInitializer(context, holder))
 
     @Before
     fun setUp() = runBlocking<Unit> { vault.wipe() }

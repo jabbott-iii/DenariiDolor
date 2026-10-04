@@ -88,7 +88,8 @@ fun MainActivityContent(
     settingsState: SettingsScreenState,
     onSignOut: () -> Unit,
     onDarkModeChange: (Boolean) -> Unit,
-    onBiometricChange: (Boolean) -> Unit
+    onBiometricChange: (Boolean) -> Unit,
+    onCurrencyChange: (String) -> Unit = {}
 ) {
     val navController = rememberNavController()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -154,6 +155,7 @@ fun MainActivityContent(
                     onSignOut = onSignOut,
                     onDarkModeChange = onDarkModeChange,
                     onBiometricChange = onBiometricChange,
+                    onCurrencyChange = onCurrencyChange,
                     onManageCategories = { navController.navigate(MainDestination.ManageCategories.route) },
                     onManageAccounts = { navController.navigate(MainDestination.ManageAccounts.route) },
                     onManageBudgets = { navController.navigate(MainDestination.ManageBudgets.route) }

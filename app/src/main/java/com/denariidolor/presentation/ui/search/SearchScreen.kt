@@ -54,6 +54,7 @@ import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.presentation.ui.common.ReferencePicker
 import com.denariidolor.presentation.ui.common.TransactionRow
 import com.denariidolor.presentation.ui.common.TransactionRowItem
+import com.denariidolor.util.DateUtils
 import java.time.LocalDate
 
 const val SEARCH_BUTTON_TAG = "searchButton"
@@ -199,7 +200,7 @@ fun SearchScreen(
 }
 
 private fun pickDate(context: Context, current: String, onPicked: (String) -> Unit) {
-    val initial = current.takeIf { it.isNotBlank() }?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: LocalDate.now()
+    val initial = current.takeIf { it.isNotBlank() }?.let { runCatching { DateUtils.parseIsoDate(it) }.getOrNull() } ?: LocalDate.now()
     DatePickerDialog(
         context,
         { _, year, month, day -> onPicked(LocalDate.of(year, month + 1, day).toString()) },

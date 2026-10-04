@@ -34,9 +34,12 @@ object DateUtils {
     fun formatLocalDate(epochMillis: Long, zoneId: ZoneId = ZoneId.systemDefault()): String =
         Instant.ofEpochMilli(epochMillis).atZone(zoneId).toLocalDate().toString()
 
+    /** A `YYYY-MM-DD` date, also when typed with Arabic-Indic, Devanagari or other non-ASCII digits. */
+    fun parseIsoDate(value: String): LocalDate = LocalDate.parse(Money.normalizeDigits(value).trim())
+
     fun parseIsoDateToStartOfDayEpochMillis(value: String, zoneId: ZoneId = ZoneId.systemDefault()): Long =
-        LocalDate.parse(value).atStartOfDay(zoneId).toInstant().toEpochMilli()
+        parseIsoDate(value).atStartOfDay(zoneId).toInstant().toEpochMilli()
 
     fun parseIsoDateToEndOfDayEpochMillis(value: String, zoneId: ZoneId = ZoneId.systemDefault()): Long =
-        LocalDate.parse(value).plusDays(1).atStartOfDay(zoneId).toInstant().toEpochMilli() - 1
+        parseIsoDate(value).plusDays(1).atStartOfDay(zoneId).toInstant().toEpochMilli() - 1
 }

@@ -19,9 +19,11 @@ package com.denariidolor.data.export
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
+import com.denariidolor.R
 import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.domain.report.ReportCsvFormatter
 import com.denariidolor.domain.report.ReportText
+import com.denariidolor.util.labelRes
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.OutputStream
@@ -53,12 +55,31 @@ class ReportExporter @Inject constructor(@ApplicationContext private val context
         FileProvider.getUriForFile(context, "${context.packageName}$AUTHORITY_SUFFIX", file)
     }
 
+    // The CSV keeps its English column keys and type names so spreadsheets and scripts can rely on them; its title is translated.
     private fun write(out: OutputStream, report: MonthlyReport, format: ReportFormat) {
+        val title = context.getString(R.string.report_title)
         when (format) {
-            ReportFormat.CSV -> out.write(ReportCsvFormatter.format(report).toByteArray(Charsets.UTF_8))
-            ReportFormat.PDF -> ReportPdfRenderer.render(report, out)
+            ReportFormat.CSV -> out.write(ReportCsvFormatter.format(report.copy(title = title)).toByteArray(Charsets.UTF_8))
+            ReportFormat.PDF -> ReportPdfRenderer.render(report, out, labels = pdfLabels(title))
         }
     }
+
+    private fun pdfLabels(title: String) = ReportPdfLabels(
+        title = title,
+        columns = listOf(
+            R.string.report_col_date,
+            R.string.report_col_type,
+            R.string.report_col_category,
+            R.string.report_col_description,
+            R.string.report_col_amount,
+            R.string.report_col_payment
+        ).map { context.getString(it) },
+        type = { context.getString(it.labelRes()) },
+        empty = context.getString(R.string.report_empty),
+        generated = { context.getString(R.string.report_generated, it) },
+        totals = { income, expense, net -> context.getString(R.string.report_totals, income, expense, net) },
+        page = { context.getString(R.string.report_page, it) }
+    )
 
     companion object {
         const val SHARE_DIR = "reports"

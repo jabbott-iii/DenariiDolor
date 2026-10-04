@@ -28,6 +28,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.denariidolor.data.export.ReportExporter
+import com.denariidolor.data.local.preferences.CurrencyPreferences
 import com.denariidolor.data.local.preferences.ThemePreferences
 import com.denariidolor.data.local.vault.Vault
 import com.denariidolor.data.local.vault.VaultState
@@ -38,6 +39,7 @@ import com.denariidolor.presentation.ui.common.isDarkTheme
 import com.denariidolor.presentation.ui.common.setThemedContent
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
 import com.denariidolor.util.Constants
+import com.denariidolor.util.Currencies
 import com.denariidolor.util.SessionManager
 import com.denariidolor.util.runSuspendCatching
 import dagger.hilt.android.AndroidEntryPoint
@@ -62,6 +64,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var themePreferences: ThemePreferences
 
+    @Inject
+    lateinit var currencyPreferences: CurrencyPreferences
+
     private var biometricEnabled by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -72,6 +77,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         val biometricHardware = biometricAuthManager.canAuthenticate(this)
+        val currency = currencyPreferences.currency.value
         lifecycleScope.launch { refreshBiometricEnabled() }
         setThemedContent(themePreferences) {
             MainActivityContent(
@@ -80,11 +86,14 @@ class MainActivity : AppCompatActivity() {
                     pinConfigured = true,
                     darkMode = themePreferences.isDarkTheme(),
                     biometricAvailable = biometricHardware || biometricEnabled,
-                    biometricEnabled = biometricEnabled
+                    biometricEnabled = biometricEnabled,
+                    currencyCode = currency.currencyCode,
+                    currencyOptions = Currencies.options(currency).map { it.currencyCode }
                 ),
                 onSignOut = ::redirectToLogin,
                 onDarkModeChange = themePreferences::setDarkMode,
-                onBiometricChange = ::setBiometricSignIn
+                onBiometricChange = ::setBiometricSignIn,
+                onCurrencyChange = ::setCurrency
             )
         }
 
@@ -115,6 +124,18 @@ class MainActivity : AppCompatActivity() {
         } else {
             sessionManager.touch()
         }
+    }
+
+    /**
+     * Only the symbol changes; amounts aren't converted. Screens already hold amounts formatted with the old symbol, so the
+     * activity starts over, with new ViewModels, on the Dashboard. The session stays signed in.
+     */
+    private fun setCurrency(code: String) {
+        val currency = Currencies.fromCode(code) ?: return
+        if (currency == currencyPreferences.currency.value) return
+        currencyPreferences.setCurrency(currency)
+        startActivity(Intent(this, MainActivity::class.java))
+        finish()
     }
 
     /** Turning biometric sign-in on wraps the database key with a biometric-bound Keystore key, so it needs a prompt (CS-07). */

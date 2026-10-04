@@ -30,6 +30,7 @@ import androidx.lifecycle.lifecycleScope
 import com.denariidolor.MainActivity
 import com.denariidolor.R
 import com.denariidolor.data.export.ReportExporter
+import com.denariidolor.data.local.preferences.CurrencyPreferences
 import com.denariidolor.data.local.preferences.RecoverPinResult
 import com.denariidolor.data.local.preferences.SecureStorageException
 import com.denariidolor.data.local.preferences.SecurityProfileService
@@ -63,6 +64,9 @@ class LoginActivity : AppCompatActivity() {
 
     @Inject
     lateinit var themePreferences: ThemePreferences
+
+    @Inject
+    lateinit var currencyPreferences: CurrencyPreferences
 
     private var busy = false
     private var signInEnabled by mutableStateOf(false)
@@ -202,6 +206,8 @@ class LoginActivity : AppCompatActivity() {
         runVaultAction {
             val result = vault.setUp(enteredPin, confirmation, question, answer)
             if (result == SetupProfileResult.SUCCESS) {
+                // A new profile starts with the currency of the device's region; Settings can change it.
+                currencyPreferences.resetToRegionDefault()
                 clearInputs()
                 showState(vault.state())
             }

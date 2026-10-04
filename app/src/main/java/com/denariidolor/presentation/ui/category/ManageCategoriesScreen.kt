@@ -182,7 +182,7 @@ private fun CategoryDialog(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = stringResource(R.string.category_icon_label, CategoryIcons.forKey(icon).label),
+                    text = stringResource(R.string.category_icon_label, stringResource(CategoryIcons.forKey(icon).labelRes)),
                     style = MaterialTheme.typography.labelLarge
                 )
                 Spacer(modifier = Modifier.height(8.dp))

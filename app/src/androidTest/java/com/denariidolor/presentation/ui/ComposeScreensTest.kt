@@ -197,7 +197,7 @@ class ComposeScreensTest {
 
         composeRule.onNodeWithTag(TRANSFER_ACCOUNT_FIELD_TAG).assertDoesNotExist()
         composeRule.onNodeWithTag(TRANSACTION_TYPE_FIELD_TAG).performClick()
-        composeRule.onNodeWithText("TRANSFER").performClick()
+        composeRule.onNodeWithText("Transfer").performClick()
         composeRule.onNodeWithTag(TRANSFER_ACCOUNT_FIELD_TAG)
             .assertIsDisplayed()
             .assertTextContains("Savings")
