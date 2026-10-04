@@ -528,3 +528,21 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
 - **Checked against the AGP 9 defaults:** the R8 keep rules use `{ *; }`, so the stricter full mode still keeps constructors, and nothing loads resources by name, so optimized resource shrinking is safe. The code already uses the current Material 3 APIs. Room's Kotlin code generation is safe because the non-null scalar DAO queries use `COUNT` or `COALESCE`. CodeQL's current release supports Kotlin up to 2.4.20.
 - **Security log:** CS-22 and CS-23 closed on CI run 37178965892 (`f8e3fc7`). CS-24 moved back from the accepted risks to In Progress.
 - **Validation:** nothing was built. Neither environment could reach Maven Central, Google Maven or the Gradle distribution server. Versions came from Maven Central metadata and the AndroidX release pages. What's still to do is in `plan.md`, Follow-on work.
+
+## 2026-10-04 — Toolchain upgrade: first CI run and fixes
+- **CI on `97d6cbe`:**
+  - Passed: "Lint, test, build" (ktlint, detekt, lint, unit tests, coverage, `assembleRelease`); CodeQL, now analysing Kotlin 2.4.20; the dependency graph; the secret scan.
+  - Gradle 9.6.1 downloaded and passed the wrapper checksum check.
+  - Failed: the instrumented tests on API 26 (1 of 64) and API 36 (2 of 64). AGP 9.4's test engine doesn't name failing tests in the log; they were read from the `instrumented-results-api-*` artifacts, downloaded with your approval.
+- **`MigrationTest.migrate1To2ConvertsMoneyToCentsAndKeepsData` (API 26 and 36):**
+  - Symptom: `AbstractMethodError` on `GeneratedSerializer.typeParametersSerializers()`, from `androidx.room.migration.bundle.FieldBundle$$serializer`.
+  - Cause: Room 2.8.5's `room-migration` (test only) is built against kotlinx-serialization 1.8.1, but navigation, lifecycle and savedstate bring 1.7.3 into the app. The test runs against the app's copy, and AGP 9 no longer aligns test dependencies with the app's (`android.dependency.useConstraints` now defaults to false).
+  - Fix: a dependency constraint in `app/build.gradle.kts` raises the app's kotlinx-serialization-core to 1.8.1 (catalog `kotlinxSerialization`).
+- **`OverlayGuardTest` (API 36):**
+  - Cause: AGP 9.4's test engine reports the test's `assumeTrue(SDK_INT < S)` skip as a failure.
+  - Fix: the test uses `@SdkSuppress(maxSdkVersion = R)` instead, so the runner doesn't run it on API 31+.
+- **Dependency graph after `97d6cbe`:**
+  - Only `kotlin-gradle-plugin` 2.4.20 is present (CS-24).
+  - Netty is gone (AGP 9.4.1's new test engine no longer uses gRPC), so the netty BOM constraint was removed from the root `buildscript`, the test-platform block and the catalog.
+  - Six Dependabot alerts opened against AGP 9.4.1 components outside the root plugin classpath: Bouncy Castle 1.80.2 through lint, HttpClient 4.5.6 and commons-lang3 3.16.0. Logged as CS-25 (open).
+- **Validation:** not run yet. It needs the next CI run.

@@ -106,6 +106,12 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+    constraints {
+        // Room 2.8's schema reader (room-migration, used by MigrationTestHelper) is built against kotlinx-serialization 1.8.1,
+        // but navigation and lifecycle bring 1.7.3 into the app. Instrumented tests run against the app's copy, and AGP 9 no
+        // longer aligns test dependencies with the app's, so raise the app's copy to match.
+        implementation(libs.kotlinx.serialization.core)
+    }
 }
 
 ktlint {
@@ -120,9 +126,8 @@ ktlint {
     }
 }
 
-// CS-22: the same build-time patches for AGP's test platform runner (netty through gRPC) and for ktlint (logback).
+// CS-22: the same build-time patches for AGP's test platform runner and for ktlint (logback).
 configurations.matching { it.name.startsWith("_internal-unified-test-platform") }.configureEach {
-    dependencies.add(project.dependencies.platform(libs.build.netty.bom.get()))
     dependencyConstraints.add(project.dependencies.constraints.create(libs.build.protobuf.java.get()))
     dependencyConstraints.add(project.dependencies.constraints.create(libs.build.commons.io.get()))
 }

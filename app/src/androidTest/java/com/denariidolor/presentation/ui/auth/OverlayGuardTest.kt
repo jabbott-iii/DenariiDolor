@@ -20,8 +20,8 @@ import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import org.junit.Assert.assertTrue
-import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,10 +32,10 @@ class OverlayGuardTest {
     @get:Rule
     val activityRule = ActivityScenarioRule(ComponentActivity::class.java)
 
+    // SdkSuppress, not an assumption: AGP 9.4's test engine reports a failed assumption as a test failure.
     @Test
+    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.R)
     fun windowDropsTouchesThroughOverlaysBeforeApi31() {
-        assumeTrue(Build.VERSION.SDK_INT < Build.VERSION_CODES.S)
-
         activityRule.scenario.onActivity { activity ->
             activity.window.guardAgainstOverlays()
             assertTrue(activity.window.decorView.filterTouchesWhenObscured)
