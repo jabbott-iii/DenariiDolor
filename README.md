@@ -32,6 +32,7 @@
 | **Dashboard** | Monthly net, income and expense totals; a spending-by-category chart; budget meters and alerts; account balances; recent transactions. |
 | **Search** | Filter by description text, category, amount range and date range. The results show as a multi-row list, and you tap a row to edit it. |
 | **Reports** | A monthly spending report with a title, a generated timestamp, totals, and a 6-column table (Date, Type, Category, Description, Amount, Payment Method). **Save** or **Share** it as **CSV** or **PDF**. |
+| **Backup & restore** | Save an encrypted backup of your accounts, categories, budgets, transactions and currency setting wherever you choose (a folder or a cloud drive), and restore it on a new phone. A passphrase of at least 12 characters protects it; restoring shows what the backup holds and replaces the data on the phone only after you type `RESTORE`. |
 | **Validation** | Rejects zero or negative amounts, amounts with more than 2 decimals, blank descriptions or ones longer than 200 characters, invalid dates, transfers to the same account, duplicate names, and inverted search ranges. |
 | **Security** | SQLCipher-encrypted database whose key only your PIN, your security answer or (optionally) your biometrics can unlock; PIN (6–12 digits) with an escalating lockout that changing the date can't skip; 5-minute session timeout; no cloud backup. |
 | **Look & feel** | Material 3, a dark mode switch, bottom navigation, and a floating **+** button for quick entry. |
@@ -44,6 +45,7 @@
 - **Moving money between accounts:** a transfer from Cash to Savings moves the balance without counting as income or spending.
 - **Finding a past purchase:** search "pharmacy" between two dates to find what you paid and when.
 - **Month-end review or taxes:** export the month's report to CSV for a spreadsheet, or to PDF to print or share with a partner or accountant.
+- **Moving to a new phone:** create a backup on the old phone, set up the app on the new one, then restore the backup with its passphrase.
 - **Privacy-conscious budgeting:** no account, no sign-up, no network, and no ads; your financial data never leaves the device.
 
 ## Getting started
@@ -78,7 +80,7 @@
 | **Dashboard** | This month's totals, chart, budgets, balances and recent transactions |
 | **Search** | Find transactions by text, category, amount or date |
 | **Reports** | Monthly report; save or share it as CSV or PDF |
-| **Settings** | Dark mode; biometric sign-in; currency; manage categories, accounts and budgets; sign out |
+| **Settings** | Dark mode; biometric sign-in; currency; manage categories, accounts and budgets; backup and restore; privacy policy; open-source licenses; sign out |
 
 Tap the round **+** button to add a transaction. The **Back** button on that form returns you to the screen you came from.
 
@@ -110,6 +112,16 @@ Open **Reports** and use **‹ Prev** / **Next ›** to pick the month. **Save C
 The PDF is in the app's language. The CSV keeps English column names (`date`, `type`, …) and type codes (`EXPENSE`, `INCOME`, `TRANSFER`) and plain amounts without a currency symbol, so spreadsheets and scripts can rely on them.
 
 > Exported files are not encrypted. Store them somewhere safe.
+
+### 7. Backup and restore
+
+Open **Settings → Backup and restore**.
+
+- **Create backup:** choose a passphrase of at least 12 characters (a few unrelated words work well), type it twice, then pick where to save the file (`denarii-dolor-backup-<date>.ddbackup`). The backup holds your accounts, categories, budgets, transactions and currency setting, encrypted with the passphrase. It doesn't hold your PIN, security question or biometric sign-in.
+- **Restore from backup:** pick the backup file and enter its passphrase. The app shows when the backup was made and how many accounts, categories, budgets and transactions it holds. Type `RESTORE` and tap **Replace data**: everything on the phone is replaced by the backup, and the app reopens on the Dashboard.
+- **On a new phone:** install the app, set up a new PIN and security question, then restore.
+
+> Keep the passphrase safe. Without it the backup can't be opened, and nobody can recover it.
 
 ## Examples
 
@@ -171,10 +183,11 @@ make release VERSION=v1.2.3            # tag and push → once CI passes on that
 | Path | Contents |
 |---|---|
 | `app/src/main/java/com/denariidolor/domain` | Models, use cases, report formatting |
-| `…/data` | Room entities/DAOs/migrations, repositories, the vault (database key, sign-in and Keystore), export |
+| `…/data` | Room entities/DAOs/migrations, repositories, the vault (database key, sign-in and Keystore), export, encrypted backup and restore (`backup`), the in-app legal documents (`legal`) |
 | `…/presentation/ui` | Compose screens and ViewModels, one package per feature |
 | `…/di` | Hilt modules |
 | `app/src/main/res/values*` | English strings (`values`) and the language packs (`values-zh-rCN`, `-hi`, `-es`, `-ar`, `-fr`, `-pt`); a new string goes into all of them |
+| `PRIVACY.md`, `THIRD_PARTY_NOTICES.md`, `licenses/` | Privacy policy and open-source notices; the build copies them into the app, which shows them in Settings |
 | `app/schemas` | Exported Room schemas (commit a new one with every schema change) |
 | `.github/workflows` | `ci.yml` (lint, tests, build, emulator tests on API 26 and 36), `security.yml` (CodeQL, dependency review, gitleaks), `cd.yml` (signed release on `v*` tags, after CI passes on the tagged commit) |
 
@@ -198,6 +211,8 @@ Release signing needs four repository secrets: `ANDROID_SIGNING_KEY` (the base64
   - A CSV formula-injection guard.
   - Exports shared through FileProvider grants.
   - R8 obfuscation for release builds.
+- **Backups:** AES-256-GCM with a key derived from your passphrase (PBKDF2-HMAC-SHA256, 600 000 iterations, a random salt per file). Files are saved and opened only through the system file picker, and a restore checks the whole backup before it replaces anything, in a single database transaction.
+- **Privacy:** the app collects nothing and has no network access. See [PRIVACY.md](PRIVACY.md), also in the app under **Settings → Privacy policy**.
 
 To report a vulnerability, open a private security advisory on this repository rather than a public issue.
 
@@ -205,4 +220,4 @@ To report a vulnerability, open a private security advisory on this repository r
 
 Proprietary. Copyright (c) 2026 Joseph Anthony Abbott III. All rights reserved.
 
-Buyers receive the [Denarii Dolor Perpetual End-User License Agreement](LICENSE): a perpetual, non-transferable license to install and use the app on their own devices. The source code is not licensed to anyone. The open-source components the app includes keep their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Buyers receive the [Denarii Dolor Perpetual End-User License Agreement](LICENSE): a perpetual, non-transferable license to install and use the app on their own devices. The source code is not licensed to anyone. The open-source components the app includes keep their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), also in the app under **Settings → Open-source licenses**.

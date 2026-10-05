@@ -1,6 +1,6 @@
 # Denarii Dolor — Plan
 
-Active and follow-on work only. Finished work is recorded in `history.md`, decisions and their reasons in `notes.md`, and security findings in `cybersec.md`. Last updated 2026-10-03.
+Active and follow-on work only. Finished work is recorded in `history.md`, decisions and their reasons in `notes.md`, and security findings in `cybersec.md`. Last updated 2026-10-04.
 
 ## Requirement Status
 | Requirement | Status | Notes |
@@ -54,7 +54,13 @@ All twelve bugs (BUG-01 – BUG-12) from the 2026-10-03 review are fixed, and ev
   - Have an attorney review `LICENSE`, especially for sales outside the United States and on app stores.
   - Make the GitHub repository private, and stop CD from attaching signed APKs to public GitHub Releases. Anyone can download those today.
   - Releases v1.0.0 and v1.0.1, and every commit published before this change, remain available under Apache 2.0 to anyone who has a copy. That can't be revoked.
-  - Generate the complete third-party list from the release build's dependency graph and reconcile `THIRD_PARTY_NOTICES.md` with it. The current list was written from the declared dependencies.
-  - Show the third-party notices inside the app, for example as an "Open-source licenses" screen in Settings, because the APK ships without these files.
+  - Generate the complete third-party list from the release build's dependency graph and reconcile `THIRD_PARTY_NOTICES.md` with it. The current list was written from the declared dependencies. Check two points from the 2026-10-04 review: whether Tink (through `security-crypto`) brings protobuf-javalite (BSD 3-Clause, which needs its own notice), and whether the crypto library inside SQLCipher for Android 4.19 is still LibTomCrypt. The app now shows this file (Settings → Open-source licenses), so a correction there reaches users with the next build.
   - Confirm that no employer agreement or school policy claims rights in the app.
+- **Play Store readiness (2026-10-04):**
+  - Publish `PRIVACY.md` at a public URL that stays up after the repository goes private (for example GitHub Pages from a separate public repository, or your own site), and enter it in Play Console. The app already shows the same text in Settings.
+  - Data safety form: no data collected or shared. Backups and reports are made by the user on the device and saved where the user chooses; the app never receives them.
+  - Have the attorney review `PRIVACY.md` together with `LICENSE`.
+  - CS-28 device check: back up, wipe, set up a new PIN, restore, and confirm every record, balance and the currency came back. Then try a wrong passphrase, a photo and a truncated file. Also time a backup on the API 26 emulator; 600 000 PBKDF2 iterations should take a few seconds at most.
+  - Have native speakers review the 31 backup, privacy and license strings added on 2026-10-04 in each language pack.
+  - CS-A6: revisit a passphrase strength check together with CS-27 option B.
 - **Later:** a chart tooltip/marker; optionally protect the `production` environment with required reviewers (a GitHub setting).

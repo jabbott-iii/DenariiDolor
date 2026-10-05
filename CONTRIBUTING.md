@@ -79,6 +79,7 @@ If you run detekt-cli outside Gradle, pass `--build-upon-default-config` so that
 - **Style:**
   - Start every source file with the proprietary copyright notice (copy it from an existing file), and follow ktlint's Android style.
   - A new dependency must be added to `THIRD_PARTY_NOTICES.md`, with its license text in `licenses/` when that license requires it.
+  - `THIRD_PARTY_NOTICES.md` and `PRIVACY.md` are shown inside the app, so keep them to the Markdown the app renders (see `intel/maint.md` §7); `LegalTextTest` checks them. A change to what the app stores or shares needs a matching change to `PRIVACY.md`.
   - Composables are PascalCase, with a `…Route` wrapper that wires the ViewModel.
   - Add comments only for intent that isn't obvious.
   - Don't suppress a warning without a comment explaining why.

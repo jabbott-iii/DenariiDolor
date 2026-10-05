@@ -83,7 +83,8 @@ class MainActivity : AppCompatActivity() {
                 onSignOut = ::redirectToLogin,
                 onDarkModeChange = themePreferences::setDarkMode,
                 onBiometricChange = ::setBiometricSignIn,
-                onCurrencyChange = ::setCurrency
+                onCurrencyChange = ::setCurrency,
+                onRestored = ::restart
             )
         }
 
@@ -124,6 +125,11 @@ class MainActivity : AppCompatActivity() {
         val currency = Currencies.fromCode(code) ?: return
         if (currency == currencyPreferences.currency.value) return
         currencyPreferences.setCurrency(currency)
+        restart()
+    }
+
+    /** Starts over on the Dashboard with new ViewModels, still signed in: after a currency change or a restore from backup. */
+    private fun restart() {
         startActivity(Intent(this, MainActivity::class.java))
         finish()
     }

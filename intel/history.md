@@ -643,3 +643,40 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
 - **Validation:**
   - Read from CI's log: the first error was `SettingsScreen.kt:170`. The second wasn't printed, and `SpendingChart.kt` is the only other `Locale.getDefault` call inside a composable.
   - Not run: `./gradlew lintDebug` and the build, because neither shell here can reach the Gradle or Google repositories. The 32 warnings weren't reviewed.
+
+## 2026-10-04 — Encrypted backup and restore, in-app privacy policy and licenses, launcher icon
+- **Why:** production readiness for Google Play. Without a backup, data couldn't move to a new phone. Play requires a privacy policy in the app, and the bundled libraries' licenses require their notices to ship with it. The launcher icon was still the template robot.
+- **Your choices:** a restore replaces all data; a separate passphrase of 12+ characters; the contact jabbottpublicsupport@gmail.com; a blue `$` on black.
+- **Backup and restore (CS-28):**
+  - Settings → **Backup and restore** (`BackupRoute`, `BackupViewModel`), through the system file picker.
+  - `BackupFile`: header `DDBK`, version, iterations, salt and nonce, then AES-256-GCM with the header as the associated data. The key is PBKDF2-HMAC-SHA256 of the NFC-normalized passphrase at 600 000 iterations. Files are read header-first and capped at 32 MiB.
+  - `BackupCodec`: the payload. `BackupSnapshot`: the records, plus `isConsistent`, which mirrors the schema.
+  - `BackupStore` and `BackupDao`: whole-table read, and a replace in one transaction.
+  - `BackupService` / `BackupManager`: create, save, open and restore; bound in `RepositoryModule`.
+  - A restore shows a preview and needs the typed word `RESTORE`, then restarts `MainActivity`.
+  - The PIN, the security profile and every key stay out of the file.
+- **Privacy policy and licenses:**
+  - New `PRIVACY.md`, based on the merged release manifest (no `INTERNET` permission) and the code.
+  - `CopyLegalDocuments` in `app/build.gradle.kts` copies it, `THIRD_PARTY_NOTICES.md` and `licenses/` into each variant's `legal` assets.
+  - `LegalDocuments` and `LegalText` read and parse them; `LegalDocumentRoute` shows them in English, from Settings → **Privacy policy** and **Open-source licenses**.
+- **Launcher icon:** the new adaptive foreground and background, legacy WebP bitmaps for every density, and `app/src/main/ic_launcher-playstore.png` (512 × 512).
+- **Strings:** 31 new strings in all seven languages (French with no-break spaces before `:` and `?`), plus the non-translatable `RESTORE`. They are flagged for native review in `plan.md`.
+- **Independent review (2026-10-04)** of the backup, restore and legal code, by a separate reviewer that read the change cold. Fixed the same day:
+  - Restore read a whole picked file before checking it, so a large video could exhaust memory. It now reads the header first and caps files at 32 MiB.
+  - Restore refused a transfer whose destination account is gone, a row the schema allows. It now restores such rows as they are.
+  - A backup is now checked before it's written.
+  - The passphrase was held while the picker was open, so a recreated screen silently saved nothing. The file is now encrypted first, a lost result is reported, and a repeated **Continue** is ignored.
+  - A crafted header could request 10 000 000 iterations; the cap is now 2 000 000.
+  - The copy task is registered per variant, and the picker launches no longer crash where no document picker exists.
+  - Two sentences in the privacy policy were made more precise.
+  - Still open: two questions about the notices (protobuf-javalite through Tink; SQLCipher's bundled crypto library), now in `plan.md`.
+- **Tests:**
+  - JVM: `BackupFileTest` (19), `BackupSnapshotTest` (8), `LegalTextTest` (4; it also parses the shipped `PRIVACY.md` and `THIRD_PARTY_NOTICES.md`).
+  - Instrumented: `BackupStoreTest` (round trip, rollback, encrypted restore into a second database), `LegalDocumentsTest` (the assets ship), `BackupViewModelTest` (with a fake `BackupService`; on a device because of `Uri`), `BackupAndLegalScreensTest` (Settings entries, passphrase dialogs, restore confirmation, legal screen).
+- **Validation, on your workstation through the desktop app** (no Gradle or Android SDK there):
+  - The 31 JVM tests passed with kotlinc 2.4.20 on JDK 11, through a small JUnit 4 stand-in. A control run confirmed the stand-in reports failures.
+  - The data layer and both ViewModels type-check against stubs of the Android, Room and Hilt APIs.
+  - ktlint 1.3.1 passed on all 26 changed Kotlin files; detekt 1.23.8 (repository config, main, test and androidTest) found nothing.
+  - All seven `strings.xml` files parse, every translatable string is in every pack, and the format arguments match.
+  - The committed icons decode to the same pixels as the renders.
+  - Not run: `./gradlew lintDebug`, the Android build, and the instrumented tests. The Compose screens and the navigation wiring weren't compiled.

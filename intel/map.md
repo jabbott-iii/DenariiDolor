@@ -7,8 +7,11 @@ A concise map of the repository and its main flows. The architecture rules are i
 | Path | Contents |
 |---|---|
 | `LICENSE` | Proprietary perpetual end-user license (Joseph Anthony Abbott III, licensor; Arizona law) |
-| `THIRD_PARTY_NOTICES.md`, `licenses/` | Attributions for the open-source components in the app; Apache 2.0 and SQLCipher (BSD 3-Clause) license texts |
-| `app/build.gradle.kts` | Android config (min 26 / target 35), R8, env-based release signing, ktlint and detekt setup |
+| `THIRD_PARTY_NOTICES.md`, `licenses/` | Attributions for the open-source components in the app; Apache 2.0 and SQLCipher (BSD 3-Clause) license texts. Shipped in the APK and shown in Settings → Open-source licenses |
+| `PRIVACY.md` | Privacy policy (effective 2026-10-04). Shipped in the APK and shown in Settings → Privacy policy; Play Console needs it at a public URL too |
+| `app/build.gradle.kts` | Android config (min 26 / target 36), R8, env-based release signing, ktlint and detekt setup; `CopyLegalDocuments` copies `PRIVACY.md`, `THIRD_PARTY_NOTICES.md` and `licenses/` into each variant's `legal` assets |
+| `app/src/main/ic_launcher-playstore.png` | 512 × 512 Google Play icon, rendered from the launcher foreground (`res/drawable/ic_launcher_foreground.xml`: blue `$` on black) |
+| `app/src/main/feature-graphic-playstore.png` | 1024 × 500 Google Play feature graphic (24-bit PNG, no alpha): the icon, the app name, the tagline and three claims the app meets (encrypted on the phone, no account, no ads) |
 | `app/proguard-rules.pro` | R8 keep rules (the only keep file AGP reads) |
 | `app/schemas/` | Exported Room schemas `1.json` and `2.json`; also an `androidTest` asset for `MigrationTest` |
 | `app/src/main/AndroidManifest.xml` | `LoginActivity` (launcher), `MainActivity`, FileProvider; `allowBackup=false` |
@@ -37,9 +40,11 @@ A concise map of the repository and its main flows. The architecture rules are i
 | `data/local/preferences` | `SecurityProfileService` (wrapped database key, recovery rules, elapsed-time lockout; pure Kotlin), `LegacySecurityProfile` (v1.0.x hashes, for the upgrade), `ThemePreferences` and `CurrencyPreferences` (`ui_prefs`) |
 | `data/local/vault` | `Vault` (setup, sign-in, recovery, v1.0.x upgrade, biometrics, lock, wipe), `KeystoreSecrets`, `KeystoreProfileStore` (`vault_profile`), `LegacyProfileStorage` (`secure_prefs`, `db_key_prefs`), `VaultConfig` |
 | `data/repository` | `Transaction`/`Category`/`Budget`/`AccountRepository` + `Impl`; `escapeLike` for search |
+| `data/backup` | `BackupService` / `BackupManager` (encrypted backup and restore through the file picker, CS-28), `BackupFile` (format and AES-GCM container), `BackupCodec` (payload), `BackupSnapshot` (records and consistency check), `BackupStore` (whole-table read and replace through `BackupDao`) |
+| `data/legal` | `LegalDocuments` (reads the `legal` assets), `LegalText` (Markdown subset and plain-text parser, pure Kotlin) |
 | `data/export` | `ReportExporter` (SAF save, FileProvider share, share-cache cleanup, translated report labels), `ReportPdfRenderer` (`ReportPdfLabels`; wraps cells with `StaticLayout`), `PdfColumnWidths` (column sizing, pure Kotlin) |
-| `di` | `AppModule` (`Clock` = `DeviceClock`), `DatabaseModule`, `RepositoryModule` |
-| `presentation/ui` | `AppScreens.kt` (NavHost, `popBackOnce`), `LoginScreen.kt`, `TransactionFormScreen.kt`, `SettingsScreen.kt`; feature packages `auth`, `dashboard`, `search`, `report`, `transaction`, `category`, `account`, `budget`, `settings`, `common` |
+| `di` | `AppModule` (`Clock` = `DeviceClock`), `DatabaseModule`, `RepositoryModule` (repositories and `BackupService`) |
+| `presentation/ui` | `AppScreens.kt` (NavHost, `popBackOnce`), `LoginScreen.kt`, `TransactionFormScreen.kt`, `SettingsScreen.kt`; feature packages `auth`, `dashboard`, `search`, `report`, `transaction`, `category`, `account`, `budget`, `settings`, `backup`, `legal`, `common` |
 | `util` | `Money` (cents, `formatMoney`, digit normalization), `Currencies`, `TextDirection` (`transferRoute`), `TransactionTypeLabels`, `Validators`, `DateUtils`, `DeviceClock`, `SessionManager`, `Constants`, `ResultExt` |
 
 ## Layer dependencies
@@ -58,6 +63,8 @@ flowchart LR
         R[Repository interfaces] -.implemented by.-> RI[Repository Impls]
         RI --> DAO[DAOs] --> DB[(Room + SQLCipher<br/>denarii_dolor.db)]
         EX[ReportExporter]
+        BK[BackupService] --> H
+        LD[LegalDocuments] --> AS[(APK assets: legal/)]
         V[Vault] --> SPS[SecurityProfileService<br/>wrapped key + lockout]
         V --> KS[Android Keystore keys]
         V --> H[DatabaseHolder] --> DB
@@ -65,6 +72,8 @@ flowchart LR
     VM --> UC
     VM --> R
     VM --> EX
+    VM --> BK
+    VM --> LD
     UC --> R
     UC --> M
     RI --> M
@@ -117,6 +126,24 @@ sequenceDiagram
         Note over V: every check except the budget
     end
 ```
+
+## Backup and restore (CS-28)
+
+```mermaid
+flowchart TD
+    subgraph Backup
+        P1[Passphrase, 12+ characters, twice] --> C[BackupService.create: read every table<br/>in one transaction, check it, encrypt]
+        C --> PICK1[File picker: choose where] --> SAVE[Write the encrypted bytes]
+    end
+    subgraph Restore
+        PICK2[File picker: choose a backup] --> P2[Passphrase] --> O[BackupService.open: header, then<br/>decrypt, decode, consistency check]
+        O -- wrong passphrase, damaged,<br/>not a backup, newer format --> P2
+        O --> PREV[Preview: date and counts<br/>+ type RESTORE] --> RE[BackupService.restore: delete and insert<br/>every table in one transaction, then currency]
+        RE --> RESTART[MainActivity restarts, still signed in]
+    end
+```
+
+File: `DDBK`, format version, PBKDF2-HMAC-SHA256 iterations (600 000), 16-byte salt and 12-byte nonce, then the AES-256-GCM ciphertext of the payload, with the header as associated data. The PIN, the security profile and every key stay out of it.
 
 ## Data model (schema v2)
 

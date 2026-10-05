@@ -63,7 +63,10 @@ fun SettingsScreen(
     onCurrencyChange: (String) -> Unit = {},
     onManageCategories: () -> Unit = {},
     onManageAccounts: () -> Unit = {},
-    onManageBudgets: () -> Unit = {}
+    onManageBudgets: () -> Unit = {},
+    onBackup: () -> Unit = {},
+    onPrivacyPolicy: () -> Unit = {},
+    onLicenses: () -> Unit = {}
 ) {
     var showCurrencyDialog by rememberSaveable { mutableStateOf(false) }
     Column(
@@ -134,9 +137,20 @@ fun SettingsScreen(
         Button(onClick = onManageBudgets, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.manage_budgets))
         }
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = onBackup, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.settings_backup_restore))
+        }
         Spacer(modifier = Modifier.height(24.dp))
         HorizontalDivider()
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+        TextButton(onClick = onPrivacyPolicy, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.settings_privacy_policy))
+        }
+        TextButton(onClick = onLicenses, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.settings_licenses))
+        }
+        Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.sign_out))
         }

@@ -68,6 +68,39 @@ android {
     }
 }
 
+// PRIVACY.md, THIRD_PARTY_NOTICES.md and the texts in licenses/ live once, at the repository root. This copies them into the
+// `legal` assets folder of every variant, so the app shows the same files (Settings: Privacy policy, Open-source licenses).
+abstract class CopyLegalDocuments : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val documents: ConfigurableFileCollection
+
+    @get:OutputDirectory
+    abstract val outputDirectory: DirectoryProperty
+
+    @get:Inject
+    abstract val fileSystem: FileSystemOperations
+
+    @TaskAction
+    fun copy() {
+        fileSystem.sync {
+            from(documents)
+            into(outputDirectory.dir("legal"))
+        }
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        // One task per variant: AGP gives each one its own output directory.
+        val taskName = "copy${variant.name.replaceFirstChar { it.uppercase() }}LegalDocuments"
+        val copyLegalDocuments = tasks.register<CopyLegalDocuments>(taskName) {
+            documents.from(rootDir.resolve("PRIVACY.md"), rootDir.resolve("THIRD_PARTY_NOTICES.md"), rootDir.resolve("licenses"))
+        }
+        variant.sources.assets?.addGeneratedSourceDirectory(copyLegalDocuments, CopyLegalDocuments::outputDirectory)
+    }
+}
+
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

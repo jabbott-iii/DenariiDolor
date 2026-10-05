@@ -17,8 +17,8 @@ This file is the authoritative source for how the app is structured and how it s
 | Layer | Package | Contains | May depend on |
 |---|---|---|---|
 | Domain | `domain/model`, `domain/usecase`, `domain/report` | Transaction hierarchy, value types, use cases, report formatting | Repository **interfaces**, `util`, `java.time.Clock` |
-| Data | `data/local/db`, `data/local/preferences`, `data/local/vault`, `data/repository`, `data/export` | Room entities, DAOs, migrations, `DatabaseHolder`, the security profile and `Vault` (key wrapping, Keystore, lockout), repositories, CSV/PDF export | Android framework, Room, SQLCipher, Android Keystore (security-crypto only for the v1.0.x upgrade) |
-| Presentation | `presentation/ui/<feature>` | Compose screens (`*Route` + stateless screen), `@HiltViewModel`s, shared composables in `common/` | Use cases, repository interfaces, `ReportExporter` |
+| Data | `data/local/db`, `data/local/preferences`, `data/local/vault`, `data/repository`, `data/export`, `data/backup`, `data/legal` | Room entities, DAOs, migrations, `DatabaseHolder`, the security profile and `Vault` (key wrapping, Keystore, lockout), repositories, CSV/PDF export, encrypted backup and restore (`BackupService`), the legal documents shipped as assets (`LegalDocuments`) | Android framework, Room, SQLCipher, Android Keystore (security-crypto only for the v1.0.x upgrade) |
+| Presentation | `presentation/ui/<feature>` | Compose screens (`*Route` + stateless screen), `@HiltViewModel`s, shared composables in `common/` | Use cases, repository interfaces, `ReportExporter`, `BackupService` (and `BackupFile`'s rules), `LegalDocuments` |
 | DI | `di` | `AppModule` (Clock), `DatabaseModule` (`VaultConfig`, and the unlocked `AppDatabase` from `DatabaseHolder`), `RepositoryModule` (`@Binds` interface → `Impl`, unscoped) | Everything it wires |
 | Util | `util` | `Money`, `Validators`, `DateUtils`, `SessionManager`, `Constants`, `runSuspendCatching` | Nothing app-specific (except `SessionManager` using `SystemClock`) |
 
@@ -29,7 +29,7 @@ Rules:
 3. Each aggregate has a repository interface with a `…RepositoryImpl` in the same file, bound in `RepositoryModule`. Code outside `data` and `di` depends on the interface.
 4. Inject time through `Clock` (from `AppModule`) wherever a result depends on "now", so that tests can fix the time. Take the time zone from the same `Clock` (`clock.zone`), never from `ZoneId.systemDefault()`. The app's `Clock` is `DeviceClock`, whose zone follows the device's current zone, so every screen and check agrees on month boundaries (BUG-09). The one exception is `SessionManager`, which must use the monotonic `SystemClock.elapsedRealtime()` (CS-01).
 5. Keep logic that doesn't need Android in pure Kotlin so that JVM unit tests can cover it. Existing examples are `Ledger`, `SecurityProfileService` (behind `SecurityProfileStore`, `DeviceKeyMixer` and `MonotonicClock`), `LegacySecurityProfile`, `DatabaseKeys`, `ReportCsvFormatter`, `SearchFilterParser` and `DashboardMappers`.
-6. The database exists only after sign-in. `AppDatabase`, the DAOs and the repositories are unscoped and come from `DatabaseHolder`, so each screen gets the database opened at the latest sign-in. Never inject them into code that runs before sign-in (`LoginActivity`, any `@Singleton`); go through `Vault`. `DefaultDataInitializer` reads the holder when it runs. While the vault is locked, `DatabaseHolder.database` throws.
+6. The database exists only after sign-in. `AppDatabase`, the DAOs and the repositories are unscoped and come from `DatabaseHolder`, so each screen gets the database opened at the latest sign-in. Never inject them into code that runs before sign-in (`LoginActivity`, any `@Singleton`); go through `Vault`. `DefaultDataInitializer` and `BackupManager` read the holder when they run. While the vault is locked, `DatabaseHolder.database` throws.
 
 ## 3. Domain invariants (do not break)
 
@@ -58,6 +58,7 @@ Rules:
   2. Add a `Migration` in `Migrations.kt` and register it in `DatabaseHolder.open` (`addMigrations(...)`).
   3. Build, then commit the new `app/schemas/.../<n>.json`.
   4. Extend `MigrationTest`.
+  5. Carry the change into backups (CS-28): `BackupStore`, the records in `BackupSnapshot` and its `isConsistent` checks, and `BackupCodec` with a new `BackupFile.FORMAT_VERSION`. `decode` must keep reading every earlier version, because users restore old files.
 
   `fallbackToDestructiveMigration()` must not be reintroduced. Where the minimum-API SQLite (API 26) lacks a feature such as `DROP COLUMN`, recreate the table as `MIGRATION_1_2` does.
 - **Encryption and the database key (CS-15):**
@@ -78,6 +79,7 @@ Changes to the files below are security-sensitive. Flag them for human review an
 | Session gate | `util/SessionManager.kt`, `MainActivity.kt` |
 | Encryption at rest | `data/local/vault/*`, `data/local/db/DatabaseHolder.kt`, `data/local/db/security/*`, `di/DatabaseModule.kt` |
 | Exports | `data/export/*`, `domain/report/ReportCsvFormatter.kt`, `res/xml/file_paths.xml` |
+| Backups | `data/backup/*`, `data/local/db/dao/BackupDao.kt`, `presentation/ui/backup/*` |
 | Platform surface | `AndroidManifest.xml`, `res/xml/backup_rules.xml`, `res/xml/data_extraction_rules.xml`, `app/proguard-rules.pro` |
 | Supply chain | `.github/workflows/*`, `.github/dependabot.yml`, `gradle/libs.versions.toml`, `gradle/wrapper/*`, `settings.gradle.kts` (repositories), the CS-22 and CS-23 constraints in `build.gradle.kts` and `app/build.gradle.kts` |
 
@@ -98,6 +100,7 @@ Standing rules:
 - New business logic needs unit tests. New DAO queries, migrations or screens need instrumented tests.
 - `VaultTest` runs the vault on the real Keystore and SQLCipher under test-only names (`VaultConfig`), so it never touches the app's own data. Biometric sign-in needs an enrolled biometric, so it is checked by hand.
 - Compose tests select elements with `testTag` constants defined next to the screen, such as `BIOMETRIC_BUTTON_TAG`.
+- `BackupViewModel` takes `android.net.Uri`, which JVM tests can't create, so `BackupViewModelTest` runs on the device against a fake `BackupService`. Keep new ViewModels free of Android types where possible, so they can be tested on the JVM.
 - UiAutomator does not wait for Compose. Wait for the target state (`waitUntil` or `waitForIdle`) before sending system events, because CI runs the API 26 emulator slowly. Before a real key event aimed at a dialog, also wait for the dialog's window (`UiDevice.wait(Until.hasObject(...))`).
 - On Android 8.x (API 26–27) a new window gets initial focus even in touch mode. A dialog whose first focusable element is a text field therefore opens with that field focused and the keyboard up, and the first Back only closes the keyboard. Call `Espresso.closeSoftKeyboard()` before testing a dialog's Back behaviour.
 - Espresso 3.7.0 runs on API 37 emulator images; 3.6.1 failed there (`NoSuchMethodException: InputManager.getInstance`). CI runs the instrumented tests on API 26 (minSdk) and API 36 (targetSdk).
@@ -116,6 +119,7 @@ Conventions:
 
 - Every source file starts with the proprietary copyright notice (copy it from an existing file). The project is proprietary: `LICENSE` is the perpetual end-user license for buyers.
 - Third-party attributions live in `THIRD_PARTY_NOTICES.md`, with license texts in `licenses/`. Update them whenever a dependency that ships in the app is added or removed.
+- `PRIVACY.md`, `THIRD_PARTY_NOTICES.md` and `licenses/` are copied into the app's `legal` assets at build time (`CopyLegalDocuments` in `app/build.gradle.kts`) and shown from Settings, in English. Keep the two Markdown files within the subset `LegalText` renders: `#` headings, paragraphs, `-` lists, pipe tables, `**bold**`, `` `code` `` and links. `LegalTextTest` checks both files. Update `PRIVACY.md` whenever the app's data handling changes.
 - Composables are PascalCase, and a screen is split into a `…Route` (ViewModel wiring) and a stateless screen.
 - Warnings are not suppressed without a reason next to the suppression, for example `@Suppress("TooGenericExceptionCaught") // Intentional: …`.
 

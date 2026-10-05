@@ -9,6 +9,7 @@ package com.denariidolor.data.local.db
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.denariidolor.data.local.db.dao.AccountDao
+import com.denariidolor.data.local.db.dao.BackupDao
 import com.denariidolor.data.local.db.dao.BudgetDao
 import com.denariidolor.data.local.db.dao.CategoryDao
 import com.denariidolor.data.local.db.dao.TransactionDao
@@ -27,4 +28,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun budgetDao(): BudgetDao
     abstract fun accountDao(): AccountDao
+    abstract fun backupDao(): BackupDao
 }

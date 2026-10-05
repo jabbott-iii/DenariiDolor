@@ -6,6 +6,8 @@
 
 package com.denariidolor.di
 
+import com.denariidolor.data.backup.BackupManager
+import com.denariidolor.data.backup.BackupService
 import com.denariidolor.data.repository.AccountRepository
 import com.denariidolor.data.repository.AccountRepositoryImpl
 import com.denariidolor.data.repository.BudgetRepository
@@ -33,4 +35,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindAccountRepository(impl: AccountRepositoryImpl): AccountRepository
+
+    @Binds
+    abstract fun bindBackupService(impl: BackupManager): BackupService
 }

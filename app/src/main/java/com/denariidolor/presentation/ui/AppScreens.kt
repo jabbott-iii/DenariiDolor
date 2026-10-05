@@ -32,10 +32,14 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.denariidolor.R
+import com.denariidolor.data.legal.LegalDocument
 import com.denariidolor.presentation.ui.account.ManageAccountsRoute
+import com.denariidolor.presentation.ui.backup.BackupRoute
 import com.denariidolor.presentation.ui.budget.ManageBudgetsRoute
 import com.denariidolor.presentation.ui.category.ManageCategoriesRoute
 import com.denariidolor.presentation.ui.dashboard.DashboardRoute
+import com.denariidolor.presentation.ui.legal.LegalDocumentRoute
+import com.denariidolor.presentation.ui.legal.LegalDocumentViewModel
 import com.denariidolor.presentation.ui.report.ReportRoute
 import com.denariidolor.presentation.ui.search.SearchRoute
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
@@ -54,10 +58,14 @@ private enum class MainDestination(val route: String, val titleRes: Int, val ico
     ),
     ManageCategories("manage_categories", R.string.manage_categories, android.R.drawable.ic_menu_sort_by_size),
     ManageAccounts("manage_accounts", R.string.manage_accounts, android.R.drawable.ic_menu_agenda),
-    ManageBudgets("manage_budgets", R.string.manage_budgets, android.R.drawable.ic_menu_manage)
+    ManageBudgets("manage_budgets", R.string.manage_budgets, android.R.drawable.ic_menu_manage),
+    Backup("backup", R.string.settings_backup_restore, android.R.drawable.ic_menu_save),
+    Legal("legal/{${LegalDocumentViewModel.ARG_DOCUMENT}}", R.string.settings_privacy_policy, android.R.drawable.ic_menu_info_details)
 }
 
 private fun editTransactionRoute(id: Long) = "edit_transaction/$id"
+
+private fun legalRoute(document: LegalDocument) = "legal/${document.name}"
 
 /**
  * Pops the current destination at most once. Later calls, such as a double tap on Back or a second `Saved` event, arrive after
@@ -79,7 +87,8 @@ fun MainActivityContent(
     onSignOut: () -> Unit,
     onDarkModeChange: (Boolean) -> Unit,
     onBiometricChange: (Boolean) -> Unit,
-    onCurrencyChange: (String) -> Unit = {}
+    onCurrencyChange: (String) -> Unit = {},
+    onRestored: () -> Unit = {}
 ) {
     val navController = rememberNavController()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -148,7 +157,10 @@ fun MainActivityContent(
                     onCurrencyChange = onCurrencyChange,
                     onManageCategories = { navController.navigate(MainDestination.ManageCategories.route) },
                     onManageAccounts = { navController.navigate(MainDestination.ManageAccounts.route) },
-                    onManageBudgets = { navController.navigate(MainDestination.ManageBudgets.route) }
+                    onManageBudgets = { navController.navigate(MainDestination.ManageBudgets.route) },
+                    onBackup = { navController.navigate(MainDestination.Backup.route) },
+                    onPrivacyPolicy = { navController.navigate(legalRoute(LegalDocument.PRIVACY_POLICY)) },
+                    onLicenses = { navController.navigate(legalRoute(LegalDocument.OPEN_SOURCE_LICENSES)) }
                 )
             }
             composable(MainDestination.AddTransaction.route) {
@@ -168,6 +180,15 @@ fun MainActivityContent(
             }
             composable(MainDestination.ManageBudgets.route) {
                 ManageBudgetsRoute(onBack = navController.popBackOnce())
+            }
+            composable(MainDestination.Backup.route) {
+                BackupRoute(onBack = navController.popBackOnce(), onRestored = onRestored)
+            }
+            composable(
+                route = MainDestination.Legal.route,
+                arguments = listOf(navArgument(LegalDocumentViewModel.ARG_DOCUMENT) { type = NavType.StringType })
+            ) {
+                LegalDocumentRoute(onBack = navController.popBackOnce())
             }
         }
     }
