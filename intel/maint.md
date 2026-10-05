@@ -130,6 +130,7 @@ Languages and currency:
 - `Money.currency` holds the saved currency for `formatMoney`, which formats with `NumberFormat` for the device's locale. `Money.parseToCents` and `DateUtils.parseIsoDate` accept the currency's symbol or code and any Unicode digits (`Money.normalizeDigits`).
 - Changing the currency restarts `MainActivity`, because ViewModels hold amounts already formatted as text.
 - Inside a `@Composable`, read the locale with `LocalLocale.current.platformLocale`, never `Locale.getDefault()`, which isn't observable state. Compose's `NonObservableLocale` lint check is an error, so `lintDebug` fails on it. Code outside composables (`formatMoney`, `transferRoute`, the report formatters) keeps its `Locale.getDefault()` default arguments.
+- Inside a `@Composable`, read strings with `stringResource` (or `LocalResources.current`), never `LocalContext.current.getString(...)`. Compose's `LocalContextGetResourceValueCall` lint check is an error, including inside a `LaunchedEffect` in the composable. Read the string during composition, as `AddTransactionRoute` does with its saved message, and use that value in the effect.
 - Stored values are never shown as text: `TransactionType.labelRes()` gives the label. Transfer routes use `transferRoute`, whose arrow follows the language's direction. The default accounts and categories are named in the device's language when they are seeded, then are ordinary data.
 
 ## 8. Toolchain and dependency constraints

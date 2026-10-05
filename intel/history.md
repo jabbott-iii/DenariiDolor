@@ -680,3 +680,17 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
   - All seven `strings.xml` files parse, every translatable string is in every pack, and the format arguments match.
   - The committed icons decode to the same pixels as the renders.
   - Not run: `./gradlew lintDebug`, the Android build, and the instrumented tests. The Compose screens and the navigation wiring weren't compiled.
+
+## 2026-10-04 — Security log: sensitive details removed
+- **Why:** you asked to wipe security-sensitive information from `intel/cybersec.md`, which is public with the repository.
+- **Removed:** how open findings could be exploited and how long guessing would take (CS-26, CS-27); where keys and secrets are held (CS-15, sections 4 and 5); private Dependabot alert numbers, and the vulnerable versions of the item still in progress (CS-23, CS-24, CS-25, **Last update**); a probe result (CS-13); and the commit that holds the old signed APK (CS-18).
+- **Kept:** every finding, with its ID, severity, component, fix, validation and status, as `AGENTS.md` requires. No item was deleted.
+- **Added:** rule 5 in section 6 of `cybersec.md`, which keeps such details out of the file.
+
+## 2026-10-04 — CI: `LocalContextGetResourceValueCall` lint error
+- **Why:** CI run 37252312627 on `c6c64ce` failed at **Android lint** (1 error, 34 warnings). Compose's `LocalContextGetResourceValueCall` check flagged `BackupScreen.kt:85`: `BackupRoute` read the "Backup restored." message with `context.getString(...)` on `LocalContext.current`, which doesn't follow configuration changes. The main source set compiled; unit tests, coverage and the release build were skipped after the failure.
+- **Change:** `BackupRoute` reads the message with `stringResource` during composition and shows that value when the restore finishes, the pattern `AddTransactionRoute` already uses. The message and the restore flow are unchanged. `maint.md` §7 records the rule.
+- **Validation:**
+  - Read from CI's log: lint reported only this one error.
+  - ktlint 1.3.1 and detekt 1.23.8 passed on the changed file.
+  - Not run: `./gradlew lintDebug`, the unit tests and the build, because no Gradle or Android SDK is available here. The 34 warnings weren't reviewed.

@@ -70,6 +70,7 @@ internal const val RESTORE_CONFIRM_BUTTON_TAG = "restoreConfirm"
 fun BackupRoute(onBack: () -> Unit, onRestored: () -> Unit, viewModel: BackupViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val restoredMessage = stringResource(R.string.backup_restored)
     val chooseDestination = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(BackupFile.MIME_TYPE)) {
         viewModel.onDestinationChosen(it)
     }
@@ -82,7 +83,7 @@ fun BackupRoute(onBack: () -> Unit, onRestored: () -> Unit, viewModel: BackupVie
                 is BackupEvent.ChooseDestination -> chooseDestination.launchOrExplain(event.fileName, context, R.string.backup_save_failed)
                 is BackupEvent.Message -> toast(context, event.message.resolve(context))
                 BackupEvent.Restored -> {
-                    toast(context, context.getString(R.string.backup_restored))
+                    toast(context, restoredMessage)
                     onRestored()
                 }
             }
