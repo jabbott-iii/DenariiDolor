@@ -694,3 +694,14 @@ ktlint 1.3.1 and detekt 1.23.8 re-run on the result: 0 findings. Instrumented te
   - Read from CI's log: lint reported only this one error.
   - ktlint 1.3.1 and detekt 1.23.8 passed on the changed file.
   - Not run: `./gradlew lintDebug`, the unit tests and the build, because no Gradle or Android SDK is available here. The 34 warnings weren't reviewed.
+
+## 2026-10-11 — Crash after a correct PIN: AppCompat 1.7.0 and Navigation 2.10
+- **Symptom:** after a correct PIN, the app crashed every time. Your logcat showed `IllegalStateException: No NavigationEventDispatcher was provided via LocalNavigationEventDispatcherOwner`, thrown from `NavHost` (`NavHostEventHandler.kt:40`) in `MainActivityContent` (`AppScreens.kt:136`) during `MainActivity`'s first frame. A wrong PIN never opens `MainActivity`, so only a correct one crashed.
+- **Cause:** the toolchain upgrade (2026-10-03) moved Navigation to 2.10.2, whose `NavHost` handles Back through `androidx.navigationevent` and needs a `NavigationEventDispatcherOwner` on the view tree. Activity 1.13.0's `ComponentActivity.initializeViewTreeOwners()` sets one, but both activities extend `AppCompatActivity`, and AppCompat 1.7.0 overrides `setContentView` without calling it. Its own `initViewTreeOwners()` sets only the lifecycle, ViewModel store, saved-state and `OnBackPressedDispatcher` owners. Confirmed in the bytecode of your debug APK (`app-debug.apk`, built 2026-10-11). AppCompat 1.7.1's release notes describe this exact fix: it now calls `initializeViewTreeOwners()`.
+- **Why CI didn't catch it:** every Compose test hosts its screen in `ComponentActivity`, which sets every owner itself, and no test opens `MainActivity`. The app hadn't been run on a device since the upgrade.
+- **Change:** `gradle/libs.versions.toml`: `appcompat` 1.7.0 → 1.7.1, with a comment on the minimum. No code changed.
+- **Also checked in the same APK:** a static scan of all 19 dex files found no missing method, field or class reference outside optional ones (window extensions, paging, Tink's optional HTTP client), and no class missing an implementation of an abstract method. `libsqlcipher.so` is 16 KB aligned. The Room identity hash matches `app/schemas/.../2.json`.
+- Also updated: `maint.md` (section 8, the AppCompat pin; section 6, the test gap) and `plan.md` (follow-on).
+- **Validation:**
+  - The version catalog parses.
+  - Not run: Gradle sync, the build, the tests and an on-device sign-in. Neither the cloud workspace nor this session can reach Google Maven or Gradle's servers, and the session has no shell on your computer. The steps are in `plan.md`.

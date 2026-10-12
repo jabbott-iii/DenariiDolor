@@ -4,7 +4,9 @@ kotlin = "2.4.20"
 ksp = "2.3.12"
 composeBom = "2026.09.00"
 activity = "1.13.0"
-appcompat = "1.7.0"
+# At least 1.7.1: older AppCompatActivity never sets the NavigationEvent view-tree owner that Navigation 2.10's NavHost
+# needs, so MainActivity crashed right after sign-in (maint.md §8).
+appcompat = "1.7.1"
 biometric = "1.1.0"
 coreKtx = "1.19.1"
 coroutines = "1.11.0"

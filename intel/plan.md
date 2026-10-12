@@ -44,6 +44,11 @@ All twelve bugs (BUG-01 – BUG-12) from the 2026-10-03 review are fixed, and ev
   - Read the dependency graph and remove the CS-22 and CS-23 constraints that AGP 9.4.1 no longer needs. Netty is done.
   - Close Dependabot PRs #12 – #17.
   - Optionally refresh the wrapper JAR and scripts with `./gradlew wrapper --gradle-version 9.6.1`.
+- **Sign-in crash fix (2026-10-11, working tree):** AppCompat 1.7.0 → 1.7.1 (`history.md`). Still to do:
+  - Sync Gradle, run the debug build on the `Medium_Phone` emulator, sign in with the correct PIN and confirm the Dashboard opens. Also open Search, Reports and Settings, press Back, and sign out.
+  - Commit, then get a green CI run (lint, unit tests, `assembleRelease`, instrumented tests on API 26 and 36).
+  - Add an instrumented test that hosts `MainActivityContent` in an `AppCompatActivity` (or opens `MainActivity` with an unlocked test vault), so that a missing view-tree owner fails in CI. Today every Compose test uses `ComponentActivity` (`maint.md` §6).
+  - Dependabot's `androidx.appcompat-appcompat-1.8.0` branch includes the fix too (1.8.0 also raises AppCompat's own minSdk to 23, below the app's 26). Close it, or take it later in place of 1.7.1.
 - **Drop `security-crypto`** (CS-09) once v1.0.x installs have had time to upgrade. It is used only by `LegacyProfileStorage`.
 - **Language packs (2026-10-04):**
   - Have a native speaker review each pack; each translator's open questions are in `history.md` (2026-10-04).
