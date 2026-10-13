@@ -26,8 +26,8 @@ android {
         minSdk = 26
         targetSdk = 36
         // CD passes -PversionCode / -PversionName derived from the release tag.
-        versionCode = (findProperty("versionCode") as String?)?.toInt() ?: 1
-        versionName = (findProperty("versionName") as String?) ?: "1.0.0-dev"
+        versionCode = (findProperty("versionCode") as String?)?.toInt() ?: 2
+        versionName = (findProperty("versionName") as String?) ?: "1.2.0-dev"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
