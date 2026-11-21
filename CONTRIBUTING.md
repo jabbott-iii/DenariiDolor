@@ -1,6 +1,6 @@
 # Contributing to Denarii Dolor
 
-Thank you for helping. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). The architecture and maintainability rules in [`intel/maint.md`](intel/maint.md) are authoritative, and this guide summarizes what a contributor needs from them.
+Thank you for helping. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). The architecture and maintainability rules in [`CLAUDE.md`](CLAUDE.md) and [`.claude/rules/`](.claude/rules/) are authoritative. Claude Code reads them automatically, and they apply to every contributor. This guide summarizes what a contributor needs from them.
 
 Security vulnerabilities are the exception: report them through a private security advisory on the repository, not a public issue.
 
@@ -53,7 +53,7 @@ If you run detekt-cli outside Gradle, pass `--build-upon-default-config` so that
 
 ## Coding expectations
 
-- **Architecture:** follow the layers in `intel/maint.md`:
+- **Architecture:** follow the layers and dependency rules in [`CLAUDE.md`](CLAUDE.md):
   - Composables talk only to ViewModels.
   - Transaction writes go through the use cases, so validation and balance updates always run.
   - Code outside `data` and `di` depends on repository interfaces, not on the `Impl` classes.
@@ -79,15 +79,18 @@ If you run detekt-cli outside Gradle, pass `--build-upon-default-config` so that
 - **Style:**
   - Start every source file with the proprietary copyright notice (copy it from an existing file), and follow ktlint's Android style.
   - A new dependency must be added to `THIRD_PARTY_NOTICES.md`, with its license text in `licenses/` when that license requires it.
-  - `THIRD_PARTY_NOTICES.md` and `PRIVACY.md` are shown inside the app, so keep them to the Markdown the app renders (see `intel/maint.md` §7); `LegalTextTest` checks them. A change to what the app stores or shares needs a matching change to `PRIVACY.md`.
+  - `THIRD_PARTY_NOTICES.md` and `PRIVACY.md` are shown inside the app, so keep them to the Markdown the app renders (see [`.claude/rules/legal-docs.md`](.claude/rules/legal-docs.md)); `LegalTextTest` checks them. A change to what the app stores or shares needs a matching change to `PRIVACY.md`.
   - Composables are PascalCase, with a `…Route` wrapper that wires the ViewModel.
   - Add comments only for intent that isn't obvious.
   - Don't suppress a warning without a comment explaining why.
-- **Dependencies:** add a new library only when an existing dependency or the platform can't do the job. Set versions only in `gradle/libs.versions.toml`. Some versions are pinned or held back on purpose (Kotlin and KSP move together; detekt 1.23.8, ktlint 1.3.1, Vico 2.0.0); check `intel/maint.md` section 8 before bumping one.
+- **Dependencies:** add a new library only when an existing dependency or the platform can't do the job. Set versions only in `gradle/libs.versions.toml`. Some versions are pinned or held back on purpose (Kotlin and KSP move together; detekt 1.23.8, ktlint 1.3.1, Vico 2.0.0); check the pinned-versions table in [`.claude/rules/build-gradle.md`](.claude/rules/build-gradle.md) before bumping one.
 - **Security:**
   - Don't add logging (`Log`, `println`, `printStackTrace`), network access, or secrets of any kind.
   - Don't weaken authentication, encryption, validation, lint or tests to get a change through.
-  - Changes to the security-sensitive files listed in `intel/maint.md` section 5 need an entry in `intel/cybersec.md`.
+  - The security-sensitive files are the `paths` listed at the top of [`.claude/rules/security.md`](.claude/rules/security.md).
+    A change to one of them must keep every control in that file's table, and the pull request must point it out. A new
+    security finding takes the next free `CS-NN` ID. Earlier findings are in the git history:
+    `git show aba0b55:intel/cybersec.md`.
 
 ## Pull request expectations
 
@@ -95,5 +98,5 @@ If you run detekt-cli outside Gradle, pass `--build-upon-default-config` so that
 - List the validation commands you ran and their results. Say which checks you didn't run (for example, instrumented tests without a device).
 - Keep the change small and focused, and preserve existing behavior unless the issue approves a change.
 - Point out any security-sensitive change so that it gets a careful review.
-- Update the documentation only where your change affects it: `README.md` for user-visible behavior, and the `intel/` documents for architecture, structure or security.
+- Update the documentation only where your change affects it: `README.md` for user-visible behavior, and [`CLAUDE.md`](CLAUDE.md) or [`.claude/rules/`](.claude/rules/) for architecture, conventions or security controls.
 - CI and the security workflow must pass before merge.
