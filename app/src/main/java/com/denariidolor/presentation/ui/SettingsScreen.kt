@@ -94,7 +94,8 @@ fun SettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp)
+            // The bottom padding keeps Sign Out clear of the floating + button when scrolled to the end, as on the Dashboard.
+            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 88.dp)
     ) {
         Text(
             text = stringResource(R.string.settings_session_timeout, state.sessionTimeoutMinutes),
