@@ -36,6 +36,8 @@
 | **Validation** | Rejects zero or negative amounts, amounts with more than 2 decimals, blank descriptions or ones longer than 200 characters, invalid dates, transfers to the same account, duplicate names, and inverted search ranges. |
 | **Security** | SQLCipher-encrypted database whose key only your PIN, your security answer or (optionally) your biometrics can unlock; PIN (6–12 digits) with an escalating lockout that changing the date can't skip; 5-minute session timeout; no cloud backup. |
 | **Look & feel** | Material 3, a dark mode switch, bottom navigation, and a floating **+** button for quick entry. |
+| **Getting started** | A short welcome tour after you set up, and a Dashboard checklist (add an account, record a transaction, set a budget) that ticks itself off as you go. Replay the tour from Settings. |
+| **Help & support** | An in-app **Help & FAQ**, **Send feedback** by email, **Rate this app** on Google Play and **Share this app** with friends, all from Settings. |
 | **Languages & currency** | English, Simplified Chinese, Hindi, Spanish (Latin America), Arabic (right to left), French and Brazilian Portuguese, following the phone's language. Amounts show in the currency chosen in **Settings → Currency**, set at first launch from the phone's region and written the way the phone's language writes money (`$1,234.50`, `1 234,50 €`, `₹12,34,567.00`). Changing it relabels amounts; it doesn't convert them. |
 
 ## Use cases
@@ -63,6 +65,7 @@
 1. Choose a **PIN** (6–12 digits) and confirm it.
 2. Write a **security question** only you can answer, and give its **answer**. You'll need the answer if you forget your PIN. The answer needs at least 6 characters, can't appear in the question and can't be your PIN; capital letters and extra spaces don't matter.
 3. Tap **Create Security Profile**, then sign in. The app starts with your region's currency (US dollars where that currency doesn't use cents); change it in **Settings → Currency**.
+4. A short welcome tour introduces the app. Swipe through it or tap **Skip**. The Dashboard then shows a **Get started** checklist; tap a step to go straight to it, or tap **×** to hide the checklist.
 
 ### 2. Signing in
 
@@ -80,7 +83,7 @@
 | **Dashboard** | This month's totals, chart, budgets, balances and recent transactions |
 | **Search** | Find transactions by text, category, amount or date |
 | **Reports** | Monthly report; save or share it as CSV or PDF |
-| **Settings** | Dark mode; biometric sign-in; currency; manage categories, accounts and budgets; backup and restore; privacy policy; open-source licenses; sign out |
+| **Settings** | Dark mode; biometric sign-in; currency; manage categories, accounts and budgets; backup and restore; help and support; privacy policy; open-source licenses; sign out |
 
 Tap the round **+** button to add a transaction. The **Back** button on that form returns you to the screen you came from.
 
@@ -122,6 +125,16 @@ Open **Settings → Backup and restore**.
 - **On a new phone:** install the app, set up a new PIN and security question, then restore.
 
 > Keep the passphrase safe. Without it the backup can't be opened, and nobody can recover it.
+
+### 8. Help and support
+
+Open **Settings → Help and support**.
+
+- **Help & FAQ:** answers to common questions, such as a forgotten PIN, backups, budgets, transfers, currency and reports. Tap a question to open its answer.
+- **Show the welcome tour:** replays the tour and brings back the **Get started** checklist.
+- **Send feedback:** opens your email app with a message to jabbottpublicsupport@gmail.com that already includes the app and Android versions. Nothing is sent until you send it. Please don't include your PIN, a backup passphrase or your financial records.
+- **Rate this app:** opens the app's Google Play page. After your 10th new transaction the app also asks once whether you'd like to rate it; **Not now** lets it ask one more time later, and **Don't ask again** stops it for good.
+- **Share this app:** opens Android's share sheet with a short message and the Google Play link.
 
 ## Examples
 

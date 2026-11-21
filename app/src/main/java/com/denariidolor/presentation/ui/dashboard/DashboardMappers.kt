@@ -13,6 +13,7 @@ import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.model.toDomainTransactionOrNull
 import com.denariidolor.presentation.ui.common.CategoryIcons
 import com.denariidolor.presentation.ui.common.TransactionRow
+import com.denariidolor.util.Constants
 import java.time.YearMonth
 
 data class DashboardSummary(val incomeCents: Long = 0L, val expenseCents: Long = 0L, val netCents: Long = 0L)
@@ -46,9 +47,34 @@ data class DashboardUiState(
     val budgets: List<BudgetProgress> = emptyList(),
     val balances: List<AccountBalance> = emptyList(),
     val recent: List<TransactionRow> = emptyList(),
-    val failed: Boolean = false
+    val failed: Boolean = false,
+    /** The getting-started checklist, or null when it's dismissed, finished, or not part of this profile's onboarding. */
+    val gettingStarted: GettingStarted? = null
 ) {
     val budgetAlerts: Int get() = budgets.count { it.status != BudgetStatus.OK }
+}
+
+enum class GettingStartedStep { ADD_ACCOUNT, ADD_TRANSACTION, SET_BUDGET }
+
+data class GettingStarted(val done: Set<GettingStartedStep>) {
+    val completed: Int get() = done.size
+    val total: Int get() = GettingStartedStep.entries.size
+}
+
+private val DEFAULT_ACCOUNT_IDS = Constants.DEFAULT_ACCOUNTS.map { it.id }.toSet()
+
+/**
+ * Works out the checklist from what the Dashboard already shows, so nothing extra is tracked: an account besides the
+ * defaults, any transaction, any budget. Null once every step is done, or when the data failed to load.
+ */
+fun gettingStarted(state: DashboardUiState): GettingStarted? {
+    if (state.failed) return null
+    val done = buildSet {
+        if (state.balances.any { it.id !in DEFAULT_ACCOUNT_IDS }) add(GettingStartedStep.ADD_ACCOUNT)
+        if (state.recent.isNotEmpty()) add(GettingStartedStep.ADD_TRANSACTION)
+        if (state.budgets.isNotEmpty()) add(GettingStartedStep.SET_BUDGET)
+    }
+    return GettingStarted(done).takeIf { it.completed < it.total }
 }
 
 fun summarize(transactions: List<TransactionEntity>): DashboardSummary {

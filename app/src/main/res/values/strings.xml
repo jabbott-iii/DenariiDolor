@@ -271,4 +271,76 @@
     <string name="default_category_income">General Income</string>
     <string name="default_category_transfer">Transfer</string>
     <string name="dashboard_load_failed">Your transactions couldn\'t be loaded. Leave the app and come back to try again.</string>
+
+    <!-- Welcome tour, shown once after a new profile is set up -->
+    <string name="tour_private_title">Your money, kept private</string>
+    <string name="tour_private_body">Track expenses, income and transfers between your accounts. Everything stays on this phone, encrypted and locked with your PIN. No account, no ads, no internet.</string>
+    <string name="tour_add_title">Add in seconds</string>
+    <string name="tour_add_body">Tap + to record an expense, income or transfer. Pick an account and a category, and your balances update on their own.</string>
+    <string name="tour_budget_title">Stay on budget</string>
+    <string name="tour_budget_body">Give a category a monthly limit. The Dashboard shows how much is left and warns you before you go over.</string>
+    <string name="tour_reports_title">Reports and backups</string>
+    <string name="tour_reports_body">Save or share a monthly report as a PDF or CSV file, and keep an encrypted backup so you never lose your records.</string>
+    <string name="tour_skip">Skip</string>
+    <string name="tour_next">Next</string>
+    <string name="tour_get_started">Get started</string>
+    <string name="tour_page_indicator">Page %1$d of %2$d</string>
+
+    <!-- Getting-started checklist on the Dashboard -->
+    <string name="getting_started_title">Get started</string>
+    <string name="getting_started_progress">%1$d of %2$d done</string>
+    <string name="getting_started_add_account">Add your bank or card account</string>
+    <string name="getting_started_add_transaction">Record your first transaction</string>
+    <string name="getting_started_set_budget">Set a monthly budget</string>
+    <string name="getting_started_step_done">Done</string>
+    <string name="getting_started_step_todo">Not done yet</string>
+    <string name="getting_started_hide">Hide the getting-started checklist</string>
+
+    <!-- Settings: help and support -->
+    <string name="settings_help_section">Help and support</string>
+    <string name="settings_help_faq">Help &amp; FAQ</string>
+    <string name="settings_show_tour">Show the welcome tour</string>
+    <string name="settings_send_feedback">Send feedback</string>
+    <string name="settings_rate_app">Rate this app</string>
+    <string name="settings_share_app">Share this app</string>
+
+    <!-- Help & FAQ screen. Each %s is the name of a screen or setting, taken from its own string. -->
+    <string name="help_title">Help &amp; FAQ</string>
+    <string name="help_expanded">Expanded</string>
+    <string name="help_collapsed">Collapsed</string>
+    <string name="help_contact_title">Still need help?</string>
+    <string name="help_contact_body">Send a question, a problem or an idea. Please don\'t include your PIN, a backup passphrase or your financial records.</string>
+    <string name="faq_data_q">Where is my data stored?</string>
+    <string name="faq_data_a">Only on this phone. Denarii Dolor has no account or server and can\'t connect to the internet. Your records are kept in an encrypted database that only your PIN, your security answer or, if you turn it on, your fingerprint or face can unlock. Android\'s cloud backup is turned off for the app.</string>
+    <string name="faq_forgot_pin_q">I forgot my PIN. What can I do?</string>
+    <string name="faq_forgot_pin_a">On the sign-in screen, tap “%1$s” and answer your security question to choose a new PIN. If you can\'t answer it either, your data can\'t be unlocked, because nobody else has the key. The only way forward then is “%2$s” on the sign-in screen, which erases everything so you can start over.</string>
+    <string name="faq_signed_out_q">Why was I signed out?</string>
+    <string name="faq_signed_out_a">To protect your data, the app signs you out after %1$d minutes without use. Sign in again with your PIN, or turn on “%2$s” in Settings to sign in with your fingerprint or face.</string>
+    <string name="faq_backup_q">How do I back up my data or move it to a new phone?</string>
+    <string name="faq_backup_a">In Settings, open “%1$s” and create a backup protected by a passphrase. Save the file somewhere safe, such as a cloud drive. On the new phone, install Denarii Dolor, set it up, then restore the file with the same passphrase. Nobody can recover a forgotten passphrase.</string>
+    <string name="faq_budgets_q">How do budgets work?</string>
+    <string name="faq_budgets_a">In Settings, open “%1$s” to give a category a monthly limit and a warning threshold. The Dashboard shows how much of each budget you\'ve used this month. If an expense would go over its budget, the app asks before saving it.</string>
+    <string name="faq_transfer_q">What is a transfer?</string>
+    <string name="faq_transfer_a">A transfer moves money between two of your accounts, for example from Savings to Cash. It changes both balances but doesn\'t count as income or as an expense.</string>
+    <string name="faq_delete_q">Why can\'t I delete a category or an account?</string>
+    <string name="faq_delete_a">The default categories and accounts can\'t be deleted, and neither can one that transactions still use. Change or delete those transactions first, then try again.</string>
+    <string name="faq_currency_q">How do I change the currency?</string>
+    <string name="faq_currency_a">In Settings, tap “%1$s” and pick one. Only the symbol changes: amounts you already entered aren\'t converted.</string>
+    <string name="faq_reports_q">How do I export a report?</string>
+    <string name="faq_reports_a">Open “%1$s”, choose a month, then save or share it as a PDF or CSV file. Exported files aren\'t encrypted, so keep them somewhere private.</string>
+    <string name="faq_biometric_q">Why did fingerprint or face sign-in turn off?</string>
+    <string name="faq_biometric_a">It turns off when the fingerprints or faces enrolled on the phone change, so that a newly added one can\'t open your data. Your PIN still works, and you can turn biometric sign-in back on in Settings.</string>
+
+    <!-- Rate, share and feedback -->
+    <string name="rate_prompt_title">Enjoying Denarii Dolor?</string>
+    <string name="rate_prompt_message">A quick rating on Google Play helps other people find the app. It only takes a moment.</string>
+    <string name="rate_prompt_rate">Rate now</string>
+    <string name="rate_prompt_later">Not now</string>
+    <string name="rate_prompt_never">Don\'t ask again</string>
+    <string name="rate_unavailable">Google Play couldn\'t be opened on this device.</string>
+    <string name="share_app_chooser">Share Denarii Dolor</string>
+    <string name="share_app_message">I track my spending and budgets with Denarii Dolor. Everything stays private on the phone. Get it on Google Play: %1$s</string>
+    <string name="feedback_email_subject">Denarii Dolor feedback (version %1$s)</string>
+    <string name="feedback_email_body">\n\n———\nApp version: %1$s\nAndroid version: %2$s</string>
+    <string name="feedback_no_email_app">No email app was found. You can write to %1$s.</string>
 </resources>

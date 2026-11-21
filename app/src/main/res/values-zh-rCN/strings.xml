@@ -266,4 +266,76 @@
     <string name="default_category_income">一般收入</string>
     <string name="default_category_transfer">转账</string>
     <string name="dashboard_load_failed">无法加载交易。请退出应用后重新进入以重试。</string>
+
+    <!-- Welcome tour, shown once after a new profile is set up -->
+    <string name="tour_private_title">你的财务，私密保管</string>
+    <string name="tour_private_body">记录支出、收入以及账户之间的转账。所有数据都保存在这部手机上，经过加密，并由你的 PIN 码锁定。无需注册，没有广告，也不联网。</string>
+    <string name="tour_add_title">几秒完成记账</string>
+    <string name="tour_add_body">点击 + 记录一笔支出、收入或转账。选好账户和分类，余额就会自动更新。</string>
+    <string name="tour_budget_title">守住预算</string>
+    <string name="tour_budget_body">为分类设置每月限额。“概览”会显示还剩多少，并在你超支之前提醒你。</string>
+    <string name="tour_reports_title">报表与备份</string>
+    <string name="tour_reports_body">将月度报表保存或分享为 PDF 或 CSV 文件，并保留一份加密备份，让记录永不丢失。</string>
+    <string name="tour_skip">跳过</string>
+    <string name="tour_next">下一步</string>
+    <string name="tour_get_started">开始使用</string>
+    <string name="tour_page_indicator">第 %1$d 页，共 %2$d 页</string>
+
+    <!-- Getting-started checklist on the Dashboard -->
+    <string name="getting_started_title">快速上手</string>
+    <string name="getting_started_progress">已完成 %1$d 项，共 %2$d 项</string>
+    <string name="getting_started_add_account">添加你的银行或银行卡账户</string>
+    <string name="getting_started_add_transaction">记录第一笔交易</string>
+    <string name="getting_started_set_budget">设置每月预算</string>
+    <string name="getting_started_step_done">已完成</string>
+    <string name="getting_started_step_todo">尚未完成</string>
+    <string name="getting_started_hide">隐藏快速上手清单</string>
+
+    <!-- Settings: help and support -->
+    <string name="settings_help_section">帮助与支持</string>
+    <string name="settings_help_faq">帮助与常见问题</string>
+    <string name="settings_show_tour">查看欢迎导览</string>
+    <string name="settings_send_feedback">发送反馈</string>
+    <string name="settings_rate_app">为此应用评分</string>
+    <string name="settings_share_app">分享此应用</string>
+
+    <!-- Help & FAQ screen. Each %s is the name of a screen or setting, taken from its own string. -->
+    <string name="help_title">帮助与常见问题</string>
+    <string name="help_expanded">已展开</string>
+    <string name="help_collapsed">已收起</string>
+    <string name="help_contact_title">还需要帮助？</string>
+    <string name="help_contact_body">欢迎发送问题、故障或建议。请勿包含你的 PIN 码、备份密码短语或财务记录。</string>
+    <string name="faq_data_q">我的数据存储在哪里？</string>
+    <string name="faq_data_a">只存储在这部手机上。Denarii Dolor 无需注册账号，也没有服务器，而且无法连接互联网。你的记录保存在加密数据库中，只有你的 PIN 码、安全问题答案，或者（如果你已开启）你的指纹或人脸才能解锁。此应用已关闭 Android 云备份。</string>
+    <string name="faq_forgot_pin_q">忘记了 PIN 码，怎么办？</string>
+    <string name="faq_forgot_pin_a">在登录界面点击“%1$s”，然后回答安全问题，即可设置新的 PIN 码。如果安全问题也答不上来，你的数据将无法解锁，因为没有其他人持有密钥。此时唯一的办法是在登录界面点击“%2$s”，清除全部数据后重新开始。</string>
+    <string name="faq_signed_out_q">为什么我被退出登录了？</string>
+    <string name="faq_signed_out_a">为保护你的数据，应用在闲置 %1$d 分钟后会自动退出登录。请使用 PIN 码重新登录，或在“设置”中开启“%2$s”，以便使用指纹或人脸登录。</string>
+    <string name="faq_backup_q">如何备份数据，或将数据迁移到新手机？</string>
+    <string name="faq_backup_a">在“设置”中打开“%1$s”，创建一个由密码短语保护的备份。将文件保存在安全的地方，例如云盘。在新手机上安装并设置 Denarii Dolor，然后使用相同的密码短语恢复该文件。密码短语一旦忘记，任何人都无法找回。</string>
+    <string name="faq_budgets_q">预算是如何运作的？</string>
+    <string name="faq_budgets_a">在“设置”中打开“%1$s”，为分类设置每月限额和预警阈值。“概览”会显示本月每项预算已使用了多少。如果某笔支出会超出预算，应用会在保存前先询问你。</string>
+    <string name="faq_transfer_q">什么是转账？</string>
+    <string name="faq_transfer_a">转账是在你的两个账户之间转移资金，例如从“储蓄”转到“现金”。它会同时改变两个账户的余额，但不计为收入或支出。</string>
+    <string name="faq_delete_q">为什么无法删除分类或账户？</string>
+    <string name="faq_delete_a">默认分类和账户无法删除，仍被交易使用的分类或账户也无法删除。请先修改或删除这些交易，然后重试。</string>
+    <string name="faq_currency_q">如何更改货币？</string>
+    <string name="faq_currency_a">在“设置”中点击“%1$s”并选择一种货币。仅更改货币符号，已输入的金额不会换算。</string>
+    <string name="faq_reports_q">如何导出报表？</string>
+    <string name="faq_reports_a">打开“%1$s”，选择月份，然后将报表保存或分享为 PDF 或 CSV 文件。导出的文件未加密，请存放在私密的地方。</string>
+    <string name="faq_biometric_q">为什么指纹或人脸登录被关闭了？</string>
+    <string name="faq_biometric_a">当手机上录入的指纹或人脸发生变化时，此功能会自动关闭，以防新添加的指纹或人脸打开你的数据。你的 PIN 码仍然可用，也可以在“设置”中重新开启生物识别登录。</string>
+
+    <!-- Rate, share and feedback -->
+    <string name="rate_prompt_title">喜欢 Denarii Dolor 吗？</string>
+    <string name="rate_prompt_message">在 Google Play 上快速评个分，就能帮助更多人发现这款应用。只需片刻。</string>
+    <string name="rate_prompt_rate">去评分</string>
+    <string name="rate_prompt_later">以后再说</string>
+    <string name="rate_prompt_never">不再询问</string>
+    <string name="rate_unavailable">无法在此设备上打开 Google Play。</string>
+    <string name="share_app_chooser">分享 Denarii Dolor</string>
+    <string name="share_app_message">我用 Denarii Dolor 记录支出和预算，所有数据都私密地保存在手机上。在 Google Play 上下载：%1$s</string>
+    <string name="feedback_email_subject">Denarii Dolor 反馈（版本 %1$s）</string>
+    <string name="feedback_email_body">\n\n———\n应用版本：%1$s\nAndroid 版本：%2$s</string>
+    <string name="feedback_no_email_app">未找到电子邮件应用。你可以发送邮件至 %1$s。</string>
 </resources>

@@ -272,4 +272,76 @@
     <string name="default_category_income">Ingresos generales</string>
     <string name="default_category_transfer">Transferencia</string>
     <string name="dashboard_load_failed">No se pudieron cargar tus transacciones. Sal de la app y vuelve a entrar para intentarlo de nuevo.</string>
+
+    <!-- Welcome tour, shown once after a new profile is set up -->
+    <string name="tour_private_title">Tu dinero, en privado</string>
+    <string name="tour_private_body">Registra gastos, ingresos y transferencias entre tus cuentas. Todo se queda en este teléfono, cifrado y protegido con tu PIN. Sin registrarte, sin anuncios y sin internet.</string>
+    <string name="tour_add_title">Agrega transacciones en segundos</string>
+    <string name="tour_add_body">Toca + para registrar un gasto, un ingreso o una transferencia. Elige una cuenta y una categoría, y tus saldos se actualizan solos.</string>
+    <string name="tour_budget_title">Cuida tu presupuesto</string>
+    <string name="tour_budget_body">Asigna un límite mensual a una categoría. El Panel te muestra cuánto te queda y te avisa antes de que lo superes.</string>
+    <string name="tour_reports_title">Informes y copias de seguridad</string>
+    <string name="tour_reports_body">Guarda o comparte un informe mensual como archivo PDF o CSV, y crea una copia de seguridad cifrada para no perder nunca tus registros.</string>
+    <string name="tour_skip">Omitir</string>
+    <string name="tour_next">Siguiente</string>
+    <string name="tour_get_started">Comenzar</string>
+    <string name="tour_page_indicator">Página %1$d de %2$d</string>
+
+    <!-- Getting-started checklist on the Dashboard -->
+    <string name="getting_started_title">Primeros pasos</string>
+    <string name="getting_started_progress">%1$d de %2$d completados</string>
+    <string name="getting_started_add_account">Agrega tu cuenta bancaria o de tarjeta</string>
+    <string name="getting_started_add_transaction">Registra tu primera transacción</string>
+    <string name="getting_started_set_budget">Define un presupuesto mensual</string>
+    <string name="getting_started_step_done">Completado</string>
+    <string name="getting_started_step_todo">Pendiente</string>
+    <string name="getting_started_hide">Ocultar la lista de primeros pasos</string>
+
+    <!-- Settings: help and support -->
+    <string name="settings_help_section">Ayuda y soporte</string>
+    <string name="settings_help_faq">Ayuda y preguntas frecuentes</string>
+    <string name="settings_show_tour">Ver el recorrido de bienvenida</string>
+    <string name="settings_send_feedback">Enviar comentarios</string>
+    <string name="settings_rate_app">Calificar esta app</string>
+    <string name="settings_share_app">Compartir esta app</string>
+
+    <!-- Help & FAQ screen. Each %s is the name of a screen or setting, taken from its own string. -->
+    <string name="help_title">Ayuda y preguntas frecuentes</string>
+    <string name="help_expanded">Expandido</string>
+    <string name="help_collapsed">Contraído</string>
+    <string name="help_contact_title">¿Aún necesitas ayuda?</string>
+    <string name="help_contact_body">Envíanos una pregunta, un problema o una idea. No incluyas tu PIN, la frase de contraseña de una copia de seguridad ni tus registros financieros.</string>
+    <string name="faq_data_q">¿Dónde se guardan mis datos?</string>
+    <string name="faq_data_a">Solo en este teléfono. Denarii Dolor no requiere una cuenta de usuario, no tiene servidor y no puede conectarse a internet. Tus registros se guardan en una base de datos cifrada que solo se puede desbloquear con tu PIN, tu respuesta de seguridad o, si lo activas, tu huella digital o tu rostro. La copia de seguridad en la nube de Android está desactivada para la app.</string>
+    <string name="faq_forgot_pin_q">Olvidé mi PIN. ¿Qué puedo hacer?</string>
+    <string name="faq_forgot_pin_a">En la pantalla de inicio de sesión, toca “%1$s” y responde tu pregunta de seguridad para elegir un PIN nuevo. Si tampoco puedes responderla, no es posible desbloquear tus datos, porque nadie más tiene la clave. En ese caso, la única opción es “%2$s” en la pantalla de inicio de sesión, que borra todo para que puedas empezar de nuevo.</string>
+    <string name="faq_signed_out_q">¿Por qué se cerró mi sesión?</string>
+    <string name="faq_signed_out_a">Para proteger tus datos, la app cierra la sesión después de %1$d minutos sin uso. Vuelve a iniciar sesión con tu PIN, o activa “%2$s” en Configuración para iniciar sesión con tu huella digital o tu rostro.</string>
+    <string name="faq_backup_q">¿Cómo hago una copia de seguridad de mis datos o los paso a un teléfono nuevo?</string>
+    <string name="faq_backup_a">En Configuración, abre “%1$s” y crea una copia de seguridad protegida con una frase de contraseña. Guarda el archivo en un lugar seguro, como un servicio de almacenamiento en la nube. En el teléfono nuevo, instala Denarii Dolor, configura la app y luego restaura el archivo con la misma frase de contraseña. Nadie puede recuperar una frase de contraseña olvidada.</string>
+    <string name="faq_budgets_q">¿Cómo funcionan los presupuestos?</string>
+    <string name="faq_budgets_a">En Configuración, abre “%1$s” para asignar a una categoría un límite mensual y un umbral de alerta. El Panel muestra cuánto llevas usado de cada presupuesto este mes. Si un gasto va a superar su presupuesto, la app te pregunta antes de guardarlo.</string>
+    <string name="faq_transfer_q">¿Qué es una transferencia?</string>
+    <string name="faq_transfer_a">Una transferencia mueve dinero entre dos de tus cuentas, por ejemplo, de Ahorros a Efectivo. Cambia ambos saldos, pero no cuenta como ingreso ni como gasto.</string>
+    <string name="faq_delete_q">¿Por qué no puedo eliminar una categoría o una cuenta?</string>
+    <string name="faq_delete_a">Las categorías y cuentas predeterminadas no se pueden eliminar, y tampoco las que todavía se usan en transacciones. Primero cambia o elimina esas transacciones y vuelve a intentarlo.</string>
+    <string name="faq_currency_q">¿Cómo cambio la moneda?</string>
+    <string name="faq_currency_a">En Configuración, toca “%1$s” y elige una. Solo cambia el símbolo: los montos que ya ingresaste no se convierten.</string>
+    <string name="faq_reports_q">¿Cómo exporto un informe?</string>
+    <string name="faq_reports_a">Abre “%1$s”, elige un mes y guarda o comparte el informe como archivo PDF o CSV. Los archivos exportados no están cifrados, así que guárdalos en un lugar privado.</string>
+    <string name="faq_biometric_q">¿Por qué se desactivó el inicio de sesión con huella digital o rostro?</string>
+    <string name="faq_biometric_a">Se desactiva cuando cambian las huellas digitales o los rostros registrados en el teléfono, para que uno agregado recientemente no pueda abrir tus datos. Tu PIN sigue funcionando, y puedes volver a activar el inicio de sesión con biometría en Configuración.</string>
+
+    <!-- Rate, share and feedback -->
+    <string name="rate_prompt_title">¿Te gusta Denarii Dolor?</string>
+    <string name="rate_prompt_message">Una calificación rápida en Google Play ayuda a que otras personas encuentren la app. Solo toma un momento.</string>
+    <string name="rate_prompt_rate">Calificar</string>
+    <string name="rate_prompt_later">Ahora no</string>
+    <string name="rate_prompt_never">No volver a preguntar</string>
+    <string name="rate_unavailable">No se pudo abrir Google Play en este dispositivo.</string>
+    <string name="share_app_chooser">Compartir Denarii Dolor</string>
+    <string name="share_app_message">Llevo el control de mis gastos y presupuestos con Denarii Dolor. Todo queda en privado en el teléfono. Disponible en Google Play: %1$s</string>
+    <string name="feedback_email_subject">Comentarios sobre Denarii Dolor (versión %1$s)</string>
+    <string name="feedback_email_body">\n\n———\nVersión de la app: %1$s\nVersión de Android: %2$s</string>
+    <string name="feedback_no_email_app">No se encontró ninguna app de correo. Puedes escribir a %1$s.</string>
 </resources>

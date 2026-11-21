@@ -269,4 +269,76 @@
     <string name="default_category_income">सामान्य आय</string>
     <string name="default_category_transfer">ट्रांसफ़र</string>
     <string name="dashboard_load_failed">आपके लेन-देन लोड नहीं हो सके। फिर से कोशिश करने के लिए ऐप से बाहर निकलकर वापस आएं।</string>
+
+    <!-- Welcome tour, shown once after a new profile is set up -->
+    <string name="tour_private_title">आपका पैसा, पूरी तरह निजी</string>
+    <string name="tour_private_body">अपने खर्च, आय और खातों के बीच ट्रांसफ़र का हिसाब रखें। सब कुछ इसी फ़ोन पर रहता है, एन्क्रिप्ट किया हुआ और आपके PIN से लॉक। न साइन-अप, न विज्ञापन, न इंटरनेट।</string>
+    <string name="tour_add_title">कुछ ही सेकंड में जोड़ें</string>
+    <string name="tour_add_body">खर्च, आय या ट्रांसफ़र दर्ज करने के लिए + पर टैप करें। खाता और कैटगरी चुनें, आपका बैलेंस अपने-आप अपडेट हो जाएगा।</string>
+    <string name="tour_budget_title">बजट में रहें</string>
+    <string name="tour_budget_body">किसी कैटगरी के लिए मासिक सीमा तय करें। डैशबोर्ड दिखाता है कि कितना बचा है, और सीमा पार होने से पहले आपको चेतावनी देता है।</string>
+    <string name="tour_reports_title">रिपोर्ट और बैकअप</string>
+    <string name="tour_reports_body">मासिक रिपोर्ट को PDF या CSV फ़ाइल के रूप में सेव या शेयर करें, और एन्क्रिप्ट किया हुआ बैकअप रखें ताकि आपके रिकॉर्ड कभी न खोएं।</string>
+    <string name="tour_skip">छोड़ें</string>
+    <string name="tour_next">आगे</string>
+    <string name="tour_get_started">शुरू करें</string>
+    <string name="tour_page_indicator">%2$d में से पेज %1$d</string>
+
+    <!-- Getting-started checklist on the Dashboard -->
+    <string name="getting_started_title">शुरुआत करें</string>
+    <string name="getting_started_progress">%2$d में से %1$d पूरे हुए</string>
+    <string name="getting_started_add_account">अपना बैंक या कार्ड खाता जोड़ें</string>
+    <string name="getting_started_add_transaction">अपना पहला लेन-देन दर्ज करें</string>
+    <string name="getting_started_set_budget">मासिक बजट सेट करें</string>
+    <string name="getting_started_step_done">पूरा हुआ</string>
+    <string name="getting_started_step_todo">अभी बाकी है</string>
+    <string name="getting_started_hide">शुरुआती चेकलिस्ट छिपाएं</string>
+
+    <!-- Settings: help and support -->
+    <string name="settings_help_section">मदद और सहायता</string>
+    <string name="settings_help_faq">मदद और FAQ</string>
+    <string name="settings_show_tour">वेलकम टूर दिखाएं</string>
+    <string name="settings_send_feedback">फ़ीडबैक भेजें</string>
+    <string name="settings_rate_app">इस ऐप को रेटिंग दें</string>
+    <string name="settings_share_app">इस ऐप को शेयर करें</string>
+
+    <!-- Help & FAQ screen. Each %s is the name of a screen or setting, taken from its own string. -->
+    <string name="help_title">मदद और FAQ</string>
+    <string name="help_expanded">खुला है</string>
+    <string name="help_collapsed">बंद है</string>
+    <string name="help_contact_title">अब भी मदद चाहिए?</string>
+    <string name="help_contact_body">कोई सवाल, समस्या या सुझाव भेजें। कृपया अपना PIN, बैकअप का पासफ़्रेज़ या वित्तीय रिकॉर्ड शामिल न करें।</string>
+    <string name="faq_data_q">मेरा डेटा कहां सेव होता है?</string>
+    <string name="faq_data_a">सिर्फ़ इसी फ़ोन पर। Denarii Dolor में न कोई अकाउंट बनाना पड़ता है, न कोई सर्वर है, और यह इंटरनेट से कनेक्ट नहीं हो सकता। आपके रिकॉर्ड एक एन्क्रिप्ट किए गए डेटाबेस में रखे जाते हैं, जिसे सिर्फ़ आपका PIN, आपका सुरक्षा उत्तर या, अगर आपने चालू किया है तो, आपका फ़िंगरप्रिंट या चेहरा ही अनलॉक कर सकता है। इस ऐप के लिए Android का क्लाउड बैकअप बंद है।</string>
+    <string name="faq_forgot_pin_q">अपना PIN भूल गए हैं? अब क्या करें?</string>
+    <string name="faq_forgot_pin_a">साइन इन स्क्रीन पर “%1$s” पर टैप करें और नया PIN चुनने के लिए अपने सुरक्षा प्रश्न का उत्तर दें। अगर आप उसका उत्तर भी नहीं दे सकते, तो आपका डेटा अनलॉक नहीं हो सकता, क्योंकि इसकी चाबी किसी और के पास नहीं है। ऐसे में आगे बढ़ने का एक ही तरीका है: साइन इन स्क्रीन पर “%2$s”, जिससे सब कुछ मिट जाता है ताकि आप नए सिरे से शुरू कर सकें।</string>
+    <string name="faq_signed_out_q">मुझे साइन आउट क्यों कर दिया गया?</string>
+    <string name="faq_signed_out_a">आपके डेटा की सुरक्षा के लिए, %1$d मिनट तक इस्तेमाल न होने पर ऐप आपको साइन आउट कर देता है। अपने PIN से फिर से साइन इन करें, या अपने फ़िंगरप्रिंट या चेहरे से साइन इन करने के लिए सेटिंग में “%2$s” चालू करें।</string>
+    <string name="faq_backup_q">अपने डेटा का बैकअप कैसे लें या उसे नए फ़ोन पर कैसे ले जाएं?</string>
+    <string name="faq_backup_a">सेटिंग में “%1$s” खोलें और पासफ़्रेज़ से सुरक्षित बैकअप बनाएं। फ़ाइल को किसी सुरक्षित जगह, जैसे क्लाउड ड्राइव में सेव करें। नए फ़ोन पर Denarii Dolor इंस्टॉल करके सेट अप करें, फिर उसी पासफ़्रेज़ से फ़ाइल रीस्टोर करें। भूला हुआ पासफ़्रेज़ कोई भी वापस नहीं ला सकता।</string>
+    <string name="faq_budgets_q">बजट कैसे काम करते हैं?</string>
+    <string name="faq_budgets_a">किसी कैटगरी के लिए मासिक सीमा और चेतावनी सीमा तय करने के लिए सेटिंग में “%1$s” खोलें। डैशबोर्ड दिखाता है कि इस महीने आपने हर बजट का कितना हिस्सा इस्तेमाल किया है। अगर कोई खर्च अपने बजट से ज़्यादा हो जाएगा, तो ऐप उसे सेव करने से पहले आपसे पूछता है।</string>
+    <string name="faq_transfer_q">ट्रांसफ़र क्या है?</string>
+    <string name="faq_transfer_a">ट्रांसफ़र से आपके दो खातों के बीच पैसा जाता है, जैसे बचत से नकद में। इससे दोनों खातों का बैलेंस बदलता है, लेकिन इसे आय या खर्च नहीं गिना जाता।</string>
+    <string name="faq_delete_q">कोई कैटगरी या खाता मिटाया क्यों नहीं जा सकता?</string>
+    <string name="faq_delete_a">डिफ़ॉल्ट कैटगरी और खाते मिटाए नहीं जा सकते, और न ही वे जिनका इस्तेमाल अब भी किसी लेन-देन में हो रहा है। पहले उन लेन-देन में बदलाव करें या उन्हें मिटाएं, फिर दोबारा कोशिश करें।</string>
+    <string name="faq_currency_q">मुद्रा कैसे बदलें?</string>
+    <string name="faq_currency_a">सेटिंग में “%1$s” पर टैप करें और कोई मुद्रा चुनें। सिर्फ़ मुद्रा का चिह्न बदलता है: आपने जो राशियां पहले से डाली हैं, वे कन्वर्ट नहीं होतीं।</string>
+    <string name="faq_reports_q">रिपोर्ट एक्सपोर्ट कैसे करें?</string>
+    <string name="faq_reports_a">“%1$s” खोलें, कोई महीना चुनें, फिर रिपोर्ट को PDF या CSV फ़ाइल के रूप में सेव या शेयर करें। एक्सपोर्ट की गई फ़ाइलें एन्क्रिप्ट नहीं होतीं, इसलिए उन्हें किसी निजी जगह पर रखें।</string>
+    <string name="faq_biometric_q">फ़िंगरप्रिंट या चेहरे से साइन-इन बंद क्यों हो गया?</string>
+    <string name="faq_biometric_a">फ़ोन में रजिस्टर किए गए फ़िंगरप्रिंट या चेहरे बदलने पर यह बंद हो जाता है, ताकि नया जोड़ा गया फ़िंगरप्रिंट या चेहरा आपका डेटा न खोल सके। आपका PIN अब भी काम करता है, और आप सेटिंग में बायोमेट्रिक साइन-इन फिर से चालू कर सकते हैं।</string>
+
+    <!-- Rate, share and feedback -->
+    <string name="rate_prompt_title">Denarii Dolor पसंद आ रहा है?</string>
+    <string name="rate_prompt_message">Google Play पर एक छोटी-सी रेटिंग से दूसरे लोगों को यह ऐप ढूंढने में मदद मिलती है। इसमें बस एक पल लगता है।</string>
+    <string name="rate_prompt_rate">अभी रेटिंग दें</string>
+    <string name="rate_prompt_later">अभी नहीं</string>
+    <string name="rate_prompt_never">फिर से न पूछें</string>
+    <string name="rate_unavailable">इस डिवाइस पर Google Play नहीं खुल सका।</string>
+    <string name="share_app_chooser">Denarii Dolor शेयर करें</string>
+    <string name="share_app_message">मेरे खर्च और बजट का हिसाब Denarii Dolor में रहता है। सारा डेटा फ़ोन पर ही निजी रहता है। इसे Google Play से पाएं: %1$s</string>
+    <string name="feedback_email_subject">Denarii Dolor फ़ीडबैक (वर्शन %1$s)</string>
+    <string name="feedback_email_body">\n\n———\nऐप वर्शन: %1$s\nAndroid वर्शन: %2$s</string>
+    <string name="feedback_no_email_app">कोई ईमेल ऐप नहीं मिला। आप %1$s पर लिख सकते हैं।</string>
 </resources>

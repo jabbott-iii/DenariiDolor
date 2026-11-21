@@ -6,6 +6,7 @@
 
 package com.denariidolor.presentation.ui.dashboard
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,19 +15,24 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Error
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -43,7 +49,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -62,9 +73,16 @@ const val DASHBOARD_LIST_TAG = "dashboardList"
 const val BUDGET_ALERT_BANNER_TAG = "budgetAlertBanner"
 const val DASHBOARD_ERROR_TAG = "dashboardError"
 const val BUDGET_METER_TAG_PREFIX = "budgetMeter_"
+const val GETTING_STARTED_CARD_TAG = "gettingStartedCard"
+const val GETTING_STARTED_HIDE_TAG = "gettingStartedHide"
+const val GETTING_STARTED_STEP_TAG_PREFIX = "gettingStartedStep_"
 
 @Composable
-fun DashboardRoute(onEditTransaction: (Long) -> Unit, viewModel: DashboardViewModel = hiltViewModel()) {
+fun DashboardRoute(
+    onEditTransaction: (Long) -> Unit,
+    onGettingStartedStep: (GettingStartedStep) -> Unit = {},
+    viewModel: DashboardViewModel = hiltViewModel()
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     UiMessageEffect(viewModel.messages)
     LifecycleResumeEffect(viewModel) {
@@ -74,12 +92,20 @@ fun DashboardRoute(onEditTransaction: (Long) -> Unit, viewModel: DashboardViewMo
     DashboardScreen(
         state = state,
         onEditTransaction = onEditTransaction,
-        onDeleteTransaction = viewModel::deleteTransaction
+        onDeleteTransaction = viewModel::deleteTransaction,
+        onGettingStartedStep = onGettingStartedStep,
+        onHideGettingStarted = viewModel::dismissGettingStarted
     )
 }
 
 @Composable
-fun DashboardScreen(state: DashboardUiState, onEditTransaction: (Long) -> Unit, onDeleteTransaction: (Long) -> Unit) {
+fun DashboardScreen(
+    state: DashboardUiState,
+    onEditTransaction: (Long) -> Unit,
+    onDeleteTransaction: (Long) -> Unit,
+    onGettingStartedStep: (GettingStartedStep) -> Unit = {},
+    onHideGettingStarted: () -> Unit = {}
+) {
     var pendingDelete by remember { mutableStateOf<TransactionRow?>(null) }
     val otherLabel = stringResource(R.string.spending_other)
 
@@ -98,6 +124,9 @@ fun DashboardScreen(state: DashboardUiState, onEditTransaction: (Long) -> Unit, 
                     modifier = Modifier.testTag(DASHBOARD_ERROR_TAG)
                 )
             }
+        }
+        state.gettingStarted?.let { checklist ->
+            item(key = "getting_started") { GettingStartedCard(checklist, onGettingStartedStep, onHideGettingStarted) }
         }
         item { SummarySection(state) }
         if (state.budgetAlerts > 0) {
@@ -157,6 +186,74 @@ fun DashboardScreen(state: DashboardUiState, onEditTransaction: (Long) -> Unit, 
                 onDeleteTransaction(row.id)
             },
             onDismiss = { pendingDelete = null }
+        )
+    }
+}
+
+@Composable
+private fun GettingStartedCard(checklist: GettingStarted, onStep: (GettingStartedStep) -> Unit, onHide: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 12.dp)
+            .testTag(GETTING_STARTED_CARD_TAG),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+    ) {
+        Column(modifier = Modifier.padding(start = 16.dp, top = 4.dp, end = 4.dp, bottom = 12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f).padding(top = 8.dp)) {
+                    Text(
+                        text = stringResource(R.string.getting_started_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.semantics { heading() }
+                    )
+                    Text(
+                        text = stringResource(R.string.getting_started_progress, checklist.completed, checklist.total),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                IconButton(onClick = onHide, modifier = Modifier.testTag(GETTING_STARTED_HIDE_TAG)) {
+                    Icon(imageVector = Icons.Outlined.Close, contentDescription = stringResource(R.string.getting_started_hide))
+                }
+            }
+            GettingStartedStep.entries.forEach { step ->
+                GettingStartedRow(step = step, done = step in checklist.done, onClick = { onStep(step) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun GettingStartedRow(step: GettingStartedStep, done: Boolean, onClick: () -> Unit) {
+    val label = stringResource(
+        when (step) {
+            GettingStartedStep.ADD_ACCOUNT -> R.string.getting_started_add_account
+            GettingStartedStep.ADD_TRANSACTION -> R.string.getting_started_add_transaction
+            GettingStartedStep.SET_BUDGET -> R.string.getting_started_set_budget
+        }
+    )
+    val state = stringResource(if (done) R.string.getting_started_step_done else R.string.getting_started_step_todo)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics { stateDescription = state }
+            .padding(end = 12.dp)
+            .testTag(GETTING_STARTED_STEP_TAG_PREFIX + step.name),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = if (done) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
+            contentDescription = null,
+            tint = if (done) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSecondaryContainer
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = label,
+            modifier = Modifier.weight(1f),
+            textDecoration = if (done) TextDecoration.LineThrough else null
         )
     }
 }

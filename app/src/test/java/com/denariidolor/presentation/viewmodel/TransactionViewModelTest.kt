@@ -10,6 +10,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.denariidolor.R
 import com.denariidolor.data.local.db.entity.BudgetEntity
 import com.denariidolor.data.local.db.entity.TransactionEntity
+import com.denariidolor.data.local.preferences.RatePromptPolicy
 import com.denariidolor.data.repository.TransactionRepository
 import com.denariidolor.domain.usecase.AddTransactionUseCase
 import com.denariidolor.domain.usecase.BudgetOverage
@@ -22,6 +23,7 @@ import com.denariidolor.presentation.ui.transaction.TransactionViewModel
 import com.denariidolor.testutil.FakeAccountRepository
 import com.denariidolor.testutil.FakeBudgetRepository
 import com.denariidolor.testutil.FakeCategoryRepository
+import com.denariidolor.testutil.FakeRatePromptStore
 import com.denariidolor.testutil.FakeTransactionRepository
 import com.denariidolor.testutil.MainDispatcherRule
 import com.denariidolor.testutil.TestData
@@ -45,7 +47,8 @@ class TransactionViewModelTest {
     private fun viewModel(
         transactionId: Long? = null,
         repository: TransactionRepository = transactions,
-        budgets: FakeBudgetRepository = FakeBudgetRepository()
+        budgets: FakeBudgetRepository = FakeBudgetRepository(),
+        ratePrompt: FakeRatePromptStore = FakeRatePromptStore()
     ): TransactionViewModel {
         val categories = FakeCategoryRepository(TestData.categories)
         val accounts = FakeAccountRepository(TestData.accounts)
@@ -56,6 +59,7 @@ class TransactionViewModelTest {
             repository,
             categories,
             accounts,
+            ratePrompt,
             SavedStateHandle(transactionId?.let { mapOf(TransactionViewModel.ARG_TRANSACTION_ID to it) } ?: emptyMap())
         )
     }
@@ -84,6 +88,35 @@ class TransactionViewModelTest {
 
         assertEquals(TransactionEvent.Saved, vm.events.first())
         assertEquals(1_299L, transactions.items.last().amountCents)
+    }
+
+    @Test
+    fun tenthNewTransactionShowsRatePrompt() = runTest {
+        val ratePrompt = FakeRatePromptStore()
+
+        repeat(RatePromptPolicy.FIRST_ASK_AFTER_SAVES) {
+            assertFalse(ratePrompt.promptVisible.value)
+            val vm = viewModel(ratePrompt = ratePrompt)
+            vm.saveTransaction("EXPENSE", "Lunch", 1_299, categoryId = 4, accountId = 1, transferAccountId = null, dateEpochMillis = 1L)
+            assertEquals(TransactionEvent.Saved, vm.events.first())
+        }
+
+        assertTrue(ratePrompt.promptVisible.value)
+    }
+
+    @Test
+    fun editsAndFailedSavesDoNotCountTowardRatePrompt() = runTest {
+        val ratePrompt = FakeRatePromptStore()
+
+        val edit = viewModel(transactionId = 7, ratePrompt = ratePrompt)
+        edit.formState.first { it !is TransactionFormState.Loading }
+        edit.saveTransaction("EXPENSE", "Coffee", 500, categoryId = 4, accountId = 1, transferAccountId = null, dateEpochMillis = 1L)
+        assertEquals(TransactionEvent.Saved, edit.events.first())
+        val invalid = viewModel(ratePrompt = ratePrompt)
+        invalid.saveTransaction("TRANSFER", "Move", 100, categoryId = 3, accountId = 1, transferAccountId = null, dateEpochMillis = 1L)
+        invalid.events.first()
+
+        assertEquals(0, ratePrompt.counters.saves)
     }
 
     @Test

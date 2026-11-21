@@ -21,6 +21,7 @@ import com.denariidolor.MainActivity
 import com.denariidolor.R
 import com.denariidolor.data.export.ReportExporter
 import com.denariidolor.data.local.preferences.CurrencyPreferences
+import com.denariidolor.data.local.preferences.OnboardingStore
 import com.denariidolor.data.local.preferences.RecoverPinResult
 import com.denariidolor.data.local.preferences.SecureStorageException
 import com.denariidolor.data.local.preferences.SecurityProfileService
@@ -57,6 +58,9 @@ class LoginActivity : AppCompatActivity() {
 
     @Inject
     lateinit var currencyPreferences: CurrencyPreferences
+
+    @Inject
+    lateinit var onboardingStore: OnboardingStore
 
     private var busy = false
     private var signInEnabled by mutableStateOf(false)
@@ -198,6 +202,8 @@ class LoginActivity : AppCompatActivity() {
             if (result == SetupProfileResult.SUCCESS) {
                 // A new profile starts with the currency of the device's region; Settings can change it.
                 currencyPreferences.resetToRegionDefault()
+                // A new profile gets the welcome tour and the getting-started checklist once it's signed in.
+                onboardingStore.startOnboarding()
                 clearInputs()
                 showState(vault.state())
             }

@@ -12,9 +12,11 @@ import com.denariidolor.data.repository.TransactionRepository
 import com.denariidolor.domain.usecase.DeleteTransactionUseCase
 import com.denariidolor.presentation.ui.dashboard.BudgetStatus
 import com.denariidolor.presentation.ui.dashboard.DashboardViewModel
+import com.denariidolor.presentation.ui.dashboard.GettingStartedStep
 import com.denariidolor.testutil.FakeAccountRepository
 import com.denariidolor.testutil.FakeBudgetRepository
 import com.denariidolor.testutil.FakeCategoryRepository
+import com.denariidolor.testutil.FakeOnboardingStore
 import com.denariidolor.testutil.FakeTransactionRepository
 import com.denariidolor.testutil.MainDispatcherRule
 import com.denariidolor.testutil.TestData
@@ -30,6 +32,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 
@@ -54,6 +58,7 @@ class DashboardViewModelTest {
             FakeAccountRepository(TestData.accounts),
             FakeBudgetRepository(listOf(BudgetEntity(id = 1, categoryId = 4, monthlyLimitCents = 10_000))),
             DeleteTransactionUseCase(transactions),
+            FakeOnboardingStore(),
             clock
         )
         val collector = launch { viewModel.uiState.collect {} }
@@ -106,14 +111,42 @@ class DashboardViewModelTest {
         collector.cancel()
     }
 
-    private fun viewModel(transactions: TransactionRepository, clock: Clock) = DashboardViewModel(
-        transactions,
-        FakeCategoryRepository(TestData.categories),
-        FakeAccountRepository(TestData.accounts),
-        FakeBudgetRepository(),
-        DeleteTransactionUseCase(transactions),
-        clock
-    )
+    @Test
+    fun showsGettingStartedWhileActiveAndHidesItWhenDismissed() = runTest {
+        val onboarding = FakeOnboardingStore(checklistActive = true)
+        val viewModel = viewModel(FakeTransactionRepository(), clock, onboarding)
+        val collector = launch { viewModel.uiState.collect {} }
+
+        // TestData.accounts has "Checking" besides the defaults; there are no transactions or budgets yet.
+        val checklist = viewModel.uiState.first { it.period != null }.gettingStarted
+        assertEquals(setOf(GettingStartedStep.ADD_ACCOUNT), checklist?.done)
+
+        viewModel.dismissGettingStarted()
+
+        assertNull(viewModel.uiState.first { it.gettingStarted == null }.gettingStarted)
+        assertFalse(onboarding.checklistActive.value)
+        collector.cancel()
+    }
+
+    @Test
+    fun noGettingStartedForProfilesThatDidNotStartOnboarding() = runTest {
+        val viewModel = viewModel(FakeTransactionRepository(), clock)
+        val collector = launch { viewModel.uiState.collect {} }
+
+        assertNull(viewModel.uiState.first { it.period != null }.gettingStarted)
+        collector.cancel()
+    }
+
+    private fun viewModel(transactions: TransactionRepository, clock: Clock, onboarding: FakeOnboardingStore = FakeOnboardingStore()) =
+        DashboardViewModel(
+            transactions,
+            FakeCategoryRepository(TestData.categories),
+            FakeAccountRepository(TestData.accounts),
+            FakeBudgetRepository(),
+            DeleteTransactionUseCase(transactions),
+            onboarding,
+            clock
+        )
 
     private class MutableClock(var now: Instant) : Clock() {
         override fun getZone(): ZoneId = ZoneOffset.UTC

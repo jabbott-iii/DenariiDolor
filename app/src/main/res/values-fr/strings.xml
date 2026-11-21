@@ -272,4 +272,76 @@
     <string name="default_category_income">Revenus généraux</string>
     <string name="default_category_transfer">Virement</string>
     <string name="dashboard_load_failed">Impossible de charger vos transactions. Quittez l’application et revenez-y pour réessayer.</string>
+
+    <!-- Welcome tour, shown once after a new profile is set up -->
+    <string name="tour_private_title">Votre argent, en toute confidentialité</string>
+    <string name="tour_private_body">Suivez vos dépenses, vos revenus et les virements entre vos comptes. Tout reste sur ce téléphone, chiffré et verrouillé par votre code PIN. Sans inscription, sans publicité, sans Internet.</string>
+    <string name="tour_add_title">Ajoutez en quelques secondes</string>
+    <string name="tour_add_body">Appuyez sur + pour enregistrer une dépense, un revenu ou un virement. Choisissez un compte et une catégorie : vos soldes se mettent à jour tout seuls.</string>
+    <string name="tour_budget_title">Respectez votre budget</string>
+    <string name="tour_budget_body">Fixez un plafond mensuel pour une catégorie. Le tableau de bord affiche ce qu’il vous reste et vous prévient avant tout dépassement.</string>
+    <string name="tour_reports_title">Rapports et sauvegardes</string>
+    <string name="tour_reports_body">Enregistrez ou partagez un rapport mensuel au format PDF ou CSV, et gardez une sauvegarde chiffrée pour ne jamais perdre vos données.</string>
+    <string name="tour_skip">Passer</string>
+    <string name="tour_next">Suivant</string>
+    <string name="tour_get_started">Commencer</string>
+    <string name="tour_page_indicator">Page %1$d sur %2$d</string>
+
+    <!-- Getting-started checklist on the Dashboard -->
+    <string name="getting_started_title">Premiers pas</string>
+    <string name="getting_started_progress">Étapes terminées : %1$d sur %2$d</string>
+    <string name="getting_started_add_account">Ajoutez votre compte bancaire ou votre carte</string>
+    <string name="getting_started_add_transaction">Enregistrez votre première transaction</string>
+    <string name="getting_started_set_budget">Définissez un budget mensuel</string>
+    <string name="getting_started_step_done">Terminé</string>
+    <string name="getting_started_step_todo">À faire</string>
+    <string name="getting_started_hide">Masquer la liste des premiers pas</string>
+
+    <!-- Settings: help and support -->
+    <string name="settings_help_section">Aide et assistance</string>
+    <string name="settings_help_faq">Aide et FAQ</string>
+    <string name="settings_show_tour">Revoir la visite guidée</string>
+    <string name="settings_send_feedback">Envoyer des commentaires</string>
+    <string name="settings_rate_app">Noter l’application</string>
+    <string name="settings_share_app">Partager l’application</string>
+
+    <!-- Help & FAQ screen. Each %s is the name of a screen or setting, taken from its own string. -->
+    <string name="help_title">Aide et FAQ</string>
+    <string name="help_expanded">Développé</string>
+    <string name="help_collapsed">Réduit</string>
+    <string name="help_contact_title">Besoin d’aide supplémentaire ?</string>
+    <string name="help_contact_body">Envoyez-nous une question, un problème ou une idée. Merci de ne pas y inclure votre code PIN, la phrase secrète d’une sauvegarde ni vos données financières.</string>
+    <string name="faq_data_q">Où mes données sont-elles stockées ?</string>
+    <string name="faq_data_a">Uniquement sur ce téléphone. Denarii Dolor ne demande aucune inscription, n’utilise aucun serveur et ne peut pas se connecter à Internet. Vos données sont conservées dans une base chiffrée que seuls votre code PIN, votre réponse de sécurité ou, si vous l’activez, votre empreinte digitale ou votre visage peuvent déverrouiller. La sauvegarde dans le cloud d’Android est désactivée pour l’application.</string>
+    <string name="faq_forgot_pin_q">J’ai oublié mon code PIN. Que faire ?</string>
+    <string name="faq_forgot_pin_a">Sur l’écran de connexion, appuyez sur « %1$s » et répondez à votre question de sécurité pour choisir un nouveau code PIN. Si vous ne connaissez pas non plus la réponse, vos données ne peuvent pas être déverrouillées, car personne d’autre n’en possède la clé. La seule solution est alors « %2$s » sur l’écran de connexion, qui efface tout pour vous permettre de repartir de zéro.</string>
+    <string name="faq_signed_out_q">Pourquoi ma session s’est-elle fermée ?</string>
+    <string name="faq_signed_out_a">Pour protéger vos données, l’application vous déconnecte après %1$d minutes d’inactivité. Reconnectez-vous avec votre code PIN, ou activez « %2$s » dans les paramètres pour vous connecter avec votre empreinte digitale ou votre visage.</string>
+    <string name="faq_backup_q">Comment sauvegarder mes données ou les transférer sur un nouveau téléphone ?</string>
+    <string name="faq_backup_a">Dans les paramètres, ouvrez « %1$s » et créez une sauvegarde protégée par une phrase secrète. Enregistrez le fichier en lieu sûr, par exemple sur un service de stockage en ligne. Sur le nouveau téléphone, installez Denarii Dolor, configurez l’application, puis restaurez le fichier avec la même phrase secrète. Personne ne peut récupérer une phrase secrète oubliée.</string>
+    <string name="faq_budgets_q">Comment fonctionnent les budgets ?</string>
+    <string name="faq_budgets_a">Dans les paramètres, ouvrez « %1$s » pour fixer un plafond mensuel et un seuil d’alerte pour une catégorie. Le tableau de bord indique la part de chaque budget déjà utilisée ce mois-ci. Si une dépense risque de dépasser son budget, l’application vous demande confirmation avant de l’enregistrer.</string>
+    <string name="faq_transfer_q">Qu’est-ce qu’un virement ?</string>
+    <string name="faq_transfer_a">Un virement déplace de l’argent entre deux de vos comptes, par exemple du compte Épargne vers le compte Espèces. Il modifie les deux soldes, mais n’est compté ni comme un revenu ni comme une dépense.</string>
+    <string name="faq_delete_q">Pourquoi ne puis-je pas supprimer une catégorie ou un compte ?</string>
+    <string name="faq_delete_a">Les catégories et les comptes par défaut ne peuvent pas être supprimés, pas plus que ceux encore utilisés par des transactions. Modifiez ou supprimez d’abord ces transactions, puis réessayez.</string>
+    <string name="faq_currency_q">Comment changer de devise ?</string>
+    <string name="faq_currency_a">Dans les paramètres, appuyez sur « %1$s » et choisissez-en une. Seul le symbole change : les montants déjà saisis ne sont pas convertis.</string>
+    <string name="faq_reports_q">Comment exporter un rapport ?</string>
+    <string name="faq_reports_a">Ouvrez « %1$s », choisissez un mois, puis enregistrez ou partagez le rapport au format PDF ou CSV. Les fichiers exportés ne sont pas chiffrés : conservez-les dans un endroit privé.</string>
+    <string name="faq_biometric_q">Pourquoi la connexion par empreinte digitale ou par visage s’est-elle désactivée ?</string>
+    <string name="faq_biometric_a">Elle se désactive lorsque les empreintes digitales ou les visages enregistrés sur le téléphone changent, afin qu’une empreinte ou un visage ajouté récemment ne puisse pas ouvrir vos données. Votre code PIN fonctionne toujours, et vous pouvez réactiver la connexion biométrique dans les paramètres.</string>
+
+    <!-- Rate, share and feedback -->
+    <string name="rate_prompt_title">Vous aimez Denarii Dolor ?</string>
+    <string name="rate_prompt_message">Une petite note sur Google Play aide d’autres personnes à découvrir l’application. Cela ne prend qu’un instant.</string>
+    <string name="rate_prompt_rate">Noter</string>
+    <string name="rate_prompt_later">Plus tard</string>
+    <string name="rate_prompt_never">Ne plus demander</string>
+    <string name="rate_unavailable">Impossible d’ouvrir Google Play sur cet appareil.</string>
+    <string name="share_app_chooser">Partager Denarii Dolor</string>
+    <string name="share_app_message">Je suis mes dépenses et mes budgets avec Denarii Dolor. Tout reste privé, sur le téléphone. Disponible sur Google Play : %1$s</string>
+    <string name="feedback_email_subject">Commentaires sur Denarii Dolor (version %1$s)</string>
+    <string name="feedback_email_body">\n\n———\nVersion de l’application : %1$s\nVersion d’Android : %2$s</string>
+    <string name="feedback_no_email_app">Aucune application de messagerie trouvée. Vous pouvez écrire à %1$s.</string>
 </resources>

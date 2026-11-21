@@ -281,4 +281,76 @@
     <string name="default_category_income">دخل عام</string>
     <string name="default_category_transfer">تحويل</string>
     <string name="dashboard_load_failed">تعذّر تحميل معاملاتك. اخرج من التطبيق ثم عُد إليه لإعادة المحاولة.</string>
+
+    <!-- Welcome tour, shown once after a new profile is set up -->
+    <string name="tour_private_title">أموالك، بخصوصية تامة</string>
+    <string name="tour_private_body">تتبّع مصروفاتك ودخلك والتحويلات بين حساباتك. يبقى كل شيء على هذا الهاتف، مشفّرًا ومقفلًا برمز PIN الخاص بك. بلا تسجيل، ولا إعلانات، ولا اتصال بالإنترنت.</string>
+    <string name="tour_add_title">أضِف في ثوانٍ</string>
+    <string name="tour_add_body">انقر على + لتسجيل مصروف أو دخل أو تحويل. اختر حسابًا وفئة، وستتحدّث أرصدتك تلقائيًا.</string>
+    <string name="tour_budget_title">التزم بميزانيتك</string>
+    <string name="tour_budget_body">عيِّن حدًّا شهريًا لأي فئة. تعرض لوحة المعلومات المبلغ المتبقي، وتنبّهك قبل أن تتجاوزه.</string>
+    <string name="tour_reports_title">التقارير والنسخ الاحتياطية</string>
+    <string name="tour_reports_body">احفظ تقريرًا شهريًا أو شاركه بتنسيق PDF أو CSV، واحتفظ بنسخة احتياطية مشفّرة حتى لا تفقد سجلاتك أبدًا.</string>
+    <string name="tour_skip">تخطٍّ</string>
+    <string name="tour_next">التالي</string>
+    <string name="tour_get_started">لنبدأ</string>
+    <string name="tour_page_indicator">الصفحة %1$d من %2$d</string>
+
+    <!-- Getting-started checklist on the Dashboard -->
+    <string name="getting_started_title">خطوات البدء</string>
+    <string name="getting_started_progress">اكتمل %1$d من %2$d</string>
+    <string name="getting_started_add_account">أضِف حسابك المصرفي أو حساب بطاقتك</string>
+    <string name="getting_started_add_transaction">سجِّل أول معاملة</string>
+    <string name="getting_started_set_budget">عيِّن ميزانية شهرية</string>
+    <string name="getting_started_step_done">تم</string>
+    <string name="getting_started_step_todo">لم يكتمل بعد</string>
+    <string name="getting_started_hide">إخفاء قائمة خطوات البدء</string>
+
+    <!-- Settings: help and support -->
+    <string name="settings_help_section">المساعدة والدعم</string>
+    <string name="settings_help_faq">المساعدة والأسئلة الشائعة</string>
+    <string name="settings_show_tour">عرض الجولة الترحيبية</string>
+    <string name="settings_send_feedback">إرسال ملاحظات</string>
+    <string name="settings_rate_app">تقييم التطبيق</string>
+    <string name="settings_share_app">مشاركة التطبيق</string>
+
+    <!-- Help & FAQ screen. Each %s is the name of a screen or setting, taken from its own string. -->
+    <string name="help_title">المساعدة والأسئلة الشائعة</string>
+    <string name="help_expanded">موسَّع</string>
+    <string name="help_collapsed">مطويّ</string>
+    <string name="help_contact_title">هل ما زلت بحاجة إلى مساعدة؟</string>
+    <string name="help_contact_body">أرسل سؤالًا أو مشكلة أو فكرة. يُرجى عدم تضمين رمز PIN أو عبارة مرور النسخة الاحتياطية أو سجلاتك المالية.</string>
+    <string name="faq_data_q">أين تُخزَّن بياناتي؟</string>
+    <string name="faq_data_a">على هذا الهاتف فقط. لا يتطلّب Denarii Dolor إنشاء حساب، وليس له خادم، ولا يمكنه الاتصال بالإنترنت. تُحفَظ سجلاتك في قاعدة بيانات مشفّرة لا يفتح قفلها إلا رمز PIN أو إجابة سؤال الأمان أو، إذا فعّلتها، بصمة إصبعك أو وجهك. والنسخ الاحتياطي السحابي في Android متوقف لهذا التطبيق.</string>
+    <string name="faq_forgot_pin_q">نسيت رمز PIN. ماذا أفعل؟</string>
+    <string name="faq_forgot_pin_a">في شاشة تسجيل الدخول، انقر على «%1$s» وأجب عن سؤال الأمان لاختيار رمز PIN جديد. وإذا لم تتمكن من الإجابة عنه أيضًا، فلا يمكن فتح قفل بياناتك، لأن المفتاح ليس بحوزة أي شخص آخر. وعندها يكون الحل الوحيد هو «%2$s» من شاشة تسجيل الدخول، ما يمحو كل شيء لتبدأ من جديد.</string>
+    <string name="faq_signed_out_q">لماذا تم تسجيل خروجي؟</string>
+    <string name="faq_signed_out_a">لحماية بياناتك، يسجّل التطبيق خروجك بعد %1$d دقائق دون استخدام. سجّل الدخول مجددًا برمز PIN، أو فعّل «%2$s» من الإعدادات لتسجيل الدخول ببصمة إصبعك أو وجهك.</string>
+    <string name="faq_backup_q">كيف أنسخ بياناتي احتياطيًا أو أنقلها إلى هاتف جديد؟</string>
+    <string name="faq_backup_a">في الإعدادات، افتح «%1$s» وأنشئ نسخة احتياطية محمية بعبارة مرور. احفظ الملف في مكان آمن، مثل خدمة تخزين سحابي. على الهاتف الجديد، ثبّت Denarii Dolor واضبطه، ثم استعِد الملف باستخدام عبارة المرور نفسها. لا يستطيع أحد استعادة عبارة مرور منسيّة.</string>
+    <string name="faq_budgets_q">كيف تعمل الميزانيات؟</string>
+    <string name="faq_budgets_a">في الإعدادات، افتح «%1$s» لتعيين حد شهري وعتبة تحذير لأي فئة. تعرض لوحة المعلومات مقدار ما استخدمته من كل ميزانية هذا الشهر. وإذا كان مصروف ما سيتجاوز ميزانيته، يسألك التطبيق قبل حفظه.</string>
+    <string name="faq_transfer_q">ما هو التحويل؟</string>
+    <string name="faq_transfer_a">ينقل التحويل المال بين حسابين من حساباتك، مثلًا من «المدخرات» إلى «النقد». فهو يغيّر الرصيدين معًا، لكنه لا يُحتسب دخلًا ولا مصروفًا.</string>
+    <string name="faq_delete_q">لماذا لا يمكنني حذف فئة أو حساب؟</string>
+    <string name="faq_delete_a">لا يمكن حذف الفئات والحسابات الافتراضية، ولا أي فئة أو حساب لا تزال معاملات تستخدمه. عدِّل تلك المعاملات أو احذفها أولًا، ثم أعد المحاولة.</string>
+    <string name="faq_currency_q">كيف أغيّر العملة؟</string>
+    <string name="faq_currency_a">في الإعدادات، انقر على «%1$s» واختر عملة. يتغيّر رمز العملة فقط، ولا تُحوَّل المبالغ التي أدخلتها سابقًا.</string>
+    <string name="faq_reports_q">كيف أصدّر تقريرًا؟</string>
+    <string name="faq_reports_a">افتح «%1$s»، واختر شهرًا، ثم احفظ التقرير أو شاركه بتنسيق PDF أو CSV. الملفات المصدَّرة غير مشفّرة، لذا احتفظ بها في مكان خاص.</string>
+    <string name="faq_biometric_q">لماذا توقّف تسجيل الدخول ببصمة الإصبع أو الوجه؟</string>
+    <string name="faq_biometric_a">يتوقف عند تغيّر بصمات الأصابع أو الوجوه المسجَّلة على الهاتف، حتى لا تتمكن بصمة أو وجه أُضيف حديثًا من فتح بياناتك. يظل رمز PIN يعمل، ويمكنك إعادة تفعيل تسجيل الدخول بالمقاييس الحيوية من الإعدادات.</string>
+
+    <!-- Rate, share and feedback -->
+    <string name="rate_prompt_title">هل يعجبك Denarii Dolor؟</string>
+    <string name="rate_prompt_message">يساعد تقييم سريع على Google Play الآخرين في العثور على التطبيق. لن يستغرق الأمر سوى لحظة.</string>
+    <string name="rate_prompt_rate">قيّم الآن</string>
+    <string name="rate_prompt_later">ليس الآن</string>
+    <string name="rate_prompt_never">لا تسألني مجددًا</string>
+    <string name="rate_unavailable">تعذّر فتح Google Play على هذا الجهاز.</string>
+    <string name="share_app_chooser">مشاركة Denarii Dolor</string>
+    <string name="share_app_message">أتتبّع إنفاقي وميزانياتي باستخدام Denarii Dolor، وتبقى كل البيانات خاصة على الهاتف. نزّله من Google Play: %1$s</string>
+    <string name="feedback_email_subject">ملاحظات حول Denarii Dolor (الإصدار %1$s)</string>
+    <string name="feedback_email_body">\n\n———\nإصدار التطبيق: %1$s\nإصدار Android: %2$s</string>
+    <string name="feedback_no_email_app">لم يتم العثور على تطبيق بريد إلكتروني. يمكنك الكتابة إلى %1$s.</string>
 </resources>

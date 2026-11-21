@@ -9,6 +9,7 @@ package com.denariidolor.presentation.ui.transaction
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.denariidolor.data.local.preferences.RatePromptStore
 import com.denariidolor.data.repository.AccountRepository
 import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.data.repository.TransactionRepository
@@ -56,6 +57,7 @@ class TransactionViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     categoryRepository: CategoryRepository,
     accountRepository: AccountRepository,
+    private val ratePrompt: RatePromptStore,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private val transactionId: Long? = savedStateHandle.get<Long>(ARG_TRANSACTION_ID)?.takeIf { it > 0L }
@@ -165,6 +167,8 @@ class TransactionViewModel @Inject constructor(
 
     private suspend fun finishSave(result: Result<Unit>) {
         if (result.isFailure || !isEditMode) _isSaving.value = false
+        // Only new transactions count toward the rate prompt; fixing an old one isn't a sign of regular use.
+        if (result.isSuccess && !isEditMode) ratePrompt.recordSave()
         _events.send(result.exceptionOrNull()?.let { TransactionEvent.Failed(UiMessage.fromError(it)) } ?: TransactionEvent.Saved)
     }
 

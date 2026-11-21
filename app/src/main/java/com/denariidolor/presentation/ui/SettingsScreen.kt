@@ -8,6 +8,7 @@
 
 package com.denariidolor.presentation.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,9 +25,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.MailOutline
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
@@ -39,10 +47,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.denariidolor.R
@@ -53,6 +64,11 @@ internal const val DARK_MODE_SWITCH_TAG = "darkModeSwitch"
 internal const val BIOMETRIC_SWITCH_TAG = "biometricSwitch"
 internal const val CURRENCY_SETTING_TAG = "currencySetting"
 internal const val CURRENCY_OPTION_TAG_PREFIX = "currencyOption_"
+internal const val SETTINGS_HELP_TAG = "settingsHelp"
+internal const val SETTINGS_TOUR_TAG = "settingsTour"
+internal const val SETTINGS_FEEDBACK_TAG = "settingsFeedback"
+internal const val SETTINGS_RATE_TAG = "settingsRate"
+internal const val SETTINGS_SHARE_TAG = "settingsShare"
 
 @Composable
 fun SettingsScreen(
@@ -66,7 +82,12 @@ fun SettingsScreen(
     onManageBudgets: () -> Unit = {},
     onBackup: () -> Unit = {},
     onPrivacyPolicy: () -> Unit = {},
-    onLicenses: () -> Unit = {}
+    onLicenses: () -> Unit = {},
+    onHelp: () -> Unit = {},
+    onShowTour: () -> Unit = {},
+    onSendFeedback: () -> Unit = {},
+    onRateApp: () -> Unit = {},
+    onShareApp: () -> Unit = {}
 ) {
     var showCurrencyDialog by rememberSaveable { mutableStateOf(false) }
     Column(
@@ -142,6 +163,19 @@ fun SettingsScreen(
             Text(stringResource(R.string.settings_backup_restore))
         }
         Spacer(modifier = Modifier.height(24.dp))
+        Text(
+            text = stringResource(R.string.settings_help_section),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.semantics { heading() }
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        SettingsLinkRow(Icons.AutoMirrored.Outlined.HelpOutline, R.string.settings_help_faq, SETTINGS_HELP_TAG, onHelp)
+        SettingsLinkRow(Icons.Outlined.Explore, R.string.settings_show_tour, SETTINGS_TOUR_TAG, onShowTour)
+        SettingsLinkRow(Icons.Outlined.MailOutline, R.string.settings_send_feedback, SETTINGS_FEEDBACK_TAG, onSendFeedback)
+        SettingsLinkRow(Icons.Outlined.StarOutline, R.string.settings_rate_app, SETTINGS_RATE_TAG, onRateApp)
+        SettingsLinkRow(Icons.Outlined.Share, R.string.settings_share_app, SETTINGS_SHARE_TAG, onShareApp)
+        Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider()
         Spacer(modifier = Modifier.height(8.dp))
         TextButton(onClick = onPrivacyPolicy, modifier = Modifier.fillMaxWidth()) {
@@ -169,6 +203,23 @@ fun SettingsScreen(
 }
 
 /** "US Dollar ($)", in the device's language. */
+@Composable
+private fun SettingsLinkRow(icon: ImageVector, @StringRes label: Int, tag: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(vertical = 8.dp)
+            .testTag(tag),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(text = stringResource(label), modifier = Modifier.weight(1f))
+    }
+}
+
 @Composable
 private fun currencyLabel(code: String): String {
     val locale = LocalLocale.current.platformLocale

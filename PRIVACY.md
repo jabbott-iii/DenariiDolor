@@ -1,6 +1,6 @@
 # Denarii Dolor Privacy Policy
 
-Effective date: October 4, 2026
+Effective date: November 20, 2026
 
 This policy explains how the Denarii Dolor app for Android ("the app") handles your information. The app is published by Joseph Anthony Abbott III ("I" or "me"). You can send questions about this policy to jabbottpublicsupport@gmail.com.
 
@@ -14,6 +14,7 @@ The app has no account, no server, no ads and no analytics, and it can't connect
 - Your security profile: your security question, and the encrypted copies of the database key with the values needed to check your PIN and answer. Your PIN and your security answer themselves are never stored. The profile is encrypted with a key held in the Android Keystore.
 - Sign-in protection: the number of failed sign-in attempts and the lockout timer.
 - Settings: dark mode and your currency. These aren't encrypted, because they reveal nothing about your finances.
+- Help prompts: whether the welcome tour and the getting-started checklist are still due, and how many new transactions you have saved (only a count, used to decide when to ask once whether you'd like to rate the app). These aren't encrypted either, and they never leave your phone.
 
 The app turns off Android's cloud backup and device-to-device transfer for all of its data, so none of it is copied to Google's servers or to another phone unless you export it yourself.
 
@@ -30,6 +31,14 @@ The app doesn't collect or send your name, email address, phone number, contacts
 
 - Reports: a monthly report saved or shared as a CSV or PDF file contains that month's transactions and is not encrypted. It goes only where you choose: a folder on your phone, a cloud drive, or an app you pick to share it with, and that destination's own privacy policy then applies. Copies made for sharing are deleted from the app's storage when you sign out or your session ends, or else the next time the app starts.
 - Backups: a backup file contains all your financial records and your currency setting, encrypted with a passphrase you choose. It doesn't contain your PIN, your security question or your biometric sign-in. It goes only where you choose. The backup can't be opened without the passphrase, and nobody, including me, can recover a forgotten passphrase. Choose a strong one: someone who gets a copy of the file could try to guess it.
+
+## Rating, sharing and feedback
+
+These options in Settings open another app on your phone. Denarii Dolor itself sends nothing.
+
+- Rate this app: opens the app's page in Google Play, where Google's privacy policy applies to any rating or review you leave.
+- Share this app: opens Android's share sheet with a short message and a link to the app's Google Play page. You choose whether to send it and to whom. The link carries a fixed campaign tag (the same for everyone) that lets Google Play count how many installs came from shared links. It doesn't identify you or the person you share it with.
+- Send feedback: opens your email app with a message addressed to me that already includes the app's version and your Android version. You can edit or delete anything before sending, and nothing is sent unless you send it. See "If you contact me" below.
 
 ## Google Play
 

@@ -9,6 +9,7 @@ package com.denariidolor.presentation.ui.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.denariidolor.R
+import com.denariidolor.data.local.preferences.OnboardingStore
 import com.denariidolor.data.repository.AccountRepository
 import com.denariidolor.data.repository.BudgetRepository
 import com.denariidolor.data.repository.CategoryRepository
@@ -43,13 +44,16 @@ class DashboardViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val budgetRepository: BudgetRepository,
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
+    private val onboarding: OnboardingStore,
     private val clock: Clock
 ) : ViewModel() {
     private val period = MutableStateFlow(currentPeriod())
 
     /** Loads only the current month and the latest rows; a failure shows an error instead of crashing (BUG-06, BUG-10). */
-    val uiState: StateFlow<DashboardUiState> = period
-        .flatMapLatest { period -> observe(period).catch { emit(DashboardUiState(period = period.month, failed = true)) } }
+    val uiState: StateFlow<DashboardUiState> = combine(
+        period.flatMapLatest { period -> observe(period).catch { emit(DashboardUiState(period = period.month, failed = true)) } },
+        onboarding.checklistActive
+    ) { state, checklistActive -> state.copy(gettingStarted = if (checklistActive) gettingStarted(state) else null) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUiState())
 
     private val _messages = Channel<UiMessage>(Channel.BUFFERED)
@@ -59,6 +63,8 @@ class DashboardViewModel @Inject constructor(
     fun refreshPeriod() {
         period.value = currentPeriod()
     }
+
+    fun dismissGettingStarted() = onboarding.dismissChecklist()
 
     fun deleteTransaction(id: Long) {
         viewModelScope.launch {

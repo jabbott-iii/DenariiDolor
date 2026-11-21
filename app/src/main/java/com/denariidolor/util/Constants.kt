@@ -18,6 +18,9 @@ object Constants {
     const val DEFAULT_INCOME_CATEGORY_ID = 2L
     const val DEFAULT_TRANSFER_CATEGORY_ID = 3L
 
+    /** Where Settings → Send feedback writes to. The same address is published in PRIVACY.md. */
+    const val SUPPORT_EMAIL = "jabbottpublicsupport@gmail.com"
+
     val DEFAULT_ACCOUNTS = listOf(
         SeedAccount(DEFAULT_CASH_ACCOUNT_ID, R.string.default_account_cash, 0L),
         SeedAccount(DEFAULT_SAVINGS_ACCOUNT_ID, R.string.default_account_savings, 0L)
