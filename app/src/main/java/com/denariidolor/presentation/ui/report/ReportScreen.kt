@@ -48,6 +48,7 @@ import com.denariidolor.domain.report.ReportText
 import com.denariidolor.presentation.platform.rememberNotices
 import com.denariidolor.presentation.platform.rememberSaveFilePicker
 import com.denariidolor.presentation.platform.rememberShareSheet
+import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.DateUtils
 import com.denariidolor.util.formatMoney
 import com.denariidolor.util.formatSignedAmount
@@ -72,8 +73,10 @@ fun ReportRoute(viewModel: ReportViewModel = hiltViewModel()) {
     val shareSheet = rememberShareSheet()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val shareTitle = stringResource(R.string.share_report)
-    val saveCsv = rememberSaveFilePicker(ReportFormat.CSV.mimeType) { uri -> uri?.let { viewModel.save(it, ReportFormat.CSV) } }
-    val savePdf = rememberSaveFilePicker(ReportFormat.PDF.mimeType) { uri -> uri?.let { viewModel.save(it, ReportFormat.PDF) } }
+    // A device without a document picker can't save a report; say so instead of crashing (BUG-13).
+    val noPicker = { notices.show(UiMessage.Resource(R.string.report_export_failed)) }
+    val saveCsv = rememberSaveFilePicker(ReportFormat.CSV.mimeType, noPicker) { uri -> uri?.let { viewModel.save(it, ReportFormat.CSV) } }
+    val savePdf = rememberSaveFilePicker(ReportFormat.PDF.mimeType, noPicker) { uri -> uri?.let { viewModel.save(it, ReportFormat.PDF) } }
 
     LaunchedEffect(Unit) { viewModel.refresh() }
     LaunchedEffect(viewModel) {

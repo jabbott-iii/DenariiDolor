@@ -74,36 +74,31 @@ fun rememberDatePicker(): DatePicker {
 }
 
 /**
- * Asks where to save a new file of [mimeType], suggesting the name it's launched with. On a device with no document picker
- * (some managed or TV builds) it calls [onUnavailable], or, without one, throws as Android's launcher does.
+ * Asks where to save a new file of [mimeType], suggesting the name it's launched with. A device with no document picker (some
+ * managed or TV builds) can't open one, so the picker calls [onUnavailable] instead of crashing the app (BUG-13).
  */
 @Composable
-fun rememberSaveFilePicker(mimeType: String, onUnavailable: (() -> Unit)? = null, onPicked: (Uri?) -> Unit): FilePicker<String> {
+fun rememberSaveFilePicker(mimeType: String, onUnavailable: () -> Unit, onPicked: (Uri?) -> Unit): FilePicker<String> {
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(mimeType), onPicked)
     return rememberFilePicker(launcher, onUnavailable) { it }
 }
 
 /** Asks which file to open, among the MIME types it's launched with. A missing picker is handled as in [rememberSaveFilePicker]. */
 @Composable
-fun rememberOpenFilePicker(onUnavailable: (() -> Unit)? = null, onPicked: (Uri?) -> Unit): FilePicker<List<String>> {
+fun rememberOpenFilePicker(onUnavailable: () -> Unit, onPicked: (Uri?) -> Unit): FilePicker<List<String>> {
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument(), onPicked)
     return rememberFilePicker(launcher, onUnavailable) { it.toTypedArray() }
 }
 
 @Composable
-private fun <I, L> rememberFilePicker(
-    launcher: ActivityResultLauncher<L>,
-    onUnavailable: (() -> Unit)?,
-    toLaunch: (I) -> L
-): FilePicker<I> {
+private fun <I, L> rememberFilePicker(launcher: ActivityResultLauncher<L>, onUnavailable: () -> Unit, toLaunch: (I) -> L): FilePicker<I> {
     val currentOnUnavailable by rememberUpdatedState(onUnavailable)
     return remember(launcher) {
         FilePicker { input ->
             try {
                 launcher.launch(toLaunch(input))
-            } catch (e: ActivityNotFoundException) {
-                val fallback = currentOnUnavailable ?: throw e
-                fallback()
+            } catch (_: ActivityNotFoundException) {
+                currentOnUnavailable()
             }
         }
     }
