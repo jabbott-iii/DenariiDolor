@@ -8,8 +8,6 @@
 
 package com.denariidolor.presentation.ui
 
-import android.app.DatePickerDialog
-import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -40,7 +38,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -51,6 +48,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.denariidolor.R
 import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.usecase.BudgetOverage
+import com.denariidolor.presentation.platform.pickForField
+import com.denariidolor.presentation.platform.rememberDatePicker
+import com.denariidolor.presentation.platform.rememberNotices
 import com.denariidolor.presentation.ui.common.ConfirmDialog
 import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.presentation.ui.common.ReferencePicker
@@ -66,9 +66,7 @@ import com.denariidolor.util.Validators
 import com.denariidolor.util.formatMoney
 import com.denariidolor.util.labelRes
 import kotlin.time.Clock
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.number
 import kotlinx.datetime.todayIn
 
 internal const val TRANSACTION_TYPE_FIELD_TAG = "transactionTypeField"
@@ -79,7 +77,7 @@ internal const val SAVE_TRANSACTION_BUTTON_TAG = "saveTransactionButton"
 
 @Composable
 internal fun AddTransactionRoute(onFinished: () -> Unit, viewModel: TransactionViewModel = hiltViewModel()) {
-    val context = LocalContext.current
+    val notices = rememberNotices()
     val formState by viewModel.formState.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
     val overBudget by viewModel.overBudget.collectAsStateWithLifecycle()
@@ -93,11 +91,10 @@ internal fun AddTransactionRoute(onFinished: () -> Unit, viewModel: TransactionV
         viewModel.events.collect { event ->
             when (event) {
                 TransactionEvent.Saved -> {
-                    Toast.makeText(context, savedMessage, Toast.LENGTH_SHORT).show()
+                    notices.show(savedMessage)
                     if (viewModel.isEditMode) onFinished() else formKey++
                 }
-                is TransactionEvent.Failed ->
-                    Toast.makeText(context, event.message.resolve(context), Toast.LENGTH_SHORT).show()
+                is TransactionEvent.Failed -> notices.show(event.message)
             }
         }
     }
@@ -108,14 +105,14 @@ internal fun AddTransactionRoute(onFinished: () -> Unit, viewModel: TransactionV
         }
         // Wait for the resumed state: onFinished ignores calls made before it (BUG-03).
         TransactionFormState.NotFound -> LifecycleResumeEffect(Unit) {
-            Toast.makeText(context, notFoundMessage, Toast.LENGTH_SHORT).show()
+            notices.show(notFoundMessage)
             onFinished()
             onPauseOrDispose { }
         }
         is TransactionFormState.Ready -> key(formKey) {
             AddTransactionScreen(
                 onSave = viewModel::saveTransaction,
-                onShowMessage = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() },
+                onShowMessage = { notices.show(it) },
                 categories = categories,
                 accounts = accounts,
                 initial = state.initial,
@@ -170,7 +167,7 @@ fun AddTransactionScreen(
     onBack: (() -> Unit)? = null,
     isSaving: Boolean = false
 ) {
-    val context = LocalContext.current
+    val datePicker = rememberDatePicker()
     val transactionTypes = TransactionType.entries.map { it.name }
     val startType = initial?.type ?: transactionTypes.firstOrNull().orEmpty()
     val startDefaults = remember(startType) {
@@ -294,7 +291,7 @@ fun AddTransactionScreen(
         Spacer(modifier = Modifier.height(8.dp))
         DateSelectorButton(
             text = dateText.ifBlank { datePlaceholder },
-            onClick = { launchDatePicker(context, dateText) { dateText = it } },
+            onClick = { datePicker.pickForField(dateText, Clock.System.todayIn(TimeZone.currentSystemDefault())) { dateText = it } },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -347,21 +344,6 @@ private fun DateSelectorButton(text: String, onClick: () -> Unit, modifier: Modi
     Button(onClick = onClick, modifier = modifier) {
         Text(text = text)
     }
-}
-
-private fun launchDatePicker(context: android.content.Context, value: String, onDateSelected: (String) -> Unit) {
-    val selectedDate = value.takeIf { it.isNotBlank() }?.let {
-        runCatching { DateUtils.parseIsoDate(it) }.getOrNull()
-    } ?: Clock.System.todayIn(TimeZone.currentSystemDefault())
-    DatePickerDialog(
-        context,
-        { _, year, month, dayOfMonth ->
-            onDateSelected(LocalDate(year, month + 1, dayOfMonth).toString())
-        },
-        selectedDate.year,
-        selectedDate.month.number - 1,
-        selectedDate.day
-    ).show()
 }
 
 internal data class TransactionTypeDefaults(

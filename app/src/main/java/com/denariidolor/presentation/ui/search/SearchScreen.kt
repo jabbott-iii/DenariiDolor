@@ -6,8 +6,6 @@
 
 package com.denariidolor.presentation.ui.search
 
-import android.app.DatePickerDialog
-import android.content.Context
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,7 +29,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -40,15 +37,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.denariidolor.R
 import com.denariidolor.domain.model.SearchFilters
+import com.denariidolor.presentation.platform.pickForField
+import com.denariidolor.presentation.platform.rememberDatePicker
 import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.presentation.ui.common.ReferencePicker
 import com.denariidolor.presentation.ui.common.TransactionRow
 import com.denariidolor.presentation.ui.common.TransactionRowItem
-import com.denariidolor.util.DateUtils
 import kotlin.time.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.number
 import kotlinx.datetime.todayIn
 
 const val SEARCH_BUTTON_TAG = "searchButton"
@@ -74,7 +71,7 @@ fun SearchScreen(
     onSearch: (SearchFilters) -> Unit,
     onResultClick: (Long) -> Unit
 ) {
-    val context = LocalContext.current
+    val datePicker = rememberDatePicker()
     var description by rememberSaveable { mutableStateOf("") }
     var categoryId by rememberSaveable { mutableStateOf("") }
     var minAmount by rememberSaveable { mutableStateOf("") }
@@ -126,11 +123,11 @@ fun SearchScreen(
         }
         Spacer(modifier = Modifier.height(8.dp))
         Row(modifier = Modifier.fillMaxWidth()) {
-            OutlinedButton(onClick = { pickDate(context, startDate) { startDate = it } }, modifier = Modifier.weight(1f)) {
+            OutlinedButton(onClick = { datePicker.pickForField(startDate, today()) { startDate = it } }, modifier = Modifier.weight(1f)) {
                 Text(startDate.ifBlank { stringResource(R.string.search_start_date_hint) })
             }
             Spacer(modifier = Modifier.width(8.dp))
-            OutlinedButton(onClick = { pickDate(context, endDate) { endDate = it } }, modifier = Modifier.weight(1f)) {
+            OutlinedButton(onClick = { datePicker.pickForField(endDate, today()) { endDate = it } }, modifier = Modifier.weight(1f)) {
                 Text(endDate.ifBlank { stringResource(R.string.search_end_date_hint) })
             }
         }
@@ -193,15 +190,4 @@ fun SearchScreen(
     }
 }
 
-private fun pickDate(context: Context, current: String, onPicked: (String) -> Unit) {
-    val initial =
-        current.takeIf { it.isNotBlank() }?.let { runCatching { DateUtils.parseIsoDate(it) }.getOrNull() }
-            ?: Clock.System.todayIn(TimeZone.currentSystemDefault())
-    DatePickerDialog(
-        context,
-        { _, year, month, day -> onPicked(LocalDate(year, month + 1, day).toString()) },
-        initial.year,
-        initial.month.number - 1,
-        initial.day
-    ).show()
-}
+private fun today(): LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())

@@ -6,13 +6,6 @@
 
 package com.denariidolor.presentation.ui.backup
 
-import android.content.ActivityNotFoundException
-import android.content.Context
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -54,7 +46,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.denariidolor.R
 import com.denariidolor.data.backup.BackupError
 import com.denariidolor.data.backup.BackupFile
+import com.denariidolor.presentation.platform.rememberNotices
+import com.denariidolor.presentation.platform.rememberOpenFilePicker
+import com.denariidolor.presentation.platform.rememberSaveFilePicker
 import com.denariidolor.presentation.ui.common.ScreenHeader
+import com.denariidolor.presentation.ui.common.UiMessage
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -69,21 +65,24 @@ internal const val RESTORE_CONFIRM_BUTTON_TAG = "restoreConfirm"
 @Composable
 fun BackupRoute(onBack: () -> Unit, onRestored: () -> Unit, viewModel: BackupViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val context = LocalContext.current
+    val notices = rememberNotices()
     val restoredMessage = stringResource(R.string.backup_restored)
-    val chooseDestination = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(BackupFile.MIME_TYPE)) {
-        viewModel.onDestinationChosen(it)
+    // A device without a document picker (some managed or TV builds) can't open one; say so instead of crashing.
+    val chooseDestination = rememberSaveFilePicker(
+        BackupFile.MIME_TYPE,
+        onUnavailable = { notices.show(UiMessage.Resource(R.string.backup_save_failed)) }
+    ) { viewModel.onDestinationChosen(it) }
+    val chooseBackup = rememberOpenFilePicker(onUnavailable = { notices.show(UiMessage.Resource(R.string.backup_error_read)) }) {
+        viewModel.onBackupFileChosen(it)
     }
-    // Backups made elsewhere may carry any type, depending on where they were stored.
-    val chooseBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { viewModel.onBackupFileChosen(it) }
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
-                is BackupEvent.ChooseDestination -> chooseDestination.launchOrExplain(event.fileName, context, R.string.backup_save_failed)
-                is BackupEvent.Message -> toast(context, event.message.resolve(context))
+                is BackupEvent.ChooseDestination -> chooseDestination.launch(event.fileName)
+                is BackupEvent.Message -> notices.show(event.message)
                 BackupEvent.Restored -> {
-                    toast(context, restoredMessage)
+                    notices.show(restoredMessage)
                     onRestored()
                 }
             }
@@ -94,24 +93,14 @@ fun BackupRoute(onBack: () -> Unit, onRestored: () -> Unit, viewModel: BackupVie
         state = state,
         onBack = onBack,
         onCreate = viewModel::startBackup,
-        onRestore = { chooseBackup.launchOrExplain(arrayOf("*/*"), context, R.string.backup_error_read) },
+        // Backups made elsewhere may carry any type, depending on where they were stored.
+        onRestore = { chooseBackup.launch(listOf("*/*")) },
         onSubmitNewPassphrase = viewModel::submitNewPassphrase,
         onSubmitRestorePassphrase = viewModel::submitRestorePassphrase,
         onConfirmRestore = viewModel::confirmRestore,
         onDismissDialog = viewModel::dismissDialog
     )
 }
-
-// A device without a document picker (some managed or TV builds) can't open one; say so instead of crashing.
-private fun <I> ActivityResultLauncher<I>.launchOrExplain(input: I, context: Context, @StringRes failure: Int) {
-    try {
-        launch(input)
-    } catch (_: ActivityNotFoundException) {
-        toast(context, context.getString(failure))
-    }
-}
-
-private fun toast(context: Context, text: String) = Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
 
 @Composable
 fun BackupScreen(

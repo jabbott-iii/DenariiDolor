@@ -14,11 +14,17 @@ paths:
     `UiMessageEffect(viewModel.messages)` and calls the screen.
   - `XxxScreen(state…, onAction lambdas)` is stateless. It never takes a ViewModel, `NavController`, repository or
     `Context`-based service, so it can be tested on its own. See `ManageCategoriesRoute` and `ManageCategoriesScreen`.
+- **Platform calls.** Screens reach Android only through `presentation/platform`, so they can move to shared code:
+  - `rememberNotices()` for toasts, `rememberShareSheet()`, `rememberExternalApps()` (store listing, feedback email),
+    `rememberAppDetails()`, `rememberDatePicker()`, and `rememberSaveFilePicker()` / `rememberOpenFilePicker()`.
+  - Their interfaces are plain Kotlin in `PlatformActions.kt`, and `AndroidPlatformActions.kt` implements them.
+  - Only that file and the activities may use `LocalContext`, `Toast`, `Intent`, `DatePickerDialog` or activity-result
+    launchers. `PlatformBoundaryTest` fails on any other file that does, and `PlatformIntentsTest` pins each intent.
 - **ViewModels.**
   - Declare them as `@HiltViewModel class XxxViewModel @Inject constructor(…) : ViewModel()`.
   - They depend on use cases, repository interfaces and `Clock`.
-  - Keep Android types (`Context`, `Uri`, `Bitmap`) out, so JVM tests can cover them. `BackupViewModel`'s `Uri` is the
-    documented exception.
+  - Keep Android types (`Context`, `Uri`, `Bitmap`) out, so JVM tests can cover them. The `Uri` that `BackupViewModel` and
+    `ReportViewModel` take for picked files is the documented exception until shared code gets its own file handle.
   - Navigation arguments come from `SavedStateHandle`.
 - **State and events.**
   - Long-lived state is one immutable `…UiState` data class (or a few `StateFlow`s) per screen.

@@ -7,15 +7,14 @@
 package com.denariidolor.presentation.ui.common
 
 import android.content.Context
-import android.widget.Toast
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalContext
 import com.denariidolor.R
 import com.denariidolor.domain.usecase.DomainError
 import com.denariidolor.domain.usecase.DomainException
+import com.denariidolor.presentation.platform.rememberNotices
 import kotlinx.coroutines.flow.Flow
 
 sealed interface UiMessage {
@@ -77,8 +76,8 @@ sealed interface UiMessage {
 
 @Composable
 fun UiMessageEffect(messages: Flow<UiMessage>) {
-    val context = LocalContext.current
+    val notices = rememberNotices()
     LaunchedEffect(messages) {
-        messages.collect { message -> Toast.makeText(context, message.resolve(context), Toast.LENGTH_SHORT).show() }
+        messages.collect { message -> notices.show(message) }
     }
 }

@@ -6,11 +6,6 @@
 
 package com.denariidolor.presentation.ui.report
 
-import android.content.ClipData
-import android.content.Intent
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,7 +32,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -51,6 +45,9 @@ import com.denariidolor.R
 import com.denariidolor.data.export.ReportFormat
 import com.denariidolor.domain.model.ReportRow
 import com.denariidolor.domain.report.ReportText
+import com.denariidolor.presentation.platform.rememberNotices
+import com.denariidolor.presentation.platform.rememberSaveFilePicker
+import com.denariidolor.presentation.platform.rememberShareSheet
 import com.denariidolor.util.DateUtils
 import com.denariidolor.util.formatMoney
 import com.denariidolor.util.formatSignedAmount
@@ -71,30 +68,19 @@ private val reportColumns = listOf(
 
 @Composable
 fun ReportRoute(viewModel: ReportViewModel = hiltViewModel()) {
-    val context = LocalContext.current
+    val notices = rememberNotices()
+    val shareSheet = rememberShareSheet()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val shareTitle = stringResource(R.string.share_report)
-    val saveCsv = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(ReportFormat.CSV.mimeType)) { uri ->
-        uri?.let { viewModel.save(it, ReportFormat.CSV) }
-    }
-    val savePdf = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(ReportFormat.PDF.mimeType)) { uri ->
-        uri?.let { viewModel.save(it, ReportFormat.PDF) }
-    }
+    val saveCsv = rememberSaveFilePicker(ReportFormat.CSV.mimeType) { uri -> uri?.let { viewModel.save(it, ReportFormat.CSV) } }
+    val savePdf = rememberSaveFilePicker(ReportFormat.PDF.mimeType) { uri -> uri?.let { viewModel.save(it, ReportFormat.PDF) } }
 
     LaunchedEffect(Unit) { viewModel.refresh() }
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
-                is ReportEvent.Message -> Toast.makeText(context, event.message.resolve(context), Toast.LENGTH_SHORT).show()
-                is ReportEvent.Share -> {
-                    val send = Intent(Intent.ACTION_SEND).apply {
-                        type = event.mimeType
-                        putExtra(Intent.EXTRA_STREAM, event.uri)
-                        clipData = ClipData.newRawUri("", event.uri)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    context.startActivity(Intent.createChooser(send, shareTitle))
-                }
+                is ReportEvent.Message -> notices.show(event.message)
+                is ReportEvent.Share -> shareSheet.shareFile(shareTitle, event.uri, event.mimeType)
             }
         }
     }
