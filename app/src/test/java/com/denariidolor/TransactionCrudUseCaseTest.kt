@@ -18,6 +18,7 @@ import com.denariidolor.testutil.FakeBudgetRepository
 import com.denariidolor.testutil.FakeCategoryRepository
 import com.denariidolor.testutil.FakeTransactionRepository
 import com.denariidolor.testutil.TestData
+import com.denariidolor.util.asZonedClock
 import java.time.Clock
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -31,7 +32,7 @@ class TransactionCrudUseCaseTest {
         FakeAccountRepository(TestData.accounts),
         FakeBudgetRepository(),
         transactions,
-        Clock.systemDefaultZone()
+        Clock.systemDefaultZone().asZonedClock()
     )
     private val add = AddTransactionUseCase(validate, transactions)
     private val update = UpdateTransactionUseCase(validate, transactions)

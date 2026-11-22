@@ -15,19 +15,21 @@ import com.denariidolor.testutil.FakeCategoryRepository
 import com.denariidolor.testutil.FakeTransactionRepository
 import com.denariidolor.testutil.TestData
 import com.denariidolor.util.DateUtils
+import com.denariidolor.util.asZonedClock
 import java.time.Clock
 import java.time.Instant
-import java.time.YearMonth
 import java.time.ZoneId
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.YearMonth
+import kotlinx.datetime.toKotlinTimeZone
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class GenerateReportUseCaseTest {
     private val zone = ZoneId.of("UTC")
     private val clock = Clock.fixed(Instant.parse("2026-09-20T12:00:00Z"), zone)
-    private val september = YearMonth.of(2026, 9)
-    private val start = DateUtils.monthRangeEpochMillis(2026, 9, zone).first
+    private val september = YearMonth(2026, 9)
+    private val start = DateUtils.monthRangeEpochMillis(2026, 9, zone.toKotlinTimeZone()).first
 
     private val transactions = FakeTransactionRepository(
         listOf(
@@ -78,7 +80,7 @@ class GenerateReportUseCaseTest {
         transactions,
         FakeCategoryRepository(TestData.categories),
         FakeAccountRepository(TestData.accounts),
-        clock
+        clock.asZonedClock()
     )
 
     @Test
@@ -105,7 +107,7 @@ class GenerateReportUseCaseTest {
 
     @Test
     fun unknownCategoryFallsBackToId() = runBlocking<Unit> {
-        val august = useCase(YearMonth.of(2026, 8)).rows.single()
+        val august = useCase(YearMonth(2026, 8)).rows.single()
 
         assertEquals("#99", august.categoryName)
     }

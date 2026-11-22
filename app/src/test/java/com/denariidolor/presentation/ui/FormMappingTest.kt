@@ -13,7 +13,7 @@ import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.presentation.ui.account.AccountViewModel
 import com.denariidolor.presentation.ui.budget.buildBudgetRows
 import com.denariidolor.presentation.ui.transaction.TransactionFormInput
-import java.time.ZoneId
+import kotlinx.datetime.TimeZone
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -32,7 +32,7 @@ class FormMappingTest {
 
     @Test
     fun formInputFromEntityFormatsFields() {
-        val input = TransactionFormInput.from(entity, ZoneId.of("UTC"))
+        val input = TransactionFormInput.from(entity, TimeZone.of("UTC"))
 
         assertEquals("250", input.amount)
         assertEquals("2", input.transferAccountId)
@@ -41,7 +41,7 @@ class FormMappingTest {
 
     @Test
     fun formInputKeepsOriginalTimestampOnlyWhenDateUnchanged() {
-        val input = TransactionFormInput.from(entity, ZoneId.of("UTC"))
+        val input = TransactionFormInput.from(entity, TimeZone.of("UTC"))
 
         assertEquals(entity.dateEpochMillis, input.resolveDateEpochMillis("2024-09-01") { error("should not parse") })
         assertEquals(42L, input.resolveDateEpochMillis("2024-09-02") { 42L })

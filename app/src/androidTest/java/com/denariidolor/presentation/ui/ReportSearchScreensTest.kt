@@ -27,7 +27,7 @@ import com.denariidolor.presentation.ui.report.ReportUiState
 import com.denariidolor.presentation.ui.search.SEARCH_BUTTON_TAG
 import com.denariidolor.presentation.ui.search.SEARCH_RESULT_COUNT_TAG
 import com.denariidolor.presentation.ui.search.SearchScreen
-import java.time.YearMonth
+import kotlinx.datetime.YearMonth
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -36,7 +36,7 @@ class ReportSearchScreensTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-    private val period = YearMonth.of(2026, 9)
+    private val period = YearMonth(2026, 9)
     private val report = MonthlyReport(
         title = ReportText.TITLE,
         period = period,

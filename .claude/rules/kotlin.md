@@ -57,8 +57,13 @@ Match the file you're editing first. These rules cover what it doesn't show.
 
 ## Time and numbers
 
-- Use `java.time` only. Don't use `Date`, `Calendar` or `System.currentTimeMillis()` in logic.
-  - Inject `Clock`, and take the zone from `clock.zone`.
+- Don't use `Date`, `Calendar` or `System.currentTimeMillis()` in logic.
+- `domain/` and `util/` use kotlinx-datetime and `kotlin.time`, so they can be shared with iOS. Presentation and data still
+  use `java.time` until they move.
+  - Domain and util code injects `ZonedClock` and takes the zone from `clock.timeZone`. Other code injects `java.time.Clock`
+    and takes the zone from `clock.zone`. Both come from `DeviceClock`; `asZonedClock()` adapts one to the other.
+  - Two exceptions keep `java.time`: `DeviceClock`, which is the Android clock, and `ReportText`, whose month and zone names
+    are localized, until a platform formatter replaces it.
   - Dates are stored as epoch millis. Month ranges come from `DateUtils`.
 - Amounts are `Long` cents. Use `BigDecimal` only inside `Money` for parsing and scaling. Never use `Float` or `Double` for a
   value that is stored, compared or summed.

@@ -7,6 +7,8 @@
 package com.denariidolor.di
 
 import com.denariidolor.util.DeviceClock
+import com.denariidolor.util.ZonedClock
+import com.denariidolor.util.asZonedClock
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -20,4 +22,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideClock(): Clock = DeviceClock
+
+    @Provides
+    @Singleton
+    fun provideZonedClock(clock: Clock): ZonedClock = clock.asZonedClock()
 }

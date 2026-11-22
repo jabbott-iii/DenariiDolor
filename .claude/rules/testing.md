@@ -25,7 +25,7 @@ Never delete a test, mark it `@Ignore` or loosen an assertion to get a green bui
 - **ViewModels:**
   - Add `@get:Rule val mainDispatcherRule = MainDispatcherRule()`.
   - Build the ViewModel directly, with fakes, real use cases over those fakes, and a fixed clock:
-    `Clock.fixed(Instant.parse("2026-09-20T12:00:00Z"), ZoneOffset.UTC)`.
+    `Clock.fixed(Instant.parse("2026-09-20T12:00:00Z"), ZoneOffset.UTC)`. Use cases take it as `.asZonedClock()`.
 - **`WhileSubscribed` state:** start a collector (`val collector = launch { viewModel.uiState.collect {} }`), wait with
   `first { predicate }`, assert, then `collector.cancel()`. `DashboardViewModelTest` is the model.
 - **Names:** descriptive camelCase that states the behavior, such as `summarizesCurrentMonthOnlyAndFlagsBudgets`. Test one

@@ -7,13 +7,13 @@
 package com.denariidolor
 
 import com.denariidolor.presentation.ui.search.SearchFilterParser
-import java.time.ZoneId
+import kotlinx.datetime.TimeZone
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 class SearchFilterParserTest {
-    private val zoneId = ZoneId.of("UTC")
+    private val timeZone = TimeZone.of("UTC")
 
     @Test
     fun parseBuildsFiltersFromOptionalInputs() {
@@ -24,7 +24,7 @@ class SearchFilterParserTest {
             maxAmount = "20.5",
             startDate = "2024-09-01",
             endDate = "2024-09-30",
-            zoneId = zoneId
+            timeZone = timeZone
         )
 
         assertEquals("Groceries", filters.description)
@@ -35,7 +35,7 @@ class SearchFilterParserTest {
         assertEquals(1_727_740_799_999L, filters.endDateEpochMillis)
     }
 
-    @Test(expected = java.time.format.DateTimeParseException::class)
+    @Test(expected = IllegalArgumentException::class)
     fun parseRejectsInvalidDates() {
         SearchFilterParser.parse(
             description = "",
@@ -44,7 +44,7 @@ class SearchFilterParserTest {
             maxAmount = "",
             startDate = "09/01/2024",
             endDate = "",
-            zoneId = zoneId
+            timeZone = timeZone
         )
     }
 
@@ -57,7 +57,7 @@ class SearchFilterParserTest {
             maxAmount = "",
             startDate = "",
             endDate = "",
-            zoneId = zoneId
+            timeZone = timeZone
         )
     }
 
@@ -70,7 +70,7 @@ class SearchFilterParserTest {
             maxAmount = "",
             startDate = "",
             endDate = "",
-            zoneId = zoneId
+            timeZone = timeZone
         )
     }
 
@@ -83,7 +83,7 @@ class SearchFilterParserTest {
             maxAmount = "4.5.6",
             startDate = "",
             endDate = "",
-            zoneId = zoneId
+            timeZone = timeZone
         )
     }
 
@@ -96,7 +96,7 @@ class SearchFilterParserTest {
             maxAmount = "",
             startDate = "2024-09-30",
             endDate = "2024-09-01",
-            zoneId = zoneId
+            timeZone = timeZone
         )
     }
 
@@ -109,7 +109,7 @@ class SearchFilterParserTest {
             maxAmount = "",
             startDate = "",
             endDate = "",
-            zoneId = zoneId
+            timeZone = timeZone
         )
 
         assertNull(filters.description)

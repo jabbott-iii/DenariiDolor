@@ -65,7 +65,11 @@ import com.denariidolor.util.Money
 import com.denariidolor.util.Validators
 import com.denariidolor.util.formatMoney
 import com.denariidolor.util.labelRes
-import java.time.LocalDate
+import kotlin.time.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
+import kotlinx.datetime.todayIn
 
 internal const val TRANSACTION_TYPE_FIELD_TAG = "transactionTypeField"
 internal const val TRANSFER_ACCOUNT_FIELD_TAG = "transferAccountField"
@@ -348,15 +352,15 @@ private fun DateSelectorButton(text: String, onClick: () -> Unit, modifier: Modi
 private fun launchDatePicker(context: android.content.Context, value: String, onDateSelected: (String) -> Unit) {
     val selectedDate = value.takeIf { it.isNotBlank() }?.let {
         runCatching { DateUtils.parseIsoDate(it) }.getOrNull()
-    } ?: LocalDate.now()
+    } ?: Clock.System.todayIn(TimeZone.currentSystemDefault())
     DatePickerDialog(
         context,
         { _, year, month, dayOfMonth ->
-            onDateSelected(LocalDate.of(year, month + 1, dayOfMonth).toString())
+            onDateSelected(LocalDate(year, month + 1, dayOfMonth).toString())
         },
         selectedDate.year,
-        selectedDate.monthValue - 1,
-        selectedDate.dayOfMonth
+        selectedDate.month.number - 1,
+        selectedDate.day
     ).show()
 }
 

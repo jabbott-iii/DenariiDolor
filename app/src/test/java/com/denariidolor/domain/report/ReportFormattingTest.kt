@@ -9,18 +9,17 @@ package com.denariidolor.domain.report
 import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.domain.model.ReportRow
 import com.denariidolor.domain.model.TransactionType
-import java.time.YearMonth
-import java.time.ZoneId
 import java.util.Locale
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.YearMonth
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ReportFormattingTest {
-    private val utc = ZoneId.of("UTC")
+    private val utc = TimeZone.of("UTC")
     private val report = MonthlyReport(
         title = ReportText.TITLE,
-        period = YearMonth.of(2026, 9),
+        period = YearMonth(2026, 9),
         generatedAtEpochMillis = 1_789_992_000_000L,
         totalIncomeCents = 200_000,
         totalExpenseCents = 90_050,
@@ -33,8 +32,8 @@ class ReportFormattingTest {
 
     @Test
     fun labelsAndFileName() {
-        assertEquals("September 2026", ReportText.periodLabel(YearMonth.of(2026, 9), Locale.US))
-        assertEquals("spending-report-2026-09.pdf", ReportText.fileName(YearMonth.of(2026, 9), "pdf"))
+        assertEquals("September 2026", ReportText.periodLabel(YearMonth(2026, 9), Locale.US))
+        assertEquals("spending-report-2026-09.pdf", ReportText.fileName(YearMonth(2026, 9), "pdf"))
     }
 
     @Test
@@ -43,12 +42,21 @@ class ReportFormattingTest {
     }
 
     @Test
+    fun generatedLabelNamesTheZoneAsTheDeviceDoes() {
+        val newYork = TimeZone.of("America/New_York")
+
+        assertEquals("2026-07-01 08:00 EDT", ReportText.generatedLabel(1_782_907_200_000L, newYork))
+        assertEquals("2026-01-01 07:00 EST", ReportText.generatedLabel(1_767_268_800_000L, newYork))
+        assertEquals("2026-09-01 05:30 IST", ReportText.generatedLabel(1_788_220_800_000L, TimeZone.of("Asia/Kolkata")))
+    }
+
+    @Test
     fun csvContainsMetadataHeaderAndRows() {
         val lines = ReportCsvFormatter.format(report, utc, Locale.US).split("\r\n")
 
         assertEquals("title,Monthly Spending Report", lines[0])
         assertEquals("period,September 2026", lines[1])
-        assertTrue(lines[2].startsWith("generated_at,"))
+        assertEquals("generated_at,2026-09-21 12:00 UTC", lines[2])
         assertEquals("total_expense,900.50", lines[4])
         assertEquals("date,type,category,description,amount,payment_method", lines[7])
         assertEquals("2026-09-01,EXPENSE,Dining,\"Lunch, \"\"team\"\"\",12.50,Cash", lines[8])

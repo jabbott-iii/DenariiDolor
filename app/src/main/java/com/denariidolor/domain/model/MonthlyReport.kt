@@ -6,7 +6,7 @@
 
 package com.denariidolor.domain.model
 
-import java.time.YearMonth
+import kotlinx.datetime.YearMonth
 
 data class MonthlyReport(
     val title: String,

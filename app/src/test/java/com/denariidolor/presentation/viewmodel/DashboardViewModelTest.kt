@@ -23,7 +23,6 @@ import com.denariidolor.testutil.TestData
 import com.denariidolor.util.DateUtils
 import java.time.Clock
 import java.time.Instant
-import java.time.YearMonth
 import java.time.ZoneId
 import java.time.ZoneOffset
 import kotlinx.coroutines.flow.Flow
@@ -31,6 +30,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.YearMonth
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -42,7 +43,7 @@ class DashboardViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val clock = Clock.fixed(Instant.parse("2026-09-20T12:00:00Z"), ZoneOffset.UTC)
-    private val september = DateUtils.monthRangeEpochMillis(2026, 9, ZoneOffset.UTC).first
+    private val september = DateUtils.monthRangeEpochMillis(2026, 9, TimeZone.UTC).first
 
     @Test
     fun summarizesCurrentMonthOnlyAndFlagsBudgets() = runTest {
@@ -65,7 +66,7 @@ class DashboardViewModelTest {
 
         val state = viewModel.uiState.first { it.period != null }
 
-        assertEquals(YearMonth.of(2026, 9), state.period)
+        assertEquals(YearMonth(2026, 9), state.period)
         assertEquals(9_000L, state.summary.expenseCents)
         assertEquals(-9_000L, state.summary.netCents)
         assertEquals(BudgetStatus.WARNING, state.budgets.single().status)
@@ -85,13 +86,13 @@ class DashboardViewModelTest {
 
         val state = viewModel.uiState.first { it.failed }
 
-        assertEquals(YearMonth.of(2026, 9), state.period)
+        assertEquals(YearMonth(2026, 9), state.period)
         collector.cancel()
     }
 
     @Test
     fun refreshPeriodRollsOverToTheNewMonth() = runTest {
-        val october = DateUtils.monthRangeEpochMillis(2026, 10, ZoneOffset.UTC).first
+        val october = DateUtils.monthRangeEpochMillis(2026, 10, TimeZone.UTC).first
         val transactions = FakeTransactionRepository(
             listOf(
                 TestData.expense(id = 1, amountCents = 9_000).copy(dateEpochMillis = september + 1),
@@ -106,7 +107,7 @@ class DashboardViewModelTest {
         movingClock.now = Instant.parse("2026-10-01T00:01:00Z")
         viewModel.refreshPeriod()
 
-        val state = viewModel.uiState.first { it.period == YearMonth.of(2026, 10) }
+        val state = viewModel.uiState.first { it.period == YearMonth(2026, 10) }
         assertEquals(1_000L, state.summary.expenseCents)
         collector.cancel()
     }

@@ -26,7 +26,7 @@ All versions live in `gradle/libs.versions.toml`, and some are pinned on purpose
 - **Build:** a single `:app` module, package `com.denariidolor`. Kotlin 2.4 (K2, compiled by AGP 9's built-in Kotlin) on a
   JDK 17 toolchain, AGP 9.4 and Gradle 9.6. compileSdk 37, targetSdk 36, minSdk 26.
 - **App:** Jetpack Compose with Material 3, Navigation Compose (string routes), Hilt with KSP, Room 2.8 over SQLCipher,
-  Coroutines and Flow, Vico charts.
+  Coroutines and Flow, kotlinx-datetime, Vico charts.
 - **Tests:** JUnit 4, kotlinx-coroutines-test and hand-written fakes (there is no mocking library), plus Compose UI test,
   Espresso and UiAutomator.
 
@@ -56,7 +56,7 @@ domain/        model (Transaction → Expense | Income | Transfer, Ledger), usec
 data/          local/db (Room, DAOs, Migrations, DatabaseHolder), local/vault (Vault, Keystore),
                local/preferences, repository (interface + Impl in one file), export, backup, legal
 presentation/  ui/<feature>/ — *Route + stateless *Screen + @HiltViewModel; shared composables in ui/common
-di/            AppModule (Clock), DatabaseModule, RepositoryModule (@Binds, unscoped)
+di/            AppModule (Clock, ZonedClock), DatabaseModule, RepositoryModule (@Binds, unscoped)
 util/          Money, Validators, DateUtils, SessionManager, Constants, runSuspendCatching
 ```
 
@@ -73,9 +73,10 @@ Dependency rules:
 4. The database exists only after sign-in. `AppDatabase`, the DAOs and the repositories are unscoped and come from
    `DatabaseHolder`. Never inject them into `LoginActivity`, a `@Singleton`, or anything else that runs before sign-in.
    `DatabaseHolder.database` throws while the vault is locked. That's a security control, not a bug to work around.
-5. Anything that depends on "now" takes the injected `java.time.Clock`, with the time zone from `clock.zone`, never
-   `ZoneId.systemDefault()`. The one exception is `SessionManager`, which uses the monotonic `SystemClock.elapsedRealtime()`
-   (CS-01).
+5. Anything that depends on "now" takes an injected clock and reads the time zone from it, never from
+   `ZoneId.systemDefault()` or `TimeZone.currentSystemDefault()`. `domain/` and `util/` take `ZonedClock` (`clock.timeZone`),
+   and other code takes `java.time.Clock` (`clock.zone`); both come from `DeviceClock`. The one exception is
+   `SessionManager`, which uses the monotonic `SystemClock.elapsedRealtime()` (CS-01).
 6. Logic that doesn't need Android stays in pure Kotlin so JVM tests can cover it. Examples are `Ledger`,
    `SecurityProfileService`, `SearchFilterParser` and `DashboardMappers`.
 

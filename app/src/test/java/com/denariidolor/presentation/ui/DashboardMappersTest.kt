@@ -18,8 +18,8 @@ import com.denariidolor.presentation.ui.dashboard.budgetProgress
 import com.denariidolor.presentation.ui.dashboard.budgetStatus
 import com.denariidolor.presentation.ui.dashboard.spendingByCategory
 import com.denariidolor.presentation.ui.dashboard.summarize
-import java.time.ZoneId
 import java.util.Locale
+import kotlinx.datetime.TimeZone
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -35,7 +35,7 @@ class DashboardMappersTest {
     @After
     fun restoreLocale() = Locale.setDefault(savedLocale)
 
-    private val utc = ZoneId.of("UTC")
+    private val utc = TimeZone.of("UTC")
     private val categories = listOf(CategoryEntity(id = 1, name = "Dining"), CategoryEntity(id = 3, name = "Transfer"))
     private val accounts =
         listOf(AccountEntity(id = 1, name = "Cash", balanceCents = 0L), AccountEntity(id = 2, name = "Savings", balanceCents = 0L))
@@ -58,7 +58,7 @@ class DashboardMappersTest {
             categories,
             accounts,
             limit = 2,
-            zoneId = utc
+            timeZone = utc
         )
 
         assertEquals(listOf(2L, 3L), rows.map { it.id })
@@ -70,7 +70,7 @@ class DashboardMappersTest {
             listOf(txn(1, TransactionType.TRANSFER, 0, transferTo = 2, categoryId = 3)),
             categories,
             accounts,
-            zoneId = utc
+            timeZone = utc
         ).single()
 
         assertEquals("Transfer", row.categoryName)
@@ -85,7 +85,7 @@ class DashboardMappersTest {
             listOf(txn(1, TransactionType.EXPENSE, 0, categoryId = 99)),
             emptyList(),
             emptyList(),
-            zoneId = utc
+            timeZone = utc
         ).single()
 
         assertEquals("#99", row.categoryName)
@@ -111,7 +111,7 @@ class DashboardMappersTest {
     @Test
     fun rowsCarryCategoryIcon() {
         val cats = listOf(CategoryEntity(id = 1, name = "Dining", iconName = "dining"))
-        val row = buildTransactionRows(listOf(txn(1, TransactionType.EXPENSE, 0)), cats, accounts, zoneId = utc).single()
+        val row = buildTransactionRows(listOf(txn(1, TransactionType.EXPENSE, 0)), cats, accounts, timeZone = utc).single()
 
         assertEquals("dining", row.categoryIcon)
     }
@@ -176,6 +176,6 @@ class DashboardMappersTest {
         val malformed = txn(2, TransactionType.TRANSFER, 2_000, transferTo = null, categoryId = 3)
 
         assertEquals(-1_000L, summarize(listOf(txn(1, TransactionType.EXPENSE, 1_000), malformed)).netCents)
-        assertEquals("Cash → ?", buildTransactionRows(listOf(malformed), categories, accounts, zoneId = utc).single().accountLabel)
+        assertEquals("Cash → ?", buildTransactionRows(listOf(malformed), categories, accounts, timeZone = utc).single().accountLabel)
     }
 }

@@ -15,20 +15,21 @@ import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.model.toDomainTransactionOrNull
 import com.denariidolor.domain.report.ReportText
 import com.denariidolor.util.DateUtils
+import com.denariidolor.util.ZonedClock
 import com.denariidolor.util.transferRoute
-import java.time.Clock
-import java.time.YearMonth
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.YearMonth
+import kotlinx.datetime.number
 
 class GenerateReportUseCase @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
     private val accountRepository: AccountRepository,
-    private val clock: Clock
+    private val clock: ZonedClock
 ) {
     suspend operator fun invoke(period: YearMonth): MonthlyReport {
-        val (start, end) = DateUtils.monthRangeEpochMillis(period.year, period.monthValue, clock.zone)
+        val (start, end) = DateUtils.monthRangeEpochMillis(period.year, period.month.number, clock.timeZone)
         val transactions = transactionRepository.observeByDateRange(start, end).first()
             .sortedWith(compareBy({ it.dateEpochMillis }, { it.id }))
         val categoryNames = categoryRepository.getAll().first().associate { it.id to it.name }
@@ -50,7 +51,7 @@ class GenerateReportUseCase @Inject constructor(
         return MonthlyReport(
             title = ReportText.TITLE,
             period = period,
-            generatedAtEpochMillis = clock.millis(),
+            generatedAtEpochMillis = clock.now().toEpochMilliseconds(),
             totalIncomeCents = rows.filter { it.type == TransactionType.INCOME }.sumOf { it.amountCents },
             totalExpenseCents = rows.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amountCents },
             netCents = transactions.mapNotNull { it.toDomainTransactionOrNull() }.sumOf { it.balanceImpact() },

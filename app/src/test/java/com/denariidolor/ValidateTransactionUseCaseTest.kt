@@ -22,10 +22,12 @@ import com.denariidolor.testutil.FakeTransactionRepository
 import com.denariidolor.testutil.TestData
 import com.denariidolor.util.DateUtils
 import com.denariidolor.util.Validators
+import com.denariidolor.util.asZonedClock
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.toKotlinTimeZone
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -39,7 +41,7 @@ class ValidateTransactionUseCaseTest {
         FakeAccountRepository(TestData.accounts),
         budgets,
         transactions,
-        Clock.systemDefaultZone()
+        Clock.systemDefaultZone().asZonedClock()
     )
 
     @Test
@@ -176,7 +178,7 @@ class ValidateTransactionUseCaseTest {
             FakeAccountRepository(TestData.accounts),
             budgets,
             transactions,
-            Clock.systemDefaultZone()
+            Clock.systemDefaultZone().asZonedClock()
         )
 
         val result = failingUseCase(TestData.expense())
@@ -205,12 +207,12 @@ class ValidateTransactionUseCaseTest {
             FakeAccountRepository(TestData.accounts),
             budgets,
             transactions,
-            Clock.fixed(instant, losAngeles)
+            Clock.fixed(instant, losAngeles).asZonedClock()
         )
 
         // 03:00 UTC on October 1 is still September 30 in Los Angeles, so September's spending counts.
         useCaseInLosAngeles(TestData.expense().copy(dateEpochMillis = instant.toEpochMilli()))
 
-        assertEquals(DateUtils.monthRangeEpochMillis(2026, 9, losAngeles), transactions.lastExpenseRange)
+        assertEquals(DateUtils.monthRangeEpochMillis(2026, 9, losAngeles.toKotlinTimeZone()), transactions.lastExpenseRange)
     }
 }

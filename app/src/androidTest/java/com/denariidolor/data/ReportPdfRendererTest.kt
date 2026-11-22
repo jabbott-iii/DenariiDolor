@@ -17,7 +17,7 @@ import com.denariidolor.domain.model.ReportRow
 import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.report.ReportText
 import java.io.File
-import java.time.YearMonth
+import kotlinx.datetime.YearMonth
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -31,7 +31,7 @@ class ReportPdfRendererTest {
 
     private fun report(rowCount: Int, description: (Int) -> String = wrappingDescription) = MonthlyReport(
         title = ReportText.TITLE,
-        period = YearMonth.of(2026, 9),
+        period = YearMonth(2026, 9),
         generatedAtEpochMillis = 0L,
         totalIncomeCents = 0L,
         totalExpenseCents = rowCount * 100L,

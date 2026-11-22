@@ -14,10 +14,12 @@ import com.denariidolor.data.repository.TransactionRepository
 import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.util.DateUtils
 import com.denariidolor.util.Validators
+import com.denariidolor.util.ZonedClock
 import com.denariidolor.util.runSuspendCatching
-import java.time.Clock
-import java.time.Instant
 import javax.inject.Inject
+import kotlin.time.Instant
+import kotlinx.datetime.number
+import kotlinx.datetime.toLocalDateTime
 
 /** How far an expense would take its category past the monthly budget; the `arg` of a [DomainError.BUDGET_EXCEEDED] failure. */
 data class BudgetOverage(val categoryName: String, val overByCents: Long, val limitCents: Long)
@@ -27,7 +29,7 @@ class ValidateTransactionUseCase @Inject constructor(
     private val accountRepository: AccountRepository,
     private val budgetRepository: BudgetRepository,
     private val transactionRepository: TransactionRepository,
-    private val clock: Clock
+    private val clock: ZonedClock
 ) {
     /**
      * Checks [transaction] before it is written. An expense that would take its category past the monthly budget fails with
@@ -94,8 +96,8 @@ class ValidateTransactionUseCase @Inject constructor(
         Result.failure(DomainException(error, message, arg))
 
     private fun monthBounds(epochMillis: Long): Pair<Long, Long> {
-        val zone = clock.zone
-        val date = Instant.ofEpochMilli(epochMillis).atZone(zone).toLocalDate()
-        return DateUtils.monthRangeEpochMillis(date.year, date.monthValue, zone)
+        val zone = clock.timeZone
+        val date = Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(zone).date
+        return DateUtils.monthRangeEpochMillis(date.year, date.month.number, zone)
     }
 }

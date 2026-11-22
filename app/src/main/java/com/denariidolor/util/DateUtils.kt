@@ -6,30 +6,36 @@
 
 package com.denariidolor.util
 
-import java.time.Instant
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.ZoneId
+import kotlin.time.Instant
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.YearMonth
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.plus
+import kotlinx.datetime.plusMonth
+import kotlinx.datetime.toLocalDateTime
 
+// A day starts at its first moment, which isn't midnight where a daylight-saving change skips midnight.
 object DateUtils {
-    fun monthRangeEpochMillis(year: Int, month: Int, zoneId: ZoneId = ZoneId.systemDefault()): Pair<Long, Long> {
-        val ym = YearMonth.of(year, month)
-        val start = ym.atDay(1).atStartOfDay(zoneId).toInstant().toEpochMilli()
-        val end = ym.plusMonths(1).atDay(1).atStartOfDay(zoneId).toInstant().toEpochMilli() - 1
+    fun monthRangeEpochMillis(year: Int, month: Int, timeZone: TimeZone = TimeZone.currentSystemDefault()): Pair<Long, Long> {
+        val ym = YearMonth(year, month)
+        val start = ym.firstDay.atStartOfDayIn(timeZone).toEpochMilliseconds()
+        val end = ym.plusMonth().firstDay.atStartOfDayIn(timeZone).toEpochMilliseconds() - 1
         return start to end
     }
 
-    fun formatIso(epochMillis: Long): String = Instant.ofEpochMilli(epochMillis).toString()
+    fun formatIso(epochMillis: Long): String = Instant.fromEpochMilliseconds(epochMillis).toString()
 
-    fun formatLocalDate(epochMillis: Long, zoneId: ZoneId = ZoneId.systemDefault()): String =
-        Instant.ofEpochMilli(epochMillis).atZone(zoneId).toLocalDate().toString()
+    fun formatLocalDate(epochMillis: Long, timeZone: TimeZone = TimeZone.currentSystemDefault()): String =
+        Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(timeZone).date.toString()
 
     /** A `YYYY-MM-DD` date, also when typed with Arabic-Indic, Devanagari or other non-ASCII digits. */
     fun parseIsoDate(value: String): LocalDate = LocalDate.parse(Money.normalizeDigits(value).trim())
 
-    fun parseIsoDateToStartOfDayEpochMillis(value: String, zoneId: ZoneId = ZoneId.systemDefault()): Long =
-        parseIsoDate(value).atStartOfDay(zoneId).toInstant().toEpochMilli()
+    fun parseIsoDateToStartOfDayEpochMillis(value: String, timeZone: TimeZone = TimeZone.currentSystemDefault()): Long =
+        parseIsoDate(value).atStartOfDayIn(timeZone).toEpochMilliseconds()
 
-    fun parseIsoDateToEndOfDayEpochMillis(value: String, zoneId: ZoneId = ZoneId.systemDefault()): Long =
-        parseIsoDate(value).plusDays(1).atStartOfDay(zoneId).toInstant().toEpochMilli() - 1
+    fun parseIsoDateToEndOfDayEpochMillis(value: String, timeZone: TimeZone = TimeZone.currentSystemDefault()): Long =
+        parseIsoDate(value).plus(1, DateTimeUnit.DAY).atStartOfDayIn(timeZone).toEpochMilliseconds() - 1
 }

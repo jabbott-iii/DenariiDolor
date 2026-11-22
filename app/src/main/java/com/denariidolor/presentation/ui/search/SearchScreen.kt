@@ -45,7 +45,11 @@ import com.denariidolor.presentation.ui.common.ReferencePicker
 import com.denariidolor.presentation.ui.common.TransactionRow
 import com.denariidolor.presentation.ui.common.TransactionRowItem
 import com.denariidolor.util.DateUtils
-import java.time.LocalDate
+import kotlin.time.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
+import kotlinx.datetime.todayIn
 
 const val SEARCH_BUTTON_TAG = "searchButton"
 const val SEARCH_RESULT_COUNT_TAG = "searchResultCount"
@@ -190,12 +194,14 @@ fun SearchScreen(
 }
 
 private fun pickDate(context: Context, current: String, onPicked: (String) -> Unit) {
-    val initial = current.takeIf { it.isNotBlank() }?.let { runCatching { DateUtils.parseIsoDate(it) }.getOrNull() } ?: LocalDate.now()
+    val initial =
+        current.takeIf { it.isNotBlank() }?.let { runCatching { DateUtils.parseIsoDate(it) }.getOrNull() }
+            ?: Clock.System.todayIn(TimeZone.currentSystemDefault())
     DatePickerDialog(
         context,
-        { _, year, month, day -> onPicked(LocalDate.of(year, month + 1, day).toString()) },
+        { _, year, month, day -> onPicked(LocalDate(year, month + 1, day).toString()) },
         initial.year,
-        initial.monthValue - 1,
-        initial.dayOfMonth
+        initial.month.number - 1,
+        initial.day
     ).show()
 }

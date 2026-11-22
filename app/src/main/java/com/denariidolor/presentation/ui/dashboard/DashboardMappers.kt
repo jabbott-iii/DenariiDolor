@@ -14,7 +14,7 @@ import com.denariidolor.domain.model.toDomainTransactionOrNull
 import com.denariidolor.presentation.ui.common.CategoryIcons
 import com.denariidolor.presentation.ui.common.TransactionRow
 import com.denariidolor.util.Constants
-import java.time.YearMonth
+import kotlinx.datetime.YearMonth
 
 data class DashboardSummary(val incomeCents: Long = 0L, val expenseCents: Long = 0L, val netCents: Long = 0L)
 

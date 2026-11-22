@@ -9,7 +9,7 @@ package com.denariidolor.presentation.ui.search
 import com.denariidolor.domain.model.SearchFilters
 import com.denariidolor.util.DateUtils
 import com.denariidolor.util.Money
-import java.time.ZoneId
+import kotlinx.datetime.TimeZone
 
 object SearchFilterParser {
     fun parse(
@@ -19,7 +19,7 @@ object SearchFilterParser {
         maxAmount: String,
         startDate: String,
         endDate: String,
-        zoneId: ZoneId = ZoneId.systemDefault()
+        timeZone: TimeZone = TimeZone.currentSystemDefault()
     ): SearchFilters {
         val filters = SearchFilters(
             description = description.trim().takeIf { it.isNotEmpty() },
@@ -28,8 +28,10 @@ object SearchFilterParser {
             maxAmountCents = parseOptionalCents(maxAmount, "maximum amount must be a valid number"),
             startDateEpochMillis = startDate.trim().takeIf {
                 it.isNotEmpty()
-            }?.let { DateUtils.parseIsoDateToStartOfDayEpochMillis(it, zoneId) },
-            endDateEpochMillis = endDate.trim().takeIf { it.isNotEmpty() }?.let { DateUtils.parseIsoDateToEndOfDayEpochMillis(it, zoneId) }
+            }?.let { DateUtils.parseIsoDateToStartOfDayEpochMillis(it, timeZone) },
+            endDateEpochMillis = endDate.trim().takeIf {
+                it.isNotEmpty()
+            }?.let { DateUtils.parseIsoDateToEndOfDayEpochMillis(it, timeZone) }
         )
         val start = filters.startDateEpochMillis
         val end = filters.endDateEpochMillis

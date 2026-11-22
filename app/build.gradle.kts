@@ -126,6 +126,7 @@ dependencies {
     implementation(libs.vico.core)
     implementation(libs.hilt.android)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.datetime)
     implementation(libs.material)
     ksp(libs.androidx.room.compiler)
     ksp(libs.hilt.compiler)

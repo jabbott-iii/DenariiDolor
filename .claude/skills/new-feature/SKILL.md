@@ -30,7 +30,7 @@ and what's confirmed.
   - Examples: `CategoryUseCases`, `ValidateTransactionUseCase`.
 - For a new `DomainError`, add the constant, its mapping in `UiMessage.DOMAIN_ERROR_STRINGS` (or a plural branch), and the
   string resource in all seven `strings.xml` files.
-- "Now" comes from the injected `Clock`, and the zone from `clock.zone`.
+- "Now" comes from the injected `ZonedClock`, and the zone from `clock.timeZone`. Use kotlinx-datetime types, not `java.time`.
 
 ## 2. Data
 

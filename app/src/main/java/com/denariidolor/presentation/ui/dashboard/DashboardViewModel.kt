@@ -20,8 +20,6 @@ import com.denariidolor.presentation.ui.common.buildTransactionRows
 import com.denariidolor.util.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
-import java.time.YearMonth
-import java.time.ZoneId
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -35,6 +33,11 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.YearMonth
+import kotlinx.datetime.number
+import kotlinx.datetime.toKotlinTimeZone
+import kotlinx.datetime.toKotlinYearMonth
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -72,10 +75,10 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    private fun currentPeriod() = Period(YearMonth.now(clock), clock.zone)
+    private fun currentPeriod() = Period(java.time.YearMonth.now(clock).toKotlinYearMonth(), clock.zone.toKotlinTimeZone())
 
     private fun observe(period: Period): Flow<DashboardUiState> {
-        val (start, end) = DateUtils.monthRangeEpochMillis(period.month.year, period.month.monthValue, period.zone)
+        val (start, end) = DateUtils.monthRangeEpochMillis(period.month.year, period.month.month.number, period.zone)
         return combine(
             transactionRepository.observeByDateRange(start, end),
             transactionRepository.observeRecent(RECENT_LIMIT),
@@ -94,7 +97,7 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    private data class Period(val month: YearMonth, val zone: ZoneId)
+    private data class Period(val month: YearMonth, val zone: TimeZone)
 
     private companion object {
         const val RECENT_LIMIT = 20

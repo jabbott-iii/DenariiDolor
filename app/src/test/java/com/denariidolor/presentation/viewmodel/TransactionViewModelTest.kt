@@ -27,6 +27,7 @@ import com.denariidolor.testutil.FakeRatePromptStore
 import com.denariidolor.testutil.FakeTransactionRepository
 import com.denariidolor.testutil.MainDispatcherRule
 import com.denariidolor.testutil.TestData
+import com.denariidolor.util.asZonedClock
 import java.time.Clock
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.first
@@ -52,7 +53,7 @@ class TransactionViewModelTest {
     ): TransactionViewModel {
         val categories = FakeCategoryRepository(TestData.categories)
         val accounts = FakeAccountRepository(TestData.accounts)
-        val validate = ValidateTransactionUseCase(categories, accounts, budgets, repository, Clock.systemDefaultZone())
+        val validate = ValidateTransactionUseCase(categories, accounts, budgets, repository, Clock.systemDefaultZone().asZonedClock())
         return TransactionViewModel(
             AddTransactionUseCase(validate, repository),
             UpdateTransactionUseCase(validate, repository),

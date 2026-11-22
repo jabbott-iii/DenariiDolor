@@ -32,7 +32,7 @@ import com.denariidolor.domain.model.isMalformedTransfer
 import com.denariidolor.util.DateUtils
 import com.denariidolor.util.formatSignedAmount
 import com.denariidolor.util.transferRoute
-import java.time.ZoneId
+import kotlinx.datetime.TimeZone
 
 const val TRANSACTION_ROW_TAG_PREFIX = "transactionRow_"
 
@@ -52,7 +52,7 @@ fun buildTransactionRows(
     categories: List<CategoryEntity>,
     accounts: List<AccountEntity>,
     limit: Int = Int.MAX_VALUE,
-    zoneId: ZoneId = ZoneId.systemDefault()
+    timeZone: TimeZone = TimeZone.currentSystemDefault()
 ): List<TransactionRow> {
     val categoriesById = categories.associateBy { it.id }
     val accountNames = accounts.associate { it.id to it.name }
@@ -75,7 +75,7 @@ fun buildTransactionRows(
                     transaction.isMalformedTransfer -> transferRoute(source, "?")
                     else -> source
                 },
-                dateText = DateUtils.formatLocalDate(transaction.dateEpochMillis, zoneId),
+                dateText = DateUtils.formatLocalDate(transaction.dateEpochMillis, timeZone),
                 categoryIcon = categoriesById[transaction.categoryId]?.iconName ?: CategoryIcons.DEFAULT_KEY
             )
         }

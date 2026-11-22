@@ -9,6 +9,9 @@ package com.denariidolor.util
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
+import kotlin.time.toKotlinInstant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toKotlinTimeZone
 
 /**
  * The system clock in the device's *current* time zone. [Clock.systemDefaultZone] fixes the zone when it is created, so after a
@@ -22,4 +25,14 @@ object DeviceClock : Clock() {
     override fun instant(): Instant = Instant.now()
 
     override fun millis(): Long = System.currentTimeMillis()
+}
+
+/** This clock as a [ZonedClock]. Its instant and zone are read on every call, so the zone of [DeviceClock] stays current. */
+fun Clock.asZonedClock(): ZonedClock = JavaZonedClock(this)
+
+private class JavaZonedClock(private val clock: Clock) : ZonedClock {
+    override val timeZone: TimeZone
+        get() = clock.zone.toKotlinTimeZone()
+
+    override fun now(): kotlin.time.Instant = clock.instant().toKotlinInstant()
 }

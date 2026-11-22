@@ -18,7 +18,6 @@ import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.runSuspendCatching
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
-import java.time.YearMonth
 import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -29,6 +28,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.YearMonth
+import kotlinx.datetime.minusMonth
+import kotlinx.datetime.plusMonth
+import kotlinx.datetime.toKotlinYearMonth
 
 data class ReportUiState(
     val period: YearMonth,
@@ -49,7 +52,7 @@ class ReportViewModel @Inject constructor(
     private val reportExporter: ReportExporter,
     clock: Clock
 ) : ViewModel() {
-    private val _state = MutableStateFlow(ReportUiState(period = YearMonth.now(clock)))
+    private val _state = MutableStateFlow(ReportUiState(period = java.time.YearMonth.now(clock).toKotlinYearMonth()))
     val state: StateFlow<ReportUiState> = _state.asStateFlow()
 
     private val _events = Channel<ReportEvent>(Channel.BUFFERED)
@@ -75,9 +78,9 @@ class ReportViewModel @Inject constructor(
         }
     }
 
-    fun previousMonth() = changePeriod(_state.value.period.minusMonths(1))
+    fun previousMonth() = changePeriod(_state.value.period.minusMonth())
 
-    fun nextMonth() = changePeriod(_state.value.period.plusMonths(1))
+    fun nextMonth() = changePeriod(_state.value.period.plusMonth())
 
     fun save(uri: Uri, format: ReportFormat) = export { report ->
         val result = runSuspendCatching { reportExporter.writeTo(uri, report, format) }

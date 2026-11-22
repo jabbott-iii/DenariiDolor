@@ -9,7 +9,7 @@ package com.denariidolor.presentation.ui.transaction
 import com.denariidolor.data.local.db.entity.TransactionEntity
 import com.denariidolor.util.DateUtils
 import com.denariidolor.util.Money
-import java.time.ZoneId
+import kotlinx.datetime.TimeZone
 
 data class TransactionFormInput(
     val type: String,
@@ -25,14 +25,14 @@ data class TransactionFormInput(
         if (currentDateText == dateText) dateEpochMillis else parse(currentDateText)
 
     companion object {
-        fun from(entity: TransactionEntity, zoneId: ZoneId = ZoneId.systemDefault()) = TransactionFormInput(
+        fun from(entity: TransactionEntity, timeZone: TimeZone = TimeZone.currentSystemDefault()) = TransactionFormInput(
             type = entity.type.name,
             description = entity.description,
             amount = Money.toInput(entity.amountCents),
             categoryId = entity.categoryId.toString(),
             accountId = entity.accountId.toString(),
             transferAccountId = entity.transferAccountId?.toString().orEmpty(),
-            dateText = DateUtils.formatLocalDate(entity.dateEpochMillis, zoneId),
+            dateText = DateUtils.formatLocalDate(entity.dateEpochMillis, timeZone),
             dateEpochMillis = entity.dateEpochMillis
         )
     }

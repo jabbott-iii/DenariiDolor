@@ -22,8 +22,8 @@ import com.denariidolor.util.DateUtils
 import com.denariidolor.util.formatMoney
 import com.denariidolor.util.formatSignedAmount
 import java.io.OutputStream
-import java.time.ZoneId
 import kotlin.math.ceil
+import kotlinx.datetime.TimeZone
 
 /** The PDF's words. [ReportExporter] fills them from string resources; the defaults are the English ones. */
 data class ReportPdfLabels(
@@ -78,13 +78,13 @@ object ReportPdfRenderer {
     fun render(
         report: MonthlyReport,
         out: OutputStream,
-        zoneId: ZoneId = ZoneId.systemDefault(),
+        timeZone: TimeZone = TimeZone.currentSystemDefault(),
         labels: ReportPdfLabels = ReportPdfLabels()
     ) {
         val paints = Paints()
         val rows = report.rows.map { row ->
             listOf(
-                DateUtils.formatLocalDate(row.dateEpochMillis, zoneId),
+                DateUtils.formatLocalDate(row.dateEpochMillis, timeZone),
                 labels.type(row.type),
                 row.categoryName,
                 row.description,
@@ -115,7 +115,7 @@ object ReportPdfRenderer {
                 val newPage = document.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create())
                 page = newPage
                 y = MARGIN
-                if (pageNumber == 1) y = drawHeading(newPage.canvas, report, zoneId, labels, y, paints)
+                if (pageNumber == 1) y = drawHeading(newPage.canvas, report, timeZone, labels, y, paints)
                 y = drawRow(newPage.canvas, layoutRow(labels.columns, widths, paints.header), widths, y)
                 newPage.canvas.drawLine(MARGIN, y, PAGE_WIDTH - MARGIN, y, paints.line)
                 rowsOnPage = 0
@@ -195,13 +195,13 @@ object ReportPdfRenderer {
     private fun drawHeading(
         canvas: Canvas,
         report: MonthlyReport,
-        zoneId: ZoneId,
+        timeZone: TimeZone,
         labels: ReportPdfLabels,
         top: Float,
         paints: Paints
     ): Float {
         var y = drawBlock(canvas, "${labels.title} — ${ReportText.periodLabel(report.period)}", paints.title, top)
-        y = drawBlock(canvas, labels.generated(ReportText.generatedLabel(report.generatedAtEpochMillis, zoneId)), paints.meta, y + 4f)
+        y = drawBlock(canvas, labels.generated(ReportText.generatedLabel(report.generatedAtEpochMillis, timeZone)), paints.meta, y + 4f)
         val totals = labels.totals(
             formatMoney(report.totalIncomeCents),
             formatMoney(report.totalExpenseCents),
