@@ -11,6 +11,8 @@ import com.denariidolor.data.local.preferences.CurrencySettings
 import com.denariidolor.data.local.preferences.GuidancePreferences
 import com.denariidolor.data.local.preferences.OnboardingStore
 import com.denariidolor.data.local.preferences.RatePromptStore
+import com.denariidolor.data.local.preferences.ThemePreferences
+import com.denariidolor.data.local.preferences.ThemeSettings
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -28,4 +30,7 @@ abstract class PreferencesModule {
 
     @Binds
     abstract fun bindCurrencySettings(impl: CurrencyPreferences): CurrencySettings
+
+    @Binds
+    abstract fun bindThemeSettings(impl: ThemePreferences): ThemeSettings
 }

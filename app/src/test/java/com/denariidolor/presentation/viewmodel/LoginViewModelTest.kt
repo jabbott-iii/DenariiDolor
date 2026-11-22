@@ -7,7 +7,6 @@
 package com.denariidolor.presentation.viewmodel
 
 import com.denariidolor.R
-import com.denariidolor.data.local.preferences.CurrencySettings
 import com.denariidolor.data.local.preferences.RecoverPinResult
 import com.denariidolor.data.local.preferences.SecureStorageException
 import com.denariidolor.data.local.preferences.SecurityProfileService
@@ -18,11 +17,12 @@ import com.denariidolor.data.local.vault.SignInResult
 import com.denariidolor.data.local.vault.SignInVault
 import com.denariidolor.data.local.vault.VaultState
 import com.denariidolor.presentation.ui.LoginScreenMode
-import com.denariidolor.presentation.ui.auth.BiometricCapability
 import com.denariidolor.presentation.ui.auth.LoginEvent
 import com.denariidolor.presentation.ui.auth.LoginField
 import com.denariidolor.presentation.ui.auth.LoginViewModel
 import com.denariidolor.presentation.ui.common.UiMessage
+import com.denariidolor.testutil.FakeBiometricCapability
+import com.denariidolor.testutil.FakeCurrencySettings
 import com.denariidolor.testutil.FakeOnboardingStore
 import com.denariidolor.testutil.MainDispatcherRule
 import com.denariidolor.util.SessionManager
@@ -499,18 +499,6 @@ class LoginViewModelTest {
             calls += "wipe"
             if (wipeResult) state = VaultState.NeedsSetup
             return wipeResult
-        }
-    }
-
-    private class FakeBiometricCapability(var available: Boolean = true) : BiometricCapability {
-        override fun canAuthenticate(): Boolean = available
-    }
-
-    private class FakeCurrencySettings : CurrencySettings {
-        var resets = 0
-
-        override fun resetToRegionDefault() {
-            resets++
         }
     }
 

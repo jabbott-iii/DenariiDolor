@@ -48,6 +48,7 @@ class PlatformBoundaryTest {
 
         val PLATFORM_CALLS = listOf(
             "LocalContext",
+            "LocalActivity",
             "android.widget.Toast",
             "android.content.Intent",
             "android.content.ActivityNotFoundException",

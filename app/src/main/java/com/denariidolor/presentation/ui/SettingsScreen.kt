@@ -10,6 +10,7 @@ package com.denariidolor.presentation.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -41,8 +42,10 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,8 +59,19 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.denariidolor.R
+import com.denariidolor.presentation.platform.BiometricPromptText
+import com.denariidolor.presentation.platform.BiometricPrompter
+import com.denariidolor.presentation.platform.rememberBiometricPrompter
+import com.denariidolor.presentation.ui.common.UiMessageEffect
+import com.denariidolor.presentation.ui.settings.SettingsEvent
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
+import com.denariidolor.presentation.ui.settings.SettingsViewModel
 import java.util.Currency
 
 internal const val DARK_MODE_SWITCH_TAG = "darkModeSwitch"
@@ -69,6 +83,72 @@ internal const val SETTINGS_TOUR_TAG = "settingsTour"
 internal const val SETTINGS_FEEDBACK_TAG = "settingsFeedback"
 internal const val SETTINGS_RATE_TAG = "settingsRate"
 internal const val SETTINGS_SHARE_TAG = "settingsShare"
+
+/**
+ * Settings with its [SettingsViewModel]. [onCurrencyChanged] starts the app over, because screens hold amounts formatted
+ * with the old symbol. The other callbacks open screens and links that live outside Settings.
+ */
+@Composable
+fun SettingsRoute(
+    onSignOut: () -> Unit,
+    onCurrencyChanged: () -> Unit,
+    onManageCategories: () -> Unit = {},
+    onManageAccounts: () -> Unit = {},
+    onManageBudgets: () -> Unit = {},
+    onBackup: () -> Unit = {},
+    onPrivacyPolicy: () -> Unit = {},
+    onLicenses: () -> Unit = {},
+    onHelp: () -> Unit = {},
+    onShowTour: () -> Unit = {},
+    onSendFeedback: () -> Unit = {},
+    onRateApp: () -> Unit = {},
+    onShareApp: () -> Unit = {},
+    viewModel: SettingsViewModel = hiltViewModel(),
+    biometricPrompter: BiometricPrompter = rememberBiometricPrompter()
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    UiMessageEffect(viewModel.messages)
+    val enrollmentText = BiometricPromptText(
+        title = stringResource(R.string.biometric_enroll_title),
+        subtitle = stringResource(R.string.biometric_enroll_subtitle),
+        cancelLabel = stringResource(R.string.cancel)
+    )
+    val currentEnrollmentText by rememberUpdatedState(enrollmentText)
+    val currentPrompter by rememberUpdatedState(biometricPrompter)
+    val currentOnCurrencyChanged by rememberUpdatedState(onCurrencyChanged)
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    // Only while started: a prompt can't open in the background, and the switch waits for the prompt's answer.
+    LaunchedEffect(viewModel, lifecycle) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.events.collect { event ->
+                when (event) {
+                    is SettingsEvent.ShowEnrollmentPrompt ->
+                        currentPrompter.authenticate(event.cipher, currentEnrollmentText, viewModel::onEnrollmentPromptResult)
+                    SettingsEvent.CurrencyChanged -> currentOnCurrencyChanged()
+                }
+            }
+        }
+    }
+
+    SettingsScreen(
+        state = state.toScreenState(systemDarkMode = isSystemInDarkTheme()),
+        onSignOut = onSignOut,
+        onDarkModeChange = viewModel::onDarkModeChange,
+        onBiometricChange = viewModel::onBiometricChange,
+        onCurrencyChange = viewModel::onCurrencyChange,
+        onManageCategories = onManageCategories,
+        onManageAccounts = onManageAccounts,
+        onManageBudgets = onManageBudgets,
+        onBackup = onBackup,
+        onPrivacyPolicy = onPrivacyPolicy,
+        onLicenses = onLicenses,
+        onHelp = onHelp,
+        onShowTour = onShowTour,
+        onSendFeedback = onSendFeedback,
+        onRateApp = onRateApp,
+        onShareApp = onShareApp
+    )
+}
 
 @Composable
 fun SettingsScreen(
@@ -127,13 +207,18 @@ fun SettingsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .toggleable(value = state.biometricEnabled, role = Role.Switch, onValueChange = onBiometricChange)
+                    .toggleable(
+                        value = state.biometricEnabled,
+                        enabled = !state.biometricChanging,
+                        role = Role.Switch,
+                        onValueChange = onBiometricChange
+                    )
                     .padding(vertical = 8.dp)
                     .testTag(BIOMETRIC_SWITCH_TAG),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = stringResource(R.string.settings_biometric_sign_in), modifier = Modifier.weight(1f))
-                Switch(checked = state.biometricEnabled, onCheckedChange = null)
+                Switch(checked = state.biometricEnabled, onCheckedChange = null, enabled = !state.biometricChanging)
             }
         }
         Row(

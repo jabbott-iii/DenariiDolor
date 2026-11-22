@@ -38,7 +38,8 @@ class Vault @Inject constructor(
     config: VaultConfig,
     private val databaseHolder: DatabaseHolder,
     private val defaultDataInitializer: DefaultDataInitializer
-) : SignInVault {
+) : SignInVault,
+    SettingsVault {
     private val appContext = context.applicationContext
     private val secrets = KeystoreSecrets(config.keyAliasPrefix)
     private val profileStore = KeystoreProfileStore(appContext, config.profilePrefsName, secrets)
@@ -159,13 +160,13 @@ class Vault @Inject constructor(
     }
 
     /** A cipher for `BiometricPrompt` that wraps the database key with a new biometric-bound key. Needs an unlocked vault. */
-    suspend fun prepareBiometricEnrollment(): Cipher = background {
+    override suspend fun prepareBiometricEnrollment(): Cipher = background {
         check(isUnlocked) { "The vault is locked" }
         secrets.biometricEncryptCipher()
     }
 
     /** Stores the database key wrapped by the cipher `BiometricPrompt` authorized; false if the vault locked meanwhile. */
-    suspend fun completeBiometricEnrollment(cipher: Cipher): Boolean = background {
+    override suspend fun completeBiometricEnrollment(cipher: Cipher): Boolean = background {
         val databaseKey = synchronized(this) { unlockedKey?.copyOf() }
         if (databaseKey == null) {
             false
@@ -181,7 +182,7 @@ class Vault @Inject constructor(
         }
     }
 
-    suspend fun disableBiometric() = background { turnOffBiometric() }
+    override suspend fun disableBiometric() = background { turnOffBiometric() }
 
     /** Closes the database and forgets every unwrapped key: sign-out, session timeout, or leaving an upgrade. */
     override fun lock() {

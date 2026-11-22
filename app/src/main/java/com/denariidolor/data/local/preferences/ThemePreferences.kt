@@ -18,12 +18,12 @@ import kotlinx.coroutines.flow.asStateFlow
  * `null` means "follow the device setting" until the user flips the switch.
  */
 @Singleton
-class ThemePreferences @Inject constructor(@ApplicationContext context: Context) {
+class ThemePreferences @Inject constructor(@ApplicationContext context: Context) : ThemeSettings {
     private val preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val _darkModeOverride = MutableStateFlow(readOverride())
-    val darkModeOverride: StateFlow<Boolean?> = _darkModeOverride.asStateFlow()
+    override val darkModeOverride: StateFlow<Boolean?> = _darkModeOverride.asStateFlow()
 
-    fun setDarkMode(enabled: Boolean) {
+    override fun setDarkMode(enabled: Boolean) {
         preferences.edit().putBoolean(KEY_DARK_MODE, enabled).apply()
         _darkModeOverride.value = enabled
     }

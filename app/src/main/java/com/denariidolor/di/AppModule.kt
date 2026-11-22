@@ -8,6 +8,7 @@ package com.denariidolor.di
 
 import com.denariidolor.data.local.preferences.CryptoPrimitives
 import com.denariidolor.data.local.preferences.JcaCryptoPrimitives
+import com.denariidolor.data.local.vault.SettingsVault
 import com.denariidolor.data.local.vault.SignInVault
 import com.denariidolor.data.local.vault.Vault
 import com.denariidolor.presentation.ui.auth.BiometricCapability
@@ -39,6 +40,9 @@ object AppModule {
 
     @Provides
     fun provideSignInVault(vault: Vault): SignInVault = vault
+
+    @Provides
+    fun provideSettingsVault(vault: Vault): SettingsVault = vault
 
     @Provides
     fun provideBiometricCapability(capability: DeviceBiometricCapability): BiometricCapability = capability

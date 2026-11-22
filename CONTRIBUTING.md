@@ -54,7 +54,7 @@ If you run detekt-cli outside Gradle, pass `--build-upon-default-config` so that
 ## Coding expectations
 
 - **Architecture:** follow the layers and dependency rules in [`CLAUDE.md`](CLAUDE.md):
-  - Composables talk only to ViewModels, and reach toasts, sharing and the system pickers only through `presentation/platform`.
+  - Composables talk only to ViewModels, and reach toasts, sharing, the system pickers and the biometric prompt only through `presentation/platform`.
   - Transaction writes go through the use cases, so validation and balance updates always run.
   - Code outside `data` and `di` depends on repository interfaces, not on the `Impl` classes.
   - The database exists only after sign-in. Don't inject `AppDatabase`, a DAO or a repository into anything that runs before sign-in (`LoginActivity`, singletons); sign-in, recovery and wipe go through `LoginViewModel` and `Vault`.

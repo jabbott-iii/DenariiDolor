@@ -15,6 +15,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,13 +25,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
+import androidx.fragment.app.FragmentActivity
+import com.denariidolor.presentation.ui.auth.BiometricAuthManager
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.StoreLinks
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.number
 
 // Android's side of PlatformActions.kt, and the one presentation file besides the activities that touches the Context,
-// toasts, intents or the system pickers. Each remember function binds its object to the activity the screen runs in.
+// toasts, intents, the system pickers or the biometric prompt. Each remember function binds its object to the activity the
+// screen runs in.
 
 @Composable
 fun rememberNotices(): Notices {
@@ -69,6 +73,31 @@ fun rememberDatePicker(): DatePicker {
                 initial.month.number - 1,
                 initial.day
             ).show()
+        }
+    }
+}
+
+/**
+ * Shows `BiometricPrompt` over the screen's activity with a `CryptoObject` for the cipher (CS-07). `BiometricPrompt` silently
+ * refuses to open once the activity has saved its state, so the prompter reports [BiometricPromptResult.Canceled] then
+ * instead, and a screen waiting for the answer never waits forever.
+ */
+@Composable
+fun rememberBiometricPrompter(): BiometricPrompter {
+    val activity = LocalActivity.current as? FragmentActivity
+    return remember(activity) {
+        BiometricPrompter { cipher, text, onResult ->
+            when {
+                activity == null -> onResult(BiometricPromptResult.Failed)
+                activity.supportFragmentManager.isStateSaved -> onResult(BiometricPromptResult.Canceled)
+                else -> BiometricAuthManager().authenticate(
+                    activity = activity,
+                    cipher = cipher,
+                    text = BiometricAuthManager.PromptText(text.title, text.subtitle, text.cancelLabel),
+                    onAuthenticated = { onResult(BiometricPromptResult.Authorized(it)) },
+                    onError = { canceled -> onResult(if (canceled) BiometricPromptResult.Canceled else BiometricPromptResult.Failed) }
+                )
+            }
         }
     }
 }

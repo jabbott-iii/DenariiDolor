@@ -52,7 +52,6 @@ import com.denariidolor.presentation.ui.legal.LegalDocumentRoute
 import com.denariidolor.presentation.ui.legal.LegalDocumentViewModel
 import com.denariidolor.presentation.ui.report.ReportRoute
 import com.denariidolor.presentation.ui.search.SearchRoute
-import com.denariidolor.presentation.ui.settings.SettingsScreenState
 import com.denariidolor.presentation.ui.transaction.TransactionViewModel
 
 private enum class MainDestination(val route: String, val titleRes: Int, val iconRes: Int) {
@@ -92,15 +91,9 @@ private val bottomDestinations = listOf(
     MainDestination.Settings
 )
 
+/** The signed-in app. [onCurrencyChanged] and [onRestored] start it over with new ViewModels, still signed in. */
 @Composable
-fun MainActivityContent(
-    settingsState: SettingsScreenState,
-    onSignOut: () -> Unit,
-    onDarkModeChange: (Boolean) -> Unit,
-    onBiometricChange: (Boolean) -> Unit,
-    onCurrencyChange: (String) -> Unit = {},
-    onRestored: () -> Unit = {}
-) {
+fun MainActivityContent(onSignOut: () -> Unit, onCurrencyChanged: () -> Unit = {}, onRestored: () -> Unit = {}) {
     val navController = rememberNavController()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
@@ -174,12 +167,9 @@ fun MainActivityContent(
                 }
                 composable(MainDestination.Report.route) { ReportRoute() }
                 composable(MainDestination.Settings.route) {
-                    SettingsScreen(
-                        state = settingsState,
+                    SettingsRoute(
                         onSignOut = onSignOut,
-                        onDarkModeChange = onDarkModeChange,
-                        onBiometricChange = onBiometricChange,
-                        onCurrencyChange = onCurrencyChange,
+                        onCurrencyChanged = onCurrencyChanged,
                         onManageCategories = { navController.navigate(MainDestination.ManageCategories.route) },
                         onManageAccounts = { navController.navigate(MainDestination.ManageAccounts.route) },
                         onManageBudgets = { navController.navigate(MainDestination.ManageBudgets.route) },

@@ -29,14 +29,14 @@ class CurrencyPreferences @Inject constructor(@ApplicationContext context: Conte
 
     // Installs from before this setting have nothing saved; they showed US dollars, so that is what they keep.
     private val _currency = MutableStateFlow(Currencies.fromCode(preferences.getString(KEY_CURRENCY, null)) ?: Currencies.DEFAULT)
-    val currency: StateFlow<Currency> = _currency.asStateFlow()
+    override val currency: StateFlow<Currency> = _currency.asStateFlow()
 
     /** Makes [Money] format with the saved currency; called once at app start. */
     fun applySaved() {
         Money.currency = _currency.value
     }
 
-    fun setCurrency(currency: Currency) {
+    override fun setCurrency(currency: Currency) {
         require(Currencies.isSupported(currency)) { "Unsupported currency ${currency.currencyCode}" }
         preferences.edit().putString(KEY_CURRENCY, currency.currencyCode).apply()
         _currency.value = currency

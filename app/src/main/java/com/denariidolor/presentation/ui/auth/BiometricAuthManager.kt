@@ -16,11 +16,6 @@ import javax.inject.Inject
 class BiometricAuthManager @Inject constructor() {
     data class PromptText(val title: String, val subtitle: String, val negativeButton: String)
 
-    fun canAuthenticate(activity: FragmentActivity): Boolean {
-        val biometricManager = BiometricManager.from(activity)
-        return biometricManager.canAuthenticate(ALLOWED_AUTHENTICATORS) == BiometricManager.BIOMETRIC_SUCCESS
-    }
-
     /**
      * Shows the system prompt bound to [cipher], so success unlocks a Keystore key instead of only firing a callback
      * (CS-07). [onAuthenticated] receives the cipher the prompt authorized; [onError] reports whether the user canceled.

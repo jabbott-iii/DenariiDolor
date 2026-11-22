@@ -71,8 +71,8 @@ Put it in `presentation/ui/<feature>/<Feature>Screen.kt`.
 - `FeatureScreen(state, onAction…)` is stateless. Use `ScreenHeader`, `ConfirmDialog`, `ManagedItemRow` and the form
   components in `presentation/ui/common`.
 - Declare `const val FEATURE_…_TAG` constants for anything a test needs to find.
-- For toasts, sharing, store or email links and the date or file pickers, use the `remember…()` functions in
-  `presentation/platform`. Never use `LocalContext`, `Toast` or `Intent` in a screen; `PlatformBoundaryTest` fails on it.
+- For toasts, sharing, store or email links, the date or file pickers and the biometric prompt, use the `remember…()`
+  functions in `presentation/platform`. Never use `LocalContext`, `Toast` or `Intent` in a screen; `PlatformBoundaryTest` fails on it.
 - Follow `.claude/rules/compose-ui.md`: `stringResource` only, `LocalLocale`, `start`/`end`, insets, `contentDescription`,
   48dp touch targets.
 - **Navigation:**

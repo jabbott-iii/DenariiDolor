@@ -16,15 +16,18 @@ paths:
     `Context`-based service, so it can be tested on its own. See `ManageCategoriesRoute` and `ManageCategoriesScreen`.
 - **Platform calls.** Screens reach Android only through `presentation/platform`, so they can move to shared code:
   - `rememberNotices()` for toasts, `rememberShareSheet()`, `rememberExternalApps()` (store listing, feedback email),
-    `rememberAppDetails()`, `rememberDatePicker()`, and `rememberSaveFilePicker()` / `rememberOpenFilePicker()`.
+    `rememberAppDetails()`, `rememberDatePicker()`, `rememberSaveFilePicker()` / `rememberOpenFilePicker()`, and
+    `rememberBiometricPrompter()` for a prompt bound to a `CryptoObject` (CS-07).
   - Their interfaces are plain Kotlin in `PlatformActions.kt`, and `AndroidPlatformActions.kt` implements them.
-  - Only that file and the activities may use `LocalContext`, `Toast`, `Intent`, `DatePickerDialog` or activity-result
-    launchers. `PlatformBoundaryTest` fails on any other file that does, and `PlatformIntentsTest` pins each intent.
+  - Only that file and the activities may use `LocalContext`, `LocalActivity`, `Toast`, `Intent`, `DatePickerDialog` or
+    activity-result launchers. `PlatformBoundaryTest` fails on any other file that does, and `PlatformIntentsTest` pins
+    each intent.
 - **ViewModels.**
   - Declare them as `@HiltViewModel class XxxViewModel @Inject constructor(…) : ViewModel()`.
   - They depend on use cases, repository interfaces and `Clock`.
   - Keep Android types (`Context`, `Uri`, `Bitmap`) out, so JVM tests can cover them. The `Uri` that `BackupViewModel` and
-    `ReportViewModel` take for picked files is the documented exception until shared code gets its own file handle.
+    `ReportViewModel` take for picked files is the documented exception until shared code gets its own file handle. The
+    `Cipher` that `LoginViewModel` and `SettingsViewModel` hand to the biometric prompt is JVM-only for the same reason.
   - Navigation arguments come from `SavedStateHandle`.
 - **State and events.**
   - Long-lived state is one immutable `…UiState` data class (or a few `StateFlow`s) per screen.

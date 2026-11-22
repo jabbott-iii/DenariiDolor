@@ -9,10 +9,12 @@ package com.denariidolor.presentation.platform
 import android.net.Uri
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.DateUtils
+import javax.crypto.Cipher
 import kotlinx.datetime.LocalDate
 
 // What screens ask of the platform, as plain Kotlin. AndroidPlatformActions.kt implements it with toasts, intents and the
-// system pickers, and no screen calls those directly (PlatformBoundaryTest). Uri stays the file handle for now.
+// system pickers, and no screen calls those directly (PlatformBoundaryTest). Uri stays the file handle, and Cipher the
+// biometric key handle, for now.
 
 enum class NoticeLength { SHORT, LONG }
 
@@ -51,6 +53,29 @@ fun interface DatePicker {
 /** A system file picker. The file the user chooses, or null when they back out, goes to the callback its factory was given. */
 fun interface FilePicker<I> {
     fun launch(input: I)
+}
+
+/** The words on the system biometric prompt. */
+data class BiometricPromptText(val title: String, val subtitle: String, val cancelLabel: String)
+
+/** How a biometric prompt ended. */
+sealed interface BiometricPromptResult {
+    /** The cipher the prompt authorized: only it can use the biometric-bound key (CS-07). */
+    class Authorized(val cipher: Cipher) : BiometricPromptResult
+
+    /** The user backed out, or the prompt couldn't open because the app went to the background. */
+    data object Canceled : BiometricPromptResult
+
+    /** The prompt gave up, such as after too many attempts. */
+    data object Failed : BiometricPromptResult
+}
+
+/**
+ * The system biometric prompt, bound to a cipher so success unlocks a Keystore key instead of only firing a callback (CS-07).
+ * [authenticate] reports to `onResult` exactly once.
+ */
+fun interface BiometricPrompter {
+    fun authenticate(cipher: Cipher, text: BiometricPromptText, onResult: (BiometricPromptResult) -> Unit)
 }
 
 /** The day a date field's picker opens on: the ISO date the field holds, or [today] when it holds none. */

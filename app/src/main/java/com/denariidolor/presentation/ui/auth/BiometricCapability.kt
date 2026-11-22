@@ -16,7 +16,7 @@ fun interface BiometricCapability {
     fun canAuthenticate(): Boolean
 }
 
-/** The same check as [BiometricAuthManager.canAuthenticate], on the application context so a ViewModel can hold it. */
+/** Asks `BiometricManager` about [BiometricAuthManager.ALLOWED_AUTHENTICATORS], on the application context so a ViewModel can hold it. */
 class DeviceBiometricCapability @Inject constructor(@ApplicationContext private val context: Context) : BiometricCapability {
     override fun canAuthenticate(): Boolean =
         BiometricManager.from(context).canAuthenticate(BiometricAuthManager.ALLOWED_AUTHENTICATORS) == BiometricManager.BIOMETRIC_SUCCESS

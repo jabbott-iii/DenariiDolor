@@ -14,6 +14,8 @@ data class SettingsScreenState(
     val darkMode: Boolean,
     val biometricAvailable: Boolean = false,
     val biometricEnabled: Boolean = false,
+    /** True from a tap on the biometric switch until its vault call and prompt finish; the switch is disabled meanwhile. */
+    val biometricChanging: Boolean = false,
     /** ISO 4217 code of the saved currency, and the codes Settings offers. */
     val currencyCode: String = Currencies.DEFAULT.currencyCode,
     val currencyOptions: List<String> = emptyList()

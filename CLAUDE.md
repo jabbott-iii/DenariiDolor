@@ -56,21 +56,24 @@ domain/        model (Transaction → Expense | Income | Transfer, Ledger), usec
 data/          local/db (Room, DAOs, Migrations, DatabaseHolder), local/vault (Vault, Keystore),
                local/preferences, repository (interface + Impl in one file), export, backup, legal
 presentation/  ui/<feature>/ — *Route + stateless *Screen + @HiltViewModel; shared composables in ui/common
-               platform/ — what screens ask of Android: toasts, the share sheet, store and email, date and file pickers
+               platform/ — what screens ask of Android: toasts, sharing, store and email, pickers, the biometric prompt
 di/            AppModule (Clock, ZonedClock), DatabaseModule, RepositoryModule (@Binds, unscoped)
 util/          Money, PlatformFormat (locale formatting), Validators, DateUtils, SessionManager, Constants, runSuspendCatching
 ```
 
 There are two activities. `LoginActivity` is the exported launcher. Its `LoginViewModel` runs setup, sign-in, recovery and
 wipe through `Vault` (as `SignInVault`), and the activity keeps the overlay guard, the biometric prompt and the start of
-`MainActivity`. `MainActivity` isn't exported, and it hosts the `NavHost` in `presentation/ui/AppScreens.kt`.
+`MainActivity`. `MainActivity` isn't exported. It checks the session and hosts the `NavHost` in
+`presentation/ui/AppScreens.kt`, where `SettingsViewModel` turns biometric sign-in on and off through `Vault` (as
+`SettingsVault`).
 
 Dependency rules:
 
 1. Composables talk only to ViewModels. They never touch DAOs, repositories, preferences or `Context`-based services.
-   Toasts, the share sheet, store and email links and the date and file pickers come from `presentation/platform`
-   (`rememberNotices()`, `rememberShareSheet()` and the rest). Only `AndroidPlatformActions.kt` and the activities use
-   `LocalContext`, `Toast`, `Intent` or activity-result launchers, and `PlatformBoundaryTest` checks it.
+   Toasts, the share sheet, store and email links, the date and file pickers and the biometric prompt come from
+   `presentation/platform` (`rememberNotices()`, `rememberShareSheet()` and the rest). Only `AndroidPlatformActions.kt` and
+   the activities use `LocalContext`, `LocalActivity`, `Toast`, `Intent` or activity-result launchers, and
+   `PlatformBoundaryTest` checks it.
 2. Transaction writes go through `AddTransactionUseCase`, `UpdateTransactionUseCase` or `DeleteTransactionUseCase`, and
    reference data goes through `CategoryUseCases`, `AccountUseCases` or `BudgetUseCases`. Validation and balance updates run
    in those use cases.
