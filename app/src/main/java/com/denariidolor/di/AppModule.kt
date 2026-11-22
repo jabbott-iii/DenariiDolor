@@ -8,6 +8,10 @@ package com.denariidolor.di
 
 import com.denariidolor.data.local.preferences.CryptoPrimitives
 import com.denariidolor.data.local.preferences.JcaCryptoPrimitives
+import com.denariidolor.data.local.vault.SignInVault
+import com.denariidolor.data.local.vault.Vault
+import com.denariidolor.presentation.ui.auth.BiometricCapability
+import com.denariidolor.presentation.ui.auth.DeviceBiometricCapability
 import com.denariidolor.util.DeviceClock
 import com.denariidolor.util.ZonedClock
 import com.denariidolor.util.asZonedClock
@@ -32,4 +36,10 @@ object AppModule {
     @Provides
     @Singleton
     fun provideCryptoPrimitives(): CryptoPrimitives = JcaCryptoPrimitives()
+
+    @Provides
+    fun provideSignInVault(vault: Vault): SignInVault = vault
+
+    @Provides
+    fun provideBiometricCapability(capability: DeviceBiometricCapability): BiometricCapability = capability
 }

@@ -60,8 +60,9 @@ di/            AppModule (Clock, ZonedClock), DatabaseModule, RepositoryModule (
 util/          Money, PlatformFormat (locale formatting), Validators, DateUtils, SessionManager, Constants, runSuspendCatching
 ```
 
-There are two activities. `LoginActivity` is the exported launcher, and it runs setup, sign-in, recovery and wipe through
-`Vault`. `MainActivity` isn't exported, and it hosts the `NavHost` in `presentation/ui/AppScreens.kt`.
+There are two activities. `LoginActivity` is the exported launcher. Its `LoginViewModel` runs setup, sign-in, recovery and
+wipe through `Vault` (as `SignInVault`), and the activity keeps the overlay guard, the biometric prompt and the start of
+`MainActivity`. `MainActivity` isn't exported, and it hosts the `NavHost` in `presentation/ui/AppScreens.kt`.
 
 Dependency rules:
 
@@ -167,7 +168,6 @@ Skills in `.claude/skills/`:
 Don't "fix" these unless you're asked:
 
 - There is a single `:app` module. That was decided; revisit it only for build time or ownership.
-- `LoginActivity` keeps its screen state in the activity, not in a ViewModel.
 - Presentation uses Room entities such as `CategoryEntity` directly for reference data.
 - Navigation uses string routes in `MainDestination`, not type-safe routes.
 - The data layer calls `Dispatchers.IO` directly instead of injecting a dispatcher.

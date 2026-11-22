@@ -57,7 +57,7 @@ If you run detekt-cli outside Gradle, pass `--build-upon-default-config` so that
   - Composables talk only to ViewModels.
   - Transaction writes go through the use cases, so validation and balance updates always run.
   - Code outside `data` and `di` depends on repository interfaces, not on the `Impl` classes.
-  - The database exists only after sign-in. Don't inject `AppDatabase`, a DAO or a repository into anything that runs before sign-in (`LoginActivity`, singletons); sign-in, recovery and wipe go through `Vault`.
+  - The database exists only after sign-in. Don't inject `AppDatabase`, a DAO or a repository into anything that runs before sign-in (`LoginActivity`, singletons); sign-in, recovery and wipe go through `LoginViewModel` and `Vault`.
 - **Money:** amounts are `Long` cents. Parse input with `Money.parseToCents` and show amounts with `formatMoney`/`formatSignedAmount`, which use the saved currency and the device's locale. Never store or compare amounts as `Double`, and never write a currency symbol into code or strings.
 - **Text and languages:**
   - User-facing text lives only in `res/values/strings.xml`. Add every new string to all six packs (`values-zh-rCN`, `values-hi`, `values-es`, `values-ar`, `values-fr`, `values-pt`), or mark it `translatable="false"`; `lintDebug` fails on a missing translation.

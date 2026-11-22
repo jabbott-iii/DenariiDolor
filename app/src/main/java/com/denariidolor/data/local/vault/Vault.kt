@@ -38,7 +38,7 @@ class Vault @Inject constructor(
     config: VaultConfig,
     private val databaseHolder: DatabaseHolder,
     private val defaultDataInitializer: DefaultDataInitializer
-) {
+) : SignInVault {
     private val appContext = context.applicationContext
     private val secrets = KeystoreSecrets(config.keyAliasPrefix)
     private val profileStore = KeystoreProfileStore(appContext, config.profilePrefsName, secrets)
@@ -54,7 +54,7 @@ class Vault @Inject constructor(
 
     val isUnlocked: Boolean get() = databaseHolder.isOpen
 
-    suspend fun state(): VaultState = background {
+    override suspend fun state(): VaultState = background {
         val current = profile.getProfileState()
         val legacyProfile = if (current.mode == ProfileMode.SIGN_IN) null else legacy.profile()
         when {
@@ -71,7 +71,7 @@ class Vault @Inject constructor(
         }
     }
 
-    suspend fun setUp(pin: String, pinConfirmation: String, question: String, answer: String): SetupProfileResult = background {
+    override suspend fun setUp(pin: String, pinConfirmation: String, question: String, answer: String): SetupProfileResult = background {
         val problem = SecurityProfileService.validateSetup(pin, pinConfirmation, question, answer, crypto)
         when {
             profile.getProfileState().mode == ProfileMode.SIGN_IN || legacy.profile() != null -> SetupProfileResult.ALREADY_CONFIGURED
@@ -85,7 +85,7 @@ class Vault @Inject constructor(
         }
     }
 
-    suspend fun signIn(pin: String): SignInResult = background {
+    override suspend fun signIn(pin: String): SignInResult = background {
         if (profile.getProfileState().mode == ProfileMode.SIGN_IN) {
             profile.unlockWithPin(pin).toSignInResult { databaseKey ->
                 unlock(databaseKey)
@@ -100,7 +100,7 @@ class Vault @Inject constructor(
         }
     }
 
-    suspend fun recoverPin(answer: String, newPin: String, pinConfirmation: String): RecoveryResult = background {
+    override suspend fun recoverPin(answer: String, newPin: String, pinConfirmation: String): RecoveryResult = background {
         val result = if (profile.getProfileState().mode == ProfileMode.SIGN_IN) {
             RecoveryResult.Finished(profile.recoverPin(answer, newPin, pinConfirmation))
         } else {
@@ -114,7 +114,7 @@ class Vault @Inject constructor(
     }
 
     /** Finishes a v1 upgrade: the new profile wraps the existing database key, and the database opens. */
-    suspend fun completeUpgrade(question: String, answer: String): SetupProfileResult = background {
+    override suspend fun completeUpgrade(question: String, answer: String): SetupProfileResult = background {
         val pending = checkNotNull(synchronized(this) { pendingUpgrade }) { "No upgrade in progress" }
         val result = profile.migrateProfile(pending.pin, question, answer, pending.databaseKey)
         if (result == SetupProfileResult.SUCCESS) {
@@ -125,7 +125,7 @@ class Vault @Inject constructor(
         result
     }
 
-    suspend fun prepareBiometricSignIn(): BiometricSignIn = background {
+    override suspend fun prepareBiometricSignIn(): BiometricSignIn = background {
         val wrapped = profile.biometricWrap()
         val cipher = wrapped?.takeIf { it.size > KeystoreSecrets.GCM_IV_BYTES }
             ?.let { secrets.biometricDecryptCipher(it.copyOfRange(0, KeystoreSecrets.GCM_IV_BYTES)) }
@@ -140,7 +140,7 @@ class Vault @Inject constructor(
     }
 
     /** Finishes biometric sign-in with the cipher that `BiometricPrompt` authorized. */
-    suspend fun signInWithBiometric(cipher: Cipher): SignInResult = background {
+    override suspend fun signInWithBiometric(cipher: Cipher): SignInResult = background {
         val databaseKey = profile.biometricWrap()?.let { wrapped ->
             try {
                 cipher.doFinal(wrapped, KeystoreSecrets.GCM_IV_BYTES, wrapped.size - KeystoreSecrets.GCM_IV_BYTES)
@@ -184,7 +184,7 @@ class Vault @Inject constructor(
     suspend fun disableBiometric() = background { turnOffBiometric() }
 
     /** Closes the database and forgets every unwrapped key: sign-out, session timeout, or leaving an upgrade. */
-    fun lock() {
+    override fun lock() {
         synchronized(this) {
             unlockedKey?.fill(0)
             unlockedKey = null
@@ -195,7 +195,7 @@ class Vault @Inject constructor(
     }
 
     /** Crypto-erase (CS-17): deletes the database files, both profile formats and every vault key. */
-    suspend fun wipe(): Boolean = background {
+    override suspend fun wipe(): Boolean = background {
         lock()
         listOf(
             databaseHolder::deleteDatabaseFiles,

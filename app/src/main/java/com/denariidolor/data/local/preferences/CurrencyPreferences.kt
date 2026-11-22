@@ -24,7 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * excluded from backups like everything else.
  */
 @Singleton
-class CurrencyPreferences @Inject constructor(@ApplicationContext context: Context) {
+class CurrencyPreferences @Inject constructor(@ApplicationContext context: Context) : CurrencySettings {
     private val preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     // Installs from before this setting have nothing saved; they showed US dollars, so that is what they keep.
@@ -43,8 +43,7 @@ class CurrencyPreferences @Inject constructor(@ApplicationContext context: Conte
         Money.currency = currency
     }
 
-    /** For a new security profile: the currency of the device's region, which the user can change in Settings. */
-    fun resetToRegionDefault(locale: Locale = Locale.getDefault()) = setCurrency(Currencies.regionDefault(locale))
+    override fun resetToRegionDefault() = setCurrency(Currencies.regionDefault(Locale.getDefault()))
 
     private companion object {
         const val PREFS_NAME = "ui_prefs"

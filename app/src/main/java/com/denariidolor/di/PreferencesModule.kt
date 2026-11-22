@@ -6,6 +6,8 @@
 
 package com.denariidolor.di
 
+import com.denariidolor.data.local.preferences.CurrencyPreferences
+import com.denariidolor.data.local.preferences.CurrencySettings
 import com.denariidolor.data.local.preferences.GuidancePreferences
 import com.denariidolor.data.local.preferences.OnboardingStore
 import com.denariidolor.data.local.preferences.RatePromptStore
@@ -14,7 +16,7 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
-/** Both interfaces resolve to the one `@Singleton` [GuidancePreferences], so every screen sees the same state. */
+/** The guidance interfaces resolve to the one `@Singleton` [GuidancePreferences], so every screen sees the same state. */
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class PreferencesModule {
@@ -23,4 +25,7 @@ abstract class PreferencesModule {
 
     @Binds
     abstract fun bindRatePromptStore(impl: GuidancePreferences): RatePromptStore
+
+    @Binds
+    abstract fun bindCurrencySettings(impl: CurrencyPreferences): CurrencySettings
 }
