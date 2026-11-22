@@ -10,6 +10,7 @@ import com.denariidolor.data.backup.BackupGoldenFiles.V1_FILE_HEX
 import com.denariidolor.data.backup.BackupGoldenFiles.V1_ITERATIONS
 import com.denariidolor.data.backup.BackupGoldenFiles.V1_PASSPHRASE
 import com.denariidolor.data.backup.BackupGoldenFiles.V1_PAYLOAD_HEX
+import com.denariidolor.data.local.preferences.JcaCryptoPrimitives
 import java.security.SecureRandom
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -24,12 +25,12 @@ class BackupGoldenFileTest {
 
     @Test
     fun aVersion1FileStillRestores() {
-        assertEquals(sampleSnapshot(), BackupFile.read(hexBytes(V1_FILE_HEX), V1_PASSPHRASE))
+        assertEquals(sampleSnapshot(), BackupFile.read(JcaCryptoPrimitives(), hexBytes(V1_FILE_HEX), V1_PASSPHRASE))
     }
 
     @Test
     fun aVersion1FileOpensWithThePassphraseTypedInAnotherUnicodeForm() {
-        assertEquals(sampleSnapshot(), BackupFile.read(hexBytes(V1_FILE_HEX), "café au lait chaud"))
+        assertEquals(sampleSnapshot(), BackupFile.read(JcaCryptoPrimitives(), hexBytes(V1_FILE_HEX), "cafe\u0301 au lait chaud"))
     }
 
     /** These two follow the current version. When [BackupFile.FORMAT_VERSION] moves on, they move to that version's fixtures. */
@@ -41,7 +42,7 @@ class BackupGoldenFileTest {
 
     @Test
     fun theCurrentFormatWritesTheVersion1FileGivenTheSameSaltAndNonce() {
-        val file = BackupFile.write(sampleSnapshot(), V1_PASSPHRASE, CountingRandom(), V1_ITERATIONS)
+        val file = BackupFile.write(JcaCryptoPrimitives(CountingRandom()), sampleSnapshot(), V1_PASSPHRASE, V1_ITERATIONS)
 
         assertEquals(1, BackupFile.FORMAT_VERSION)
         assertArrayEquals(hexBytes(V1_FILE_HEX), file)

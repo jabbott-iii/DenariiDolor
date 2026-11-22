@@ -6,6 +6,8 @@
 
 package com.denariidolor.di
 
+import com.denariidolor.data.local.preferences.CryptoPrimitives
+import com.denariidolor.data.local.preferences.JcaCryptoPrimitives
 import com.denariidolor.util.DeviceClock
 import com.denariidolor.util.ZonedClock
 import com.denariidolor.util.asZonedClock
@@ -26,4 +28,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideZonedClock(clock: Clock): ZonedClock = clock.asZonedClock()
+
+    @Provides
+    @Singleton
+    fun provideCryptoPrimitives(): CryptoPrimitives = JcaCryptoPrimitives()
 }

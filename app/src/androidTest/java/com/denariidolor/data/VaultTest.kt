@@ -18,6 +18,7 @@ import com.denariidolor.data.local.db.DatabaseHolder
 import com.denariidolor.data.local.db.DefaultDataInitializer
 import com.denariidolor.data.local.db.entity.AccountEntity
 import com.denariidolor.data.local.db.security.DatabaseKeys
+import com.denariidolor.data.local.preferences.JcaCryptoPrimitives
 import com.denariidolor.data.local.preferences.LegacySecurityProfile
 import com.denariidolor.data.local.preferences.RecoverPinResult
 import com.denariidolor.data.local.preferences.SecureStorageException
@@ -129,7 +130,9 @@ class VaultTest {
 
         val stored = prefsFile(config.profilePrefsName).readText()
 
-        listOf(PIN, QUESTION, ANSWER, SecurityProfileService.normalizeAnswer(ANSWER)).forEach { assertFalse(stored.contains(it)) }
+        listOf(PIN, QUESTION, ANSWER, SecurityProfileService.normalizeAnswer(ANSWER, JcaCryptoPrimitives())).forEach {
+            assertFalse(stored.contains(it))
+        }
     }
 
     @Test

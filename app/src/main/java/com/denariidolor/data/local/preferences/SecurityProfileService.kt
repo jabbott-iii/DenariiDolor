@@ -6,13 +6,7 @@
 
 package com.denariidolor.data.local.preferences
 
-import java.security.SecureRandom
-import java.text.Normalizer
 import java.util.Base64
-import javax.crypto.AEADBadTagException
-import javax.crypto.Cipher
-import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.SecretKeySpec
 
 interface SecurityProfileStore {
     fun getString(key: String): String?
@@ -99,7 +93,7 @@ class SecurityProfileService(
     private val store: SecurityProfileStore,
     private val deviceKeyMixer: DeviceKeyMixer,
     private val clock: MonotonicClock,
-    private val secureRandom: SecureRandom = SecureRandom(),
+    private val crypto: CryptoPrimitives,
     private val iterations: Int = DEFAULT_ITERATIONS
 ) {
     private enum class Slot(id: String) {
@@ -133,9 +127,9 @@ class SecurityProfileService(
     @Synchronized
     fun setupProfile(pin: String, pinConfirmation: String, securityQuestion: String, securityAnswer: String): SetupProfileResult {
         if (isProfileConfigured()) return SetupProfileResult.ALREADY_CONFIGURED
-        val problem = validateSetup(pin, pinConfirmation, securityQuestion, securityAnswer)
+        val problem = validateSetup(pin, pinConfirmation, securityQuestion, securityAnswer, crypto)
         if (problem != SetupProfileResult.SUCCESS) return problem
-        val databaseKey = ByteArray(DATABASE_KEY_BYTES).also(secureRandom::nextBytes)
+        val databaseKey = crypto.randomBytes(DATABASE_KEY_BYTES)
         try {
             writeProfile(pin, securityQuestion, securityAnswer, databaseKey)
         } finally {
@@ -148,7 +142,7 @@ class SecurityProfileService(
     @Synchronized
     fun migrateProfile(pin: String, securityQuestion: String, securityAnswer: String, databaseKey: ByteArray): SetupProfileResult {
         if (isProfileConfigured()) return SetupProfileResult.ALREADY_CONFIGURED
-        val problem = validateSetup(pin, pin, securityQuestion, securityAnswer)
+        val problem = validateSetup(pin, pin, securityQuestion, securityAnswer, crypto)
         if (problem == SetupProfileResult.SUCCESS) writeProfile(pin, securityQuestion, securityAnswer, databaseKey)
         return problem
     }
@@ -162,7 +156,7 @@ class SecurityProfileService(
 
     @Synchronized
     fun recoverPin(securityAnswer: String, newPin: String, pinConfirmation: String): RecoverPinResult {
-        val normalizedAnswer = normalizeAnswer(securityAnswer)
+        val normalizedAnswer = normalizeAnswer(securityAnswer, crypto)
         val problem = when {
             !isProfileConfigured() -> RecoverPinResult.PROFILE_NOT_CONFIGURED
             lockoutRemainingMillis() > 0 -> RecoverPinResult.LOCKED_OUT
@@ -241,7 +235,7 @@ class SecurityProfileService(
     private fun writeProfile(pin: String, securityQuestion: String, securityAnswer: String, databaseKey: ByteArray) {
         deviceKeyMixer.prepare()
         val pinKey = seal(Slot.PIN, pin, databaseKey)
-        val answerKey = seal(Slot.ANSWER, normalizeAnswer(securityAnswer), databaseKey)
+        val answerKey = seal(Slot.ANSWER, normalizeAnswer(securityAnswer, crypto), databaseKey)
         store.edit {
             clear()
             putInt(KEY_PROFILE_VERSION, PROFILE_VERSION)
@@ -252,15 +246,11 @@ class SecurityProfileService(
     }
 
     private fun seal(slot: Slot, secret: String, databaseKey: ByteArray): SealedKey {
-        val salt = ByteArray(SALT_BYTES).also(secureRandom::nextBytes)
-        val iv = ByteArray(GCM_IV_BYTES).also(secureRandom::nextBytes)
+        val salt = crypto.randomBytes(SALT_BYTES)
+        val iv = crypto.randomBytes(GCM_IV_BYTES)
         val kek = keyEncryptionKey(slot, secret, salt, iterations)
         try {
-            val cipher = Cipher.getInstance(AES_GCM).apply {
-                init(Cipher.ENCRYPT_MODE, SecretKeySpec(kek, "AES"), GCMParameterSpec(GCM_TAG_BITS, iv))
-                updateAAD(slot.context)
-            }
-            return SealedKey(slot, salt, iterations, iv + cipher.doFinal(databaseKey))
+            return SealedKey(slot, salt, iterations, iv + crypto.aesGcmSeal(kek, iv, slot.context, databaseKey))
         } finally {
             kek.fill(0)
         }
@@ -275,21 +265,16 @@ class SecurityProfileService(
             throw SecureStorageException("Security profile is corrupt")
         }
         val kek = keyEncryptionKey(slot, secret, salt, storedIterations)
+        val iv = wrapped.copyOfRange(0, GCM_IV_BYTES)
         return try {
-            Cipher.getInstance(AES_GCM).run {
-                init(Cipher.DECRYPT_MODE, SecretKeySpec(kek, "AES"), GCMParameterSpec(GCM_TAG_BITS, wrapped, 0, GCM_IV_BYTES))
-                updateAAD(slot.context)
-                doFinal(wrapped, GCM_IV_BYTES, wrapped.size - GCM_IV_BYTES)
-            }
-        } catch (_: AEADBadTagException) {
-            null
+            crypto.aesGcmOpen(kek, iv, slot.context, wrapped.copyOfRange(GCM_IV_BYTES, wrapped.size))
         } finally {
             kek.fill(0)
         }
     }
 
     private fun keyEncryptionKey(slot: Slot, secret: String, salt: ByteArray, iterations: Int): ByteArray {
-        val stretched = pbkdf2(secret, salt, iterations)
+        val stretched = crypto.pbkdf2HmacSha256(secret, salt, iterations)
         return try {
             deviceKeyMixer.mix(slot.context + stretched)
         } finally {
@@ -340,9 +325,7 @@ class SecurityProfileService(
 
     companion object {
         private const val PROFILE_VERSION = 2
-        private const val AES_GCM = "AES/GCM/NoPadding"
         private const val GCM_IV_BYTES = 12
-        private const val GCM_TAG_BITS = 128
         private const val SALT_BYTES = 16
         private const val MAX_ITERATIONS = 1_000_000
         private const val MAX_DOUBLINGS = 5
@@ -371,13 +354,19 @@ class SecurityProfileService(
         fun isValidPin(pin: String): Boolean = PIN_REGEX.matches(pin)
 
         /** Answers are compared ignoring case, spacing and Unicode form (NFKC), so users aren't pushed to trivial answers. */
-        fun normalizeAnswer(answer: String): String =
-            Normalizer.normalize(answer, Normalizer.Form.NFKC).trim().replace(WHITESPACE, " ").lowercase()
+        fun normalizeAnswer(answer: String, crypto: CryptoPrimitives): String =
+            crypto.normalizeNfkc(answer).trim().replace(WHITESPACE, " ").lowercase()
 
         /** [SetupProfileResult.SUCCESS] when the setup input meets the PIN rules and the recovery rules (CS-14). */
-        fun validateSetup(pin: String, pinConfirmation: String, securityQuestion: String, securityAnswer: String): SetupProfileResult {
+        fun validateSetup(
+            pin: String,
+            pinConfirmation: String,
+            securityQuestion: String,
+            securityAnswer: String,
+            crypto: CryptoPrimitives
+        ): SetupProfileResult {
             val question = securityQuestion.trim()
-            val answer = normalizeAnswer(securityAnswer)
+            val answer = normalizeAnswer(securityAnswer, crypto)
             return when {
                 !isValidPin(pin) -> SetupProfileResult.INVALID_PIN_FORMAT
                 pin != pinConfirmation -> SetupProfileResult.PIN_MISMATCH
@@ -386,7 +375,7 @@ class SecurityProfileService(
                 answer.isEmpty() -> SetupProfileResult.SECURITY_ANSWER_REQUIRED
                 answer.codePointCount(0, answer.length) < MIN_ANSWER_LENGTH -> SetupProfileResult.SECURITY_ANSWER_TOO_SHORT
                 answer.length > MAX_ANSWER_LENGTH -> SetupProfileResult.SECURITY_ANSWER_TOO_LONG
-                normalizeAnswer(question).contains(answer) -> SetupProfileResult.SECURITY_ANSWER_IN_QUESTION
+                normalizeAnswer(question, crypto).contains(answer) -> SetupProfileResult.SECURITY_ANSWER_IN_QUESTION
                 answer == pin -> SetupProfileResult.SECURITY_ANSWER_MATCHES_PIN
                 else -> SetupProfileResult.SUCCESS
             }

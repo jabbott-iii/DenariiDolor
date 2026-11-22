@@ -11,8 +11,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.denariidolor.R
 import com.denariidolor.data.backup.BackupError
 import com.denariidolor.data.backup.BackupException
+import com.denariidolor.data.backup.BackupFile
 import com.denariidolor.data.backup.BackupService
 import com.denariidolor.data.backup.BackupSnapshot
+import com.denariidolor.data.local.preferences.JcaCryptoPrimitives
 import com.denariidolor.presentation.ui.backup.BackupDialog
 import com.denariidolor.presentation.ui.backup.BackupEvent
 import com.denariidolor.presentation.ui.backup.BackupPreview
@@ -184,6 +186,9 @@ class BackupViewModelTest {
         var createFailure: Exception? = null
         var restoreFailure: Exception? = null
         var openResult: Result<BackupSnapshot> = Result.success(SNAPSHOT)
+
+        override fun checkPassphrase(passphrase: String, confirmation: String?): BackupError? =
+            BackupFile.checkPassphrase(JcaCryptoPrimitives(), passphrase, confirmation)
 
         override suspend fun create(passphrase: String): ByteArray {
             createFailure?.let { throw it }

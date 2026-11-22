@@ -75,7 +75,7 @@ class BackupViewModel @Inject constructor(private val backupService: BackupServi
 
     fun submitNewPassphrase(passphrase: String, confirmation: String) {
         val dialog = _state.value.dialog as? BackupDialog.NewPassphrase ?: return
-        val problem = BackupFile.checkPassphrase(passphrase, confirmation)
+        val problem = backupService.checkPassphrase(passphrase, confirmation)
         if (problem != null) {
             showDialog(dialog.copy(error = problem))
             return

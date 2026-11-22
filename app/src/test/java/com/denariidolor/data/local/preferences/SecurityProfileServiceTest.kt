@@ -19,7 +19,8 @@ class SecurityProfileServiceTest {
     private val store = InMemorySecurityProfileStore()
     private val clock = FakeMonotonicClock()
     private val mixer = FakeDeviceKeyMixer()
-    private val service = SecurityProfileService(store, mixer, clock, iterations = SecurityProfileService.MIN_ITERATIONS)
+    private val crypto = JcaCryptoPrimitives()
+    private val service = SecurityProfileService(store, mixer, clock, crypto, iterations = SecurityProfileService.MIN_ITERATIONS)
 
     private fun configured(): SecurityProfileService = service.apply {
         assertEquals(SetupProfileResult.SUCCESS, setupProfile(PIN, PIN, QUESTION, ANSWER))
@@ -62,14 +63,14 @@ class SecurityProfileServiceTest {
 
         val stored = store.values.values.filterIsInstance<String>()
 
-        assertFalse(stored.any { it.contains(PIN) || it.contains(SecurityProfileService.normalizeAnswer(ANSWER)) })
+        assertFalse(stored.any { it.contains(PIN) || it.contains(SecurityProfileService.normalizeAnswer(ANSWER, crypto)) })
         assertFalse(stored.any { it.contains(encodedKey) })
     }
 
     @Test
     fun keyCannotBeUnwrappedWithAnotherDeviceKey() {
         configured()
-        val otherDevice = SecurityProfileService(store, FakeDeviceKeyMixer(ByteArray(32) { 2 }), clock)
+        val otherDevice = SecurityProfileService(store, FakeDeviceKeyMixer(ByteArray(32) { 2 }), clock, crypto)
 
         assertTrue(otherDevice.unlockWithPin(PIN) is AttemptResult.Rejected)
     }
@@ -97,7 +98,7 @@ class SecurityProfileServiceTest {
 
     @Test
     fun recoveryAnswersMustBeHardToGuess() {
-        fun check(question: String, answer: String) = SecurityProfileService.validateSetup(PIN, PIN, question, answer)
+        fun check(question: String, answer: String) = SecurityProfileService.validateSetup(PIN, PIN, question, answer, crypto)
 
         assertEquals(SetupProfileResult.SECURITY_QUESTION_REQUIRED, check("   ", ANSWER))
         assertEquals(SetupProfileResult.SECURITY_QUESTION_TOO_LONG, check("q".repeat(201), ANSWER))
@@ -119,7 +120,20 @@ class SecurityProfileServiceTest {
 
         assertEquals(RecoverPinResult.SUCCESS, service.recoverPin("  lincoln   ELEMENTARY ", "567890", "567890"))
         assertEquals(RecoverPinResult.SUCCESS, service.recoverPin("Ｌｉｎｃｏｌｎ Elementary", "567891", "567891"))
-        assertEquals("lincoln elementary", SecurityProfileService.normalizeAnswer("ＬＩＮＣＯＬＮ Elementary"))
+        assertEquals("lincoln elementary", SecurityProfileService.normalizeAnswer("ＬＩＮＣＯＬＮ Elementary", crypto))
+    }
+
+    /** NFKC folds ligatures, numerals, Arabic presentation forms and halfwidth kana into the letters people mean. */
+    @Test
+    fun answersAreComparedInCompatibilityForm() {
+        mapOf(
+            "\uFB01rst \uFB02at \u2116\u2075" to "first flat no5",
+            "\u2460\u2461\u2462 \u216B" to "123 xii",
+            "\uFEFB \uFDF2" to "\u0644\u0627 \u0627\u0644\u0644\u0647",
+            "\u092E\u0947\u0930\u093E   \u092A\u0939\u0932\u093E" to "\u092E\u0947\u0930\u093E \u092A\u0939\u0932\u093E",
+            "\uFF76\uFF9E\uFF6F\uFF7A\uFF73" to "\u30AC\u30C3\u30B3\u30A6",
+            "  Cafe\u0301   \uFF2D\u00FCller " to "caf\u00E9 m\u00FCller"
+        ).forEach { (typed, normalized) -> assertEquals(typed, normalized, SecurityProfileService.normalizeAnswer(typed, crypto)) }
     }
 
     @Test

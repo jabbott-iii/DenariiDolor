@@ -10,6 +10,7 @@ import android.content.Context
 import com.denariidolor.data.local.db.DatabaseHolder
 import com.denariidolor.data.local.db.DefaultDataInitializer
 import com.denariidolor.data.local.preferences.AttemptResult
+import com.denariidolor.data.local.preferences.JcaCryptoPrimitives
 import com.denariidolor.data.local.preferences.LegacySecurityProfile
 import com.denariidolor.data.local.preferences.ProfileMode
 import com.denariidolor.data.local.preferences.RecoverPinResult
@@ -41,7 +42,8 @@ class Vault @Inject constructor(
     private val appContext = context.applicationContext
     private val secrets = KeystoreSecrets(config.keyAliasPrefix)
     private val profileStore = KeystoreProfileStore(appContext, config.profilePrefsName, secrets)
-    private val profile = SecurityProfileService(profileStore, KeystoreDeviceKeyMixer(secrets), AndroidMonotonicClock(appContext))
+    private val crypto = JcaCryptoPrimitives()
+    private val profile = SecurityProfileService(profileStore, KeystoreDeviceKeyMixer(secrets), AndroidMonotonicClock(appContext), crypto)
     private val legacy = LegacyProfileStorage(appContext, config, secrets)
 
     private class PendingUpgrade(val pin: String, val databaseKey: ByteArray)
@@ -70,7 +72,7 @@ class Vault @Inject constructor(
     }
 
     suspend fun setUp(pin: String, pinConfirmation: String, question: String, answer: String): SetupProfileResult = background {
-        val problem = SecurityProfileService.validateSetup(pin, pinConfirmation, question, answer)
+        val problem = SecurityProfileService.validateSetup(pin, pinConfirmation, question, answer, crypto)
         when {
             profile.getProfileState().mode == ProfileMode.SIGN_IN || legacy.profile() != null -> SetupProfileResult.ALREADY_CONFIGURED
             problem != SetupProfileResult.SUCCESS -> problem

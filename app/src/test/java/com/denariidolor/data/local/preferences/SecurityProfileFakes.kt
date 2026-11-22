@@ -6,6 +6,7 @@
 
 package com.denariidolor.data.local.preferences
 
+import java.security.SecureRandom
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
@@ -48,6 +49,15 @@ internal class InMemorySecurityProfileStore : SecurityProfileStore {
             }
         }
         block(editor)
+    }
+}
+
+/** Hands out the bytes 00, 01, 02 … in order, so salts, nonces and keys are known. Never random: tests only. */
+internal class CountingSecureRandom : SecureRandom() {
+    private var next = 0
+
+    override fun nextBytes(bytes: ByteArray) {
+        for (i in bytes.indices) bytes[i] = next++.toByte()
     }
 }
 

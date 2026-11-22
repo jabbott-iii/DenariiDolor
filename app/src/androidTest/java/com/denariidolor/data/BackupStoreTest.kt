@@ -17,6 +17,7 @@ import com.denariidolor.data.local.db.entity.AccountEntity
 import com.denariidolor.data.local.db.entity.BudgetEntity
 import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.data.local.db.entity.TransactionEntity
+import com.denariidolor.data.local.preferences.JcaCryptoPrimitives
 import com.denariidolor.domain.model.TransactionType
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -102,11 +103,11 @@ class BackupStoreTest {
     @Test
     fun anEncryptedBackupRestoresIntoAnotherDatabase() = runBlocking<Unit> {
         val snapshot = store.read(createdAtEpochMillis = 7L, currencyCode = "BRL")
-        val file = BackupFile.write(snapshot, PASSPHRASE, iterations = 100_000)
+        val file = BackupFile.write(JcaCryptoPrimitives(), snapshot, PASSPHRASE, iterations = 100_000)
         val newPhone = inMemoryDatabase()
         try {
             val restoredStore = BackupStore(newPhone)
-            restoredStore.replaceAll(BackupFile.read(file, PASSPHRASE))
+            restoredStore.replaceAll(BackupFile.read(JcaCryptoPrimitives(), file, PASSPHRASE))
 
             assertEquals(snapshot, restoredStore.read(createdAtEpochMillis = 7L, currencyCode = "BRL"))
         } finally {

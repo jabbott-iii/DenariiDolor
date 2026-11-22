@@ -52,6 +52,10 @@ The app is offline and single-user.
   profile, the v1.0.x files and every vault key.
 - **Legacy upgrade:** v1.0.x installs (`secure_prefs`, `db_key_prefs`) are upgraded by `LegacyProfileStorage`, the only
   user of `security-crypto`.
+- **Primitives:** `SecurityProfileService` and `BackupFile` get PBKDF2-HMAC-SHA256, AES-256-GCM, secure random bytes and
+  NFC/NFKC from `CryptoPrimitives`, implemented on Android by `JcaCryptoPrimitives`. Keystore keys stay in `KeystoreSecrets`.
+  `CryptoKnownAnswerTest`, `CryptoPrimitivesDeviceTest` and `SecurityProfileGoldenTest` pin the exact bytes, so profiles and
+  backups already on phones keep opening; never change their expected values to make a change pass.
 
 Never do any of these:
 
@@ -115,7 +119,8 @@ These need design decisions. Work on them only when asked.
 ## When you change this area
 
 - **Tests:**
-  - Add JVM tests for pure logic (`SecurityProfileServiceTest`, `LegacySecurityProfileTest`, `DatabaseKeysTest`).
+  - Add JVM tests for pure logic (`SecurityProfileServiceTest`, `LegacySecurityProfileTest`, `DatabaseKeysTest`). A change to
+    the primitives or the stored profile must keep `CryptoKnownAnswerTest` and `SecurityProfileGoldenTest` passing unchanged.
   - Add instrumented tests for Keystore and SQLCipher behavior. `VaultTest` uses test-only `VaultConfig` names; never touch
     the app's real profile, database or key aliases from a test.
   - Biometric flows need a manual check on a device with an enrolled fingerprint. Say so in your summary.

@@ -9,6 +9,7 @@ package com.denariidolor.data.backup
 import android.content.Context
 import android.net.Uri
 import com.denariidolor.data.local.db.DatabaseHolder
+import com.denariidolor.data.local.preferences.CryptoPrimitives
 import com.denariidolor.data.local.preferences.CurrencyPreferences
 import com.denariidolor.util.Constants
 import com.denariidolor.util.Currencies
@@ -25,6 +26,9 @@ import kotlinx.coroutines.withContext
  * permission and no network; where a file goes is the user's choice. Everything here needs an unlocked vault.
  */
 interface BackupService {
+    /** What is wrong with [passphrase], or null if it can protect a backup. Pass [confirmation] when the passphrase is new. */
+    fun checkPassphrase(passphrase: String, confirmation: String? = null): BackupError?
+
     /** Every table and the currency setting, encrypted under [passphrase]: the bytes of a backup file, ready to be saved. */
     suspend fun create(passphrase: String): ByteArray
 
@@ -43,15 +47,19 @@ class BackupManager @Inject constructor(
     @ApplicationContext context: Context,
     private val databaseHolder: DatabaseHolder,
     private val currencyPreferences: CurrencyPreferences,
-    private val clock: Clock
+    private val clock: Clock,
+    private val crypto: CryptoPrimitives
 ) : BackupService {
     private val contentResolver = context.applicationContext.contentResolver
+
+    override fun checkPassphrase(passphrase: String, confirmation: String?): BackupError? =
+        BackupFile.checkPassphrase(crypto, passphrase, confirmation)
 
     // Checked before anything is saved, so a backup that restore would refuse is never written.
     override suspend fun create(passphrase: String): ByteArray = withContext(Dispatchers.IO) {
         val snapshot = BackupStore(databaseHolder.database).read(clock.millis(), currencyPreferences.currency.value.currencyCode)
         if (!snapshot.isConsistent(DEFAULT_ACCOUNT_IDS, DEFAULT_CATEGORY_IDS)) throw BackupException(BackupError.DAMAGED)
-        BackupFile.write(snapshot, passphrase).also { check(it.size <= BackupFile.MAX_FILE_BYTES) { "Too large to restore" } }
+        BackupFile.write(crypto, snapshot, passphrase).also { check(it.size <= BackupFile.MAX_FILE_BYTES) { "Too large to restore" } }
     }
 
     override suspend fun save(uri: Uri, file: ByteArray) {
@@ -62,7 +70,7 @@ class BackupManager @Inject constructor(
     }
 
     override suspend fun open(uri: Uri, passphrase: String): BackupSnapshot = withContext(Dispatchers.IO) {
-        val snapshot = BackupFile.read(readFile(uri), passphrase)
+        val snapshot = BackupFile.read(crypto, readFile(uri), passphrase)
         if (!snapshot.isConsistent(DEFAULT_ACCOUNT_IDS, DEFAULT_CATEGORY_IDS)) throw BackupException(BackupError.DAMAGED)
         snapshot
     }

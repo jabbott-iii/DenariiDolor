@@ -6,16 +6,10 @@
 
 package com.denariidolor.data.backup
 
-import com.denariidolor.data.local.preferences.pbkdf2
+import com.denariidolor.data.local.preferences.CryptoPrimitives
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.nio.ByteBuffer
-import java.security.SecureRandom
-import java.text.Normalizer
-import javax.crypto.AEADBadTagException
-import javax.crypto.Cipher
-import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.SecretKeySpec
 
 /** Why a backup couldn't be made or opened. The UI maps each one to a message. */
 enum class BackupError {
@@ -71,41 +65,34 @@ object BackupFile {
     private const val NONCE_OFFSET = SALT_OFFSET + SALT_BYTES
     private const val NONCE_BYTES = 12
     private const val HEADER_BYTES = NONCE_OFFSET + NONCE_BYTES
-    private const val TAG_BITS = 128
-    private const val TAG_BYTES = TAG_BITS / Byte.SIZE_BITS
-    private const val AES_GCM = "AES/GCM/NoPadding"
+    private const val TAG_BYTES = 16
     private const val CHUNK_BYTES = 64 * 1024
 
     /** What is wrong with [passphrase], or null if it can protect a backup. Pass [confirmation] when the passphrase is new. */
-    fun checkPassphrase(passphrase: String, confirmation: String? = null): BackupError? {
-        val normalized = normalize(passphrase)
+    fun checkPassphrase(crypto: CryptoPrimitives, passphrase: String, confirmation: String? = null): BackupError? {
+        val normalized = crypto.normalizeNfc(passphrase)
         val length = normalized.codePointCount(0, normalized.length)
         return when {
             normalized.isBlank() || length !in MIN_PASSPHRASE_LENGTH..MAX_PASSPHRASE_LENGTH -> BackupError.PASSPHRASE_LENGTH
-            confirmation != null && normalize(confirmation) != normalized -> BackupError.PASSPHRASE_MISMATCH
+            confirmation != null && crypto.normalizeNfc(confirmation) != normalized -> BackupError.PASSPHRASE_MISMATCH
             else -> null
         }
     }
 
     /** Encrypts [snapshot] under [passphrase]. Throws [BackupException] when the passphrase is too short or too long. */
-    fun write(
-        snapshot: BackupSnapshot,
-        passphrase: String,
-        random: SecureRandom = SecureRandom(),
-        iterations: Int = DEFAULT_ITERATIONS
-    ): ByteArray {
-        checkPassphrase(passphrase)?.let { throw BackupException(it) }
+    fun write(crypto: CryptoPrimitives, snapshot: BackupSnapshot, passphrase: String, iterations: Int = DEFAULT_ITERATIONS): ByteArray {
+        checkPassphrase(crypto, passphrase)?.let { throw BackupException(it) }
         require(iterations in MIN_ITERATIONS..MAX_ITERATIONS) { "Unsupported iteration count" }
         val header = ByteBuffer.allocate(HEADER_BYTES)
             .put(MAGIC)
             .putInt(FORMAT_VERSION)
             .putInt(iterations)
-            .put(ByteArray(SALT_BYTES).also(random::nextBytes))
-            .put(ByteArray(NONCE_BYTES).also(random::nextBytes))
+            .put(crypto.randomBytes(SALT_BYTES))
+            .put(crypto.randomBytes(NONCE_BYTES))
             .array()
         val payload = BackupCodec.encode(snapshot)
         return try {
-            header + cipher(Cipher.ENCRYPT_MODE, passphrase, header).doFinal(payload)
+            header + withKey(crypto, passphrase, header) { key, nonce -> crypto.aesGcmSeal(key, nonce, header, payload) }
         } finally {
             payload.fill(0)
         }
@@ -133,14 +120,12 @@ object BackupFile {
      * [BackupError.NEWER_VERSION] for a format this build can't read, [BackupError.WRONG_PASSPHRASE] when authentication fails
      * (a wrong passphrase and a changed file can't be told apart), and [BackupError.DAMAGED] for anything else.
      */
-    fun read(file: ByteArray, passphrase: String): BackupSnapshot {
+    fun read(crypto: CryptoPrimitives, file: ByteArray, passphrase: String): BackupSnapshot {
         headerProblem(file)?.let { throw BackupException(it) }
         val header = file.copyOfRange(0, HEADER_BYTES)
-        val payload = try {
-            cipher(Cipher.DECRYPT_MODE, passphrase, header).doFinal(file, HEADER_BYTES, file.size - HEADER_BYTES)
-        } catch (e: AEADBadTagException) {
-            throw BackupException(BackupError.WRONG_PASSPHRASE, e)
-        }
+        val sealed = file.copyOfRange(HEADER_BYTES, file.size)
+        val payload = withKey(crypto, passphrase, header) { key, nonce -> crypto.aesGcmOpen(key, nonce, header, sealed) }
+            ?: throw BackupException(BackupError.WRONG_PASSPHRASE)
         return try {
             BackupCodec.decode(payload)
         } finally {
@@ -161,16 +146,20 @@ object BackupFile {
         }
     }
 
-    private fun cipher(mode: Int, passphrase: String, header: ByteArray): Cipher {
+    /** Runs [use] with the key [header] calls for and its nonce, then zeroes the key. */
+    private inline fun <T> withKey(
+        crypto: CryptoPrimitives,
+        passphrase: String,
+        header: ByteArray,
+        use: (key: ByteArray, nonce: ByteArray) -> T
+    ): T {
         val iterations = ByteBuffer.wrap(header).getInt(ITERATIONS_OFFSET)
         val salt = header.copyOfRange(SALT_OFFSET, SALT_OFFSET + SALT_BYTES)
         val nonce = header.copyOfRange(NONCE_OFFSET, NONCE_OFFSET + NONCE_BYTES)
-        val key = pbkdf2(normalize(passphrase), salt, iterations)
+        // NFC, so the same passphrase typed on two keyboards that compose accents differently still opens the file.
+        val key = crypto.pbkdf2HmacSha256(crypto.normalizeNfc(passphrase), salt, iterations)
         return try {
-            Cipher.getInstance(AES_GCM).apply {
-                init(mode, SecretKeySpec(key, "AES"), GCMParameterSpec(TAG_BITS, nonce))
-                updateAAD(header)
-            }
+            use(key, nonce)
         } finally {
             key.fill(0)
         }
@@ -186,7 +175,4 @@ object BackupFile {
             copied += read
         }
     }
-
-    // NFC, so the same passphrase typed on two keyboards that compose accents differently still opens the file.
-    private fun normalize(passphrase: String): String = Normalizer.normalize(passphrase, Normalizer.Form.NFC)
 }

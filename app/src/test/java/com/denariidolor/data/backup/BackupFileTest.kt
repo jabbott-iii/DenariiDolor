@@ -6,6 +6,7 @@
 
 package com.denariidolor.data.backup
 
+import com.denariidolor.data.local.preferences.JcaCryptoPrimitives
 import com.denariidolor.data.local.preferences.pbkdf2
 import java.io.ByteArrayInputStream
 import java.io.InputStream
@@ -23,30 +24,32 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BackupFileTest {
+    private val crypto = JcaCryptoPrimitives()
+
     private fun write(snapshot: BackupSnapshot = sampleSnapshot(), passphrase: String = PASSPHRASE) =
-        BackupFile.write(snapshot, passphrase, iterations = FAST_ITERATIONS)
+        BackupFile.write(crypto, snapshot, passphrase, iterations = FAST_ITERATIONS)
 
     private fun failure(file: ByteArray, passphrase: String = PASSPHRASE): BackupError =
-        assertThrows(BackupException::class.java) { BackupFile.read(file, passphrase) }.error
+        assertThrows(BackupException::class.java) { BackupFile.read(crypto, file, passphrase) }.error
 
     @Test
     fun everyFieldSurvivesARoundTrip() {
-        assertEquals(sampleSnapshot(), BackupFile.read(write(), PASSPHRASE))
+        assertEquals(sampleSnapshot(), BackupFile.read(crypto, write(), PASSPHRASE))
     }
 
     @Test
     fun anEmptySnapshotSurvivesARoundTrip() {
         val empty = BackupSnapshot(0L, "USD", emptyList(), emptyList(), emptyList(), emptyList())
 
-        assertEquals(empty, BackupFile.read(write(empty), PASSPHRASE))
+        assertEquals(empty, BackupFile.read(crypto, write(empty), PASSPHRASE))
     }
 
     @Test
     fun newFilesUseTheRecommendedIterationCount() {
-        val file = BackupFile.write(sampleSnapshot(), PASSPHRASE)
+        val file = BackupFile.write(crypto, sampleSnapshot(), PASSPHRASE)
 
         assertEquals(BackupFile.DEFAULT_ITERATIONS, ByteBuffer.wrap(file).getInt(ITERATIONS_OFFSET))
-        assertEquals(sampleSnapshot(), BackupFile.read(file, PASSPHRASE))
+        assertEquals(sampleSnapshot(), BackupFile.read(crypto, file, PASSPHRASE))
     }
 
     @Test
@@ -68,7 +71,7 @@ class BackupFileTest {
         val composed = "café au lait chaud"
         val decomposed = "café au lait chaud"
 
-        assertEquals(sampleSnapshot(), BackupFile.read(write(passphrase = composed), decomposed))
+        assertEquals(sampleSnapshot(), BackupFile.read(crypto, write(passphrase = composed), decomposed))
     }
 
     @Test
@@ -165,26 +168,26 @@ class BackupFileTest {
 
     @Test
     fun passphrasesNeedTwelveToTwoHundredFiftySixCharacters() {
-        assertEquals(BackupError.PASSPHRASE_LENGTH, BackupFile.checkPassphrase("a".repeat(11)))
-        assertNull(BackupFile.checkPassphrase("a".repeat(12)))
-        assertNull(BackupFile.checkPassphrase("a".repeat(256)))
-        assertEquals(BackupError.PASSPHRASE_LENGTH, BackupFile.checkPassphrase("a".repeat(257)))
-        assertEquals(BackupError.PASSPHRASE_LENGTH, BackupFile.checkPassphrase(" ".repeat(12)))
+        assertEquals(BackupError.PASSPHRASE_LENGTH, BackupFile.checkPassphrase(crypto, "a".repeat(11)))
+        assertNull(BackupFile.checkPassphrase(crypto, "a".repeat(12)))
+        assertNull(BackupFile.checkPassphrase(crypto, "a".repeat(256)))
+        assertEquals(BackupError.PASSPHRASE_LENGTH, BackupFile.checkPassphrase(crypto, "a".repeat(257)))
+        assertEquals(BackupError.PASSPHRASE_LENGTH, BackupFile.checkPassphrase(crypto, " ".repeat(12)))
         // Characters, not UTF-16 units: each emoji is two units.
-        assertNull(BackupFile.checkPassphrase("🔒".repeat(12)))
-        assertEquals(BackupError.PASSPHRASE_LENGTH, BackupFile.checkPassphrase("🔒".repeat(11)))
+        assertNull(BackupFile.checkPassphrase(crypto, "🔒".repeat(12)))
+        assertEquals(BackupError.PASSPHRASE_LENGTH, BackupFile.checkPassphrase(crypto, "🔒".repeat(11)))
     }
 
     @Test
     fun aNewPassphraseMustMatchItsConfirmation() {
-        assertEquals(BackupError.PASSPHRASE_MISMATCH, BackupFile.checkPassphrase(PASSPHRASE, "$PASSPHRASE "))
-        assertNull(BackupFile.checkPassphrase(PASSPHRASE, PASSPHRASE))
-        assertEquals(BackupError.PASSPHRASE_LENGTH, BackupFile.checkPassphrase("short", "short"))
+        assertEquals(BackupError.PASSPHRASE_MISMATCH, BackupFile.checkPassphrase(crypto, PASSPHRASE, "$PASSPHRASE "))
+        assertNull(BackupFile.checkPassphrase(crypto, PASSPHRASE, PASSPHRASE))
+        assertEquals(BackupError.PASSPHRASE_LENGTH, BackupFile.checkPassphrase(crypto, "short", "short"))
     }
 
     @Test
     fun aShortPassphraseCannotProtectABackup() {
-        val error = assertThrows(BackupException::class.java) { BackupFile.write(sampleSnapshot(), "too short") }.error
+        val error = assertThrows(BackupException::class.java) { BackupFile.write(crypto, sampleSnapshot(), "too short") }.error
 
         assertEquals(BackupError.PASSPHRASE_LENGTH, error)
     }
