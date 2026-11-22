@@ -57,7 +57,7 @@ data/          local/db (Room, DAOs, Migrations, DatabaseHolder), local/vault (V
                local/preferences, repository (interface + Impl in one file), export, backup, legal
 presentation/  ui/<feature>/ — *Route + stateless *Screen + @HiltViewModel; shared composables in ui/common
 di/            AppModule (Clock, ZonedClock), DatabaseModule, RepositoryModule (@Binds, unscoped)
-util/          Money, Validators, DateUtils, SessionManager, Constants, runSuspendCatching
+util/          Money, PlatformFormat (locale formatting), Validators, DateUtils, SessionManager, Constants, runSuspendCatching
 ```
 
 There are two activities. `LoginActivity` is the exported launcher, and it runs setup, sign-in, recovery and wipe through

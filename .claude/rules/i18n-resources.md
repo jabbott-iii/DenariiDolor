@@ -45,7 +45,8 @@ paths:
 - **Currency** is a saved setting (an ISO code in `CurrencyPreferences`), not part of a language pack.
   - Only currencies with 2 decimals are allowed, and amounts are never converted.
   - Never write `$`, `€` or any other symbol into strings or code. `formatMoney` formats through `NumberFormat` for the
-    device's locale.
+    device's locale, in `PlatformFormat.kt`. `MoneySnapshotTest` pins the output in each language; update it only when the
+    change is meant.
 - **Parsing:** `Money.parseToCents` and `DateUtils.parseIsoDate` accept the currency's symbol or code and digits from any
   Unicode script (`Money.normalizeDigits`). Keep that when you change either one, and add `MoneyTest` or `DateUtilsTest`
   cases for the scripts involved.

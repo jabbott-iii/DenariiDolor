@@ -6,26 +6,19 @@
 
 package com.denariidolor.domain.report
 
-import java.time.Instant
-import java.time.format.DateTimeFormatter
+import com.denariidolor.util.localeMonthYearText
+import com.denariidolor.util.zonedDateTimeText
 import java.util.Locale
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.YearMonth
-import kotlinx.datetime.toJavaYearMonth
-import kotlinx.datetime.toJavaZoneId
 
-// kotlinx-datetime has no localized month names or zone abbreviations, so the two labels still format through java.time. They
-// move to a platform formatter along with the money formatting, which needs the device locale too.
 object ReportText {
     const val TITLE = "Monthly Spending Report"
 
-    fun periodLabel(period: YearMonth, locale: Locale = Locale.getDefault()): String =
-        period.toJavaYearMonth().format(DateTimeFormatter.ofPattern("MMMM yyyy", locale))
+    fun periodLabel(period: YearMonth, locale: Locale = Locale.getDefault()): String = localeMonthYearText(period, locale)
 
-    fun generatedLabel(epochMillis: Long, timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm z", Locale.US).withZone(timeZone.toJavaZoneId())
-        return formatter.format(Instant.ofEpochMilli(epochMillis))
-    }
+    fun generatedLabel(epochMillis: Long, timeZone: TimeZone = TimeZone.currentSystemDefault()): String =
+        zonedDateTimeText(epochMillis, timeZone)
 
     fun fileName(period: YearMonth, extension: String): String = "spending-report-$period.$extension"
 }
