@@ -127,6 +127,7 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.datetime)
+    implementation(project(":shared"))
     implementation(libs.material)
     ksp(libs.androidx.room.compiler)
     ksp(libs.hilt.compiler)

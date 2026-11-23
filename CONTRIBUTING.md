@@ -54,6 +54,7 @@ If you run detekt-cli outside Gradle, pass `--build-upon-default-config` so that
 ## Coding expectations
 
 - **Architecture:** follow the layers and dependency rules in [`CLAUDE.md`](CLAUDE.md):
+  - `:app` is the Android app. `:shared` holds code meant to run on iOS later too; its `commonMain` may not use Java, Android or Hilt APIs, and `SharedCodeBoundaryTest` checks that.
   - Composables talk only to ViewModels, and reach toasts, sharing, the system pickers and the biometric prompt only through `presentation/platform`.
   - Transaction writes go through the use cases, so validation and balance updates always run.
   - Code outside `data` and `di` depends on repository interfaces, not on the `Impl` classes.

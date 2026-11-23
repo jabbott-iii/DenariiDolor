@@ -23,8 +23,10 @@ security come before speed, novelty or elegance.
 
 All versions live in `gradle/libs.versions.toml`, and some are pinned on purpose (see `.claude/rules/build-gradle.md`).
 
-- **Build:** a single `:app` module, package `com.denariidolor`. Kotlin 2.4 (K2, compiled by AGP 9's built-in Kotlin) on a
-  JDK 17 toolchain, AGP 9.4 and Gradle 9.6. compileSdk 37, targetSdk 36, minSdk 26.
+- **Build:** two modules, both in package `com.denariidolor`. `:app` is the Android app. `:shared` is a Kotlin
+  Multiplatform library, Android its only target for now, holding code that will also run on iOS (Compose Multiplatform
+  plan, Phase 2). Kotlin 2.4 (K2; AGP 9's built-in Kotlin in `:app`, the multiplatform plugin in `:shared`) on a JDK 17
+  toolchain, AGP 9.4 and Gradle 9.6. compileSdk 37, targetSdk 36, minSdk 26.
 - **App:** Jetpack Compose with Material 3, Navigation Compose (string routes), Hilt with KSP, Room 2.8 over SQLCipher,
   Coroutines and Flow, kotlinx-datetime, Vico charts.
 - **Tests:** JUnit 4, kotlinx-coroutines-test and hand-written fakes (there is no mocking library), plus Compose UI test,
@@ -59,7 +61,14 @@ presentation/  ui/<feature>/ — *Route + stateless *Screen + @HiltViewModel; sh
                platform/ — what screens ask of Android: toasts, sharing, store and email, pickers, the biometric prompt
 di/            AppModule (Clock, ZonedClock), DatabaseModule, RepositoryModule (@Binds, unscoped)
 util/          Money, PlatformFormat (locale formatting), Validators, DateUtils, SessionManager, Constants, runSuspendCatching
+
+shared/        src/commonMain: the same packages, for code that needs nothing from Java, Android or Hilt. So far the
+               domain models, Validators, ZonedClock, runSuspendCatching, BackupSnapshot and the crypto, guidance
+               and theme interfaces
 ```
+
+Code moves into `:shared` one reviewed step at a time, keeping its package, so imports don't change. Until `:shared` has a
+second target, the compiler accepts Java and Android APIs in `commonMain`, so `SharedCodeBoundaryTest` refuses them.
 
 There are two activities. `LoginActivity` is the exported launcher. Its `LoginViewModel` runs setup, sign-in, recovery and
 wipe through `Vault` (as `SignInVault`), and the activity keeps the overlay guard, the biometric prompt and the start of
@@ -176,7 +185,8 @@ Skills in `.claude/skills/`:
 
 Don't "fix" these unless you're asked:
 
-- There is a single `:app` module. That was decided; revisit it only for build time or ownership.
+- Most code still lives in `:app` while Phase 2 moves it into `:shared` step by step. The Room move waits until the Phase 0
+  iOS spike passes.
 - Presentation uses Room entities such as `CategoryEntity` directly for reference data.
 - Navigation uses string routes in `MainDestination`, not type-safe routes.
 - The data layer calls `Dispatchers.IO` directly instead of injecting a dispatcher.

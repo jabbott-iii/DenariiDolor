@@ -12,6 +12,10 @@ Match the file you're editing first. These rules cover what it doesn't show.
 
 - Start each new file with the 5-line proprietary copyright block, copied from any existing `.kt` file, then the `package`
   line.
+- Code that needs nothing from Java, Android or Hilt can live in `shared/src/commonMain/kotlin`, in the same package it would
+  have in `:app`. Common code may use only the Kotlin standard library, kotlinx-coroutines and kotlinx-datetime: no `java.*`,
+  `android.*`, `String.format`, `Charsets` or `@Inject` (`SharedCodeBoundaryTest`). Keep its API public, because `internal`
+  stops at the module boundary.
 - Follow ktlint's `android_studio` style: 140 columns, no wildcard imports, no trailing commas, imports in ktlint's order.
   Run `./gradlew ktlintFormat` rather than formatting by hand. Then revert any hunks it changed in files you didn't touch.
 - Use expression bodies for single-expression functions. That's the house style (see `CategoryRepositoryImpl`).

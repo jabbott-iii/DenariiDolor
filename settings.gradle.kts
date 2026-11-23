@@ -2,7 +2,8 @@ pluginManagement {
     resolutionStrategy {
         eachPlugin {
             when (requested.id.id) {
-                "com.android.application" -> useModule("com.android.tools.build:gradle:${requested.version}")
+                "com.android.application", "com.android.kotlin.multiplatform.library" ->
+                    useModule("com.android.tools.build:gradle:${requested.version}")
                 "com.google.dagger.hilt.android" -> useModule("com.google.dagger:hilt-android-gradle-plugin:${requested.version}")
             }
         }
@@ -26,4 +27,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Denarii Dolor"
 include(":app")
+include(":shared")
  

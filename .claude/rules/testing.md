@@ -19,6 +19,7 @@ Never delete a test, mark it `@Ignore` or loosen an assertion to get a green bui
 
 ## JVM unit tests
 
+- **Shared code:** its tests still live in `app/src/test`, in the same package, until the tests move to `commonTest`.
 - **Framework:** JUnit 4 (`org.junit.Test`, `org.junit.Assert.*`) with `kotlinx-coroutines-test` (`runTest`).
 - **No mocking library.** Use or extend the fakes and the `TestData` builders, which are all in
   `testutil/FakeRepositories.kt`. Ask before adding Mockito, MockK, Robolectric, Turbine or Truth.

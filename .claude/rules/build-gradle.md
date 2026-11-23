@@ -31,6 +31,17 @@ paths:
     The local default is in `app/build.gradle.kts`.
   - The maintainer releases with `make release VERSION=vX.Y.Z`, which starts `cd.yml`. Claude never tags or pushes.
 
+## Modules
+
+- `:app` applies `com.android.application` with AGP 9's built-in Kotlin. `:shared` applies
+  `org.jetbrains.kotlin.multiplatform` by id, without a version, because the root `buildscript` already puts the catalog's
+  Kotlin Gradle plugin on the classpath. It also applies `com.android.kotlin.multiplatform.library`, which
+  `settings.gradle.kts` resolves to the AGP artifact.
+- `:shared` has only an Android target until the iOS phases. It has no `lintDebug`, `testDebugUnitTest` or
+  `assembleRelease` task, so those CI steps cover `:app`; `ktlintCheck` and `detekt` cover both modules. Tests for shared
+  code stay in `app/src/test` until the tests move to `commonTest`.
+- `:shared` repeats `:app`'s ktlint logback constraint (CS-22) and detekt's Kotlin pin. Keep the two in step.
+
 ## Pinned versions (don't bump one on its own)
 
 | Pin | Why |
