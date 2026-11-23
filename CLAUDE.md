@@ -11,11 +11,12 @@ files with `git show 6d57526:<path>`. The new app must open what v1 left on user
 
 ## Status
 
-As of 2026-11-23, milestone M0 is done except M0.8 (skills for the new stack). Built: the Doctrina rules, the planning
-documents in `docs/`, the spec of v1's stored formats, and the `denarii-core` crate (money, transactions, balance changes and
-validation) with its tests. Planned: the Flutter app and the bridge (M1), storage (M2), sign-in (M3), the screens (M4),
-backups (M5), the Android release (M6) and iOS (M7). Nothing from the rewrite has shipped. `docs/roadmap.md` has the
-details.
+As of 2026-11-23, milestone M0 is done except M0.8 (skills for the new stack), and M1.1 is done. Built: the Doctrina rules,
+the planning documents in `docs/`, the spec of v1's stored formats, the `denarii-core` crate (money, transactions, balance
+changes and validation) with its tests, and the Flutter project (M1.1): the Android and iOS host apps, the app scope, and a
+root switch between placeholder sign-in and signed-in screens, with its tests. Planned: the rest of M1 (the bridge, CI for
+Flutter, strings, theme and formatting), storage (M2), sign-in (M3), the screens (M4), backups (M5), the Android release (M6)
+and iOS (M7). Nothing from the rewrite has shipped. `docs/roadmap.md` has the details.
 
 ## Working agreement
 
@@ -69,7 +70,13 @@ RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
 ```
 
 - One test file: `cargo test --locked -p denarii-core --test money`.
-- The Flutter checks (`dart format`, `flutter analyze`, `flutter test`) join from M1.1; `.claude/rules/flutter.md` lists them.
+- Run the Flutter checks from the repository root. CI runs them from M1.3:
+
+  ```bash
+  dart format --output=none --set-exit-if-changed .
+  flutter analyze
+  flutter test
+  ```
 - `adb` may not be on `PATH`. The SDK location is `sdk.dir` in `local.properties`.
 - Use the `ci-gates` skill to run the full set and report the results.
 
@@ -136,7 +143,9 @@ Details are in `.claude/rules/security.md`, which loads when you touch security-
 
 - Add no logging to shipped code: no `print!`, `eprintln!` or `dbg!` in Rust, no `print` or `debugPrint` in Dart, no `Log` or
   `println` in Kotlin, and no logging crate or package.
-- Add no `INTERNET` permission, network code, analytics, crash reporting or ads SDK (ADR-0008).
+- Add no `INTERNET` permission, network code, analytics, crash reporting or ads SDK (ADR-0008). The one exception is the
+  `INTERNET` permission in Flutter's debug and profile manifests, which the Flutter tool needs to attach to a running app;
+  the release build never has it (ADR-0013).
 - Put no secrets in code, tests, docs or commits.
 - Never weaken authentication, lockout, encryption or validation to get a change through. The same goes for lints and tests:
   don't add an `#[allow]`, an `// ignore:`, a lint baseline or an ignored test just to get a green build.

@@ -53,6 +53,9 @@ A version upgrade is a change of its own, in a commit of its own.
 | State management in Flutter | Build: `ChangeNotifier` view models and two `InheritedWidget` scopes, no package | Decided, 2026-11-23 (ADR-0010) | M1.1 |
 | Navigation in Flutter | Build: Flutter's `Navigator`, no package | Decided, 2026-11-23 (ADR-0011) | M1.1 |
 | Pinning the Flutter release | Build: an exact constraint in `pubspec.yaml`, no version manager | Decided, 2026-11-23 (ADR-0009) | M1.1 |
+| Material Design widgets, which Flutter moved out of the SDK into a package (`package:flutter/material.dart` is deprecated since Flutter 3.47) | Buy: `material_ui` 1.11.1 from the Flutter authors (BSD-3-Clause, pure Dart). It brings `cupertino_ui` 1.1.7 (BSD-3-Clause), `intl` 0.20.3 (BSD-3-Clause) with `clock` 1.1.3 (Apache-2.0) and `path` 1.9.1 (BSD-3-Clause), and the SDK's `flutter_localizations` | Approved by the maintainer, 2026-11-23 | M1.1 |
+| Recommended lints for Flutter apps | Buy: `flutter_lints` 6.0.0, a dev dependency from the Flutter authors (BSD-3-Clause), with `lints` 6.1.0 | Approved by the maintainer, 2026-11-23 | M1.1 |
+| Cupertino icon font, which `flutter create` adds | Not added: the app draws no Cupertino icons, so `cupertino_icons` is left out | Decided, 2026-11-23 | M1.1 |
 | Charts on the dashboard (v1 used Vico) | Open | Open | M4.1 |
 | PDF reports (v1 used Android's `PdfDocument`) | Open | Open | M4.5 |
 | The v1.0.x profile upgrade, which needs `androidx.security:security-crypto` in Kotlin | Open: keep it, or drop support for upgrading v1.0.x installs | Open | M3.4 |

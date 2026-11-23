@@ -46,7 +46,7 @@ reader, but every user who skipped the export would have lost their data.
 | Application ID | `com.denariidolor` | `app/build.gradle.kts:25` |
 | SDK levels | `minSdk` 26, `targetSdk` 36, `compileSdk` 37 | `app/build.gradle.kts:22`, `:26`, `:27` |
 | Version code | Set by CD from the release tag; the local default is 3. The new app's build number must be higher than the last one uploaded to Play, which the repository doesn't record. | `app/build.gradle.kts:28-30` |
-| Launcher activity | `com.denariidolor.presentation.ui.auth.LoginActivity` (exported). Some launchers drop a home-screen icon whose component disappears, so the rewrite may keep this name with an `activity-alias`. | `app/src/main/AndroidManifest.xml:18-26` |
+| Launcher activity | `com.denariidolor.presentation.ui.auth.LoginActivity` (exported). Some launchers drop a home-screen icon whose component disappears, so the rewrite keeps this name as an exported `activity-alias` of Flutter's `MainActivity`, which isn't exported (the maintainer's choice on 2026-11-23, built in M1.1). | `app/src/main/AndroidManifest.xml:18-26` |
 | Android backup | `android:allowBackup="false"`; both rule files exclude the `database`, `sharedpref`, and `file` domains from cloud backup and device transfer. | `app/src/main/AndroidManifest.xml:10-12`, `app/src/main/res/xml/backup_rules.xml:3-7`, `app/src/main/res/xml/data_extraction_rules.xml:3-14` |
 | Share provider | `androidx.core.content.FileProvider` at authority `com.denariidolor.fileprovider`, serving only `cache/reports/` | `app/src/main/AndroidManifest.xml:32-40`, `app/src/main/res/xml/file_paths.xml:3` |
 

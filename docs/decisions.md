@@ -177,7 +177,8 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
 
 ## ADR-0008 — The app stays offline
 
-- **Status:** Accepted
+- **Status:** Accepted. ADR-0013 lets debug and profile builds on Android keep Flutter's `INTERNET`
+  permission.
 - **Date:** 2026-11-23
 - **Context:** v1 has no `INTERNET` permission, no network code, and no analytics, crash
   reporting, or ads, and `PRIVACY.md` promises that the app collects and shares nothing. The rule
@@ -300,3 +301,35 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
   review.
 - **Revisit when:** generated files make up most of the lines in typical pull requests, or a
   generator's output changes between two runs on the same input.
+
+## ADR-0013 — Debug and profile builds keep Flutter's `INTERNET` permission
+
+- **Status:** Accepted
+- **Date:** 2026-11-23
+- **Context:** ADR-0008 (the app stays offline) says the rewrite asks for no network permission on
+  any platform. `flutter create` in Flutter 3.50.1 adds `android.permission.INTERNET` to
+  `android/app/src/debug/AndroidManifest.xml` and `android/app/src/profile/AndroidManifest.xml`,
+  but not to the main manifest. In those two builds the Flutter tool connects to the Dart VM service
+  (the debugging server inside the running app) over a socket, and hot reload, the debugger,
+  DevTools, and `flutter test integration_test` (M1.2) all need that connection. Android merges a
+  build type's manifest only into that build type, so a release build gets neither file. On
+  2026-11-23, during M1.1, the maintainer was asked whether to keep the permission in those two
+  manifests or remove it everywhere.
+- **Decision** (the maintainer chose to keep it in debug and profile builds only, on 2026-11-23):
+  keep Flutter's `INTERNET` permission in the debug and profile manifests, each with a comment that
+  cites this record. Never add it to `android/app/src/main/AndroidManifest.xml` or to a release
+  source set. The release build, which is the one uploaded to Google Play, asks for no network
+  permission, as ADR-0008 requires.
+- **Consequences:**
+  - Good: `flutter run`, hot reload, the debugger, and integration tests work on emulators and
+    devices, and the Google Play build keeps the promise in `PRIVACY.md` and the store listing.
+  - Bad: debug and profile builds can open sockets, so a check of a debug build doesn't show what
+    the release build asks for. A plugin can also add the permission to the release build through
+    its own manifest, so only the merged release manifest is proof.
+  - Follow-up: M3.8 checks the merged release manifest for the permission; M6.1 builds only release
+    bundles for upload.
+- **Alternatives considered:** removing the permission from every manifest, which keeps every
+  build offline but stops the Flutter tool from attaching to the app: no hot reload, no debugger,
+  and no integration tests on a device.
+- **Revisit when:** the Flutter tool can attach to an Android app without a network socket, or a
+  merged release manifest is found to contain `INTERNET`.

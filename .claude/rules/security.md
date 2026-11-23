@@ -90,7 +90,7 @@ Never do any of these:
 | CS-21 | Both activities set `android:taskAffinity=""` |
 | CS-28 | Backups: 12–256-character passphrase, encrypted, versioned, validated, atomic restore |
 | CS-03, CS-08, CS-19 | Workflows: `persist-credentials: false`; actions pinned to commit SHAs; CD split into `ci-gate`, `build` (secrets, read-only) and `publish` (write, no secrets) |
-| Platform | `allowBackup="false"`, and the backup and data-extraction rules exclude everything; only `LoginActivity` is exported; the FileProvider isn't exported and has minimal paths; no `INTERNET` permission |
+| Platform | `allowBackup="false"`, and the backup and data-extraction rules exclude everything; only `LoginActivity` is exported (in the rewrite, an `activity-alias` of that name); the FileProvider isn't exported and has minimal paths; no `INTERNET` permission in the release build (ADR-0013 keeps Flutter's in debug and profile builds) |
 
 ## Accepted risks
 

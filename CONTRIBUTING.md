@@ -45,7 +45,13 @@ cargo test --workspace --locked                                 # unit, integrat
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
 ```
 
-From M1.1, also run `dart format --output=none --set-exit-if-changed .`, `flutter analyze` and `flutter test` from the repository root.
+Also run these from the repository root, with Flutter 3.50.1. CI runs them from milestone M1.3.
+
+```bash
+dart format --output=none --set-exit-if-changed .
+flutter analyze
+flutter test
+```
 
 The security workflow also runs CodeQL, gitleaks and, on pull requests, dependency review, which fails on high-severity vulnerabilities.
 

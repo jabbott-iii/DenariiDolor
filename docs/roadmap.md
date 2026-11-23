@@ -103,7 +103,7 @@ order, and accepted, changed, or rejected ADR-0004 to ADR-0007.
 **Goal:** A debug build that starts on Android, shows a placeholder screen in all seven languages,
 and displays an amount that Rust parsed and Dart formatted.
 
-- [ ] **M1.1 — ui: create the Flutter project at the repository root**
+- [x] **M1.1 — ui: create the Flutter project at the repository root**
   - Note: 2026-11-23: the maintainer chose Flutter 3.50.1 pinned in `pubspec.yaml` with iOS 15
     and later (ADR-0009), `ChangeNotifier` view models with no package (ADR-0010), and Flutter's
     `Navigator` with no package (ADR-0011). The maintainer also accepted ADR-0012: generated code
@@ -112,6 +112,25 @@ and displays an amount that Rust parsed and Dart formatted.
     Android SDK has platform 37, build-tools 36.0.0, the command-line tools, NDK 28.2.13676358,
     and the emulators `Denarii_API_26` and `Denarii_API_36` (Google APIs x86_64 images), which
     both boot.
+  - Note: 2026-11-23: Flutter 3.50 moved Material out of the SDK (`package:flutter/material.dart`
+    is deprecated), so the maintainer approved `material_ui` 1.11.1, and `flutter_lints` 6.0.0 as a
+    dev dependency; `cupertino_icons` is left out (the register in `docs/02-dependency-policy.md`).
+    Import Material from `package:material_ui/material_ui.dart`.
+  - Note: 2026-11-23: the maintainer chose to keep Flutter's `INTERNET` permission in the debug and
+    profile manifests only (ADR-0013), and to keep v1's launcher name: `MainActivity` isn't
+    exported, and an exported `activity-alias` named `.presentation.ui.auth.LoginActivity` carries
+    the launcher intent filter.
+  - Note: 2026-11-23: `flutter run --no-resident` started the app through the alias on
+    `Denarii_API_26` and `Denarii_API_36`, and starting `MainActivity` directly from `adb` failed
+    with "not exported". The pin was checked by changing it: Flutter 3.50.1's `flutter pub get`
+    fails against `flutter: 3.50.0` and `flutter: 3.50.2`, and succeeds against `3.50.1`. The
+    release APK asks for no permission except AndroidX's own
+    `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`.
+  - Note: 2026-11-23: the iOS bundle identifier is `com.denariidolor` and the deployment target
+    15.0, set in the Xcode project but not built, because building needs a Mac (M7). The version is
+    a placeholder, `0.0.0+1`, until M6.1.
+  - Note: 2026-11-23: the app starts locked through `LockedSessionLock`, which has no way to
+    unlock, so this build can't reach the signed-in placeholder. Tests unlock it with a fake.
   - Depends: M0.3
   - Do:
     - Run `flutter create` with the application ID `com.denariidolor`, set minSdk 26, targetSdk
@@ -150,6 +169,9 @@ and displays an amount that Rust parsed and Dart formatted.
     - A pull request runs the Rust and Flutter jobs and blocks on either.
   - Verify: a pull request's checks (expect green)
 - [ ] **M1.4 — i18n: port v1's strings to ARB files**
+  - Note (from M1.1): the placeholder sign-out button's tooltip is v1's English `sign_out` string,
+    hard-coded in `lib/features/session/ui/signed_in_placeholder_screen.dart`; move it to the ARB
+    files.
   - Depends: M1.1
   - Do:
     - Convert `app/src/main/res/values*/strings.xml` at `6d57526` into `lib/l10n/app_*.arb` for
@@ -295,6 +317,10 @@ and fingerprint, and sees the same balances.
     - Fixture F9 upgrades and signs in.
   - Verify: an instrumented test on an emulator
 - [ ] **M3.5 — auth: setup, sign-in, and recovery screens**
+  - Note (from M1.1): replace `LockedSessionLock` in `lib/main.dart` with a `SessionLock` over the
+    vault; wrap `SignedInTree` in the session scope (ADR-0010); and push the sign-in screens on a
+    `Navigator` inside the sign-in flow, not the app's root `Navigator`, so unlocking removes them.
+    The sign-in placeholder is `lib/features/auth/ui/sign_in_placeholder_screen.dart`.
   - Depends: M3.3, M1.4
   - Do:
     - Port `LoginScreen`, `LoginViewModel`, and the overlay guard (CS-11).
@@ -318,6 +344,12 @@ and fingerprint, and sees the same balances.
       format spec says.
   - Verify: unit tests over a fake clock; an instrumented test of wipe
 - [ ] **M3.8 — android: manifest controls**
+  - Note (from M1.1): the release manifest already exports only the launcher `activity-alias`
+    among activities, and has no `INTERNET` permission (ADR-0013 keeps it in debug and profile
+    builds). `allowBackup`, the backup and data-extraction rules, and `HIDE_OVERLAY_WINDOWS` aren't
+    set yet. AndroidX merges in `androidx.startup.InitializationProvider` (not exported) and
+    `androidx.profileinstaller.ProfileInstallReceiver` (exported, but only to callers that hold
+    `android.permission.DUMP`); decide whether to keep them.
   - Depends: M1.1
   - Do:
     - Keep `allowBackup="false"`, the data-extraction rules, `taskAffinity=""` (CS-21), one
@@ -404,6 +436,8 @@ restores in the new app on another phone.
     - Rebuild v1's tag-driven pipeline for Flutter, split into `ci-gate`, `build`, and `publish`
       jobs (CS-19), with a build number above v1's highest `versionCode`.
 - [ ] **M6.2 — legal: notices, privacy policy, and Data safety**
+  - Note (from M1.1): the app ships `material_ui`, `cupertino_ui`, `intl`, `clock` (Apache-2.0),
+    and `path`, besides Flutter's own packages; see the register in `docs/02-dependency-policy.md`.
   - Depends: M6.1
   - Do:
     - Rewrite `THIRD_PARTY_NOTICES.md` and `licenses/` for the new dependencies; review

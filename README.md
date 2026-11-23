@@ -174,11 +174,11 @@ The same report exported as **PDF** has the title, period, timestamp, totals and
 
 ## For developers
 
-**Status:** the app is being rewritten as a Flutter app over a Rust core, for Android and then iOS. As of 2026-11-23 the plan, the decision records and the Rust domain core (`rust/crates/core`) are done; the Flutter app, storage, sign-in, the screens and backups are planned. Google Play still serves v1, the Kotlin app, whose source is at commit `6d57526` (`git show 6d57526:<path>`). New builds keep the application ID `com.denariidolor` and open the data v1 left on each phone.
+**Status:** the app is being rewritten as a Flutter app over a Rust core, for Android and then iOS. As of 2026-11-23 the plan, the decision records, the Rust domain core (`rust/crates/core`) and the Flutter project with placeholder screens are done; the bridge to Rust, storage, sign-in, the real screens and backups are planned. Google Play still serves v1, the Kotlin app, whose source is at commit `6d57526` (`git show 6d57526:<path>`). New builds keep the application ID `com.denariidolor` and open the data v1 left on each phone.
 
 ```mermaid
 flowchart LR
-    UI[Flutter screens<br/>planned] --> BR[Rust bridge<br/>planned] --> ST[store, vault, backup, report<br/>planned] --> CO[core: money, transactions,<br/>balance changes, validation]
+    UI[Flutter app<br/>placeholder screens] --> BR[Rust bridge<br/>planned] --> ST[store, vault, backup, report<br/>planned] --> CO[core: money, transactions,<br/>balance changes, validation]
     UI --> PL[Kotlin and Swift:<br/>Keystore, Keychain, biometrics<br/>planned]
 ```
 

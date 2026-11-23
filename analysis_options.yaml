@@ -1,0 +1,16 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  # No hand-written Dart lives here. On a Mac, ios/ also holds symbolic links to plugin sources.
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+
+linter:
+  rules:
+    - unawaited_futures

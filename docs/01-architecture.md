@@ -30,7 +30,7 @@ names the task that builds each planned part.
 ```mermaid
 flowchart TB
     subgraph Dart["Flutter app (lib/) — M1.1"]
-        UI["Screens and view models"]
+        UI["Screens and view models<br/>(placeholders until M3.5 and M4)"]
     end
     subgraph Native["Platform code — M3.2, M7.1"]
         KT["Kotlin in android/:<br/>Keystore, BiometricPrompt"]
@@ -58,8 +58,8 @@ flowchart TB
 
     classDef built stroke-width:2px
     classDef planned stroke-dasharray: 5 5
-    class CO built
-    class UI,KT,SW,BR,ST,VA,BK,RP planned
+    class CO,UI built
+    class KT,SW,BR,ST,VA,BK,RP planned
 ```
 
 Solid boxes are built; dashed boxes are planned, labeled with the task that builds them.
@@ -104,8 +104,9 @@ constructors, from two scopes:
 The root widget follows the vault's lock state and shows either the sign-in flow or the signed-in
 tree, which has its own `Navigator` inside the session scope (ADR-0011, Flutter's `Navigator` with no
 package). Locking replaces that tree, so no signed-in screen or view model outlives the session
-(CS-02). Screens are pushed as widget classes that take the IDs they need. Both scopes and the root
-switch land in M1.1 with placeholder screens; M3.5 connects them to the vault.
+(CS-02). Screens are pushed as widget classes that take the IDs they need. The app scope and the root
+switch land in M1.1 with placeholder screens; M3.5 adds the session scope and connects the root switch
+to the vault.
 
 ## Source layout
 
@@ -114,9 +115,9 @@ switch land in M1.1 with placeholder screens; M3.5 connects them to the vault.
 | `rust/Cargo.toml` | The workspace, shared package fields, and lints | M0.4 |
 | `rust/crates/core` | `denarii-core`; its design is in `docs/specs/core.md` | M0.4–M0.7 |
 | `rust/crates/{store,vault,backup,report,bridge}` | The planned crates in the table above | M1.2–M5.1 |
-| `pubspec.yaml`, `lib/`, `test/`, `integration_test/` | The Flutter app and its tests | M1.1 |
+| `pubspec.yaml`, `lib/`, `test/`, `integration_test/` | The Flutter app and its tests | M1.1; `integration_test/` in M1.2 |
 | `android/` | Flutter's Android host app and the Kotlin platform code | M1.1, M3.2 |
-| `ios/` | Flutter's iOS host app and the Swift platform code | M7.1 |
+| `ios/` | Flutter's iOS host app and the Swift platform code | M1.1, M7.1 |
 | `docs/` | These documents, the decision log, the roadmap, and the specs | M0.3 |
 
 v1's Kotlin source left the working tree under ADR-0003 (replace the Kotlin app now). Read any of

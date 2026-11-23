@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The Flutter tool needs the INTERNET permission to attach to the running app, for hot reload, the
+         debugger and integration tests. Debug and profile builds only: the release manifest never has it
+         (ADR-0013, ADR-0008). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+</manifest>

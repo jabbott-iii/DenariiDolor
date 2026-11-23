@@ -1,0 +1,26 @@
+name: denarii_dolor
+description: "Denarii Dolor, an offline personal-finance ledger."
+publish_to: "none"
+
+# A placeholder for development builds. M6.1 sets the release version, with a build number
+# (after the +) above every versionCode v1 uploaded to Google Play.
+version: 0.0.0+1
+
+# Flutter is pinned exactly, so `flutter pub get` fails on any other release (ADR-0009).
+environment:
+  sdk: ^3.14.0
+  flutter: 3.50.1
+
+# Each package is approved in the register in docs/02-dependency-policy.md.
+dependencies:
+  flutter:
+    sdk: flutter
+  material_ui: ^1.11.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

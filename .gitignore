@@ -30,6 +30,22 @@ replay_pid*
 # Rust build output
 /rust/target/
 
+# Flutter and Dart tool state (android/.gitignore and ios/.gitignore cover the host apps)
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/coverage/
+.widget_preview/
+migrate_working_dir/
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Obfuscation symbols and maps stay private (M6.3)
+app.*.symbols
+app.*.map.json
+
 # Gradle working directories (Flutter's android/ host app uses Gradle too)
 .gradle/
 build/

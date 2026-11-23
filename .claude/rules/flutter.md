@@ -29,23 +29,23 @@ each value by its bold name. If a value still reads `[FILL IN: …]`, the rule i
 yet. Work out that value from the repository itself, and tell the user which values are missing
 so they can fill them in.
 
-- **Packages and layout:** planned, built by M1.1: one app package, `denarii_dolor`, at the
-  repository root, with `lib/app/` (startup, theme, routes), `lib/features/<feature>/` holding
-  `ui/` and `state/`, `lib/platform/` (the Rust bridge and the platform channels), and
-  `lib/l10n/`. Domain rules and storage live in Rust under `rust/` (ADR-0004, Proposed: Rust owns
+- **Packages and layout:** one app package, `denarii_dolor`, at the repository root, with
+  `lib/app/` (startup, theme, routes), `lib/features/<feature>/` holding `ui/` and `state/`,
+  `lib/platform/` (the Rust bridge and the platform channels, from M1.2), and `lib/l10n/` (from
+  M1.4). Domain rules and storage live in Rust under `rust/` (ADR-0004, Proposed: Rust owns
   the rules and the data)
 - **Platforms:** Android with minSdk 26, targetSdk 36, and compileSdk 37, the same as v1, set in
-  `android/app/build.gradle.kts` once M1.1 creates it; the application ID stays `com.denariidolor`
+  `android/app/build.gradle.kts`; the application ID stays `com.denariidolor`
   (ADR-0002, existing installs upgrade in place). iOS 15 and later, set in the Xcode project, with
   the iOS app following in M7 (ADR-0009, Flutter 3.50.1 and iOS 15)
 - **Toolchain:** Flutter 3.50.1 (stable, with Dart 3.14.0), pinned exactly by
-  `environment: flutter: 3.50.1` and `sdk: ^3.14.0` in `pubspec.yaml` once M1.1 creates it; no
+  `environment: flutter: 3.50.1` and `sdk: ^3.14.0` in `pubspec.yaml`; no
   version manager (ADR-0009). As of 2026-11-23 the maintainer's Linux machine has Flutter 3.50.1
   in `~/flutter`, not on `PATH`, and an Android SDK with the command-line tools, NDK
   28.2.13676358 (Flutter 3.50's default), and emulators for API 26, 36, and 37
-- **Check commands:** from M1.1: `dart format --output=none --set-exit-if-changed .`, `flutter
+- **Check commands:** `dart format --output=none --set-exit-if-changed .`, `flutter
   analyze`, and `flutter test`, plus the Rust **Check commands** in `rust.md`
-- **Lint configuration:** from M1.1: `package:flutter_lints/flutter.yaml` in
+- **Lint configuration:** `package:flutter_lints/flutter.yaml` in
   `analysis_options.yaml`, with `strict-casts`, `strict-inference`, and `strict-raw-types` on and
   the `unawaited_futures` lint enabled
 - **Dependency policy:** ask first, and record each decision in `docs/02-dependency-policy.md`. No
@@ -64,7 +64,8 @@ so they can fill them in.
   `app/src/main/java/com/denariidolor/presentation/ui/AppScreens.kt` at 6d57526
 - **Design system:** Material 3 with v1's colors (`ThemedContent.kt` and `VizColors.kt` at
   6d57526) and its light, dark, and system theme setting, built in M1.5. How far iOS adapts its
-  controls is decided in M7
+  controls is decided in M7. Import Material from `package:material_ui/material_ui.dart`, because
+  Flutter 3.50 deprecated `package:flutter/material.dart`
 - **Localization:** seven languages: English (the default), Simplified Chinese (`zh-CN`), Hindi
   (`hi`), Spanish (`es`), Arabic (`ar`, right to left), French (`fr`), and Portuguese (`pt`). ARB
   files go in `lib/l10n/`, ported from v1's `app/src/main/res/values*/strings.xml` in M1.4. The
@@ -82,8 +83,8 @@ so they can fill them in.
   strings, from M1.2 and M1.4. Their output is committed and never edited by hand; CI regenerates
   it and fails on any difference (M1.3), and the analyzer and the formatter skip only the
   generated paths (ADR-0012)
-- **Test layout:** from M1.1: unit and widget tests in `test/`, with hand-written fakes; whole
-  flows in `integration_test/` on an emulator or device (API 26 and API 36, as v1's CI ran). Rust
+- **Test layout:** unit and widget tests in `test/`, with hand-written fakes; whole
+  flows in `integration_test/` (from M1.2) on an emulator or device (API 26 and API 36, as v1's CI ran). Rust
   tests live in `rust/` (see `rust.md`)
 - **Release:** none yet. M6 builds a signed `flutter build appbundle` in CD with the existing Play
   upload key, keeps v1's split of the pipeline into `ci-gate`, `build`, and `publish` jobs
