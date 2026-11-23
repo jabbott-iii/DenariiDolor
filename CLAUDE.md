@@ -11,12 +11,14 @@ files with `git show 6d57526:<path>`. The new app must open what v1 left on user
 
 ## Status
 
-As of 2026-11-23, milestone M0 is done except M0.8 (skills for the new stack), and M1.1 is done. Built: the Doctrina rules,
-the planning documents in `docs/`, the spec of v1's stored formats, the `denarii-core` crate (money, transactions, balance
-changes and validation) with its tests, and the Flutter project (M1.1): the Android and iOS host apps, the app scope, and a
-root switch between placeholder sign-in and signed-in screens, with its tests. Planned: the rest of M1 (the bridge, CI for
-Flutter, strings, theme and formatting), storage (M2), sign-in (M3), the screens (M4), backups (M5), the Android release (M6)
-and iOS (M7). Nothing from the rewrite has shipped. `docs/roadmap.md` has the details.
+As of 2026-11-23, all of M0's tasks and M1.1 are done. M0's exit criteria are the maintainer's to check, and they
+include deciding ADR-0004 to ADR-0007, which are still Proposed. Built: the Doctrina rules, the `ci-gates` and
+`dependency-upgrade` skills, the planning documents in `docs/`, the spec of v1's stored formats, the `denarii-core` crate
+(money, transactions, balance changes and validation) with its tests, and the Flutter project (M1.1): the Android and iOS
+host apps, the app scope, and a root switch between placeholder sign-in and signed-in screens, with its tests. Planned:
+the rest of M1 (the bridge, CI for Flutter, strings, theme and formatting), storage (M2), sign-in (M3), the screens (M4),
+backups (M5), the Android release (M6) and iOS (M7). Nothing from the rewrite has shipped. `docs/roadmap.md` has the
+details.
 
 ## Working agreement
 
@@ -42,7 +44,7 @@ and iOS (M7). Nothing from the rewrite has shipped. `docs/roadmap.md` has the de
 | `lib/`, `test/`, `pubspec.yaml`, ARB files (from M1.1) | `.claude/rules/flutter.md` |
 | Stored data, keys, sign-in, the session, backups, exports, `android/`, `ios/`, `.github/` | `.claude/rules/security.md` and `docs/specs/android-v1-formats.md` |
 | `docs/`, `README.md`, `CONTRIBUTING.md` | `.claude/rules/roadmap-and-docs.md` and `.claude/rules/writing.md` |
-| A dependency, a plugin or a GitHub Action | `docs/02-dependency-policy.md` |
+| A dependency, a plugin or a GitHub Action | `docs/02-dependency-policy.md`, and the `dependency-upgrade` skill |
 | A significant or hard-to-reverse choice | `docs/decisions.md` |
 | `PRIVACY.md`, `THIRD_PARTY_NOTICES.md`, `licenses/`, `LICENSE` | `.claude/rules/legal-docs.md` |
 | A commit message or pull request | `.claude/rules/commits.md` and "Commit messages" below |
@@ -195,14 +197,16 @@ Skills in `.claude/skills/`:
 | Skill | Use it to |
 |---|---|
 | `ci-gates` | Run the blocking checks and report the results |
+| `dependency-upgrade` | Add, upgrade or remove a crate, package or plugin, or change a pinned version or action |
 | `next-task` | Carry the next unblocked roadmap task, or the one named, through the definition of done (`/next-task M1.1`) |
 | `fix-doc-drift` | Find and correct statements in the docs that no longer match the code or the records (`/fix-doc-drift docs/`) |
 
 `next-task` and `fix-doc-drift` come from Doctrina unchanged and read their values from the rules' "Project details". Only
 the maintainer can start them, but you can read and follow them.
 
-v1's `new-feature`, `room-migration` and `dependency-upgrade` skills were Kotlin-only and left with ADR-0003; M0.8 writes
-their replacements.
+v1's `new-feature` and `room-migration` skills were Kotlin-only and left with ADR-0003. Their replacements need layers
+that don't exist yet: M4.9 writes `new-feature` after the transaction form (M4.2), and M5.3 writes `schema-migration`
+after the store's migrations (M2.2) and the backup formats (M5.1).
 
 ## Known debt
 

@@ -79,12 +79,23 @@ domain rules to Rust with their tests.
   - Accept:
     - Every case in v1's `ValidatorsTest.kt` passes, and validation reports errors in v1's order.
   - Verify: `cd rust && cargo test --locked -p denarii-core --test validation` (expect all pass)
-- [ ] **M0.8 — claude: skills for the new stack**
+- [x] **M0.8 — claude: skills for the new stack**
   - Note: 2026-11-23: `ci-gates` now runs the Rust checks. `new-feature`, `room-migration`, and
     `dependency-upgrade` were Kotlin-only and left with ADR-0003; their text is at `6d57526`.
   - Note: 2026-11-23: at the maintainer's request, the skills `next-task` and `fix-doc-drift`
     are copied unchanged from Doctrina commit `96b996b`. They take their values from the rules'
     "Project details" and name no project command, so the new stack needs no rewrite of them.
+  - Note: 2026-11-23: the user's choice: this task writes `ci-gates` and `dependency-upgrade`
+    only. The layers that `new-feature` and `schema-migration` walk through (a `store` use case
+    and its migrations, the bridge, ARB strings, and backup formats) don't exist yet, so those
+    skills move to M4.9 and M5.3.
+  - Note: 2026-11-23: `ci-gates` now runs the Flutter checks with Flutter from `~/flutter/bin`
+    and, for a change to `android/` or the packages, `flutter build apk --release` and the
+    release APK's permissions from `aapt2` 36.0.0: only
+    `com.denariidolor.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`. `dependency-upgrade` covers
+    crates, Dart packages, the Rust and Flutter pins, the Android build tools and SDK levels, and
+    GitHub Actions. Every command in both skills ran once, including `flutter run --no-resident`
+    on `Denarii_API_26` and the pin check, which ran in a scratch copy of `pubspec.yaml`.
   - Depends: M1.1
   - Do:
     - Extend `ci-gates` with the Flutter checks; write `new-feature`, `schema-migration`, and
@@ -373,6 +384,18 @@ over it keeps the data, and the same PIN, answer, and fingerprint sign in.
 - [ ] **M4.2 — transaction: the add and edit form**
   - Depends: M3.5
   - Note: keeps one write at a time (`isSaving`) and the over-budget confirmation.
+- [ ] **M4.9 — claude: the `new-feature` skill**
+  - Note: 2026-11-23: split from M0.8 by the user's choice, because the layers the skill walks
+    through (a `store` use case, the bridge, a view model, a screen, and ARB strings) don't all
+    exist until M4.2. It's listed here so that M4.3–M4.7 can use it.
+  - Depends: M4.2
+  - Do:
+    - Write `.claude/skills/new-feature/SKILL.md` for Flutter and Rust, starting from v1's skill
+      (`git show 6d57526:.claude/skills/new-feature/SKILL.md`), with M4.2's transaction form as
+      the example to copy, and add it to the skills table in `CLAUDE.md`.
+  - Accept:
+    - The skill names only commands and files that exist.
+  - Verify: run the skill's commands once (expect success)
 - [ ] **M4.3 — search: filters and results**
   - Depends: M2.7, M3.5
 - [ ] **M4.4 — category: manage categories, accounts, and budgets**
@@ -420,6 +443,18 @@ rules (CS-28).
   - Accept:
     - A failed restore leaves the database unchanged.
   - Verify: an integration test on an emulator
+- [ ] **M5.3 — claude: the `schema-migration` skill**
+  - Note: 2026-11-23: split from M0.8 by the user's choice, because the store's migrations (M2.2)
+    and the backup formats (M5.1) that a schema change must update don't exist yet.
+  - Depends: M2.2, M5.1
+  - Do:
+    - Write `.claude/skills/schema-migration/SKILL.md`, starting from v1's `room-migration` skill
+      (`git show 6d57526:.claude/skills/room-migration/SKILL.md`): a forward-only migration from
+      `user_version` 2 with its fixture and test, and a new backup `FORMAT_VERSION` that still
+      restores every older one (CS-28). Add it to the skills table in `CLAUDE.md`.
+  - Accept:
+    - The skill names only commands and files that exist.
+  - Verify: run the skill's commands once (expect success)
 
 **Exit criteria (M5):** a backup made by v1 restores in the new app, and one made by the new app
 restores in the new app on another phone.
