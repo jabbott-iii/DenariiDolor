@@ -16,13 +16,13 @@ import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.data.repository.CategoryRepositoryImpl
 import com.denariidolor.data.repository.TransactionRepository
 import com.denariidolor.data.repository.TransactionRepositoryImpl
-import dagger.Binds
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.BindingContainer
+import dev.zacsweers.metro.Binds
+import dev.zacsweers.metro.ContributesTo
 
-@Module
-@InstallIn(SingletonComponent::class)
+@ContributesTo(AppScope::class)
+@BindingContainer
 abstract class RepositoryModule {
     @Binds
     abstract fun bindTransactionRepository(impl: TransactionRepositoryImpl): TransactionRepository

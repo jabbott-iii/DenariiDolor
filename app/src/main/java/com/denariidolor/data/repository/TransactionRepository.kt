@@ -15,7 +15,7 @@ import com.denariidolor.domain.model.Ledger
 import com.denariidolor.domain.model.SearchFilters
 import com.denariidolor.domain.model.toDomainTransaction
 import com.denariidolor.domain.model.toDomainTransactionOrNull
-import javax.inject.Inject
+import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.Flow
 
 interface TransactionRepository {
@@ -36,7 +36,8 @@ interface TransactionRepository {
     suspend fun countByAccount(accountId: Long): Int
 }
 
-class TransactionRepositoryImpl @Inject constructor(
+@Inject
+class TransactionRepositoryImpl(
     private val database: AppDatabase,
     private val transactionDao: TransactionDao,
     private val accountDao: AccountDao

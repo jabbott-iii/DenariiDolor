@@ -6,9 +6,10 @@
 package com.denariidolor.data.local.preferences
 
 import android.content.Context
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
+import com.denariidolor.di.ApplicationContext
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,8 +18,9 @@ import kotlinx.coroutines.flow.asStateFlow
  * Appearance preference. Not sensitive, so it lives in plain app-private prefs (still excluded from backups).
  * `null` means "follow the device setting" until the user flips the switch.
  */
-@Singleton
-class ThemePreferences @Inject constructor(@ApplicationContext context: Context) : ThemeSettings {
+@SingleIn(AppScope::class)
+@Inject
+class ThemePreferences(@ApplicationContext context: Context) : ThemeSettings {
     private val preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val _darkModeOverride = MutableStateFlow(readOverride())
     override val darkModeOverride: StateFlow<Boolean?> = _darkModeOverride.asStateFlow()

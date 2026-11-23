@@ -10,20 +10,19 @@ import android.content.Context
 import androidx.room.withTransaction
 import com.denariidolor.data.local.db.entity.AccountEntity
 import com.denariidolor.data.local.db.entity.CategoryEntity
+import com.denariidolor.di.ApplicationContext
 import com.denariidolor.util.Constants
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 
 /**
  * Seeds the default accounts and categories into the unlocked database; runs after every sign-in and is idempotent.
  * Their names are written in the device's language at that moment (new installs and after a wipe); existing names stay as they are.
  */
-@Singleton
-class DefaultDataInitializer @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val databaseHolder: DatabaseHolder
-) {
+@SingleIn(AppScope::class)
+@Inject
+class DefaultDataInitializer(@ApplicationContext private val context: Context, private val databaseHolder: DatabaseHolder) {
     suspend fun seedDefaults() {
         val appDatabase = databaseHolder.database
         val accountDao = appDatabase.accountDao()

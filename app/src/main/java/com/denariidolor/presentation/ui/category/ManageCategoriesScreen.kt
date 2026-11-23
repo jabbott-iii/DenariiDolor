@@ -43,7 +43,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.denariidolor.R
 import com.denariidolor.data.local.db.entity.CategoryEntity
@@ -53,11 +52,12 @@ import com.denariidolor.presentation.ui.common.ConfirmDialog
 import com.denariidolor.presentation.ui.common.ManagedItemRow
 import com.denariidolor.presentation.ui.common.ScreenHeader
 import com.denariidolor.presentation.ui.common.UiMessageEffect
+import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 const val CATEGORY_ICON_OPTION_TAG_PREFIX = "categoryIcon_"
 
 @Composable
-fun ManageCategoriesRoute(onBack: () -> Unit, viewModel: CategoryViewModel = hiltViewModel()) {
+fun ManageCategoriesRoute(onBack: () -> Unit, viewModel: CategoryViewModel = metroViewModel()) {
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     UiMessageEffect(viewModel.messages)
     ManageCategoriesScreen(

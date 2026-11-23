@@ -11,13 +11,14 @@ import android.net.Uri
 import com.denariidolor.data.local.db.DatabaseHolder
 import com.denariidolor.data.local.preferences.CryptoPrimitives
 import com.denariidolor.data.local.preferences.CurrencyPreferences
+import com.denariidolor.di.ApplicationContext
 import com.denariidolor.util.Constants
 import com.denariidolor.util.Currencies
-import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import java.io.IOException
 import java.time.Clock
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -42,8 +43,9 @@ interface BackupService {
     suspend fun restore(snapshot: BackupSnapshot)
 }
 
-@Singleton
-class BackupManager @Inject constructor(
+@SingleIn(AppScope::class)
+@Inject
+class BackupManager(
     @ApplicationContext context: Context,
     private val databaseHolder: DatabaseHolder,
     private val currencyPreferences: CurrencyPreferences,

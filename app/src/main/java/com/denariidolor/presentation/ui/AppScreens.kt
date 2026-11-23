@@ -24,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavController
@@ -53,6 +52,7 @@ import com.denariidolor.presentation.ui.legal.LegalDocumentViewModel
 import com.denariidolor.presentation.ui.report.ReportRoute
 import com.denariidolor.presentation.ui.search.SearchRoute
 import com.denariidolor.presentation.ui.transaction.TransactionViewModel
+import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 private enum class MainDestination(val route: String, val titleRes: Int, val iconRes: Int) {
     Dashboard("dashboard", R.string.dashboard, android.R.drawable.ic_menu_view),
@@ -97,7 +97,7 @@ fun MainActivityContent(onSignOut: () -> Unit, onCurrencyChanged: () -> Unit = {
     val navController = rememberNavController()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
-    val guidance: GuidanceViewModel = hiltViewModel()
+    val guidance: GuidanceViewModel = metroViewModel()
     val tourPending by guidance.tourPending.collectAsStateWithLifecycle()
     val ratePromptVisible by guidance.ratePromptVisible.collectAsStateWithLifecycle()
     val support = rememberSupportActions()

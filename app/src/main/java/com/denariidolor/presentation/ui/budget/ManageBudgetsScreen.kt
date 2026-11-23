@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.denariidolor.R
 import com.denariidolor.presentation.ui.common.ConfirmDialog
@@ -32,11 +31,12 @@ import com.denariidolor.presentation.ui.common.ScreenHeader
 import com.denariidolor.presentation.ui.common.UiMessageEffect
 import com.denariidolor.util.Money
 import com.denariidolor.util.formatMoney
+import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 private const val DEFAULT_WARNING_PERCENT = "80"
 
 @Composable
-fun ManageBudgetsRoute(onBack: () -> Unit, viewModel: BudgetViewModel = hiltViewModel()) {
+fun ManageBudgetsRoute(onBack: () -> Unit, viewModel: BudgetViewModel = metroViewModel()) {
     val rows by viewModel.rows.collectAsStateWithLifecycle()
     UiMessageEffect(viewModel.messages)
     ManageBudgetsScreen(

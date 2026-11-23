@@ -13,14 +13,14 @@ import com.denariidolor.data.local.preferences.OnboardingStore
 import com.denariidolor.data.local.preferences.RatePromptStore
 import com.denariidolor.data.local.preferences.ThemePreferences
 import com.denariidolor.data.local.preferences.ThemeSettings
-import dagger.Binds
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.BindingContainer
+import dev.zacsweers.metro.Binds
+import dev.zacsweers.metro.ContributesTo
 
-/** The guidance interfaces resolve to the one `@Singleton` [GuidancePreferences], so every screen sees the same state. */
-@Module
-@InstallIn(SingletonComponent::class)
+/** The guidance interfaces resolve to the one singleton [GuidancePreferences], so every screen sees the same state. */
+@ContributesTo(AppScope::class)
+@BindingContainer
 abstract class PreferencesModule {
     @Binds
     abstract fun bindOnboardingStore(impl: GuidancePreferences): OnboardingStore

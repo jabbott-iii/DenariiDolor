@@ -17,12 +17,14 @@ import com.denariidolor.data.backup.BackupService
 import com.denariidolor.data.backup.BackupSnapshot
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.runSuspendCatching
-import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZonedDateTime
-import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,8 +60,10 @@ sealed interface BackupEvent {
  * user browses; the encrypted file is kept until the destination is chosen, and a decrypted backup until the restore is
  * confirmed or cancelled. None of them goes into saved state.
  */
-@HiltViewModel
-class BackupViewModel @Inject constructor(private val backupService: BackupService, private val clock: Clock) : ViewModel() {
+@ViewModelKey
+@ContributesIntoMap(AppScope::class)
+@Inject
+class BackupViewModel(private val backupService: BackupService, private val clock: Clock) : ViewModel() {
     private val _state = MutableStateFlow(BackupUiState())
     val state: StateFlow<BackupUiState> = _state.asStateFlow()
 

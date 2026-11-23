@@ -7,15 +7,17 @@
 package com.denariidolor.util
 
 import android.os.SystemClock
-import javax.inject.Inject
-import javax.inject.Singleton
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 
 /**
  * Tracks the signed-in session. Times come from [SystemClock.elapsedRealtime] (monotonic, includes deep sleep),
  * so changing the device's wall clock cannot extend or reset a session.
  */
-@Singleton
-class SessionManager @Inject constructor() {
+@SingleIn(AppScope::class)
+@Inject
+class SessionManager {
     private var lastActiveAt: Long = 0L
     private var authenticated: Boolean = false
 

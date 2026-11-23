@@ -41,7 +41,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.denariidolor.R
 import com.denariidolor.data.backup.BackupError
@@ -51,6 +50,7 @@ import com.denariidolor.presentation.platform.rememberOpenFilePicker
 import com.denariidolor.presentation.platform.rememberSaveFilePicker
 import com.denariidolor.presentation.ui.common.ScreenHeader
 import com.denariidolor.presentation.ui.common.UiMessage
+import dev.zacsweers.metrox.viewmodel.metroViewModel
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -63,7 +63,7 @@ internal const val RESTORE_CONFIRMATION_FIELD_TAG = "restoreConfirmation"
 internal const val RESTORE_CONFIRM_BUTTON_TAG = "restoreConfirm"
 
 @Composable
-fun BackupRoute(onBack: () -> Unit, onRestored: () -> Unit, viewModel: BackupViewModel = hiltViewModel()) {
+fun BackupRoute(onBack: () -> Unit, onRestored: () -> Unit, viewModel: BackupViewModel = metroViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val notices = rememberNotices()
     val restoredMessage = stringResource(R.string.backup_restored)

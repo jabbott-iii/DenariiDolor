@@ -16,8 +16,10 @@ import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.domain.usecase.BudgetUseCases
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.Money
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -34,8 +36,10 @@ fun buildBudgetRows(categories: List<CategoryEntity>, budgets: List<BudgetEntity
     return categories.map { BudgetRow(it.id, it.name, budgetsByCategory[it.id]) }
 }
 
-@HiltViewModel
-class BudgetViewModel @Inject constructor(
+@ViewModelKey
+@ContributesIntoMap(AppScope::class)
+@Inject
+class BudgetViewModel(
     private val budgetUseCases: BudgetUseCases,
     categoryRepository: CategoryRepository,
     budgetRepository: BudgetRepository

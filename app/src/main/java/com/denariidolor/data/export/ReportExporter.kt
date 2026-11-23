@@ -10,15 +10,16 @@ import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
 import com.denariidolor.R
+import com.denariidolor.di.ApplicationContext
 import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.domain.report.ReportCsvFormatter
 import com.denariidolor.domain.report.ReportText
 import com.denariidolor.util.labelRes
-import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import java.io.File
 import java.io.OutputStream
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -27,8 +28,9 @@ enum class ReportFormat(val mimeType: String, val extension: String) {
     PDF("application/pdf", "pdf")
 }
 
-@Singleton
-class ReportExporter @Inject constructor(@ApplicationContext private val context: Context) {
+@SingleIn(AppScope::class)
+@Inject
+class ReportExporter(@ApplicationContext private val context: Context) {
     suspend fun writeTo(uri: Uri, report: MonthlyReport, format: ReportFormat) = withContext(Dispatchers.IO) {
         val stream = context.contentResolver.openOutputStream(uri, "wt") ?: error("Unable to open export destination")
         stream.use { write(it, report, format) }

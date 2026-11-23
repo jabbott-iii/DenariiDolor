@@ -16,9 +16,11 @@ import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.domain.usecase.GenerateReportUseCase
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.runSuspendCatching
-import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import java.time.Clock
-import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -46,12 +48,11 @@ sealed interface ReportEvent {
     data class Share(val uri: Uri, val mimeType: String) : ReportEvent
 }
 
-@HiltViewModel
-class ReportViewModel @Inject constructor(
-    private val generateReportUseCase: GenerateReportUseCase,
-    private val reportExporter: ReportExporter,
-    clock: Clock
-) : ViewModel() {
+@ViewModelKey
+@ContributesIntoMap(AppScope::class)
+@Inject
+class ReportViewModel(private val generateReportUseCase: GenerateReportUseCase, private val reportExporter: ReportExporter, clock: Clock) :
+    ViewModel() {
     private val _state = MutableStateFlow(ReportUiState(period = java.time.YearMonth.now(clock).toKotlinYearMonth()))
     val state: StateFlow<ReportUiState> = _state.asStateFlow()
 

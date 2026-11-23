@@ -1,6 +1,6 @@
 ---
 name: new-feature
-description: Add a user-facing feature or screen to Denarii Dolor end to end, following its layers (domain model and use case, repository, Hilt ViewModel, Compose Route and Screen, navigation, strings in all seven languages, tests and docs). Use when asked to build, add or extend a screen, flow, setting or capability of the app.
+description: Add a user-facing feature or screen to Denarii Dolor end to end, following its layers (domain model and use case, repository, Metro ViewModel, Compose Route and Screen, navigation, strings in all seven languages, tests and docs). Use when asked to build, add or extend a screen, flow, setting or capability of the app.
 ---
 
 # Add a feature end to end
@@ -47,8 +47,10 @@ Put it in `presentation/ui/<feature>/<Feature>ViewModel.kt`. Examples: `Category
 `TransactionViewModel` (form, save guard, over-budget confirmation).
 
 ```kotlin
-@HiltViewModel
-class FeatureViewModel @Inject constructor(private val useCases: FeatureUseCases, repository: FeatureRepository) : ViewModel() {
+@Inject
+@ViewModelKey
+@ContributesIntoMap(AppScope::class)
+class FeatureViewModel(private val useCases: FeatureUseCases, repository: FeatureRepository) : ViewModel() {
     val uiState: StateFlow<FeatureUiState> = repository.observe()
         .map(::toUiState)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FeatureUiState())
@@ -58,7 +60,8 @@ class FeatureViewModel @Inject constructor(private val useCases: FeatureUseCases
 }
 ```
 
-- No `Context` and no Android types. Navigation arguments come from `SavedStateHandle`.
+- No `Context` and no Android types. Navigation arguments come from a `SavedStateHandle`, taken as `@Assisted` through a
+  `ViewModelAssistedFactory`, as `LegalDocumentViewModel` does.
 - Write actions ignore repeat calls while one is in flight, and expose `isSaving` so the button disables.
 - Turn results into messages with `UiMessage.fromResult(result, R.string.feature_saved)` or `UiMessage.fromError(e)`.
 
@@ -66,7 +69,7 @@ class FeatureViewModel @Inject constructor(private val useCases: FeatureUseCases
 
 Put it in `presentation/ui/<feature>/<Feature>Screen.kt`.
 
-- `FeatureRoute(onBack: () -> Unit, viewModel: FeatureViewModel = hiltViewModel())` calls `collectAsStateWithLifecycle()`
+- `FeatureRoute(onBack: () -> Unit, viewModel: FeatureViewModel = metroViewModel())` calls `collectAsStateWithLifecycle()`
   and `UiMessageEffect(viewModel.messages)`, then the screen.
 - `FeatureScreen(state, onAction…)` is stateless. Use `ScreenHeader`, `ConfirmDialog`, `ManagedItemRow` and the form
   components in `presentation/ui/common`.

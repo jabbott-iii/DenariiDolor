@@ -13,8 +13,10 @@ import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.domain.usecase.CategoryUseCases
 import com.denariidolor.presentation.ui.common.UiMessage
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,9 +25,10 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-@HiltViewModel
-class CategoryViewModel @Inject constructor(private val categoryUseCases: CategoryUseCases, categoryRepository: CategoryRepository) :
-    ViewModel() {
+@ViewModelKey
+@ContributesIntoMap(AppScope::class)
+@Inject
+class CategoryViewModel(private val categoryUseCases: CategoryUseCases, categoryRepository: CategoryRepository) : ViewModel() {
     val categories: StateFlow<List<CategoryEntity>> = categoryRepository.getAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 

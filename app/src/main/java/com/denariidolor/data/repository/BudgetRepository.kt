@@ -8,7 +8,7 @@ package com.denariidolor.data.repository
 
 import com.denariidolor.data.local.db.dao.BudgetDao
 import com.denariidolor.data.local.db.entity.BudgetEntity
-import javax.inject.Inject
+import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.Flow
 
 interface BudgetRepository {
@@ -18,7 +18,8 @@ interface BudgetRepository {
     suspend fun deleteByCategoryId(categoryId: Long): Boolean
 }
 
-class BudgetRepositoryImpl @Inject constructor(private val budgetDao: BudgetDao) : BudgetRepository {
+@Inject
+class BudgetRepositoryImpl(private val budgetDao: BudgetDao) : BudgetRepository {
     override suspend fun upsert(budget: BudgetEntity): Long = budgetDao.upsert(budget)
 
     override fun getAll(): Flow<List<BudgetEntity>> = budgetDao.getAll()

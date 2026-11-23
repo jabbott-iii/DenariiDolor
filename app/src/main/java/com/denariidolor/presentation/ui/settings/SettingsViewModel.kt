@@ -19,10 +19,12 @@ import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.Constants
 import com.denariidolor.util.Currencies
 import com.denariidolor.util.runSuspendCatching
-import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import java.util.Currency
 import javax.crypto.Cipher
-import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -65,8 +67,10 @@ sealed interface SettingsEvent {
 }
 
 /** Dark mode, biometric sign-in and the currency label, which MainActivity used to handle itself. */
-@HiltViewModel
-class SettingsViewModel @Inject constructor(
+@ViewModelKey
+@ContributesIntoMap(AppScope::class)
+@Inject
+class SettingsViewModel(
     private val vault: SettingsVault,
     biometrics: BiometricCapability,
     private val theme: ThemeSettings,

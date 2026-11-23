@@ -39,7 +39,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.denariidolor.R
 import com.denariidolor.data.export.ReportFormat
@@ -53,6 +52,7 @@ import com.denariidolor.util.DateUtils
 import com.denariidolor.util.formatMoney
 import com.denariidolor.util.formatSignedAmount
 import com.denariidolor.util.labelRes
+import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.datetime.TimeZone
 
 const val REPORT_TABLE_TAG = "reportTable"
@@ -69,7 +69,7 @@ private val reportColumns = listOf(
 )
 
 @Composable
-fun ReportRoute(viewModel: ReportViewModel = hiltViewModel()) {
+fun ReportRoute(viewModel: ReportViewModel = metroViewModel()) {
     val notices = rememberNotices()
     val shareSheet = rememberShareSheet()
     val state by viewModel.state.collectAsStateWithLifecycle()

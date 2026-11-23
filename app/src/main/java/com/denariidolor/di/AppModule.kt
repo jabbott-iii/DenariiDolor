@@ -16,26 +16,26 @@ import com.denariidolor.presentation.ui.auth.DeviceBiometricCapability
 import com.denariidolor.util.DeviceClock
 import com.denariidolor.util.ZonedClock
 import com.denariidolor.util.asZonedClock
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.BindingContainer
+import dev.zacsweers.metro.ContributesTo
+import dev.zacsweers.metro.Provides
+import dev.zacsweers.metro.SingleIn
 import java.time.Clock
-import javax.inject.Singleton
 
-@Module
-@InstallIn(SingletonComponent::class)
+@ContributesTo(AppScope::class)
+@BindingContainer
 object AppModule {
     @Provides
-    @Singleton
+    @SingleIn(AppScope::class)
     fun provideClock(): Clock = DeviceClock
 
     @Provides
-    @Singleton
+    @SingleIn(AppScope::class)
     fun provideZonedClock(clock: Clock): ZonedClock = clock.asZonedClock()
 
     @Provides
-    @Singleton
+    @SingleIn(AppScope::class)
     fun provideCryptoPrimitives(): CryptoPrimitives = JcaCryptoPrimitives()
 
     @Provides

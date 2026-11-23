@@ -42,7 +42,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.denariidolor.R
@@ -65,6 +64,7 @@ import com.denariidolor.util.Money
 import com.denariidolor.util.Validators
 import com.denariidolor.util.formatMoney
 import com.denariidolor.util.labelRes
+import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 
@@ -75,7 +75,7 @@ internal const val ACCOUNT_PICKER_TAG = "accountPicker"
 internal const val SAVE_TRANSACTION_BUTTON_TAG = "saveTransactionButton"
 
 @Composable
-internal fun AddTransactionRoute(onFinished: () -> Unit, viewModel: TransactionViewModel = hiltViewModel()) {
+internal fun AddTransactionRoute(onFinished: () -> Unit, viewModel: TransactionViewModel = metroViewModel()) {
     val notices = rememberNotices()
     val formState by viewModel.formState.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()

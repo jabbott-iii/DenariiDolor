@@ -7,9 +7,10 @@
 package com.denariidolor.data.legal
 
 import android.content.Context
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
+import com.denariidolor.di.ApplicationContext
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -23,8 +24,9 @@ enum class LegalDocument {
  * (`copyLegalDocuments` in `app/build.gradle.kts`): `PRIVACY.md`, `THIRD_PARTY_NOTICES.md` and every text in `licenses/`.
  * The app shows them in English, the language they are written in.
  */
-@Singleton
-class LegalDocuments @Inject constructor(@ApplicationContext context: Context) {
+@SingleIn(AppScope::class)
+@Inject
+class LegalDocuments(@ApplicationContext context: Context) {
     private val assets = context.applicationContext.assets
 
     suspend fun load(document: LegalDocument): List<LegalBlock> = withContext(Dispatchers.IO) {

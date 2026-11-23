@@ -10,7 +10,7 @@ paths:
 ## Screen structure
 
 - **Route and screen.** Each destination has two composables:
-  - `XxxRoute(…, viewModel: XxxViewModel = hiltViewModel())` collects state with `collectAsStateWithLifecycle()`, wires
+  - `XxxRoute(…, viewModel: XxxViewModel = metroViewModel())` collects state with `collectAsStateWithLifecycle()`, wires
     `UiMessageEffect(viewModel.messages)` and calls the screen.
   - `XxxScreen(state…, onAction lambdas)` is stateless. It never takes a ViewModel, `NavController`, repository or
     `Context`-based service, so it can be tested on its own. See `ManageCategoriesRoute` and `ManageCategoriesScreen`.
@@ -23,7 +23,10 @@ paths:
     activity-result launchers. `PlatformBoundaryTest` fails on any other file that does, and `PlatformIntentsTest` pins
     each intent.
 - **ViewModels.**
-  - Declare them as `@HiltViewModel class XxxViewModel @Inject constructor(…) : ViewModel()`.
+  - Declare them as `@Inject @ViewModelKey @ContributesIntoMap(AppScope::class) class XxxViewModel(…) : ViewModel()`.
+  - One that reads navigation arguments is `@AssistedInject` with an `@Assisted savedStateHandle: SavedStateHandle` and a
+    nested `ViewModelAssistedFactory` that builds the handle with `extras.createSavedStateHandle()`. See
+    `LegalDocumentViewModel`.
   - They depend on use cases, repository interfaces and `Clock`.
   - Keep Android types (`Context`, `Uri`, `Bitmap`) out, so JVM tests can cover them. The `Uri` that `BackupViewModel` and
     `ReportViewModel` take for picked files is the documented exception until shared code gets its own file handle. The

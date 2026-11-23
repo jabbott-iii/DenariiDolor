@@ -8,7 +8,7 @@ package com.denariidolor.data.repository
 
 import com.denariidolor.data.local.db.dao.AccountDao
 import com.denariidolor.data.local.db.entity.AccountEntity
-import javax.inject.Inject
+import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.Flow
 
 interface AccountRepository {
@@ -20,7 +20,8 @@ interface AccountRepository {
     suspend fun isDuplicateName(name: String, excludeId: Long = 0L): Boolean
 }
 
-class AccountRepositoryImpl @Inject constructor(private val accountDao: AccountDao) : AccountRepository {
+@Inject
+class AccountRepositoryImpl(private val accountDao: AccountDao) : AccountRepository {
     override suspend fun add(account: AccountEntity): Long = accountDao.insert(account)
 
     override suspend fun rename(id: Long, name: String): Boolean = accountDao.rename(id, name) > 0

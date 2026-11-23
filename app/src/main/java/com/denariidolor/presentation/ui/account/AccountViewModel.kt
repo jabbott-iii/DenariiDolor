@@ -14,8 +14,10 @@ import com.denariidolor.data.repository.AccountRepository
 import com.denariidolor.domain.usecase.AccountUseCases
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.Money
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,9 +26,10 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-@HiltViewModel
-class AccountViewModel @Inject constructor(private val accountUseCases: AccountUseCases, accountRepository: AccountRepository) :
-    ViewModel() {
+@ViewModelKey
+@ContributesIntoMap(AppScope::class)
+@Inject
+class AccountViewModel(private val accountUseCases: AccountUseCases, accountRepository: AccountRepository) : ViewModel() {
     val accounts: StateFlow<List<AccountEntity>> = accountRepository.getAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 

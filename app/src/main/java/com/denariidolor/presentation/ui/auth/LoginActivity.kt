@@ -16,26 +16,27 @@ import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.denariidolor.MainActivity
 import com.denariidolor.R
+import com.denariidolor.appGraph
 import com.denariidolor.data.export.ReportExporter
 import com.denariidolor.data.local.preferences.ThemePreferences
 import com.denariidolor.presentation.ui.LoginScreen
 import com.denariidolor.presentation.ui.common.setThemedContent
 import com.denariidolor.util.SessionManager
-import dagger.hilt.android.AndroidEntryPoint
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metrox.viewmodel.MetroViewModelFactory
 import javax.crypto.Cipher
-import javax.inject.Inject
 import kotlinx.coroutines.launch
 
 /**
  * The exported launcher. Its screen state and vault calls live in [LoginViewModel]; the activity keeps what needs a window:
  * the overlay guard (CS-11), clearing share copies (CS-04), the biometric prompt (CS-07) and opening [MainActivity].
  */
-@AndroidEntryPoint
 class LoginActivity : AppCompatActivity() {
     @Inject
     lateinit var biometricAuthManager: BiometricAuthManager
@@ -46,9 +47,16 @@ class LoginActivity : AppCompatActivity() {
     @Inject
     lateinit var themePreferences: ThemePreferences
 
+    @Inject
+    lateinit var viewModelFactory: MetroViewModelFactory
+
     private val viewModel: LoginViewModel by viewModels()
 
+    // `by viewModels()` creates LoginViewModel through the app graph.
+    override val defaultViewModelProviderFactory: ViewModelProvider.Factory get() = viewModelFactory
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        appGraph.inject(this)
         super.onCreate(savedInstanceState)
         window.guardAgainstOverlays()
         // Cold start or return after sign-out: no unencrypted share copies should outlive a session.

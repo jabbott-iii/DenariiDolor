@@ -16,7 +16,7 @@ import com.denariidolor.util.DateUtils
 import com.denariidolor.util.Validators
 import com.denariidolor.util.ZonedClock
 import com.denariidolor.util.runSuspendCatching
-import javax.inject.Inject
+import dev.zacsweers.metro.Inject
 import kotlin.time.Instant
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
@@ -24,7 +24,8 @@ import kotlinx.datetime.toLocalDateTime
 /** How far an expense would take its category past the monthly budget; the `arg` of a [DomainError.BUDGET_EXCEEDED] failure. */
 data class BudgetOverage(val categoryName: String, val overByCents: Long, val limitCents: Long)
 
-class ValidateTransactionUseCase @Inject constructor(
+@Inject
+class ValidateTransactionUseCase(
     private val categoryRepository: CategoryRepository,
     private val accountRepository: AccountRepository,
     private val budgetRepository: BudgetRepository,

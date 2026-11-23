@@ -6,9 +6,9 @@ The application includes the open-source components below. Each one is licensed 
 
 | Component | Copyright holder | License |
 |---|---|---|
-| Android Jetpack (AndroidX) libraries: Activity, AppCompat, Biometric, Compose (including Material 3 and Material Icons), Core, Hilt Navigation Compose, Lifecycle, Navigation, Room, Security Crypto, SQLite | The Android Open Source Project | Apache License 2.0 |
+| Android Jetpack (AndroidX) libraries: Activity, AppCompat, Biometric, Compose (including Material 3 and Material Icons), Core, Lifecycle, Navigation, Room, Security Crypto, SQLite | The Android Open Source Project | Apache License 2.0 |
 | Material Components for Android | Google LLC | Apache License 2.0 |
-| Dagger and Hilt | The Dagger Authors (Google LLC) | Apache License 2.0 |
+| Metro (dependency injection, including its ViewModel support) | Zac Sweers | Apache License 2.0 |
 | Tink (used by Security Crypto) | Google LLC | Apache License 2.0 |
 | Kotlin standard library, kotlinx.coroutines, kotlinx-datetime, kotlinx.serialization | JetBrains s.r.o. and Kotlin Programming Language contributors | Apache License 2.0 |
 | Vico (charts) | Patryk Goworowski and Patrick Michalik | Apache License 2.0 |

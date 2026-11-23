@@ -1,6 +1,6 @@
 ---
 name: dependency-upgrade
-description: Add, upgrade or remove a library, Gradle plugin, SDK level or toolchain version in Denarii Dolor without breaking pinned compatibility (Kotlin/KSP/Hilt, Room/SQLCipher, AppCompat/Navigation, detekt/ktlint), the build-tool security constraints, the legal notices or Play requirements. Use for any edit to gradle/libs.versions.toml, plugin versions, compileSdk/targetSdk, the Gradle wrapper, or a Dependabot PR.
+description: Add, upgrade or remove a library, Gradle plugin, SDK level or toolchain version in Denarii Dolor without breaking pinned compatibility (Kotlin/KSP/Metro, Room/SQLCipher, AppCompat/Navigation, detekt/ktlint), the build-tool security constraints, the legal notices or Play requirements. Use for any edit to gradle/libs.versions.toml, plugin versions, compileSdk/targetSdk, the Gradle wrapper, or a Dependabot PR.
 ---
 
 # Upgrade or add a dependency
@@ -11,10 +11,10 @@ description: Add, upgrade or remove a library, Gradle plugin, SDK level or toolc
   license, its size, any native code, and whether it needs a permission or network access. Network access is never
   allowed.
 - **An upgrade:** read the pin table in `.claude/rules/build-gradle.md`. If the library is pinned or held back (Kotlin and
-  KSP, Hilt, Room, SQLCipher, AppCompat, kotlinx-serialization, `security-crypto`, detekt, ktlint, Vico), check that the
+  KSP, Metro, Room, SQLCipher, AppCompat, kotlinx-serialization, `security-crypto`, detekt, ktlint, Vico), check that the
   constraint behind the pin no longer applies, and say so before you change it.
 - Change one coupled group at a time:
-  - Kotlin, KSP and Hilt together;
+  - Kotlin, KSP and Metro together;
   - Room, `androidx.sqlite` and SQLCipher together;
   - the Compose BOM alone;
   - AGP, the Gradle wrapper and the JDK together.
@@ -61,8 +61,8 @@ narrow keep rules to `app/proguard-rules.pro` only when the library's documentat
 - **Room, `androidx.sqlite` or SQLCipher:** run `MigrationTest`, `EncryptedDatabaseTest` and `VaultTest`. Ask the maintainer
   to install the current release build with data, update to the new build, and confirm the database opens with its data
   intact.
-- **Kotlin, KSP or Hilt:** a clean build (`./gradlew clean assembleDebug`) must generate the Hilt components. Check Hilt's
-  `kotlin-metadata-jvm` support for the new Kotlin version.
+- **Kotlin, KSP or Metro:** a clean build (`./gradlew clean assembleDebug`) must compile the Metro graph. Check that Metro's
+  compatibility table lists the new Kotlin version, and run `LockedVaultGraphTest`.
 - **detekt or ktlint:** a new ktlint reformats the codebase. Upgrading it is its own change, with the `ktlintFormat` output
   reviewed separately.
 - **compileSdk or targetSdk:**

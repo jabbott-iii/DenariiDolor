@@ -8,7 +8,9 @@ package com.denariidolor.presentation.ui.transaction
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
 import com.denariidolor.data.local.preferences.RatePromptStore
 import com.denariidolor.data.repository.AccountRepository
 import com.denariidolor.data.repository.CategoryRepository
@@ -26,9 +28,14 @@ import com.denariidolor.domain.usecase.UpdateTransactionUseCase
 import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.runSuspendCatching
-import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metrox.viewmodel.ViewModelAssistedFactory
+import dev.zacsweers.metrox.viewmodel.ViewModelAssistedFactoryKey
 import java.time.Clock
-import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,10 +62,9 @@ sealed interface TransactionEvent {
     data class Failed(val message: UiMessage) : TransactionEvent
 }
 
-@HiltViewModel
+@AssistedInject
 class TransactionViewModel
-@Suppress("LongParameterList") // Intentional: only Hilt and tests call it; grouping its dependencies would hide what the form uses.
-@Inject
+@Suppress("LongParameterList") // Intentional: only the DI graph and tests call it; grouping its dependencies would hide what the form uses.
 constructor(
     private val addTransactionUseCase: AddTransactionUseCase,
     private val updateTransactionUseCase: UpdateTransactionUseCase,
@@ -67,7 +73,7 @@ constructor(
     accountRepository: AccountRepository,
     private val ratePrompt: RatePromptStore,
     private val clock: Clock,
-    savedStateHandle: SavedStateHandle
+    @Assisted savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private val transactionId: Long? = savedStateHandle.get<Long>(ARG_TRANSACTION_ID)?.takeIf { it > 0L }
 
@@ -214,6 +220,16 @@ constructor(
                 ?: throw DomainException(DomainError.TRANSFER_DESTINATION_REQUIRED, "Transfer destination is required"),
             dateEpochMillis = dateEpochMillis
         )
+    }
+
+    /** Builds the form's [SavedStateHandle] from the screen's creation extras, which carry the edited transaction's id. */
+    @AssistedFactory
+    @ViewModelAssistedFactoryKey(TransactionViewModel::class)
+    @ContributesIntoMap(AppScope::class)
+    fun interface Factory : ViewModelAssistedFactory {
+        override fun create(extras: CreationExtras): TransactionViewModel = create(extras.createSavedStateHandle())
+
+        fun create(savedStateHandle: SavedStateHandle): TransactionViewModel
     }
 
     companion object {

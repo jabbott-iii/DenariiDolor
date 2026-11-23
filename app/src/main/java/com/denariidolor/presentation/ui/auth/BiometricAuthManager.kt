@@ -10,10 +10,11 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import dev.zacsweers.metro.Inject
 import javax.crypto.Cipher
-import javax.inject.Inject
 
-class BiometricAuthManager @Inject constructor() {
+@Inject
+class BiometricAuthManager {
     data class PromptText(val title: String, val subtitle: String, val negativeButton: String)
 
     /**

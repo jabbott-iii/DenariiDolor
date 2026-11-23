@@ -46,8 +46,8 @@ paths:
 
 | Pin | Why |
 |---|---|
-| Kotlin 2.4.20 and KSP 2.3.12 | AGP 9's built-in Kotlin brings KGP 2.2.10, so the root `buildscript` raises it to the catalog's Kotlin. Don't apply `org.jetbrains.kotlin.android`. Kotlin 2.4.20 is the minimum for CVE-2026-53914 (CS-24). Hilt reads Kotlin metadata, so check Hilt's support before moving past 2.4. |
-| Hilt 2.60.1 | Moves together with Kotlin. |
+| Kotlin 2.4.20 and KSP 2.3.12 | AGP 9's built-in Kotlin brings KGP 2.2.10, so the root `buildscript` raises it to the catalog's Kotlin. Don't apply `org.jetbrains.kotlin.android`. Kotlin 2.4.20 is the minimum for CVE-2026-53914 (CS-24). Metro is a Kotlin compiler plugin, so check its compatibility table before moving Kotlin. |
+| Metro 1.5.2 | Moves together with Kotlin: each Metro release supports a range of Kotlin versions. |
 | Room 2.8.5 | Still opens SQLCipher through `openHelperFactory` (`SupportSQLite`). Room 3 changes the package and the driver API, so it's a separate, planned step. |
 | SQLCipher 4.19.1 and `androidx.sqlite` 2.7.1 | SQLCipher 4.18+ needs compileSdk 37. After every upgrade, install the current release build with data, update to the new build, and confirm the database still opens. |
 | AppCompat 1.7.1 or later | 1.7.0 crashes `MainActivity` right after sign-in: there is no `NavigationEventDispatcherOwner` for Navigation 2.10's `NavHost`. Never go below 1.7.1. |

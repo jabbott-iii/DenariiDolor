@@ -10,9 +10,10 @@ import com.denariidolor.data.repository.TransactionRepository
 import com.denariidolor.domain.model.Transaction
 import com.denariidolor.domain.model.toEntity
 import com.denariidolor.util.runSuspendCatching
-import javax.inject.Inject
+import dev.zacsweers.metro.Inject
 
-class UpdateTransactionUseCase @Inject constructor(
+@Inject
+class UpdateTransactionUseCase(
     private val validateTransactionUseCase: ValidateTransactionUseCase,
     private val transactionRepository: TransactionRepository
 ) {

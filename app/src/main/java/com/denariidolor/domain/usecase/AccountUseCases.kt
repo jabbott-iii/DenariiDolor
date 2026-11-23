@@ -12,12 +12,10 @@ import com.denariidolor.data.repository.TransactionRepository
 import com.denariidolor.util.Constants
 import com.denariidolor.util.Validators
 import com.denariidolor.util.runSuspendCatching
-import javax.inject.Inject
+import dev.zacsweers.metro.Inject
 
-class AccountUseCases @Inject constructor(
-    private val accountRepository: AccountRepository,
-    private val transactionRepository: TransactionRepository
-) {
+@Inject
+class AccountUseCases(private val accountRepository: AccountRepository, private val transactionRepository: TransactionRepository) {
     suspend fun add(name: String, openingBalanceCents: Long = 0L): Result<Long> = runSuspendCatching {
         val validName = requireValidName(name, excludeId = 0L)
         accountRepository.add(AccountEntity(name = validName, balanceCents = openingBalanceCents))

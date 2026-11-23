@@ -12,12 +12,10 @@ import com.denariidolor.data.repository.TransactionRepository
 import com.denariidolor.util.Constants
 import com.denariidolor.util.Validators
 import com.denariidolor.util.runSuspendCatching
-import javax.inject.Inject
+import dev.zacsweers.metro.Inject
 
-class CategoryUseCases @Inject constructor(
-    private val categoryRepository: CategoryRepository,
-    private val transactionRepository: TransactionRepository
-) {
+@Inject
+class CategoryUseCases(private val categoryRepository: CategoryRepository, private val transactionRepository: TransactionRepository) {
     suspend fun add(name: String, iconName: String = DEFAULT_ICON): Result<Long> = runSuspendCatching {
         val validName = requireValidName(name, excludeId = 0L)
         categoryRepository.add(CategoryEntity(name = validName, iconName = iconName.ifBlank { DEFAULT_ICON }))

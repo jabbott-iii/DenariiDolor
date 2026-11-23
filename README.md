@@ -174,7 +174,7 @@ The same report exported as **PDF** has the title, period, timestamp, totals and
 
 ## For developers
 
-**Stack:** Kotlin 2.4 · Jetpack Compose (Material 3) · MVVM + use cases + repositories · Hilt · Room + SQLCipher · Coroutines/Flow · Vico charts · minSdk 26 / targetSdk 36 · AGP 9.4 · JDK 17.
+**Stack:** Kotlin 2.4 · Jetpack Compose (Material 3) · MVVM + use cases + repositories · Metro · Room + SQLCipher · Coroutines/Flow · Vico charts · minSdk 26 / targetSdk 36 · AGP 9.4 · JDK 17.
 
 ```mermaid
 flowchart LR
@@ -198,7 +198,7 @@ make release VERSION=v1.2.3            # tag and push → once CI passes on that
 | `app/src/main/java/com/denariidolor/domain` | Models, use cases, report formatting |
 | `…/data` | Room entities/DAOs/migrations, repositories, the vault (database key, sign-in and Keystore), export, encrypted backup and restore (`backup`), the in-app legal documents (`legal`) |
 | `…/presentation/ui` | Compose screens and ViewModels, one package per feature |
-| `…/di` | Hilt modules |
+| `…/di` | The Metro dependency graph and its binding containers |
 | `app/src/main/res/values*` | English strings (`values`) and the language packs (`values-zh-rCN`, `-hi`, `-es`, `-ar`, `-fr`, `-pt`); a new string goes into all of them |
 | `PRIVACY.md`, `THIRD_PARTY_NOTICES.md`, `licenses/` | Privacy policy and open-source notices; the build copies them into the app, which shows them in Settings |
 | `app/schemas` | Exported Room schemas (commit a new one with every schema change) |

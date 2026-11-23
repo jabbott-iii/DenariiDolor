@@ -13,17 +13,17 @@ import com.denariidolor.data.local.db.dao.BudgetDao
 import com.denariidolor.data.local.db.dao.CategoryDao
 import com.denariidolor.data.local.db.dao.TransactionDao
 import com.denariidolor.data.local.vault.VaultConfig
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.BindingContainer
+import dev.zacsweers.metro.ContributesTo
+import dev.zacsweers.metro.Provides
+import dev.zacsweers.metro.SingleIn
 
-@Module
-@InstallIn(SingletonComponent::class)
+@ContributesTo(AppScope::class)
+@BindingContainer
 object DatabaseModule {
     @Provides
-    @Singleton
+    @SingleIn(AppScope::class)
     fun provideVaultConfig(): VaultConfig = VaultConfig()
 
     /**

@@ -9,6 +9,7 @@ package com.denariidolor
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -19,14 +20,14 @@ import com.denariidolor.presentation.ui.MainActivityContent
 import com.denariidolor.presentation.ui.auth.LoginActivity
 import com.denariidolor.presentation.ui.common.setThemedContent
 import com.denariidolor.util.SessionManager
-import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
+import dev.zacsweers.metrox.viewmodel.MetroViewModelFactory
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var sessionManager: SessionManager
@@ -37,7 +38,12 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var themePreferences: ThemePreferences
 
+    @Inject
+    lateinit var viewModelFactory: MetroViewModelFactory
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Filled before anything reads them, including the session check below (CS-02).
+        appGraph.inject(this)
         super.onCreate(savedInstanceState)
         // Also covers the task being restored after process death: the session and the open database are both gone.
         if (sessionManager.isSessionTimedOut() || !vault.isUnlocked) {
@@ -46,7 +52,9 @@ class MainActivity : AppCompatActivity() {
         }
         // Settings, with biometric enrollment (CS-07), runs in SettingsViewModel; the activity keeps the session and restarts.
         setThemedContent(themePreferences) {
-            MainActivityContent(onSignOut = ::redirectToLogin, onCurrencyChanged = ::restart, onRestored = ::restart)
+            CompositionLocalProvider(LocalMetroViewModelFactory provides viewModelFactory) {
+                MainActivityContent(onSignOut = ::redirectToLogin, onCurrencyChanged = ::restart, onRestored = ::restart)
+            }
         }
 
         lifecycleScope.launch {

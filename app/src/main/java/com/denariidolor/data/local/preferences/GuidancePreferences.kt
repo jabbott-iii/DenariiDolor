@@ -8,9 +8,10 @@ package com.denariidolor.data.local.preferences
 
 import android.content.Context
 import androidx.core.content.edit
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
+import com.denariidolor.di.ApplicationContext
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,7 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * the rate prompt), so it lives in the plain app-private `ui_prefs` file next to the theme and currency, excluded from backups.
  * An install from before these features has no keys, so its existing users see neither the tour nor the checklist.
  */
-@Singleton
+@SingleIn(AppScope::class)
 class GuidancePreferences internal constructor(context: Context, prefsName: String) :
     OnboardingStore,
     RatePromptStore {

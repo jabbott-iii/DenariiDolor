@@ -17,12 +17,13 @@ import com.denariidolor.data.local.preferences.RecoverPinResult
 import com.denariidolor.data.local.preferences.SecureStorageException
 import com.denariidolor.data.local.preferences.SecurityProfileService
 import com.denariidolor.data.local.preferences.SetupProfileResult
-import dagger.hilt.android.qualifiers.ApplicationContext
+import com.denariidolor.di.ApplicationContext
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import java.security.GeneralSecurityException
 import java.security.SecureRandom
 import javax.crypto.Cipher
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -32,8 +33,9 @@ import kotlinx.coroutines.withContext
  * Storage and Keystore failures surface as [SecureStorageException] (BUG-05).
  */
 @Suppress("TooManyFunctions") // The vault is the only holder of the unwrapped key; splitting it would spread that key across classes.
-@Singleton
-class Vault @Inject constructor(
+@SingleIn(AppScope::class)
+@Inject
+class Vault(
     @ApplicationContext context: Context,
     config: VaultConfig,
     private val databaseHolder: DatabaseHolder,

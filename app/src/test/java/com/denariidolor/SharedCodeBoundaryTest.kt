@@ -13,11 +13,12 @@ import org.junit.Test
 
 /**
  * The :shared module's common code must stay portable for the iOS phases. While Android is its only target, the compiler
- * builds commonMain as Android code and accepts Java and Android APIs there, so this test refuses them instead.
+ * builds commonMain as Android code and accepts Java and Android APIs there, so this test refuses them instead. Nothing in
+ * commonMain is injected yet, so @Inject is refused too.
  */
 class SharedCodeBoundaryTest {
     @Test
-    fun commonCodeUsesNoJavaAndroidOrHiltApis() {
+    fun commonCodeUsesNoJavaAndroidOrInjectionApis() {
         val offenders = commonSources().flatMap { file ->
             val code = withoutComments(file.readText())
             PLATFORM_ONLY.filter { it.containsMatchIn(code) }.map { "${file.name}: ${it.pattern}" }

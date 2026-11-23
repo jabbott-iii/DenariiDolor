@@ -18,9 +18,11 @@ import com.denariidolor.domain.usecase.DeleteTransactionUseCase
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.presentation.ui.common.buildTransactionRows
 import com.denariidolor.util.DateUtils
-import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import java.time.Clock
-import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -40,8 +42,10 @@ import kotlinx.datetime.toKotlinTimeZone
 import kotlinx.datetime.toKotlinYearMonth
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@HiltViewModel
-class DashboardViewModel @Inject constructor(
+@ViewModelKey
+@ContributesIntoMap(AppScope::class)
+@Inject
+class DashboardViewModel(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
     private val accountRepository: AccountRepository,

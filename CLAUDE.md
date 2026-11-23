@@ -27,8 +27,8 @@ All versions live in `gradle/libs.versions.toml`, and some are pinned on purpose
   Multiplatform library, Android its only target for now, holding code that will also run on iOS (Compose Multiplatform
   plan, Phase 2). Kotlin 2.4 (K2; AGP 9's built-in Kotlin in `:app`, the multiplatform plugin in `:shared`) on a JDK 17
   toolchain, AGP 9.4 and Gradle 9.6. compileSdk 37, targetSdk 36, minSdk 26.
-- **App:** Jetpack Compose with Material 3, Navigation Compose (string routes), Hilt with KSP, Room 2.8 over SQLCipher,
-  Coroutines and Flow, kotlinx-datetime, Vico charts.
+- **App:** Jetpack Compose with Material 3, Navigation Compose (string routes), Metro (compile-time DI, a Kotlin compiler
+  plugin), Room 2.8 with KSP over SQLCipher, Coroutines and Flow, kotlinx-datetime, Vico charts.
 - **Tests:** JUnit 4, kotlinx-coroutines-test and hand-written fakes (there is no mocking library), plus Compose UI test,
   Espresso and UiAutomator.
 
@@ -57,15 +57,16 @@ Run these from the repository root. CI (`.github/workflows/ci.yml`) runs every o
 domain/        model (Transaction → Expense | Income | Transfer, Ledger), usecase, report      pure Kotlin
 data/          local/db (Room, DAOs, Migrations, DatabaseHolder), local/vault (Vault, Keystore),
                local/preferences, repository (interface + Impl in one file), export, backup, legal
-presentation/  ui/<feature>/ — *Route + stateless *Screen + @HiltViewModel; shared composables in ui/common
+presentation/  ui/<feature>/ — *Route + stateless *Screen + Metro ViewModel; shared composables in ui/common
                platform/ — what screens ask of Android: toasts, sharing, store and email, pickers, the biometric prompt
-di/            AppModule (Clock, ZonedClock), DatabaseModule, RepositoryModule (@Binds, unscoped)
+di/            AppGraph (Metro), AppViewModelFactory, AppModule (Clock, ZonedClock), DatabaseModule, RepositoryModule
 util/          DeviceClock, SessionManager, Constants, StoreLinks, TransactionTypeLabels
 
-shared/        src/commonMain: the same packages, for code that needs nothing from Java, Android or Hilt. So far the
-               domain models, Money, Currencies, DateUtils, Validators, ZonedClock, runSuspendCatching, transferRoute,
-               ReportText, ReportCsvFormatter, BackupSnapshot and the crypto, guidance and theme interfaces.
-               PlatformFormat declares what the platform's locale data decides; src/androidMain implements it
+shared/        src/commonMain: the same packages, for code that needs nothing from Java or Android and isn't
+               injected yet. So far the domain models, Money, Currencies, DateUtils, Validators, ZonedClock,
+               runSuspendCatching, transferRoute, ReportText, ReportCsvFormatter, BackupSnapshot and the crypto,
+               guidance and theme interfaces. PlatformFormat declares what the platform's locale data decides;
+               src/androidMain implements it
 ```
 
 Code moves into `:shared` one reviewed step at a time, keeping its package, so imports don't change. Until `:shared` has a
@@ -76,6 +77,11 @@ wipe through `Vault` (as `SignInVault`), and the activity keeps the overlay guar
 `MainActivity`. `MainActivity` isn't exported. It checks the session and hosts the `NavHost` in
 `presentation/ui/AppScreens.kt`, where `SettingsViewModel` turns biometric sign-in on and off through `Vault` (as
 `SettingsVault`).
+
+Dependency injection is Metro. `App` creates `AppGraph` (`di/`), and both activities call `appGraph.inject(this)` before
+`super.onCreate`. A ViewModel is `@Inject` plus `@ViewModelKey @ContributesIntoMap(AppScope::class)`, and a Route gets it
+with `metroViewModel()`. A ViewModel that reads navigation arguments takes an `@Assisted SavedStateHandle` through a
+`ViewModelAssistedFactory`, as `TransactionViewModel` does.
 
 Dependency rules:
 
@@ -89,8 +95,10 @@ Dependency rules:
    in those use cases.
 3. Code outside `data/` and `di/` depends on repository **interfaces**, never on a `…Impl` class.
 4. The database exists only after sign-in. `AppDatabase`, the DAOs and the repositories are unscoped and come from
-   `DatabaseHolder`. Never inject them into `LoginActivity`, a `@Singleton`, or anything else that runs before sign-in.
+   `DatabaseHolder`. Never inject them into `LoginActivity`, a `@SingleIn(AppScope::class)` singleton, or anything else that
+   runs before sign-in.
    `DatabaseHolder.database` throws while the vault is locked. That's a security control, not a bug to work around.
+   `LockedVaultGraphTest` checks that the app graph builds while the vault is locked and refuses database-bound screens.
 5. Anything that depends on "now" takes an injected clock and reads the time zone from it, never from
    `ZoneId.systemDefault()` or `TimeZone.currentSystemDefault()`. `domain/` and `util/` take `ZonedClock` (`clock.timeZone`),
    and other code takes `java.time.Clock` (`clock.zone`); both come from `DeviceClock`. The one exception is

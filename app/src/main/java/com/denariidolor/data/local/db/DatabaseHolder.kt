@@ -10,13 +10,14 @@ import android.content.Context
 import androidx.room.Room
 import com.denariidolor.data.local.db.security.DatabaseKeys
 import com.denariidolor.data.local.vault.VaultConfig
-import dagger.hilt.android.qualifiers.ApplicationContext
+import com.denariidolor.di.ApplicationContext
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import java.util.concurrent.Callable
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import javax.inject.Inject
-import javax.inject.Singleton
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 /**
@@ -24,8 +25,9 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
  * and closes on sign-out or timeout. Closing zeroes the passphrase, which SQLCipher holds by reference, so a stray
  * query fails instead of silently reopening the database.
  */
-@Singleton
-class DatabaseHolder @Inject constructor(@ApplicationContext context: Context, private val config: VaultConfig) {
+@SingleIn(AppScope::class)
+@Inject
+class DatabaseHolder(@ApplicationContext context: Context, private val config: VaultConfig) {
     private val appContext = context.applicationContext
 
     // One thread opens, closes and deletes, so those steps can never overlap.

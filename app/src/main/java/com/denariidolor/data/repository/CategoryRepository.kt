@@ -8,7 +8,7 @@ package com.denariidolor.data.repository
 
 import com.denariidolor.data.local.db.dao.CategoryDao
 import com.denariidolor.data.local.db.entity.CategoryEntity
-import javax.inject.Inject
+import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.Flow
 
 interface CategoryRepository {
@@ -20,7 +20,8 @@ interface CategoryRepository {
     suspend fun isDuplicateName(name: String, excludeId: Long = 0L): Boolean
 }
 
-class CategoryRepositoryImpl @Inject constructor(private val categoryDao: CategoryDao) : CategoryRepository {
+@Inject
+class CategoryRepositoryImpl(private val categoryDao: CategoryDao) : CategoryRepository {
     override suspend fun add(category: CategoryEntity): Long = categoryDao.insert(category)
 
     override suspend fun update(category: CategoryEntity): Boolean = categoryDao.update(category.id, category.name, category.iconName) > 0

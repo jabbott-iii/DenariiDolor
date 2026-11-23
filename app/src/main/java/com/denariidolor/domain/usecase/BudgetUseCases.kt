@@ -11,12 +11,10 @@ import com.denariidolor.data.repository.BudgetRepository
 import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.util.Validators
 import com.denariidolor.util.runSuspendCatching
-import javax.inject.Inject
+import dev.zacsweers.metro.Inject
 
-class BudgetUseCases @Inject constructor(
-    private val budgetRepository: BudgetRepository,
-    private val categoryRepository: CategoryRepository
-) {
+@Inject
+class BudgetUseCases(private val budgetRepository: BudgetRepository, private val categoryRepository: CategoryRepository) {
     suspend fun set(categoryId: Long, monthlyLimitCents: Long, warningThresholdPercent: Int = DEFAULT_WARNING_PERCENT): Result<Long> =
         runSuspendCatching {
             if (!Validators.isValidAmount(monthlyLimitCents)) {

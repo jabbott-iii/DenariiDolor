@@ -59,7 +59,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -72,6 +71,7 @@ import com.denariidolor.presentation.ui.common.UiMessageEffect
 import com.denariidolor.presentation.ui.settings.SettingsEvent
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
 import com.denariidolor.presentation.ui.settings.SettingsViewModel
+import dev.zacsweers.metrox.viewmodel.metroViewModel
 import java.util.Currency
 
 internal const val DARK_MODE_SWITCH_TAG = "darkModeSwitch"
@@ -103,7 +103,7 @@ fun SettingsRoute(
     onSendFeedback: () -> Unit = {},
     onRateApp: () -> Unit = {},
     onShareApp: () -> Unit = {},
-    viewModel: SettingsViewModel = hiltViewModel(),
+    viewModel: SettingsViewModel = metroViewModel(),
     biometricPrompter: BiometricPrompter = rememberBiometricPrompter()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()

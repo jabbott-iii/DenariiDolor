@@ -56,7 +56,6 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.denariidolor.R
@@ -68,6 +67,7 @@ import com.denariidolor.presentation.ui.common.TransactionRow
 import com.denariidolor.presentation.ui.common.TransactionRowItem
 import com.denariidolor.presentation.ui.common.UiMessageEffect
 import com.denariidolor.util.formatMoney
+import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 const val DASHBOARD_LIST_TAG = "dashboardList"
 const val BUDGET_ALERT_BANNER_TAG = "budgetAlertBanner"
@@ -81,7 +81,7 @@ const val GETTING_STARTED_STEP_TAG_PREFIX = "gettingStartedStep_"
 fun DashboardRoute(
     onEditTransaction: (Long) -> Unit,
     onGettingStartedStep: (GettingStartedStep) -> Unit = {},
-    viewModel: DashboardViewModel = hiltViewModel()
+    viewModel: DashboardViewModel = metroViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     UiMessageEffect(viewModel.messages)

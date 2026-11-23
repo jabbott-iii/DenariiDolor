@@ -33,7 +33,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.denariidolor.R
 import com.denariidolor.domain.model.SearchFilters
@@ -43,6 +42,7 @@ import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.presentation.ui.common.ReferencePicker
 import com.denariidolor.presentation.ui.common.TransactionRow
 import com.denariidolor.presentation.ui.common.TransactionRowItem
+import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 
@@ -51,7 +51,7 @@ const val SEARCH_RESULT_COUNT_TAG = "searchResultCount"
 private const val ALL_CATEGORIES_ID = 0L
 
 @Composable
-fun SearchRoute(onEditTransaction: (Long) -> Unit, viewModel: SearchViewModel = hiltViewModel()) {
+fun SearchRoute(onEditTransaction: (Long) -> Unit, viewModel: SearchViewModel = metroViewModel()) {
     val results by viewModel.results.collectAsStateWithLifecycle()
     val categories by viewModel.categoryOptions.collectAsStateWithLifecycle()
     SearchScreen(

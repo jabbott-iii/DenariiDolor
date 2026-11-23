@@ -24,9 +24,11 @@ import com.denariidolor.presentation.ui.LoginScreenMode
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.SessionManager
 import com.denariidolor.util.runSuspendCatching
-import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import javax.crypto.Cipher
-import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,8 +71,10 @@ sealed interface LoginEvent {
 }
 
 /** Setup, sign-in, PIN recovery, the v1 upgrade and wipe, run through the [SignInVault] one call at a time. */
-@HiltViewModel
-class LoginViewModel @Inject constructor(
+@ViewModelKey
+@ContributesIntoMap(AppScope::class)
+@Inject
+class LoginViewModel(
     private val vault: SignInVault,
     private val biometrics: BiometricCapability,
     private val sessionManager: SessionManager,

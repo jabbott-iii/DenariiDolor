@@ -58,7 +58,7 @@ existing bad rows.
 
 - `DatabaseModule` provides `AppDatabase` and the DAOs **unscoped**, from `DatabaseHolder.database`, which throws while the
   vault is locked.
-  - Code that outlives a session injects `DatabaseHolder` and reads it when it runs: `@Singleton`s,
+  - Code that outlives a session injects `DatabaseHolder` and reads it when it runs: singletons,
     `DefaultDataInitializer`, `BackupManager`.
   - Never cache `AppDatabase` or a DAO in a field that outlives sign-out.
 - The database is opened, closed and deleted only through `DatabaseHolder`, which serializes these steps on one worker thread.

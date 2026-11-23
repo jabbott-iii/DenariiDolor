@@ -29,18 +29,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.denariidolor.R
 import com.denariidolor.data.legal.LegalBlock
 import com.denariidolor.data.legal.LegalDocument
 import com.denariidolor.presentation.ui.common.ScreenHeader
+import dev.zacsweers.metrox.viewmodel.metroViewModel
 import java.util.Locale
 
 internal const val LEGAL_DOCUMENT_TAG = "legalDocument"
 
 @Composable
-fun LegalDocumentRoute(onBack: () -> Unit, viewModel: LegalDocumentViewModel = hiltViewModel()) {
+fun LegalDocumentRoute(onBack: () -> Unit, viewModel: LegalDocumentViewModel = metroViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LegalDocumentScreen(document = viewModel.document, state = state, onBack = onBack)
 }

@@ -17,12 +17,13 @@ import com.denariidolor.domain.report.ReportText
 import com.denariidolor.util.DateUtils
 import com.denariidolor.util.ZonedClock
 import com.denariidolor.util.transferRoute
-import javax.inject.Inject
+import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.YearMonth
 import kotlinx.datetime.number
 
-class GenerateReportUseCase @Inject constructor(
+@Inject
+class GenerateReportUseCase(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
     private val accountRepository: AccountRepository,

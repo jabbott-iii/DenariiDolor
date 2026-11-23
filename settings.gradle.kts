@@ -4,7 +4,6 @@ pluginManagement {
             when (requested.id.id) {
                 "com.android.application", "com.android.kotlin.multiplatform.library" ->
                     useModule("com.android.tools.build:gradle:${requested.version}")
-                "com.google.dagger.hilt.android" -> useModule("com.google.dagger:hilt-android-gradle-plugin:${requested.version}")
             }
         }
     }

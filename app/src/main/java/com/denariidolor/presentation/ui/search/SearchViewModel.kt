@@ -16,9 +16,11 @@ import com.denariidolor.domain.usecase.SearchTransactionUseCase
 import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.presentation.ui.common.TransactionRow
 import com.denariidolor.presentation.ui.common.buildTransactionRows
-import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import java.time.Clock
-import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -37,8 +39,10 @@ import kotlinx.datetime.toKotlinLocalDate
 import kotlinx.datetime.toKotlinTimeZone
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@HiltViewModel
-class SearchViewModel @Inject constructor(
+@ViewModelKey
+@ContributesIntoMap(AppScope::class)
+@Inject
+class SearchViewModel(
     private val searchTransactionUseCase: SearchTransactionUseCase,
     categoryRepository: CategoryRepository,
     accountRepository: AccountRepository,

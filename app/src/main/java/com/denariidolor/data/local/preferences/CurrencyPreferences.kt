@@ -7,13 +7,14 @@
 package com.denariidolor.data.local.preferences
 
 import android.content.Context
+import com.denariidolor.di.ApplicationContext
 import com.denariidolor.util.Currencies
 import com.denariidolor.util.Money
-import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import java.util.Currency
 import java.util.Locale
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,8 +24,9 @@ import kotlinx.coroutines.flow.asStateFlow
  * language or region later doesn't relabel existing amounts. Not sensitive, so it lives in the plain `ui_prefs` file, which is
  * excluded from backups like everything else.
  */
-@Singleton
-class CurrencyPreferences @Inject constructor(@ApplicationContext context: Context) : CurrencySettings {
+@SingleIn(AppScope::class)
+@Inject
+class CurrencyPreferences(@ApplicationContext context: Context) : CurrencySettings {
     private val preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     // Installs from before this setting have nothing saved; they showed US dollars, so that is what they keep.

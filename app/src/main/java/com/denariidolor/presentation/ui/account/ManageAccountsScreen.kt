@@ -26,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.denariidolor.R
 import com.denariidolor.data.local.db.entity.AccountEntity
@@ -37,9 +36,10 @@ import com.denariidolor.presentation.ui.common.ManagedItemRow
 import com.denariidolor.presentation.ui.common.ScreenHeader
 import com.denariidolor.presentation.ui.common.UiMessageEffect
 import com.denariidolor.util.formatMoney
+import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 @Composable
-fun ManageAccountsRoute(onBack: () -> Unit, viewModel: AccountViewModel = hiltViewModel()) {
+fun ManageAccountsRoute(onBack: () -> Unit, viewModel: AccountViewModel = metroViewModel()) {
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     UiMessageEffect(viewModel.messages)
     ManageAccountsScreen(
