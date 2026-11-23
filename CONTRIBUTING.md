@@ -1,103 +1,102 @@
 # Contributing to Denarii Dolor
 
-Thank you for helping. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). The architecture and maintainability rules in [`CLAUDE.md`](CLAUDE.md) and [`.claude/rules/`](.claude/rules/) are authoritative. Claude Code reads them automatically, and they apply to every contributor. This guide summarizes what a contributor needs from them.
+Thank you for helping. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). The architecture and maintainability rules in [`CLAUDE.md`](CLAUDE.md), [`.claude/rules/`](.claude/rules/) and [`docs/`](docs/) are authoritative. Claude Code reads them automatically, and they apply to every contributor. This guide summarizes what a contributor needs from them.
 
 Security vulnerabilities are the exception: report them through a private security advisory on the repository, not a public issue.
 
 Denarii Dolor is proprietary software owned by Joseph Anthony Abbott III (see [LICENSE](LICENSE)). A contribution can be accepted only after its author signs a written agreement that assigns their rights in it to him.
+
+The app is being rewritten as a Flutter app over a Rust core ([ADR-0001](docs/decisions.md)). Start with [`docs/00-overview.md`](docs/00-overview.md) and [`docs/roadmap.md`](docs/roadmap.md), which say what is built and what comes next. v1, the Kotlin app on Google Play, is at commit `6d57526`; read any of its files with `git show 6d57526:<path>`.
 
 ## Setup
 
 **Prerequisites**
 
 - Git.
-- A JDK to run Gradle. The project compiles with a JDK 17 toolchain (`jvmToolchain(17)`), which the foojay resolver in `settings.gradle.kts` can download if it's missing. CI uses Temurin 17. `gradle/gradle-daemon-jvm.properties` requests JDK 21 for the Gradle daemon.
-- The Android SDK with platform 37 (`compileSdk = 37`). Point Gradle at it with `ANDROID_HOME` or with `sdk.dir` in `local.properties`, which is git-ignored.
-- For instrumented tests, a device or emulator running API 26 or newer. CI runs API 26 and 36. With Espresso 3.7.0 the Compose UI tests also run on API 37 images.
-
-Use the Gradle wrapper (`./gradlew`); don't install Gradle separately.
+- `rustup`. The Rust version is pinned in `rust/rust-toolchain.toml`, and `rustup toolchain install` in `rust/` installs it with Clippy and rustfmt.
+- From milestone M1.1: the Flutter SDK at the version pinned in `.fvmrc`, the Android SDK with platform 37, and an emulator or device running API 26 or newer. CI will run API 26 and 36, as it did for v1.
+- For iOS work (milestone M7): a Mac with Xcode.
 
 ```bash
 git clone https://github.com/jabbott-iii/DenariiDolor.git
-cd DenariiDolor
-./gradlew installDebug        # build and install the debug app on a connected device or emulator
+cd DenariiDolor/rust
+rustup toolchain install
+cargo test --workspace --locked
 ```
 
 ## Workflow
 
-1. Get the concept approved on its issue (see the rules above).
-2. Branch from `main`, and keep the branch focused on that issue. Don't mix in unrelated refactoring, formatting, dependency upgrades or renames.
+1. Get the concept approved on its issue, and find its task in [`docs/roadmap.md`](docs/roadmap.md).
+2. Branch from `main`, and keep the branch focused on that task. Don't mix in unrelated refactoring, formatting, dependency upgrades or renames.
 3. Make the change following the coding expectations below.
 4. Run the validation commands and fix any failures.
 5. Open a pull request against `main` that links the issue.
 
-The maintainer (`@jabbott-iii`, see `CODEOWNERS`) reviews every pull request. Releases are cut from `main` by the maintainer with `make release VERSION=vX.Y.Z`; contributors don't push tags.
+The maintainer (`@jabbott-iii`, see `CODEOWNERS`) reviews every pull request. There's no release pipeline until milestone M6 rebuilds one; contributors don't push tags.
 
 ## Validation
 
-Run these from the repository root before opening a pull request. CI runs the same checks, and all of them block a merge.
+Run these from `rust/` before opening a pull request. CI runs the same checks, and all of them block a merge.
 
 ```bash
-./gradlew ktlintCheck                         # Kotlin style (fix with ./gradlew ktlintFormat)
-./gradlew detekt                              # static analysis (default rules + config/detekt/detekt.yml)
-./gradlew lintDebug                           # Android lint
-./gradlew testDebugUnitTest                   # JVM unit tests
-./gradlew createDebugUnitTestCoverageReport   # JaCoCo coverage report
-./gradlew assembleRelease                     # release build with R8 shrinking (unsigned locally)
-./gradlew connectedDebugAndroidTest           # instrumented tests (device or emulator required)
+cargo fmt --all --check                                         # fix with cargo fmt --all
+cargo clippy --workspace --all-targets --locked -- -D warnings  # lints, set in rust/Cargo.toml
+cargo test --workspace --locked                                 # unit, integration and doc tests
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
 ```
+
+From M1.1, also run `dart format --output=none --set-exit-if-changed .`, `flutter analyze` and `flutter test` from the repository root.
 
 The security workflow also runs CodeQL, gitleaks and, on pull requests, dependency review, which fails on high-severity vulnerabilities.
 
-If you run detekt-cli outside Gradle, pass `--build-upon-default-config` so that it matches CI.
-
 ## Coding expectations
 
-- **Architecture:** follow the layers and dependency rules in [`CLAUDE.md`](CLAUDE.md):
-  - `:app` is the Android app. `:shared` holds code meant to run on iOS later too; its `commonMain` and `commonTest` may not use Java or Android APIs or `@Inject` yet, and `SharedCodeBoundaryTest` checks that.
-  - Composables talk only to ViewModels, and reach toasts, sharing, the system pickers and the biometric prompt only through `presentation/platform`.
-  - Transaction writes go through the use cases, so validation and balance updates always run.
-  - Code outside `data` and `di` depends on repository interfaces, not on the `Impl` classes.
-  - The database exists only after sign-in. Don't inject `AppDatabase`, a DAO or a repository into anything that runs before sign-in (`LoginActivity`, singletons); sign-in, recovery and wipe go through `LoginViewModel` and `Vault`.
-- **Money:** amounts are `Long` cents. Parse input with `Money.parseToCents` and show amounts with `formatMoney`/`formatSignedAmount`, which use the saved currency and the device's locale. Never store or compare amounts as `Double`, and never write a currency symbol into code or strings.
-- **Text and languages:**
-  - User-facing text lives only in `res/values/strings.xml`. Add every new string to all six packs (`values-zh-rCN`, `values-hi`, `values-es`, `values-ar`, `values-fr`, `values-pt`), or mark it `translatable="false"`; `lintDebug` fails on a missing translation.
-  - Translations keep the source's format arguments (`%1$s`, `%d`, `%%`), escape `'` and `"`, and give plurals every quantity the language needs (Chinese: `other`; Hindi: `one`, `other`; Spanish, French, Portuguese: `one`, `many`, `other`; Arabic: `zero`, `one`, `two`, `few`, `many`, `other`).
-  - Don't show stored values as text: a `TransactionType` is shown through `labelRes()`, and the CSV keeps its English keys.
-  - Layouts must work right to left (Arabic). Use `start`/`end`, not `left`/`right`.
-- **Errors:** use cases return `Result`. In suspend code, use `runSuspendCatching` rather than `runCatching`.
-- **Database changes:**
-  1. Bump the version.
-  2. Add a `Migration` and register it in `DatabaseHolder`.
-  3. Commit the new schema JSON in `app/schemas/`.
-  4. Extend `MigrationTest`.
-
-  Never add `fallbackToDestructiveMigration()`. Queries use Room `@Query` with bound parameters only.
+- **Architecture:** follow the layers and dependency rules in [`docs/01-architecture.md`](docs/01-architecture.md) and [`CLAUDE.md`](CLAUDE.md):
+  - Rust owns the rules and the data; Dart owns the screens; Kotlin and Swift own only what needs the operating system.
+  - `rust/crates/core` uses only `std`.
+  - Transaction writes go through the storage use cases, so validation and balance updates always run.
+  - The database exists only after sign-in.
+- **v1's data:** the new app opens what v1 left on phones, as it is. [`docs/specs/android-v1-formats.md`](docs/specs/android-v1-formats.md) is the contract; a change to how the app reads any of it needs a decision record.
+- **Money:** amounts are whole cents (`Cents(i64)` in Rust). Parse input with `core::parse_cents`. Never store or compare amounts as floating point, and never write a currency symbol into code or strings.
+- **Text and languages (from M1.4):** user-facing text lives only in the ARB files, in English and the six language packs (zh-CN, hi, es, ar, fr, pt). Rust returns error codes, never sentences for users. Layouts must work right to left (Arabic).
+- **Errors:** Rust returns `Result` with a typed error, never panics on input, and checks its arithmetic.
 - **Tests:**
-  - New business logic needs JVM unit tests. Use the fakes in `app/src/test/.../testutil`. Tests for code in `:shared` go in `shared/src/commonTest` and use kotlin.test.
-  - New DAO queries, migrations or screens need instrumented tests.
-  - In Compose tests, find elements by `testTag`.
+  - New logic needs unit tests, and a bug fix a test that fails without the fix.
+  - Code that reads v1's data needs a test against a fixture that v1 wrote.
+  - Integration tests run on an emulator or device (from M1.2).
 - **Style:**
-  - Start every source file with the proprietary copyright notice (copy it from an existing file), and follow ktlint's Android style.
-  - A new dependency must be added to `THIRD_PARTY_NOTICES.md`, with its license text in `licenses/` when that license requires it.
-  - `THIRD_PARTY_NOTICES.md` and `PRIVACY.md` are shown inside the app, so keep them to the Markdown the app renders (see [`.claude/rules/legal-docs.md`](.claude/rules/legal-docs.md)); `LegalTextTest` checks them. A change to what the app stores or shares needs a matching change to `PRIVACY.md`.
-  - Composables are PascalCase, with a `…Route` wrapper that wires the ViewModel.
+  - Start every source file with the proprietary copyright notice (copy it from an existing `.rs` file).
+  - Follow `rustfmt` and the workspace lints. Silence a lint only on the smallest item, with `#[expect(…, reason = "…")]`.
   - Add comments only for intent that isn't obvious.
-  - Don't suppress a warning without a comment explaining why.
-- **Dependencies:** add a new library only when an existing dependency or the platform can't do the job. Set versions only in `gradle/libs.versions.toml`. Some versions are pinned or held back on purpose (Kotlin and KSP move together; detekt 1.23.8, ktlint 1.3.1, Vico 2.0.0); check the pinned-versions table in [`.claude/rules/build-gradle.md`](.claude/rules/build-gradle.md) before bumping one.
+- **Dependencies:** add one only when the platform or an existing dependency can't do the job, and ask first. [`docs/02-dependency-policy.md`](docs/02-dependency-policy.md) has the test it must pass and the register of decisions. A dependency that ships in the app goes in `THIRD_PARTY_NOTICES.md`, with its license text in `licenses/` when that license requires it.
 - **Security:**
-  - Don't add logging (`Log`, `println`, `printStackTrace`), network access, or secrets of any kind.
-  - Don't weaken authentication, encryption, validation, lint or tests to get a change through.
+  - Don't add logging, network access, or secrets of any kind.
+  - Don't weaken authentication, encryption, validation, lints or tests to get a change through.
   - The security-sensitive files are the `paths` listed at the top of [`.claude/rules/security.md`](.claude/rules/security.md).
     A change to one of them must keep every control in that file's table, and the pull request must point it out. A new
     security finding takes the next free `CS-NN` ID. Earlier findings are in the git history:
     `git show aba0b55:intel/cybersec.md`.
 
+## Documentation
+
+Update the documents a change affects in the same pull request:
+
+| Change | Update |
+|---|---|
+| A change in behavior or design | The part's spec in `docs/specs/` |
+| A significant or hard-to-reverse decision | A new record in `docs/decisions.md` (`Proposed` until the maintainer accepts it) |
+| A roadmap task done | Its tick and notes in `docs/roadmap.md`, the "Status" section of `CLAUDE.md`, and the status line in `README.md` |
+| A new command, module or rule | The "Read before working" table in `CLAUDE.md` |
+| User-visible behavior | The user guide in `README.md` |
+| What the app stores, exports or shares, or its permissions | `PRIVACY.md`, and tell the maintainer about the Play Data safety form |
+| The workflow or the checks | This file |
+
+Write prose by [`.claude/rules/writing.md`](.claude/rules/writing.md), and plans and specs by [`.claude/rules/roadmap-and-docs.md`](.claude/rules/roadmap-and-docs.md).
+
 ## Pull request expectations
 
-- Link the approved issue, and describe what changed and why.
-- List the validation commands you ran and their results. Say which checks you didn't run (for example, instrumented tests without a device).
-- Keep the change small and focused, and preserve existing behavior unless the issue approves a change.
+- Link the approved issue and the roadmap task, and describe what changed and why.
+- List the validation commands you ran and their results. Say which checks you didn't run (for example, integration tests without an emulator, or biometric checks without a phone).
+- Keep the change small and focused, and preserve v1's behavior unless the task and a decision record change it.
 - Point out any security-sensitive change so that it gets a careful review.
-- Update the documentation only where your change affects it: `README.md` for user-visible behavior, and [`CLAUDE.md`](CLAUDE.md) or [`.claude/rules/`](.claude/rules/) for architecture, conventions or security controls.
 - CI and the security workflow must pass before merge.

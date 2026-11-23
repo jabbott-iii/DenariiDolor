@@ -174,37 +174,29 @@ The same report exported as **PDF** has the title, period, timestamp, totals and
 
 ## For developers
 
-**Stack:** Kotlin 2.4 · Jetpack Compose (Material 3) · MVVM + use cases + repositories · Metro · Room + SQLCipher · Coroutines/Flow · Vico charts · minSdk 26 / targetSdk 36 · AGP 9.4 · JDK 17.
+**Status:** the app is being rewritten as a Flutter app over a Rust core, for Android and then iOS. As of 2026-11-23 the plan, the decision records and the Rust domain core (`rust/crates/core`) are done; the Flutter app, storage, sign-in, the screens and backups are planned. Google Play still serves v1, the Kotlin app, whose source is at commit `6d57526` (`git show 6d57526:<path>`). New builds keep the application ID `com.denariidolor` and open the data v1 left on each phone.
 
 ```mermaid
 flowchart LR
-    UI[Compose screens] --> VM[ViewModels<br/>StateFlow] --> UC[Use cases] --> R[Repository interfaces] --> DB[(Room + SQLCipher)]
-    UC --> M[Domain model<br/>Transaction ▸ Expense / Income / Transfer]
+    UI[Flutter screens<br/>planned] --> BR[Rust bridge<br/>planned] --> ST[store, vault, backup, report<br/>planned] --> CO[core: money, transactions,<br/>balance changes, validation]
+    UI --> PL[Kotlin and Swift:<br/>Keystore, Keychain, biometrics<br/>planned]
 ```
 
-`Transaction` is an abstract base class. `Expense`, `Income` and `Transfer` each override `balanceImpact()` and `accountImpacts()`, so balances and reports never branch on the transaction type.
-
 ```bash
-git clone https://github.com/jabbott-iii/DenariiDolor.git && cd DenariiDolor
-./gradlew installDebug                 # build and install on a device/emulator
-./gradlew testDebugUnitTest            # unit tests
-./gradlew connectedDebugAndroidTest    # instrumented tests (device required)
-./gradlew ktlintFormat detekt lintDebug  # format and static analysis
-make release VERSION=v1.2.3            # tag and push → once CI passes on that commit, CD publishes a signed GitHub Release
+git clone https://github.com/jabbott-iii/DenariiDolor.git && cd DenariiDolor/rust
+cargo test --workspace --locked                                   # unit, integration and doc tests
+cargo clippy --workspace --all-targets --locked -- -D warnings    # lints
+cargo fmt --all                                                   # format
 ```
 
 | Path | Contents |
 |---|---|
-| `app/src/main/java/com/denariidolor/domain` | Models, use cases, report formatting |
-| `…/data` | Room entities/DAOs/migrations, repositories, the vault (database key, sign-in and Keystore), export, encrypted backup and restore (`backup`), the in-app legal documents (`legal`) |
-| `…/presentation/ui` | Compose screens and ViewModels, one package per feature |
-| `…/di` | The Metro dependency graph and its binding containers |
-| `app/src/main/res/values*` | English strings (`values`) and the language packs (`values-zh-rCN`, `-hi`, `-es`, `-ar`, `-fr`, `-pt`); a new string goes into all of them |
-| `PRIVACY.md`, `THIRD_PARTY_NOTICES.md`, `licenses/` | Privacy policy and open-source notices; the build copies them into the app, which shows them in Settings |
-| `app/schemas` | Exported Room schemas (commit a new one with every schema change) |
-| `.github/workflows` | `ci.yml` (lint, tests, build, emulator tests on API 26 and 36), `security.yml` (CodeQL, dependency review, gitleaks), `cd.yml` (signed release on `v*` tags, after CI passes on the tagged commit) |
+| `rust/` | The Rust workspace; `crates/core` holds money in cents, transactions, balance changes and validation |
+| `docs/` | The overview, architecture, dependency policy, decision log, roadmap, and specs, including `specs/android-v1-formats.md`: what v1 stores on phones and in backups |
+| `PRIVACY.md`, `THIRD_PARTY_NOTICES.md`, `licenses/` | Privacy policy and open-source notices, which the app shows in Settings |
+| `.github/workflows` | `ci.yml` (Rust checks) and `security.yml` (CodeQL, dependency review, gitleaks) |
 
-Release signing needs four repository secrets: `ANDROID_SIGNING_KEY` (the base64-encoded keystore), `ANDROID_SIGNING_KEYSTORE_PASSWORD`, `ANDROID_SIGNING_KEY_ALIAS` and `ANDROID_SIGNING_KEY_PASSWORD`. For contribution rules, see [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
+No release can be built from `main` until the new app reaches parity with v1 (milestone M6 in [the roadmap](docs/roadmap.md)). For contribution rules, see [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Security
 
