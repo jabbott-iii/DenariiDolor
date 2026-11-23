@@ -60,7 +60,9 @@ class FeatureViewModel(private val useCases: FeatureUseCases, repository: Featur
 }
 ```
 
-- No `Context` and no Android types. Navigation arguments come from a `SavedStateHandle`, taken as `@Assisted` through a
+- No `Context` and no Android types. A service that needs Android is an interface beside its implementation, bound in
+  `AppModule` (see `ReportExportService`), and the ViewModel takes the interface. Navigation arguments come from a
+  `SavedStateHandle`, taken as `@Assisted` through a
   `ViewModelAssistedFactory`, as `LegalDocumentViewModel` does.
 - Write actions ignore repeat calls while one is in flight, and expose `isSaving` so the button disables.
 - Turn results into messages with `UiMessage.fromResult(result, StringKey.FEATURE_SAVED)` or `UiMessage.fromError(e)`. A

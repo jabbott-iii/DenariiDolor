@@ -14,6 +14,7 @@ import com.denariidolor.di.ApplicationContext
 import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.domain.report.ReportCsvFormatter
 import com.denariidolor.domain.report.ReportText
+import com.denariidolor.util.PlatformUri
 import com.denariidolor.util.labelRes
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
@@ -28,16 +29,28 @@ enum class ReportFormat(val mimeType: String, val extension: String) {
     PDF("application/pdf", "pdf")
 }
 
+/**
+ * Writes a monthly report as CSV or PDF for the user to save or share. An interface, like BackupService, so ReportViewModel
+ * needs nothing from Android; [ReportExporter] is Android's.
+ */
+interface ReportExportService {
+    /** Writes [report] in [format] to [uri], a file the user chose in the system file picker. */
+    suspend fun writeTo(uri: PlatformUri, report: MonthlyReport, format: ReportFormat)
+
+    /** Writes [report] in [format] to the private share folder, emptied first, and returns a read-only link to it (CS-04). */
+    suspend fun createShareUri(report: MonthlyReport, format: ReportFormat): PlatformUri
+}
+
 @SingleIn(AppScope::class)
 @Inject
-class ReportExporter(@ApplicationContext private val context: Context) {
-    suspend fun writeTo(uri: Uri, report: MonthlyReport, format: ReportFormat) = withContext(Dispatchers.IO) {
+class ReportExporter(@ApplicationContext private val context: Context) : ReportExportService {
+    override suspend fun writeTo(uri: Uri, report: MonthlyReport, format: ReportFormat) = withContext(Dispatchers.IO) {
         val stream = context.contentResolver.openOutputStream(uri, "wt") ?: error("Unable to open export destination")
         stream.use { write(it, report, format) }
     }
 
     /** Writes to a private cache folder (cleared on every call) and returns a read-only FileProvider URI. */
-    suspend fun createShareUri(report: MonthlyReport, format: ReportFormat): Uri = withContext(Dispatchers.IO) {
+    override suspend fun createShareUri(report: MonthlyReport, format: ReportFormat): Uri = withContext(Dispatchers.IO) {
         val directory = File(context.cacheDir, SHARE_DIR).apply {
             deleteRecursively()
             check(mkdirs()) { "Unable to prepare export folder" }

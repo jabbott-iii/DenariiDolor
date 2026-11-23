@@ -8,7 +8,7 @@ package com.denariidolor.presentation.ui.report
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.denariidolor.data.export.ReportExporter
+import com.denariidolor.data.export.ReportExportService
 import com.denariidolor.data.export.ReportFormat
 import com.denariidolor.di.SessionScope
 import com.denariidolor.domain.model.MonthlyReport
@@ -54,7 +54,7 @@ sealed interface ReportEvent {
 @Inject
 class ReportViewModel(
     private val generateReportUseCase: GenerateReportUseCase,
-    private val reportExporter: ReportExporter,
+    private val reportExporter: ReportExportService,
     clock: ZonedClock
 ) : ViewModel() {
     private val _state = MutableStateFlow(ReportUiState(period = clock.todayIn(clock.timeZone).yearMonth))

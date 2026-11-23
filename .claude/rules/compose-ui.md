@@ -31,10 +31,12 @@ paths:
   - They depend on use cases, repository interfaces and `ZonedClock`, and use kotlinx-datetime types, never `java.time`
     (`ClockBoundaryTest`), so they can move to shared code.
   - Keep Java and Android types out of them and out of the interfaces they call (`PlatformActions.kt`, `SignInVault`,
-    `SettingsVault`, `BackupService`), so JVM tests can cover them and they can move to shared code. `ViewModelBoundaryTest`
-    checks this. A picked or shared file is a `PlatformUri`, the biometric cipher a `PlatformCipher` and a currency a
-    `PlatformCurrency`. On Android these are `Uri`, `Cipher` and `Currency`, so the Android code behind the interfaces keeps
-    those names.
+    `SettingsVault`, `BackupService`, `ReportExportService`, `LegalDocumentService`), so JVM tests can cover them and they
+    can move to shared code. A service that needs a `Context` gets an interface beside its implementation, bound in
+    `AppModule`, and the ViewModel takes the interface. `ViewModelBoundaryTest` checks all of this, including that no
+    ViewModel takes a class whose constructor needs a `Context`. A picked or shared file is a `PlatformUri`, the biometric
+    cipher a `PlatformCipher` and a currency a `PlatformCurrency`. On Android these are `Uri`, `Cipher` and `Currency`, so
+    the Android code behind the interfaces keeps those names.
   - Navigation arguments come from `SavedStateHandle`.
 - **State and events.**
   - Long-lived state is one immutable `…UiState` data class (or a few `StateFlow`s) per screen.

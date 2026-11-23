@@ -13,7 +13,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.denariidolor.data.legal.LegalBlock
 import com.denariidolor.data.legal.LegalDocument
-import com.denariidolor.data.legal.LegalDocuments
+import com.denariidolor.data.legal.LegalDocumentService
 import com.denariidolor.di.SessionScope
 import com.denariidolor.util.runSuspendCatching
 import dev.zacsweers.metro.Assisted
@@ -36,7 +36,7 @@ sealed interface LegalUiState {
 }
 
 @AssistedInject
-class LegalDocumentViewModel(@Assisted savedStateHandle: SavedStateHandle, documents: LegalDocuments) : ViewModel() {
+class LegalDocumentViewModel(@Assisted savedStateHandle: SavedStateHandle, documents: LegalDocumentService) : ViewModel() {
     val document: LegalDocument = LegalDocument.valueOf(checkNotNull(savedStateHandle.get<String>(ARG_DOCUMENT)))
 
     val state: StateFlow<LegalUiState> = flow {

@@ -19,6 +19,11 @@ enum class LegalDocument {
     OPEN_SOURCE_LICENSES
 }
 
+/** The legal texts the app shows. An interface so LegalDocumentViewModel needs nothing from Android; [LegalDocuments] is Android's. */
+interface LegalDocumentService {
+    suspend fun load(document: LegalDocument): List<LegalBlock>
+}
+
 /**
  * Reads the legal files that the build copies, unchanged, from the repository root into the `legal` assets folder
  * (`copyLegalDocuments` in `app/build.gradle.kts`): `PRIVACY.md`, `THIRD_PARTY_NOTICES.md` and every text in `licenses/`.
@@ -26,10 +31,10 @@ enum class LegalDocument {
  */
 @SingleIn(AppScope::class)
 @Inject
-class LegalDocuments(@ApplicationContext context: Context) {
+class LegalDocuments(@ApplicationContext context: Context) : LegalDocumentService {
     private val assets = context.applicationContext.assets
 
-    suspend fun load(document: LegalDocument): List<LegalBlock> = withContext(Dispatchers.IO) {
+    override suspend fun load(document: LegalDocument): List<LegalBlock> = withContext(Dispatchers.IO) {
         when (document) {
             LegalDocument.PRIVACY_POLICY -> LegalText.parseMarkdown(read(PRIVACY_POLICY_FILE))
             LegalDocument.OPEN_SOURCE_LICENSES -> LegalText.parseMarkdown(read(NOTICES_FILE)) + licenseTexts()

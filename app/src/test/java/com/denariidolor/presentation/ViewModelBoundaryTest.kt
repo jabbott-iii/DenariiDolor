@@ -6,6 +6,7 @@
 
 package com.denariidolor.presentation
 
+import android.content.Context
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -27,24 +28,45 @@ class ViewModelBoundaryTest {
         assertEquals(emptyList<String>(), offenders)
     }
 
-    /** Guards the test above against passing because it looked in the wrong place. */
+    /** A ViewModel reaches Android services only through interfaces, never through a class that needs a Context. */
+    @Test
+    fun viewModelsTakeNoClassThatNeedsAContext() {
+        val offenders = viewModelClasses().flatMap { viewModel ->
+            viewModel.declaredConstructors.flatMap { it.parameterTypes.asList() }.distinct()
+                .filter { type -> type.declaredConstructors.any { it.parameterTypes.any(Context::class.java::isAssignableFrom) } }
+                .map { "${viewModel.simpleName}: ${it.simpleName}" }
+        }
+
+        assertEquals(emptyList<String>(), offenders)
+    }
+
+    /** Guards the tests above against passing because they looked in the wrong place. */
     @Test
     fun theScanSeesTheViewModelsAndTheirInterfaces() {
         val names = portableCode().map { it.first }
 
         val expected = listOf("LoginViewModel.kt", "SettingsViewModel.kt", "BackupViewModel.kt", "ReportViewModel.kt") +
-            INTERFACE_FILES.map { File(it).name } + BACKUP_SERVICE
+            INTERFACE_FILES.map { File(it).name } + INTERFACES_BESIDE_THEIR_IMPLEMENTATION.map { it.second }
         assertTrue(names.toString(), names.containsAll(expected))
+        assertEquals(viewModelFiles().size, viewModelClasses().size)
     }
 
-    /** Each ViewModel, each interface file, and the BackupService interface, which shares its file with the implementation. */
+    /** Each ViewModel, each interface file, and the interfaces that share a file with their implementation. */
     private fun portableCode(): List<Pair<String, String>> {
-        val viewModels = sources("com/denariidolor/presentation").filter { it.name.endsWith("ViewModel.kt") }
         val interfaces = INTERFACE_FILES.map { File(sourceRoot(), it) }
-        val backup = File(sourceRoot(), "com/denariidolor/data/backup/BackupManager.kt").readText()
-        val backupService = backup.substringAfter("interface BackupService {").substringBefore("\n}\n")
-        return (viewModels + interfaces).map { it.name to withoutComments(it.readText()) } +
-            (BACKUP_SERVICE to withoutComments(backupService))
+        val besideImplementations = INTERFACES_BESIDE_THEIR_IMPLEMENTATION.map { (path, name) ->
+            val source = File(sourceRoot(), path).readText()
+            check("interface $name {" in source) { "No interface $name in $path" }
+            name to withoutComments(source.substringAfter("interface $name {").substringBefore("\n}\n"))
+        }
+        return (viewModelFiles() + interfaces).map { it.name to withoutComments(it.readText()) } + besideImplementations
+    }
+
+    private fun viewModelFiles(): List<File> = sources("com/denariidolor/presentation").filter { it.name.endsWith("ViewModel.kt") }
+
+    private fun viewModelClasses(): List<Class<*>> = viewModelFiles().map { file ->
+        val className = file.relativeTo(sourceRoot()).path.removeSuffix(".kt").replace(File.separatorChar, '.')
+        Class.forName(className, false, javaClass.classLoader)
     }
 
     private fun sources(packagePath: String): List<File> =
@@ -57,7 +79,11 @@ class ViewModelBoundaryTest {
         source.replace(BLOCK_COMMENT, "").lines().joinToString("\n") { it.substringBefore("//") }
 
     private companion object {
-        const val BACKUP_SERVICE = "BackupService"
+        val INTERFACES_BESIDE_THEIR_IMPLEMENTATION = listOf(
+            "com/denariidolor/data/backup/BackupManager.kt" to "BackupService",
+            "com/denariidolor/data/export/ReportExporter.kt" to "ReportExportService",
+            "com/denariidolor/data/legal/LegalDocuments.kt" to "LegalDocumentService"
+        )
 
         val INTERFACE_FILES = listOf(
             "com/denariidolor/presentation/platform/PlatformActions.kt",

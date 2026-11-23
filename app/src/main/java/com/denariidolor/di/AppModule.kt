@@ -8,6 +8,10 @@ package com.denariidolor.di
 
 import com.denariidolor.data.backup.BackupManager
 import com.denariidolor.data.backup.BackupService
+import com.denariidolor.data.export.ReportExportService
+import com.denariidolor.data.export.ReportExporter
+import com.denariidolor.data.legal.LegalDocumentService
+import com.denariidolor.data.legal.LegalDocuments
 import com.denariidolor.data.local.preferences.CryptoPrimitives
 import com.denariidolor.data.local.preferences.JcaCryptoPrimitives
 import com.denariidolor.data.local.vault.SettingsVault
@@ -57,4 +61,10 @@ object AppModule {
     /** Backups read the database through [com.denariidolor.data.local.db.DatabaseHolder] only while one runs. */
     @Provides
     fun provideBackupService(manager: BackupManager): BackupService = manager
+
+    @Provides
+    fun provideReportExportService(exporter: ReportExporter): ReportExportService = exporter
+
+    @Provides
+    fun provideLegalDocumentService(documents: LegalDocuments): LegalDocumentService = documents
 }

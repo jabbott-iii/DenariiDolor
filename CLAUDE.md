@@ -95,7 +95,8 @@ A ViewModel is `@Inject` plus `@ViewModelKey @ContributesIntoMap(SessionScope::c
 interfaces they call, use no Java or Android types, so they can move to `:shared` once Room does (`ViewModelBoundaryTest`).
 A picked file is a `PlatformUri`, the biometric cipher a `PlatformCipher` and a currency a `PlatformCurrency`. Text for the
 user is a `UiMessage` naming a `StringKey` or `PluralKey`, never an `R` resource; `StringKeyResources.kt` gives each key the
-Android string of the same name.
+Android string of the same name. A service that needs a `Context` reaches a ViewModel only through an interface beside its
+implementation, bound in `AppModule`: `BackupService`, `ReportExportService`, `LegalDocumentService`.
 
 Dependency rules:
 

@@ -92,6 +92,8 @@ existing bad rows.
 These are security-sensitive; see `security.md`.
 
 - **Reports:**
+  - `ReportViewModel` saves and shares through `ReportExportService`, which `ReportExporter` implements and `AppModule`
+    binds.
   - **Save** writes through a Storage Access Framework `CreateDocument` URI.
   - **Share** uses a FileProvider URI under `cache/reports/`, which is cleared at the end of every session (CS-04).
   - No storage permissions.
