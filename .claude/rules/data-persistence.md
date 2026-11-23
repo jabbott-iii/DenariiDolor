@@ -56,15 +56,17 @@ existing bad rows.
 
 ## DatabaseHolder and DI
 
-- `DatabaseModule` provides `AppDatabase` and the DAOs **unscoped**, from `DatabaseHolder.database`, which throws while the
-  vault is locked.
+- `DatabaseModule` and `RepositoryModule` contribute to `SessionScope`, so the database, DAOs and repositories exist only in
+  `SessionGraph`, the graph `MainActivity` creates after sign-in. `AppGraph` (singletons and sign-in) can't see them: asking
+  for one there fails to compile.
+  - `AppDatabase` is **unscoped**: each request reads `DatabaseHolder.database`, which throws while the vault is locked.
   - Code that outlives a session injects `DatabaseHolder` and reads it when it runs: singletons,
     `DefaultDataInitializer`, `BackupManager`.
   - Never cache `AppDatabase` or a DAO in a field that outlives sign-out.
 - The database is opened, closed and deleted only through `DatabaseHolder`, which serializes these steps on one worker thread.
 - **A new repository:**
   1. Write the interface and its `…Impl @Inject constructor(...)` in the same file in `data/repository`.
-  2. `@Binds` it in `RepositoryModule`, unscoped.
+  2. `@Binds` it in `RepositoryModule` (session graph), unscoped.
   3. Add a fake to `app/src/test/java/com/denariidolor/testutil/FakeRepositories.kt`.
 - **A new use case:** an `@Inject constructor` class in `domain/usecase` that returns `Result<T>` through
   `runSuspendCatching`. Group related operations the way `CategoryUseCases` does.

@@ -49,7 +49,7 @@ Put it in `presentation/ui/<feature>/<Feature>ViewModel.kt`. Examples: `Category
 ```kotlin
 @Inject
 @ViewModelKey
-@ContributesIntoMap(AppScope::class)
+@ContributesIntoMap(SessionScope::class)
 class FeatureViewModel(private val useCases: FeatureUseCases, repository: FeatureRepository) : ViewModel() {
     val uiState: StateFlow<FeatureUiState> = repository.observe()
         .map(::toUiState)

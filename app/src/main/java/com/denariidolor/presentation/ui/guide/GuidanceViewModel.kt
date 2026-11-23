@@ -9,7 +9,7 @@ package com.denariidolor.presentation.ui.guide
 import androidx.lifecycle.ViewModel
 import com.denariidolor.data.local.preferences.OnboardingStore
 import com.denariidolor.data.local.preferences.RatePromptStore
-import dev.zacsweers.metro.AppScope
+import com.denariidolor.di.SessionScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 /** The welcome tour and the rate prompt, both shown above every screen of `MainActivity`. */
 @ViewModelKey
-@ContributesIntoMap(AppScope::class)
+@ContributesIntoMap(SessionScope::class)
 @Inject
 class GuidanceViewModel(private val onboarding: OnboardingStore, private val ratePrompt: RatePromptStore) : ViewModel() {
     val tourPending: StateFlow<Boolean> = onboarding.tourPending

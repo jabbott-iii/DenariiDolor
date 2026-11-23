@@ -12,11 +12,11 @@ import androidx.lifecycle.viewModelScope
 import com.denariidolor.R
 import com.denariidolor.data.export.ReportExporter
 import com.denariidolor.data.export.ReportFormat
+import com.denariidolor.di.SessionScope
 import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.domain.usecase.GenerateReportUseCase
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.runSuspendCatching
-import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
@@ -49,7 +49,7 @@ sealed interface ReportEvent {
 }
 
 @ViewModelKey
-@ContributesIntoMap(AppScope::class)
+@ContributesIntoMap(SessionScope::class)
 @Inject
 class ReportViewModel(private val generateReportUseCase: GenerateReportUseCase, private val reportExporter: ReportExporter, clock: Clock) :
     ViewModel() {

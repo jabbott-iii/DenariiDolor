@@ -13,13 +13,13 @@ import com.denariidolor.data.local.preferences.CurrencySettings
 import com.denariidolor.data.local.preferences.ThemeSettings
 import com.denariidolor.data.local.vault.SettingsVault
 import com.denariidolor.data.local.vault.VaultState
+import com.denariidolor.di.SessionScope
 import com.denariidolor.presentation.platform.BiometricPromptResult
 import com.denariidolor.presentation.ui.auth.BiometricCapability
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.Constants
 import com.denariidolor.util.Currencies
 import com.denariidolor.util.runSuspendCatching
-import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
@@ -68,7 +68,7 @@ sealed interface SettingsEvent {
 
 /** Dark mode, biometric sign-in and the currency label, which MainActivity used to handle itself. */
 @ViewModelKey
-@ContributesIntoMap(AppScope::class)
+@ContributesIntoMap(SessionScope::class)
 @Inject
 class SettingsViewModel(
     private val vault: SettingsVault,

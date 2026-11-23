@@ -14,11 +14,11 @@ import com.denariidolor.data.repository.AccountRepository
 import com.denariidolor.data.repository.BudgetRepository
 import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.data.repository.TransactionRepository
+import com.denariidolor.di.SessionScope
 import com.denariidolor.domain.usecase.DeleteTransactionUseCase
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.presentation.ui.common.buildTransactionRows
 import com.denariidolor.util.DateUtils
-import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
@@ -43,7 +43,7 @@ import kotlinx.datetime.toKotlinYearMonth
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @ViewModelKey
-@ContributesIntoMap(AppScope::class)
+@ContributesIntoMap(SessionScope::class)
 @Inject
 class DashboardViewModel(
     private val transactionRepository: TransactionRepository,

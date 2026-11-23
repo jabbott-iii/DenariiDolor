@@ -6,11 +6,14 @@
 
 package com.denariidolor.di
 
+import com.denariidolor.data.backup.BackupManager
+import com.denariidolor.data.backup.BackupService
 import com.denariidolor.data.local.preferences.CryptoPrimitives
 import com.denariidolor.data.local.preferences.JcaCryptoPrimitives
 import com.denariidolor.data.local.vault.SettingsVault
 import com.denariidolor.data.local.vault.SignInVault
 import com.denariidolor.data.local.vault.Vault
+import com.denariidolor.data.local.vault.VaultConfig
 import com.denariidolor.presentation.ui.auth.BiometricCapability
 import com.denariidolor.presentation.ui.auth.DeviceBiometricCapability
 import com.denariidolor.util.DeviceClock
@@ -39,6 +42,10 @@ object AppModule {
     fun provideCryptoPrimitives(): CryptoPrimitives = JcaCryptoPrimitives()
 
     @Provides
+    @SingleIn(AppScope::class)
+    fun provideVaultConfig(): VaultConfig = VaultConfig()
+
+    @Provides
     fun provideSignInVault(vault: Vault): SignInVault = vault
 
     @Provides
@@ -46,4 +53,8 @@ object AppModule {
 
     @Provides
     fun provideBiometricCapability(capability: DeviceBiometricCapability): BiometricCapability = capability
+
+    /** Backups read the database through [com.denariidolor.data.local.db.DatabaseHolder] only while one runs. */
+    @Provides
+    fun provideBackupService(manager: BackupManager): BackupService = manager
 }

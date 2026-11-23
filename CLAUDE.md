@@ -78,10 +78,16 @@ wipe through `Vault` (as `SignInVault`), and the activity keeps the overlay guar
 `presentation/ui/AppScreens.kt`, where `SettingsViewModel` turns biometric sign-in on and off through `Vault` (as
 `SettingsVault`).
 
-Dependency injection is Metro. `App` creates `AppGraph` (`di/`), and both activities call `appGraph.inject(this)` before
-`super.onCreate`. A ViewModel is `@Inject` plus `@ViewModelKey @ContributesIntoMap(AppScope::class)`, and a Route gets it
-with `metroViewModel()`. A ViewModel that reads navigation arguments takes an `@Assisted SavedStateHandle` through a
-`ViewModelAssistedFactory`, as `TransactionViewModel` does.
+Dependency injection is Metro, with two graphs in `di/`:
+
+- `AppGraph`, created by `App`, holds the process-wide singletons and what sign-in needs. Both activities call
+  `appGraph.inject(this)` before `super.onCreate`.
+- `SessionGraph` extends it with everything that reads the database: the database, DAOs, repositories, use cases and the
+  signed-in app's ViewModels. `MainActivity` creates one after its session check, and it goes away with the activity.
+
+A ViewModel is `@Inject` plus `@ViewModelKey @ContributesIntoMap(SessionScope::class)`; only `LoginViewModel` uses
+`AppScope`. A Route gets it with `metroViewModel()`. A ViewModel that reads navigation arguments takes an
+`@Assisted SavedStateHandle` through a `ViewModelAssistedFactory`, as `TransactionViewModel` does.
 
 Dependency rules:
 
@@ -94,11 +100,10 @@ Dependency rules:
    reference data goes through `CategoryUseCases`, `AccountUseCases` or `BudgetUseCases`. Validation and balance updates run
    in those use cases.
 3. Code outside `data/` and `di/` depends on repository **interfaces**, never on a `…Impl` class.
-4. The database exists only after sign-in. `AppDatabase`, the DAOs and the repositories are unscoped and come from
-   `DatabaseHolder`. Never inject them into `LoginActivity`, a `@SingleIn(AppScope::class)` singleton, or anything else that
-   runs before sign-in.
-   `DatabaseHolder.database` throws while the vault is locked. That's a security control, not a bug to work around.
-   `LockedVaultGraphTest` checks that the app graph builds while the vault is locked and refuses database-bound screens.
+4. The database exists only after sign-in. `AppDatabase`, the DAOs, the repositories and the use cases are only in
+   `SessionGraph`. `AppGraph` can't see them, so asking for one from a singleton, `LoginActivity` or anything else that runs
+   before sign-in fails to compile. The database binding is unscoped and `DatabaseHolder.database` throws while the vault
+   is locked. That's a security control, not a bug to work around. `LockedVaultGraphTest` checks both graphs.
 5. Anything that depends on "now" takes an injected clock and reads the time zone from it, never from
    `ZoneId.systemDefault()` or `TimeZone.currentSystemDefault()`. `domain/` and `util/` take `ZonedClock` (`clock.timeZone`),
    and other code takes `java.time.Clock` (`clock.zone`); both come from `DeviceClock`. The one exception is

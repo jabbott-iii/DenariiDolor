@@ -11,9 +11,9 @@ import androidx.lifecycle.viewModelScope
 import com.denariidolor.R
 import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.data.repository.CategoryRepository
+import com.denariidolor.di.SessionScope
 import com.denariidolor.domain.usecase.CategoryUseCases
 import com.denariidolor.presentation.ui.common.UiMessage
-import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
@@ -26,7 +26,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 @ViewModelKey
-@ContributesIntoMap(AppScope::class)
+@ContributesIntoMap(SessionScope::class)
 @Inject
 class CategoryViewModel(private val categoryUseCases: CategoryUseCases, categoryRepository: CategoryRepository) : ViewModel() {
     val categories: StateFlow<List<CategoryEntity>> = categoryRepository.getAll()

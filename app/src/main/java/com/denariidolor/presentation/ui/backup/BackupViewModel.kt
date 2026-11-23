@@ -15,9 +15,9 @@ import com.denariidolor.data.backup.BackupException
 import com.denariidolor.data.backup.BackupFile
 import com.denariidolor.data.backup.BackupService
 import com.denariidolor.data.backup.BackupSnapshot
+import com.denariidolor.di.SessionScope
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.runSuspendCatching
-import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
@@ -61,7 +61,7 @@ sealed interface BackupEvent {
  * confirmed or cancelled. None of them goes into saved state.
  */
 @ViewModelKey
-@ContributesIntoMap(AppScope::class)
+@ContributesIntoMap(SessionScope::class)
 @Inject
 class BackupViewModel(private val backupService: BackupService, private val clock: Clock) : ViewModel() {
     private val _state = MutableStateFlow(BackupUiState())

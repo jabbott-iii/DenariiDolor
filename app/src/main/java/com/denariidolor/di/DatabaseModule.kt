@@ -12,23 +12,17 @@ import com.denariidolor.data.local.db.dao.AccountDao
 import com.denariidolor.data.local.db.dao.BudgetDao
 import com.denariidolor.data.local.db.dao.CategoryDao
 import com.denariidolor.data.local.db.dao.TransactionDao
-import com.denariidolor.data.local.vault.VaultConfig
-import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides
-import dev.zacsweers.metro.SingleIn
 
-@ContributesTo(AppScope::class)
+/** The open database and its DAOs, only in [SessionGraph] (rule 4). */
+@ContributesTo(SessionScope::class)
 @BindingContainer
 object DatabaseModule {
-    @Provides
-    @SingleIn(AppScope::class)
-    fun provideVaultConfig(): VaultConfig = VaultConfig()
-
     /**
-     * The database opened at the latest sign-in. Unscoped on purpose: inject it (or a repository) only into screens shown
-     * after sign-in. While the vault is locked this throws instead of handing out data.
+     * The database opened at the latest sign-in. Unscoped on purpose: each request reads [DatabaseHolder] again, so after the
+     * vault locks this throws instead of handing out data.
      */
     @Provides
     fun provideAppDatabase(holder: DatabaseHolder): AppDatabase = holder.database

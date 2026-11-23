@@ -6,8 +6,6 @@
 
 package com.denariidolor.di
 
-import com.denariidolor.data.backup.BackupManager
-import com.denariidolor.data.backup.BackupService
 import com.denariidolor.data.repository.AccountRepository
 import com.denariidolor.data.repository.AccountRepositoryImpl
 import com.denariidolor.data.repository.BudgetRepository
@@ -16,12 +14,12 @@ import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.data.repository.CategoryRepositoryImpl
 import com.denariidolor.data.repository.TransactionRepository
 import com.denariidolor.data.repository.TransactionRepositoryImpl
-import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.Binds
 import dev.zacsweers.metro.ContributesTo
 
-@ContributesTo(AppScope::class)
+/** The repositories read the database, so they are only in [SessionGraph] (rule 4). */
+@ContributesTo(SessionScope::class)
 @BindingContainer
 abstract class RepositoryModule {
     @Binds
@@ -35,7 +33,4 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindAccountRepository(impl: AccountRepositoryImpl): AccountRepository
-
-    @Binds
-    abstract fun bindBackupService(impl: BackupManager): BackupService
 }

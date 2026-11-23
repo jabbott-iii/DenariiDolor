@@ -11,7 +11,7 @@ paths:
   - "shared/src/*/kotlin/com/denariidolor/domain/report/ReportCsvFormatter.kt"
   - "app/src/main/java/com/denariidolor/util/SessionManager.kt"
   - "app/src/main/java/com/denariidolor/MainActivity.kt"
-  - "app/src/main/java/com/denariidolor/di/DatabaseModule.kt"
+  - "app/src/main/java/com/denariidolor/di/**"
   - "app/src/main/AndroidManifest.xml"
   - "app/src/main/res/xml/**"
   - "app/proguard-rules.pro"

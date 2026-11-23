@@ -15,6 +15,7 @@ import com.denariidolor.data.local.preferences.RatePromptStore
 import com.denariidolor.data.repository.AccountRepository
 import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.data.repository.TransactionRepository
+import com.denariidolor.di.SessionScope
 import com.denariidolor.domain.model.Expense
 import com.denariidolor.domain.model.Income
 import com.denariidolor.domain.model.Transaction
@@ -28,7 +29,6 @@ import com.denariidolor.domain.usecase.UpdateTransactionUseCase
 import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.runSuspendCatching
-import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
@@ -225,7 +225,7 @@ constructor(
     /** Builds the form's [SavedStateHandle] from the screen's creation extras, which carry the edited transaction's id. */
     @AssistedFactory
     @ViewModelAssistedFactoryKey(TransactionViewModel::class)
-    @ContributesIntoMap(AppScope::class)
+    @ContributesIntoMap(SessionScope::class)
     fun interface Factory : ViewModelAssistedFactory {
         override fun create(extras: CreationExtras): TransactionViewModel = create(extras.createSavedStateHandle())
 

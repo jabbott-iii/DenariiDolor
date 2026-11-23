@@ -11,10 +11,10 @@ import androidx.lifecycle.viewModelScope
 import com.denariidolor.R
 import com.denariidolor.data.local.db.entity.AccountEntity
 import com.denariidolor.data.repository.AccountRepository
+import com.denariidolor.di.SessionScope
 import com.denariidolor.domain.usecase.AccountUseCases
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.Money
-import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
@@ -27,7 +27,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 @ViewModelKey
-@ContributesIntoMap(AppScope::class)
+@ContributesIntoMap(SessionScope::class)
 @Inject
 class AccountViewModel(private val accountUseCases: AccountUseCases, accountRepository: AccountRepository) : ViewModel() {
     val accounts: StateFlow<List<AccountEntity>> = accountRepository.getAll()

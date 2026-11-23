@@ -11,12 +11,12 @@ import androidx.lifecycle.viewModelScope
 import com.denariidolor.data.local.db.entity.TransactionEntity
 import com.denariidolor.data.repository.AccountRepository
 import com.denariidolor.data.repository.CategoryRepository
+import com.denariidolor.di.SessionScope
 import com.denariidolor.domain.model.SearchFilters
 import com.denariidolor.domain.usecase.SearchTransactionUseCase
 import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.presentation.ui.common.TransactionRow
 import com.denariidolor.presentation.ui.common.buildTransactionRows
-import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
@@ -40,7 +40,7 @@ import kotlinx.datetime.toKotlinTimeZone
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @ViewModelKey
-@ContributesIntoMap(AppScope::class)
+@ContributesIntoMap(SessionScope::class)
 @Inject
 class SearchViewModel(
     private val searchTransactionUseCase: SearchTransactionUseCase,

@@ -22,7 +22,6 @@ import com.denariidolor.presentation.ui.common.setThemedContent
 import com.denariidolor.util.SessionManager
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
-import dev.zacsweers.metrox.viewmodel.MetroViewModelFactory
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -38,9 +37,6 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var themePreferences: ThemePreferences
 
-    @Inject
-    lateinit var viewModelFactory: MetroViewModelFactory
-
     override fun onCreate(savedInstanceState: Bundle?) {
         // Filled before anything reads them, including the session check below (CS-02).
         appGraph.inject(this)
@@ -50,9 +46,11 @@ class MainActivity : AppCompatActivity() {
             redirectToLogin()
             return
         }
+        // Only now, with the vault unlocked, can anything reach the database (rule 4). The graph goes away with this activity.
+        val session = appGraph.createSessionGraph()
         // Settings, with biometric enrollment (CS-07), runs in SettingsViewModel; the activity keeps the session and restarts.
         setThemedContent(themePreferences) {
-            CompositionLocalProvider(LocalMetroViewModelFactory provides viewModelFactory) {
+            CompositionLocalProvider(LocalMetroViewModelFactory provides session.viewModelFactory) {
                 MainActivityContent(onSignOut = ::redirectToLogin, onCurrencyChanged = ::restart, onRestored = ::restart)
             }
         }

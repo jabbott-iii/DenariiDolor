@@ -13,10 +13,10 @@ import com.denariidolor.data.local.db.entity.BudgetEntity
 import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.data.repository.BudgetRepository
 import com.denariidolor.data.repository.CategoryRepository
+import com.denariidolor.di.SessionScope
 import com.denariidolor.domain.usecase.BudgetUseCases
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.Money
-import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
@@ -37,7 +37,7 @@ fun buildBudgetRows(categories: List<CategoryEntity>, budgets: List<BudgetEntity
 }
 
 @ViewModelKey
-@ContributesIntoMap(AppScope::class)
+@ContributesIntoMap(SessionScope::class)
 @Inject
 class BudgetViewModel(
     private val budgetUseCases: BudgetUseCases,

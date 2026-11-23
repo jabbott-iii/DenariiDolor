@@ -23,7 +23,8 @@ paths:
     activity-result launchers. `PlatformBoundaryTest` fails on any other file that does, and `PlatformIntentsTest` pins
     each intent.
 - **ViewModels.**
-  - Declare them as `@Inject @ViewModelKey @ContributesIntoMap(AppScope::class) class XxxViewModel(…) : ViewModel()`.
+  - Declare them as `@Inject @ViewModelKey @ContributesIntoMap(SessionScope::class) class XxxViewModel(…) : ViewModel()`.
+    Screens of the signed-in app live in `SessionGraph`; only `LoginViewModel` contributes to `AppScope`.
   - One that reads navigation arguments is `@AssistedInject` with an `@Assisted savedStateHandle: SavedStateHandle` and a
     nested `ViewModelAssistedFactory` that builds the handle with `extras.createSavedStateHandle()`. See
     `LegalDocumentViewModel`.

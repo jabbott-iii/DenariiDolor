@@ -14,8 +14,8 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import com.denariidolor.data.legal.LegalBlock
 import com.denariidolor.data.legal.LegalDocument
 import com.denariidolor.data.legal.LegalDocuments
+import com.denariidolor.di.SessionScope
 import com.denariidolor.util.runSuspendCatching
-import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
@@ -46,7 +46,7 @@ class LegalDocumentViewModel(@Assisted savedStateHandle: SavedStateHandle, docum
     /** Builds the [SavedStateHandle] from the screen's creation extras, which carry the document's name. */
     @AssistedFactory
     @ViewModelAssistedFactoryKey(LegalDocumentViewModel::class)
-    @ContributesIntoMap(AppScope::class)
+    @ContributesIntoMap(SessionScope::class)
     fun interface Factory : ViewModelAssistedFactory {
         override fun create(extras: CreationExtras): LegalDocumentViewModel = create(extras.createSavedStateHandle())
 
