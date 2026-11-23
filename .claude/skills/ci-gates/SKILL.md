@@ -32,7 +32,7 @@ If something fails, read the report rather than guessing:
 | ktlint | the console output, and `app/build/reports/ktlint/` |
 | detekt | `app/build/reports/detekt/` (`detekt.txt` or `.html`) |
 | Android lint | `app/build/reports/lint-results-debug.*` (HTML and XML) |
-| Unit tests | `app/build/reports/tests/testDebugUnitTest/index.html` and `app/build/test-results/testDebugUnitTest/TEST-*.xml` |
+| Unit tests | `app/build/reports/tests/testDebugUnitTest/index.html` and `app/build/test-results/testDebugUnitTest/TEST-*.xml`; for `:shared`, `shared/build/reports/tests/testAndroidHostTest/` and `shared/build/test-results/testAndroidHostTest/` |
 
 How to fix each kind of failure:
 

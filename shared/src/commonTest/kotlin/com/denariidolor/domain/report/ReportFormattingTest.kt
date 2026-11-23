@@ -9,12 +9,12 @@ package com.denariidolor.domain.report
 import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.domain.model.ReportRow
 import com.denariidolor.domain.model.TransactionType
-import java.util.Locale
+import com.denariidolor.util.localeOf
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.YearMonth
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
 
 class ReportFormattingTest {
     private val utc = TimeZone.of("UTC")
@@ -34,7 +34,7 @@ class ReportFormattingTest {
 
     @Test
     fun labelsAndFileName() {
-        assertEquals("September 2026", ReportText.periodLabel(YearMonth(2026, 9), Locale.US))
+        assertEquals("September 2026", ReportText.periodLabel(YearMonth(2026, 9), localeOf("en-US")))
         assertEquals("spending-report-2026-09.pdf", ReportText.fileName(YearMonth(2026, 9), "pdf"))
     }
 
@@ -54,7 +54,7 @@ class ReportFormattingTest {
 
     @Test
     fun csvContainsMetadataHeaderAndRows() {
-        val lines = ReportCsvFormatter.format(report, Locale.US).split("\r\n")
+        val lines = ReportCsvFormatter.format(report, localeOf("en-US")).split("\r\n")
 
         assertEquals("title,Monthly Spending Report", lines[0])
         assertEquals("period,September 2026", lines[1])
@@ -67,10 +67,10 @@ class ReportFormattingTest {
     @Test
     fun csvWritesTimesAndDatesInTheReportsZone() {
         // 12:00 UTC on Sep 21 is 05:00 in Phoenix, and midnight UTC on Sep 1 is still Aug 31 there.
-        val lines = ReportCsvFormatter.format(report.copy(timeZone = TimeZone.of("America/Phoenix")), Locale.US).split("\r\n")
+        val lines = ReportCsvFormatter.format(report.copy(timeZone = TimeZone.of("America/Phoenix")), localeOf("en-US")).split("\r\n")
 
-        assertTrue(lines[2], lines[2].startsWith("generated_at,2026-09-21 05:00 "))
-        assertTrue(lines[8], lines[8].startsWith("2026-08-31,EXPENSE,Dining,"))
+        assertTrue(lines[2].startsWith("generated_at,2026-09-21 05:00 "), lines[2])
+        assertTrue(lines[8].startsWith("2026-08-31,EXPENSE,Dining,"), lines[8])
     }
 
     @Test

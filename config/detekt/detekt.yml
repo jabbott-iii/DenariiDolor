@@ -14,7 +14,7 @@ complexity:
     threshold: 80
     ignoreAnnotated: ['Composable']
   TooManyFunctions:
-    excludes: ['**/test/**', '**/androidTest/**']
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/androidHostTest/**']
     # Count the public surface only; private helpers and interface overrides don't make a class harder to use.
     ignorePrivate: true
     ignoreOverridden: true
@@ -23,7 +23,7 @@ complexity:
 
 style:
   MagicNumber:
-    excludes: ['**/test/**', '**/androidTest/**']
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/androidHostTest/**']
     ignoreAnnotated: ['Composable']
     ignorePropertyDeclaration: true
     ignoreCompanionObjectPropertyDeclaration: true

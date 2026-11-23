@@ -20,6 +20,11 @@ kotlin {
         namespace = "com.denariidolor.shared"
         compileSdk = 37
         minSdk = 26
+
+        // JVM tests on the build machine. :app's testDebugUnitTest and coverage report run these too.
+        withHostTest {
+            enableCoverage = true
+        }
     }
 
     sourceSets {
@@ -27,6 +32,14 @@ kotlin {
             // Shared types use both in their public API (YearMonth, TimeZone, StateFlow).
             api(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.datetime)
+        }
+        // Tests for common code that will also run on iOS. Tests that compare against java.* stay in androidHostTest.
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
+        // The tests that compare against java.time and java.text, or set the JVM's default locale, stay on JUnit 4.
+        getByName("androidHostTest").dependencies {
+            implementation(libs.junit)
         }
     }
 }
@@ -63,5 +76,5 @@ configurations.matching { it.name == "detekt" }.configureEach {
 detekt {
     buildUponDefaultConfig = true
     config.setFrom(rootProject.file("config/detekt/detekt.yml"))
-    source.setFrom("src/commonMain/kotlin", "src/androidMain/kotlin")
+    source.setFrom("src/commonMain/kotlin", "src/androidMain/kotlin", "src/commonTest/kotlin", "src/androidHostTest/kotlin")
 }

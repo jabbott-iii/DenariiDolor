@@ -12,9 +12,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The :shared module's common code must stay portable for the iOS phases. While Android is its only target, the compiler
- * builds commonMain as Android code and accepts Java and Android APIs there, so this test refuses them instead. Nothing in
- * commonMain is injected yet, so @Inject is refused too.
+ * The :shared module's common code and its tests must stay portable for the iOS phases. While Android is its only target,
+ * the compiler builds commonMain and commonTest as Android code and accepts Java and Android APIs there, so this test refuses
+ * them instead. Nothing in commonMain is injected yet, so @Inject is refused too.
  */
 class SharedCodeBoundaryTest {
     @Test
@@ -32,12 +32,14 @@ class SharedCodeBoundaryTest {
     fun theScanSeesTheSharedCode() {
         val names = commonSources().map { it.name }.toSet()
 
-        assertTrue(names.toString(), names.containsAll(listOf("Ledger.kt", "BackupSnapshot.kt", "ZonedClock.kt")))
+        assertTrue(names.toString(), names.containsAll(listOf("Ledger.kt", "BackupSnapshot.kt", "ZonedClock.kt", "MoneySnapshotTest.kt")))
     }
 
     private fun commonSources(): List<File> {
-        val root = listOf(File("../shared/src/commonMain/kotlin"), File("shared/src/commonMain/kotlin")).first { it.isDirectory }
-        return root.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
+        val shared = listOf(File("../shared"), File("shared")).first { it.resolve("src/commonMain").isDirectory }
+        return listOf("src/commonMain/kotlin", "src/commonTest/kotlin").flatMap { path ->
+            shared.resolve(path).walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
+        }
     }
 
     /** KDoc may name a Java type to explain a choice; only code counts. */

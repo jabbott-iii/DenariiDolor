@@ -7,10 +7,10 @@
 package com.denariidolor
 
 import com.denariidolor.util.DateUtils
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import org.junit.Assert.assertEquals
-import org.junit.Test
 
 class DateUtilsTest {
     private val zoneId = TimeZone.of("UTC")

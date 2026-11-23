@@ -37,9 +37,14 @@ paths:
   `org.jetbrains.kotlin.multiplatform` by id, without a version, because the root `buildscript` already puts the catalog's
   Kotlin Gradle plugin on the classpath. It also applies `com.android.kotlin.multiplatform.library`, which
   `settings.gradle.kts` resolves to the AGP artifact.
-- `:shared` has only an Android target until the iOS phases. It has no `lintDebug`, `testDebugUnitTest` or
-  `assembleRelease` task, so those CI steps cover `:app`; `ktlintCheck` and `detekt` cover both modules. Tests for shared
-  code stay in `app/src/test` until the tests move to `commonTest`.
+- `:shared` has only an Android target until the iOS phases. It has no `lintDebug` or `assembleRelease` task, so those CI
+  steps cover `:app`; `ktlintCheck` and `detekt` cover both modules, tests included. Its JVM tests run in
+  `testAndroidHostTest`, with coverage on. `:app`'s `testDebugUnitTest` depends on that task, and
+  `createDebugUnitTestCoverageReport` on `createAndroidHostTestCoverageReport`, so CI and CD run them without naming
+  `:shared`. CI's uploaded report artifact still holds only `app/build`.
+- `:app`'s `testDebugUnitTest` declares `shared/src`'s common and Android sources as inputs, because
+  `SharedCodeBoundaryTest` and `ClockBoundaryTest` read those files. Without that, a change no class reflects, such as an
+  unused `java.*` import, would leave the task up to date.
 - `:shared` repeats `:app`'s ktlint logback constraint (CS-22) and detekt's Kotlin pin. Keep the two in step.
 
 ## Pinned versions (don't bump one on its own)

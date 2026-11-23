@@ -30,7 +30,7 @@ All versions live in `gradle/libs.versions.toml`, and some are pinned on purpose
 - **App:** Jetpack Compose with Material 3, Navigation Compose (string routes), Metro (compile-time DI, a Kotlin compiler
   plugin), Room 2.8 with KSP over SQLCipher, Coroutines and Flow, kotlinx-datetime, Vico charts.
 - **Tests:** JUnit 4, kotlinx-coroutines-test and hand-written fakes (there is no mocking library), plus Compose UI test,
-  Espresso and UiAutomator.
+  Espresso and UiAutomator. `:shared`'s `commonTest` uses kotlin.test, so those tests can also run on iOS.
 
 ## Commands
 
@@ -40,12 +40,13 @@ Run these from the repository root. CI (`.github/workflows/ci.yml`) runs every o
 ./gradlew ktlintCheck                  # fix with ./gradlew ktlintFormat
 ./gradlew detekt                       # default rules + config/detekt/detekt.yml
 ./gradlew lintDebug                    # includes missing translations and Compose lint errors
-./gradlew testDebugUnitTest            # JVM unit tests
+./gradlew testDebugUnitTest            # JVM unit tests, in both modules
 ./gradlew assembleRelease              # R8 minify and resource shrinking; unsigned locally
 ./gradlew connectedDebugAndroidTest    # device/emulator required; CI runs API 26 and API 36
 ```
 
-- One unit test class: `./gradlew testDebugUnitTest --tests "com.denariidolor.LedgerTest"`.
+- One unit test class: `./gradlew testDebugUnitTest --tests "com.denariidolor.presentation.ui.UiMessageTest"`. For a class
+  in `:shared`, use `./gradlew :shared:testAndroidHostTest --tests "com.denariidolor.LedgerTest"`.
 - One instrumented class: `./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.denariidolor.data.MigrationTest`.
 - The machine's `java` may be newer than 17. Gradle provisions JDK 17 through the toolchain, so don't change `jvmToolchain(17)`.
 - `adb` may not be on `PATH`. The SDK location is `sdk.dir` in `local.properties`.
@@ -66,11 +67,13 @@ shared/        src/commonMain: the same packages, for code that needs nothing fr
                injected yet. So far the domain models, Money, Currencies, DateUtils, Validators, ZonedClock,
                runSuspendCatching, transferRoute, ReportText, ReportCsvFormatter, BackupSnapshot and the crypto,
                guidance and theme interfaces. PlatformFormat declares what the platform's locale data decides;
-               src/androidMain implements it
+               src/androidMain implements it. src/commonTest holds their tests (kotlin.test); src/androidHostTest
+               holds the few that compare against java.* or set the JVM's default locale
 ```
 
 Code moves into `:shared` one reviewed step at a time, keeping its package, so imports don't change. Until `:shared` has a
-second target, the compiler accepts Java and Android APIs in `commonMain`, so `SharedCodeBoundaryTest` refuses them.
+second target, the compiler accepts Java and Android APIs in `commonMain` and `commonTest`, so `SharedCodeBoundaryTest`
+refuses them. `:app`'s `testDebugUnitTest` and `createDebugUnitTestCoverageReport` also run `:shared`'s tests and coverage.
 
 There are two activities. `LoginActivity` is the exported launcher. Its `LoginViewModel` runs setup, sign-in, recovery and
 wipe through `Vault` (as `SignInVault`), and the activity keeps the overlay guard, the biometric prompt and the start of

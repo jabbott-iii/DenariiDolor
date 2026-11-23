@@ -10,8 +10,8 @@ import com.denariidolor.domain.model.Expense
 import com.denariidolor.domain.model.Income
 import com.denariidolor.domain.model.Ledger
 import com.denariidolor.domain.model.Transfer
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class LedgerTest {
     private val expense = Expense(id = 1, description = "Food", amountCents = 4_500, categoryId = 1, accountId = 1, dateEpochMillis = 1L)

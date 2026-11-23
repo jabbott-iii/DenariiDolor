@@ -2,6 +2,8 @@
 paths:
   - "app/src/test/**"
   - "app/src/androidTest/**"
+  - "shared/src/commonTest/**"
+  - "shared/src/androidHostTest/**"
 ---
 
 # Tests
@@ -10,7 +12,7 @@ paths:
 
 | Change | Test |
 |---|---|
-| Domain logic, a use case, a mapper, a parser or a ViewModel | JVM unit test in `app/src/test` |
+| Domain logic, a use case, a mapper, a parser or a ViewModel | JVM unit test in `app/src/test`, or in `shared/src/commonTest` for code in `:shared` |
 | A DAO query, a migration, a repository transaction, Room/SQLCipher, Keystore, PDF rendering or a Compose screen | Instrumented test in `app/src/androidTest` |
 | A new `DomainError` | Its mapping, covered by `UiMessageTest` |
 | A bug fix | A test that fails without the fix |
@@ -19,8 +21,16 @@ Never delete a test, mark it `@Ignore` or loosen an assertion to get a green bui
 
 ## JVM unit tests
 
-- **Shared code:** its tests still live in `app/src/test`, in the same package, until the tests move to `commonTest`.
-- **Framework:** JUnit 4 (`org.junit.Test`, `org.junit.Assert.*`) with `kotlinx-coroutines-test` (`runTest`).
+- **Framework:** JUnit 4 (`org.junit.Test`, `org.junit.Assert.*`) with `kotlinx-coroutines-test` (`runTest`) in `:app`.
+- **Shared code:** its tests live in `shared/src/commonTest`, in the same package, so they can run on iOS later.
+  - They use kotlin.test (`kotlin.test.Test`, `assertEquals`, `assertFailsWith`). A failure message goes last, as in
+    `assertEquals(expected, actual, message)`, not first as in JUnit.
+  - Name locales with `localeOf("fr-FR")` and currencies with `currencyOf("EUR")`, never `java.util`.
+    `SharedCodeBoundaryTest` refuses Java and Android APIs in `commonTest` as in `commonMain`.
+  - Only a test that compares against `java.*` or sets the JVM's default locale goes in `shared/src/androidHostTest`, on
+    JUnit 4 (`MoneyCompatibilityTest`, `DateUtilsCompatibilityTest`, `DefaultLocalesTest`).
+  - A test that needs an `:app` fixture stays in `app/src/test`: `BackupSnapshotTest` uses the backup tests'
+    `sampleSnapshot()`.
 - **No mocking library.** Use or extend the fakes and the `TestData` builders, which are all in
   `testutil/FakeRepositories.kt`. Ask before adding Mockito, MockK, Robolectric, Turbine or Truth.
 - **ViewModels:**
@@ -63,11 +73,14 @@ Never delete a test, mark it `@Ignore` or loosen an assertion to get a green bui
 
 ```bash
 ./gradlew testDebugUnitTest --tests "com.denariidolor.presentation.viewmodel.DashboardViewModelTest"
+./gradlew :shared:testAndroidHostTest --tests "com.denariidolor.util.MoneyTest"
 ./gradlew createDebugUnitTestCoverageReport
 ./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.denariidolor.data.MigrationTest
 ```
 
+- `testDebugUnitTest` runs every `:shared` test too, even with `--tests`, which filters only `:app`'s.
 - Unit test reports are in `app/build/reports/tests/testDebugUnitTest/`, and the JaCoCo report is in
-  `app/build/reports/coverage/`.
+  `app/build/reports/coverage/`. `:shared`'s are in `shared/build/reports/tests/testAndroidHostTest/` and
+  `shared/build/reports/coverage/`.
 - Run the instrumented tests only when `adb devices` lists a device. If none is attached, say in your summary that they
   weren't run.

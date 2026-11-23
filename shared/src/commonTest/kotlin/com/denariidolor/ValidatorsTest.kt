@@ -8,9 +8,9 @@ package com.denariidolor
 
 import com.denariidolor.domain.model.SearchFilters
 import com.denariidolor.util.Validators
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class ValidatorsTest {
     @Test

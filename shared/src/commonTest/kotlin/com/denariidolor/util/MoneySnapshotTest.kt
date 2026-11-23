@@ -8,11 +8,9 @@ package com.denariidolor.util
 
 import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.report.ReportText
-import java.util.Currency
-import java.util.Locale
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlinx.datetime.YearMonth
-import org.junit.Assert.assertEquals
-import org.junit.Test
 
 /**
  * Money and month labels exactly as each of the app's languages shows them today, in the region currency and in US dollars.
@@ -25,22 +23,22 @@ class MoneySnapshotTest {
     fun moneyIsShownAsEachLanguageShowsIt() {
         MONEY.forEach { (key, expected) ->
             val (tag, code) = key.split(' ')
-            val locale = Locale.forLanguageTag(tag)
-            val currency = Currency.getInstance(code)
+            val locale = localeOf(tag)
+            val currency = currencyOf(code)
             val actual = AMOUNTS.map { formatMoney(it, currency, locale) } +
                 formatMoney(PLUS_AMOUNT, currency, locale, showPlus = true) +
                 TransactionType.entries.map { formatSignedAmount(it, SIGNED_AMOUNT, currency, locale) }
 
-            assertEquals(key, expected, actual)
+            assertEquals(expected, actual, key)
         }
     }
 
     @Test
     fun monthLabelsAreShownAsEachLanguageShowsThem() {
         PERIODS.forEach { (tag, expected) ->
-            val locale = Locale.forLanguageTag(tag)
+            val locale = localeOf(tag)
 
-            assertEquals(tag, expected, listOf(YearMonth(2026, 5), YearMonth(2026, 9)).map { ReportText.periodLabel(it, locale) })
+            assertEquals(expected, listOf(YearMonth(2026, 5), YearMonth(2026, 9)).map { ReportText.periodLabel(it, locale) }, tag)
         }
     }
 

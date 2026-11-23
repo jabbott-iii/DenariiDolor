@@ -101,6 +101,19 @@ androidComponents {
     }
 }
 
+// :shared's JVM tests and their coverage report run with this module's, so `testDebugUnitTest` and
+// `createDebugUnitTestCoverageReport` (in CI, in CD before a release, and locally) cover both modules.
+tasks.named { it == "testDebugUnitTest" }.configureEach {
+    dependsOn(":shared:testAndroidHostTest")
+    // SharedCodeBoundaryTest and ClockBoundaryTest read these files, so editing one must rerun them even when no class changes.
+    inputs.files(fileTree(rootDir.resolve("shared/src")) { include("commonMain/**", "commonTest/**", "androidMain/**") })
+        .withPropertyName("sharedSourcesReadByBoundaryTests")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+}
+tasks.named { it == "createDebugUnitTestCoverageReport" }.configureEach {
+    dependsOn(":shared:createAndroidHostTestCoverageReport")
+}
+
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
