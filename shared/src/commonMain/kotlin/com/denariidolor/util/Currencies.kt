@@ -25,6 +25,9 @@ object Currencies {
     /** The ISO code if it names a supported currency, otherwise null. */
     fun fromCode(code: String?): PlatformCurrency? = code?.let(::currencyForCode)?.takeIf(::isSupported)
 
+    /** The ISO 4217 code, which [fromCode] reads back: what settings and backups store. */
+    fun code(currency: PlatformCurrency): String = currencyCode(currency)
+
     /** The choices for Settings: the common currencies plus [current], in that order and without duplicates. */
     fun options(current: PlatformCurrency): List<PlatformCurrency> =
         (COMMON.map { code -> checkNotNull(currencyForCode(code)) { "$code is ISO 4217" } } + current).distinct()

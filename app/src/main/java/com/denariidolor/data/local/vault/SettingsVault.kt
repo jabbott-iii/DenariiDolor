@@ -6,8 +6,6 @@
 
 package com.denariidolor.data.local.vault
 
-import javax.crypto.Cipher
-
 /**
  * What Settings does with the [Vault] while signed in: turn biometric sign-in on and off (CS-07). An interface, so its
  * ViewModel can be tested without the Keystore. Each call runs off the main thread, as [Vault] documents.
@@ -16,10 +14,10 @@ interface SettingsVault {
     suspend fun state(): VaultState
 
     /** A cipher for `BiometricPrompt` that wraps the database key with a new biometric-bound key. Needs an unlocked vault. */
-    suspend fun prepareBiometricEnrollment(): Cipher
+    suspend fun prepareBiometricEnrollment(): PlatformCipher
 
     /** Stores the database key wrapped by the cipher `BiometricPrompt` authorized; false if the vault locked meanwhile. */
-    suspend fun completeBiometricEnrollment(cipher: Cipher): Boolean
+    suspend fun completeBiometricEnrollment(cipher: PlatformCipher): Boolean
 
     /** Deletes the biometric wrap and its key; the PIN and the security answer still open the vault. */
     suspend fun disableBiometric()

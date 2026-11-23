@@ -48,6 +48,8 @@ The app is offline and single-user.
   - one from the PIN and one from the normalized security answer. Each is PBKDF2-HMAC-SHA256 with 210,000 iterations,
     followed by an HMAC with a non-exportable Keystore device key, so guesses can only be checked on the device;
   - optionally, one under a Keystore key that requires `BIOMETRIC_STRONG` for every use, through a `CryptoObject` (CS-07).
+    The ViewModels, `PlatformActions.kt` and the vault interfaces call that cipher `PlatformCipher`, a typealias of
+    `javax.crypto.Cipher` on Android, so it is the same object end to end.
 - **The rest of the profile** is one AES-GCM blob under a Keystore storage key (`KeystoreProfileStore`, prefs file
   `vault_profile`).
 - **Locking:** `Vault.lock()` closes the database and zeroes the passphrase, which SQLCipher holds by reference.

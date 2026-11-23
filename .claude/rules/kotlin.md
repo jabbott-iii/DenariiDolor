@@ -76,12 +76,17 @@ Match the file you're editing first. These rules cover what it doesn't show.
 - Amounts are `Long` cents. `Money` parses and scales them in plain Kotlin, without `BigDecimal`. Never use `Float` or `Double`
   for a value that is stored, compared or summed.
 - Whatever depends on the device's locale data goes through `PlatformFormat`: how money is written, the decimal mark and
-  currency symbols that parsing needs, month names and zone names, and which currency a code or region means.
-  - `shared/src/commonMain/.../util/PlatformFormat.kt` declares it with `expect`, and `PlatformFormat.android.kt` in
-    `androidMain` implements it on `java.text`, `java.math` and `java.time`. An iOS version must match `MoneySnapshotTest`.
+  currency symbols that parsing needs, month names and zone names. The device's locales and which currency a code or region
+  means go through `PlatformLocale` and `PlatformCurrency`.
+  - `shared/src/commonMain/.../util/PlatformFormat.kt`, `PlatformLocale.kt` and `PlatformCurrency.kt` declare these with
+    `expect`, and their `.android.kt` files in `androidMain` implement them on `java.util`, `java.text`, `java.math` and
+    `java.time`. An iOS version must match `MoneySnapshotTest`.
   - Shared code names locales and currencies `PlatformLocale` and `PlatformCurrency`. On Android these are typealiases of
-    `java.util.Locale` and `java.util.Currency`, so Android code keeps passing those. `:shared` compiles with
-    `-Xexpect-actual-classes` because Kotlin still calls expect classes Beta.
+    `java.util.Locale` and `java.util.Currency`, so Android code keeps passing those. `Currencies.code` gives a currency's
+    ISO code. `:shared` compiles with `-Xexpect-actual-classes` because Kotlin still calls expect classes Beta.
+  - In the same way, `PlatformUri` (`util`) is a file the platform hands over, `android.net.Uri` on Android, and
+    `PlatformCipher` (`data/local/vault`) is what the biometric prompt authorizes, `javax.crypto.Cipher` on Android. Common
+    code only passes them along.
   - Amounts and `parseToCents` default to the format locale (`defaultFormatLocale()`); transfer arrows, month names and the
     CSV period follow the language (`defaultLocale()`). `DefaultLocalesTest` pins which is which.
 

@@ -38,6 +38,13 @@ class CurrenciesTest {
     }
 
     @Test
+    fun codeIsTheIsoCodeThatFromCodeReads() {
+        assertEquals("USD", Currencies.code(Currencies.DEFAULT))
+        assertEquals("EUR", Currencies.code(currencyOf("EUR")))
+        assertEquals(currencyOf("BRL"), Currencies.fromCode(Currencies.code(currencyOf("BRL"))))
+    }
+
+    @Test
     fun optionsIncludeTheCurrentCurrencyOnce() {
         val peso = currencyOf("UYU") // Uruguayan peso: supported, but not one of the common choices
         val options = Currencies.options(peso)

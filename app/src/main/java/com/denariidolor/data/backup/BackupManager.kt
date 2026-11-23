@@ -14,6 +14,7 @@ import com.denariidolor.data.local.preferences.CurrencyPreferences
 import com.denariidolor.di.ApplicationContext
 import com.denariidolor.util.Constants
 import com.denariidolor.util.Currencies
+import com.denariidolor.util.PlatformUri
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -34,10 +35,10 @@ interface BackupService {
     suspend fun create(passphrase: String): ByteArray
 
     /** Writes a file made by [create] to [uri]. */
-    suspend fun save(uri: Uri, file: ByteArray)
+    suspend fun save(uri: PlatformUri, file: ByteArray)
 
     /** Decrypts and checks the backup at [uri] without changing anything. Throws [BackupException] for a file it can't use. */
-    suspend fun open(uri: Uri, passphrase: String): BackupSnapshot
+    suspend fun open(uri: PlatformUri, passphrase: String): BackupSnapshot
 
     /** Replaces all data with [snapshot] in one database transaction, then applies its currency setting. */
     suspend fun restore(snapshot: BackupSnapshot)

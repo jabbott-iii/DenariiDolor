@@ -7,7 +7,6 @@
 package com.denariidolor.data.local.vault
 
 import com.denariidolor.data.local.preferences.SetupProfileResult
-import javax.crypto.Cipher
 
 /**
  * What the sign-in screen does with the [Vault]: an interface, so its ViewModel can be tested without the Keystore. Each call
@@ -26,7 +25,7 @@ interface SignInVault {
 
     suspend fun prepareBiometricSignIn(): BiometricSignIn
 
-    suspend fun signInWithBiometric(cipher: Cipher): SignInResult
+    suspend fun signInWithBiometric(cipher: PlatformCipher): SignInResult
 
     fun lock()
 

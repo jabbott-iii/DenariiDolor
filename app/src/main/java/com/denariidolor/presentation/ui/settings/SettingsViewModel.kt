@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import com.denariidolor.R
 import com.denariidolor.data.local.preferences.CurrencySettings
 import com.denariidolor.data.local.preferences.ThemeSettings
+import com.denariidolor.data.local.vault.PlatformCipher
 import com.denariidolor.data.local.vault.SettingsVault
 import com.denariidolor.data.local.vault.VaultState
 import com.denariidolor.di.SessionScope
@@ -19,12 +20,11 @@ import com.denariidolor.presentation.ui.auth.BiometricCapability
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.Constants
 import com.denariidolor.util.Currencies
+import com.denariidolor.util.PlatformCurrency
 import com.denariidolor.util.runSuspendCatching
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
-import java.util.Currency
-import javax.crypto.Cipher
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -43,7 +43,7 @@ data class SettingsUiState(
     val biometricAvailable: Boolean = false,
     val biometricEnabled: Boolean = false,
     val biometricChanging: Boolean = false,
-    val currencyCode: String = Currencies.DEFAULT.currencyCode,
+    val currencyCode: String = Currencies.code(Currencies.DEFAULT),
     val currencyOptions: List<String> = emptyList()
 ) {
     fun toScreenState(systemDarkMode: Boolean): SettingsScreenState = SettingsScreenState(
@@ -61,7 +61,7 @@ data class SettingsUiState(
 
 /** What only the screen can do: show the system biometric prompt (CS-07), and start the app over after a currency change. */
 sealed interface SettingsEvent {
-    class ShowEnrollmentPrompt(val cipher: Cipher) : SettingsEvent
+    class ShowEnrollmentPrompt(val cipher: PlatformCipher) : SettingsEvent
 
     data object CurrencyChanged : SettingsEvent
 }
@@ -164,13 +164,13 @@ class SettingsViewModel(
     private suspend fun biometricEnrolled(): Boolean =
         (runSuspendCatching { vault.state() }.getOrNull() as? VaultState.Configured)?.biometricEnrolled == true
 
-    private fun uiState(darkModeOverride: Boolean?, currency: Currency, switch: BiometricSwitch) = SettingsUiState(
+    private fun uiState(darkModeOverride: Boolean?, currency: PlatformCurrency, switch: BiometricSwitch) = SettingsUiState(
         darkModeOverride = darkModeOverride,
         // Shown while it's on even if the device can no longer use it, so it can still be turned off.
         biometricAvailable = biometricHardware || switch.enabled,
         biometricEnabled = switch.enabled,
         biometricChanging = switch.changing,
-        currencyCode = currency.currencyCode,
-        currencyOptions = Currencies.options(currency).map { it.currencyCode }
+        currencyCode = Currencies.code(currency),
+        currencyOptions = Currencies.options(currency).map(Currencies::code)
     )
 }

@@ -6,7 +6,6 @@
 
 package com.denariidolor.presentation.ui.backup
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.denariidolor.R
@@ -17,6 +16,7 @@ import com.denariidolor.data.backup.BackupService
 import com.denariidolor.data.backup.BackupSnapshot
 import com.denariidolor.di.SessionScope
 import com.denariidolor.presentation.ui.common.UiMessage
+import com.denariidolor.util.PlatformUri
 import com.denariidolor.util.ZonedClock
 import com.denariidolor.util.runSuspendCatching
 import dev.zacsweers.metro.ContributesIntoMap
@@ -41,7 +41,7 @@ data class BackupPreview(val createdAt: LocalDateTime, val accounts: Int, val ca
 
 sealed interface BackupDialog {
     data class NewPassphrase(val error: BackupError? = null) : BackupDialog
-    data class RestorePassphrase(val uri: Uri, val error: BackupError? = null) : BackupDialog
+    data class RestorePassphrase(val uri: PlatformUri, val error: BackupError? = null) : BackupDialog
     data class ConfirmRestore(val preview: BackupPreview) : BackupDialog
 }
 
@@ -104,7 +104,7 @@ class BackupViewModel(private val backupService: BackupService, private val cloc
      * The file picker's result; null when it was cancelled. A destination without an encrypted file means the screen was
      * recreated while the picker was open; the picker's empty file is left alone, since it may be one the user chose to replace.
      */
-    fun onDestinationChosen(uri: Uri?) {
+    fun onDestinationChosen(uri: PlatformUri?) {
         val file = pendingFile
         pendingFile = null
         when {
@@ -118,7 +118,7 @@ class BackupViewModel(private val backupService: BackupService, private val cloc
     }
 
     /** The file picker's result; null when it was cancelled. */
-    fun onBackupFileChosen(uri: Uri?) {
+    fun onBackupFileChosen(uri: PlatformUri?) {
         if (uri != null && !_state.value.working) showDialog(BackupDialog.RestorePassphrase(uri))
     }
 

@@ -66,9 +66,11 @@ util/          DeviceClock, SessionManager, Constants, StoreLinks, TransactionTy
 shared/        src/commonMain: the same packages, for code that needs nothing from Java or Android and isn't
                injected yet. So far the domain models, Money, Currencies, DateUtils, Validators, ZonedClock,
                runSuspendCatching, transferRoute, ReportText, ReportCsvFormatter, BackupSnapshot and the crypto,
-               guidance and theme interfaces. PlatformFormat declares what the platform's locale data decides;
-               src/androidMain implements it. src/commonTest holds their tests (kotlin.test); src/androidHostTest
-               holds the few that compare against java.* or set the JVM's default locale
+               guidance and theme interfaces. PlatformLocale, PlatformCurrency and PlatformFormat declare what the
+               platform's locale and currency data decide, and PlatformUri and PlatformCipher name a picked file and
+               the biometric cipher; src/androidMain implements them. src/commonTest holds their tests
+               (kotlin.test); src/androidHostTest holds the few that compare against java.* or set the JVM's
+               default locale
 ```
 
 Code moves into `:shared` one reviewed step at a time, keeping its package, so imports don't change. Until `:shared` has a
@@ -90,7 +92,9 @@ Dependency injection is Metro, with two graphs in `di/`:
 
 A ViewModel is `@Inject` plus `@ViewModelKey @ContributesIntoMap(SessionScope::class)`; only `LoginViewModel` uses
 `AppScope`. A Route gets it with `metroViewModel()`. A ViewModel that reads navigation arguments takes an
-`@Assisted SavedStateHandle` through a `ViewModelAssistedFactory`, as `TransactionViewModel` does.
+`@Assisted SavedStateHandle` through a `ViewModelAssistedFactory`, as `TransactionViewModel` does. ViewModels, and the
+interfaces they call, use no Java or Android types, so they can move to `:shared` once Room does (`ViewModelBoundaryTest`).
+A picked file is a `PlatformUri`, the biometric cipher a `PlatformCipher` and a currency a `PlatformCurrency`.
 
 Dependency rules:
 

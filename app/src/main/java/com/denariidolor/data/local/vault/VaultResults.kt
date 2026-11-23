@@ -7,7 +7,6 @@
 package com.denariidolor.data.local.vault
 
 import com.denariidolor.data.local.preferences.RecoverPinResult
-import javax.crypto.Cipher
 
 sealed interface VaultState {
     data object NeedsSetup : VaultState
@@ -41,7 +40,7 @@ sealed interface RecoveryResult {
 }
 
 sealed interface BiometricSignIn {
-    class Ready(val cipher: Cipher) : BiometricSignIn
+    class Ready(val cipher: PlatformCipher) : BiometricSignIn
 
     data object NotEnrolled : BiometricSignIn
 

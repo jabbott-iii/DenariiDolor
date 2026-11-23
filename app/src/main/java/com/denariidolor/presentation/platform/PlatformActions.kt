@@ -6,15 +6,15 @@
 
 package com.denariidolor.presentation.platform
 
-import android.net.Uri
+import com.denariidolor.data.local.vault.PlatformCipher
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.DateUtils
-import javax.crypto.Cipher
+import com.denariidolor.util.PlatformUri
 import kotlinx.datetime.LocalDate
 
 // What screens ask of the platform, as plain Kotlin. AndroidPlatformActions.kt implements it with toasts, intents and the
-// system pickers, and no screen calls those directly (PlatformBoundaryTest). Uri stays the file handle, and Cipher the
-// biometric key handle, for now.
+// system pickers, and no screen calls those directly (PlatformBoundaryTest). Files and the biometric cipher pass through as
+// PlatformUri and PlatformCipher, which on Android are Uri and Cipher.
 
 enum class NoticeLength { SHORT, LONG }
 
@@ -30,7 +30,7 @@ interface ShareSheet {
     fun shareText(chooserTitle: String, text: String)
 
     /** Offers the file at [uri]; the app the user picks may read that one file and nothing else. */
-    fun shareFile(chooserTitle: String, uri: Uri, mimeType: String)
+    fun shareFile(chooserTitle: String, uri: PlatformUri, mimeType: String)
 }
 
 /** Hands off to other apps; the app itself sends nothing. Each call returns false when no app on the device takes it. */
@@ -61,7 +61,7 @@ data class BiometricPromptText(val title: String, val subtitle: String, val canc
 /** How a biometric prompt ended. */
 sealed interface BiometricPromptResult {
     /** The cipher the prompt authorized: only it can use the biometric-bound key (CS-07). */
-    class Authorized(val cipher: Cipher) : BiometricPromptResult
+    class Authorized(val cipher: PlatformCipher) : BiometricPromptResult
 
     /** The user backed out, or the prompt couldn't open because the app went to the background. */
     data object Canceled : BiometricPromptResult
@@ -75,7 +75,7 @@ sealed interface BiometricPromptResult {
  * [authenticate] reports to `onResult` exactly once.
  */
 fun interface BiometricPrompter {
-    fun authenticate(cipher: Cipher, text: BiometricPromptText, onResult: (BiometricPromptResult) -> Unit)
+    fun authenticate(cipher: PlatformCipher, text: BiometricPromptText, onResult: (BiometricPromptResult) -> Unit)
 }
 
 /** The day a date field's picker opens on: the ISO date the field holds, or [today] when it holds none. */

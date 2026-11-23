@@ -6,7 +6,6 @@
 
 package com.denariidolor.presentation.ui.report
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.denariidolor.R
@@ -16,6 +15,7 @@ import com.denariidolor.di.SessionScope
 import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.domain.usecase.GenerateReportUseCase
 import com.denariidolor.presentation.ui.common.UiMessage
+import com.denariidolor.util.PlatformUri
 import com.denariidolor.util.ZonedClock
 import com.denariidolor.util.runSuspendCatching
 import dev.zacsweers.metro.ContributesIntoMap
@@ -46,7 +46,7 @@ data class ReportUiState(
 
 sealed interface ReportEvent {
     data class Message(val message: UiMessage) : ReportEvent
-    data class Share(val uri: Uri, val mimeType: String) : ReportEvent
+    data class Share(val uri: PlatformUri, val mimeType: String) : ReportEvent
 }
 
 @ViewModelKey
@@ -87,7 +87,7 @@ class ReportViewModel(
 
     fun nextMonth() = changePeriod(_state.value.period.plusMonth())
 
-    fun save(uri: Uri, format: ReportFormat) = export { report ->
+    fun save(uri: PlatformUri, format: ReportFormat) = export { report ->
         val result = runSuspendCatching { reportExporter.writeTo(uri, report, format) }
         _events.send(ReportEvent.Message(exportMessage(result, R.string.report_saved)))
     }

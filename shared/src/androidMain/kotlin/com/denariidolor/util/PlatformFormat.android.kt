@@ -12,31 +12,14 @@ import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.format.DateTimeFormatter
-import java.util.Currency
 import java.util.Locale
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.YearMonth
 import kotlinx.datetime.toJavaYearMonth
 import kotlinx.datetime.toJavaZoneId
 
-// Android's side of PlatformFormat.kt, on java.util, java.text and java.time. Android callers keep passing Locale and
-// Currency, because these are the same types.
-
-actual typealias PlatformLocale = Locale
-
-actual typealias PlatformCurrency = Currency
-
-actual fun defaultFormatLocale(): PlatformLocale = Locale.getDefault(Locale.Category.FORMAT)
-
-actual fun defaultLocale(): PlatformLocale = Locale.getDefault()
-
-internal actual fun languageCode(locale: PlatformLocale): String = locale.language
-
-internal actual fun currencyForCode(code: String): PlatformCurrency? = runCatching { Currency.getInstance(code) }.getOrNull()
-
-internal actual fun currencyForRegion(locale: PlatformLocale): PlatformCurrency? = runCatching { Currency.getInstance(locale) }.getOrNull()
-
-internal actual fun fractionDigits(currency: PlatformCurrency): Int = currency.defaultFractionDigits
+// Android's side of PlatformFormat.kt, on java.text and java.time. Android callers keep passing Locale and Currency, because
+// these are the same types as PlatformLocale and PlatformCurrency.
 
 internal actual fun localeNumberSymbols(locale: PlatformLocale, currency: PlatformCurrency): NumberSymbols = NumberSymbols(
     decimalSeparator = DecimalFormatSymbols.getInstance(locale).decimalSeparator,

@@ -16,6 +16,7 @@ import com.denariidolor.data.local.preferences.SecureStorageException
 import com.denariidolor.data.local.preferences.SecurityProfileService
 import com.denariidolor.data.local.preferences.SetupProfileResult
 import com.denariidolor.data.local.vault.BiometricSignIn
+import com.denariidolor.data.local.vault.PlatformCipher
 import com.denariidolor.data.local.vault.RecoveryResult
 import com.denariidolor.data.local.vault.SignInResult
 import com.denariidolor.data.local.vault.SignInVault
@@ -28,7 +29,6 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
-import javax.crypto.Cipher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -67,7 +67,7 @@ enum class LoginField {
 sealed interface LoginEvent {
     data object SignedIn : LoginEvent
 
-    class ShowBiometricPrompt(val cipher: Cipher) : LoginEvent
+    class ShowBiometricPrompt(val cipher: PlatformCipher) : LoginEvent
 }
 
 /** Setup, sign-in, PIN recovery, the v1 upgrade and wipe, run through the [SignInVault] one call at a time. */
@@ -141,7 +141,7 @@ class LoginViewModel(
     }
 
     /** The cipher `BiometricPrompt` authorized: only it can unwrap the database key (CS-07). */
-    fun onBiometricAuthenticated(cipher: Cipher) = runVaultAction { showSignInResult(vault.signInWithBiometric(cipher)) }
+    fun onBiometricAuthenticated(cipher: PlatformCipher) = runVaultAction { showSignInResult(vault.signInWithBiometric(cipher)) }
 
     fun onRequestWipeData() {
         if (_state.value.signInEnabled) _state.update { it.copy(showWipeConfirmation = true) }

@@ -6,6 +6,8 @@ paths:
   - "shared/src/*/kotlin/com/denariidolor/util/DateUtils.kt"
   - "shared/src/*/kotlin/com/denariidolor/util/TextDirection.kt"
   - "shared/src/*/kotlin/com/denariidolor/util/PlatformFormat*.kt"
+  - "shared/src/*/kotlin/com/denariidolor/util/PlatformCurrency*.kt"
+  - "shared/src/*/kotlin/com/denariidolor/util/PlatformLocale*.kt"
   - "app/src/main/java/com/denariidolor/util/TransactionTypeLabels.kt"
   - "app/src/main/java/com/denariidolor/data/local/preferences/CurrencyPreferences.kt"
 ---
