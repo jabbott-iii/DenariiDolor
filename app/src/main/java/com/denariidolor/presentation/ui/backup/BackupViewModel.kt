@@ -17,14 +17,12 @@ import com.denariidolor.data.backup.BackupService
 import com.denariidolor.data.backup.BackupSnapshot
 import com.denariidolor.di.SessionScope
 import com.denariidolor.presentation.ui.common.UiMessage
+import com.denariidolor.util.ZonedClock
 import com.denariidolor.util.runSuspendCatching
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
-import java.time.Clock
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZonedDateTime
+import kotlin.time.Instant
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,9 +31,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
 
-/** What a backup holds, shown before it replaces the data on this phone. */
-data class BackupPreview(val createdAt: ZonedDateTime, val accounts: Int, val categories: Int, val budgets: Int, val transactions: Int)
+/** What a backup holds, shown before it replaces the data on this phone. [createdAt] is in the injected clock's zone. */
+data class BackupPreview(val createdAt: LocalDateTime, val accounts: Int, val categories: Int, val budgets: Int, val transactions: Int)
 
 sealed interface BackupDialog {
     data class NewPassphrase(val error: BackupError? = null) : BackupDialog
@@ -63,7 +65,7 @@ sealed interface BackupEvent {
 @ViewModelKey
 @ContributesIntoMap(SessionScope::class)
 @Inject
-class BackupViewModel(private val backupService: BackupService, private val clock: Clock) : ViewModel() {
+class BackupViewModel(private val backupService: BackupService, private val clock: ZonedClock) : ViewModel() {
     private val _state = MutableStateFlow(BackupUiState())
     val state: StateFlow<BackupUiState> = _state.asStateFlow()
 
@@ -89,7 +91,7 @@ class BackupViewModel(private val backupService: BackupService, private val cloc
                 .onSuccess { file ->
                     pendingFile = file
                     showDialog(null)
-                    _events.send(BackupEvent.ChooseDestination(fileName(LocalDate.now(clock))))
+                    _events.send(BackupEvent.ChooseDestination(fileName(clock.todayIn(clock.timeZone))))
                 }
                 .onFailure {
                     showDialog(null)
@@ -165,7 +167,7 @@ class BackupViewModel(private val backupService: BackupService, private val cloc
     }
 
     private fun BackupSnapshot.preview() = BackupPreview(
-        createdAt = Instant.ofEpochMilli(createdAtEpochMillis).atZone(clock.zone),
+        createdAt = Instant.fromEpochMilliseconds(createdAtEpochMillis).toLocalDateTime(clock.timeZone),
         accounts = accounts.size,
         categories = categories.size,
         budgets = budgets.size,

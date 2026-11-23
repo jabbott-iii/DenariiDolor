@@ -38,6 +38,16 @@ class ClockBoundaryTest {
         assertEquals(emptyList<String>(), offenders)
     }
 
+    /** ViewModels take ZonedClock and kotlinx-datetime types, so they can move to :shared with the code they call. */
+    @Test
+    fun viewModelsUseNoJavaTime() {
+        val viewModels = presentationSources().filter { it.name.endsWith("ViewModel.kt") }
+        val offenders = viewModels.filter { JAVA_TIME.containsMatchIn(it.readText()) }.map { it.name }
+
+        assertTrue(viewModels.toString(), viewModels.map { it.name }.containsAll(listOf("DashboardViewModel.kt", "BackupViewModel.kt")))
+        assertEquals(emptyList<String>(), offenders)
+    }
+
     /** Guards the tests above against passing because they looked in the wrong place. */
     @Test
     fun theScanSeesTheScreensWithDateFieldsAndTheDateFormatters() {
@@ -72,6 +82,8 @@ class ClockBoundaryTest {
         const val DEVICE_CLOCK = "DeviceClock.kt"
 
         val SHARED_SOURCE_SETS = listOf("commonMain", "androidMain")
+
+        val JAVA_TIME = Regex("\\bjava\\.time\\.")
 
         val SYSTEM_ZONE_READS = listOf("currentSystemDefault", "ZoneId.systemDefault", "TimeZone.getDefault", "systemDefaultZone")
 

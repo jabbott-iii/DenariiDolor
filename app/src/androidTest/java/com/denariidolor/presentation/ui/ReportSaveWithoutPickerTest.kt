@@ -100,7 +100,7 @@ class ReportSaveWithoutPickerTest {
             AccountRepositoryImpl(db.accountDao()),
             clock.asZonedClock()
         )
-        return ReportViewModel(generate, ReportExporter(context), clock)
+        return ReportViewModel(generate, ReportExporter(context), clock.asZonedClock())
     }
 
     private fun text(resId: Int): String = composeRule.activity.getString(resId)

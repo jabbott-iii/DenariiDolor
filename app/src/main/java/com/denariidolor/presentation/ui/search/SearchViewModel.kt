@@ -17,10 +17,10 @@ import com.denariidolor.domain.usecase.SearchTransactionUseCase
 import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.presentation.ui.common.TransactionRow
 import com.denariidolor.presentation.ui.common.buildTransactionRows
+import com.denariidolor.util.ZonedClock
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
-import java.time.Clock
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,8 +35,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toKotlinLocalDate
-import kotlinx.datetime.toKotlinTimeZone
+import kotlinx.datetime.todayIn
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @ViewModelKey
@@ -46,7 +45,7 @@ class SearchViewModel(
     private val searchTransactionUseCase: SearchTransactionUseCase,
     categoryRepository: CategoryRepository,
     accountRepository: AccountRepository,
-    private val clock: Clock
+    private val clock: ZonedClock
 ) : ViewModel() {
     private val filters = MutableStateFlow<SearchFilters?>(null)
 
@@ -70,10 +69,10 @@ class SearchViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** The day the date pickers open on while their fields are empty, in the injected clock's zone (rule 5). */
-    fun today(): LocalDate = java.time.LocalDate.now(clock).toKotlinLocalDate()
+    fun today(): LocalDate = clock.todayIn(clock.timeZone)
 
     /** The zone filters are read and results shown in: the injected clock's, read on each call so a zone change applies at once. */
-    fun timeZone(): TimeZone = clock.zone.toKotlinTimeZone()
+    fun timeZone(): TimeZone = clock.timeZone
 
     fun search(newFilters: SearchFilters) {
         filters.value = newFilters

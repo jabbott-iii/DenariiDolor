@@ -62,15 +62,17 @@ Match the file you're editing first. These rules cover what it doesn't show.
 ## Time and numbers
 
 - Don't use `Date`, `Calendar` or `System.currentTimeMillis()` in logic.
-- `domain/` and `util/` use kotlinx-datetime and `kotlin.time`, so they can be shared with iOS. Presentation and data still
-  use `java.time` until they move.
-  - Domain and util code injects `ZonedClock` and takes the zone from `clock.timeZone`. Other code injects `java.time.Clock`
-    and takes the zone from `clock.zone`. Both come from `DeviceClock`; `asZonedClock()` adapts one to the other.
+- `domain/`, `util/` and the ViewModels use kotlinx-datetime and `kotlin.time`, so they can be shared with iOS. Screens and
+  the data layer still use `java.time` until they move.
+  - Domain, util and ViewModel code injects `ZonedClock` and takes the zone from `clock.timeZone`. The data layer injects
+    `java.time.Clock` and takes the zone from `clock.zone`. Both come from `DeviceClock`; `asZonedClock()` adapts one to the
+    other.
   - Two files keep `java.time`: `DeviceClock`, which is the Android clock, and `PlatformFormat.android.kt` (see below).
   - Dates are stored as epoch millis. Month ranges come from `DateUtils`.
   - A function that formats or parses a date takes the zone as a required argument, never with a system-zone default. Pass
     the injected clock's zone. A `MonthlyReport` carries the zone its month was computed in, and the Report screen and both
-    exports show its dates in it. `ClockBoundaryTest` fails if anything but `DeviceClock` reads the system time zone.
+    exports show its dates in it. `ClockBoundaryTest` fails if anything but `DeviceClock` reads the system time zone, or if
+    a ViewModel uses `java.time`.
 - Amounts are `Long` cents. `Money` parses and scales them in plain Kotlin, without `BigDecimal`. Never use `Float` or `Double`
   for a value that is stored, compared or summed.
 - Whatever depends on the device's locale data goes through `PlatformFormat`: how money is written, the decimal mark and

@@ -19,10 +19,10 @@ import com.denariidolor.domain.usecase.DeleteTransactionUseCase
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.presentation.ui.common.buildTransactionRows
 import com.denariidolor.util.DateUtils
+import com.denariidolor.util.ZonedClock
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
-import java.time.Clock
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -38,8 +38,8 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.YearMonth
 import kotlinx.datetime.number
-import kotlinx.datetime.toKotlinTimeZone
-import kotlinx.datetime.toKotlinYearMonth
+import kotlinx.datetime.todayIn
+import kotlinx.datetime.yearMonth
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @ViewModelKey
@@ -52,7 +52,7 @@ class DashboardViewModel(
     private val budgetRepository: BudgetRepository,
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
     private val onboarding: OnboardingStore,
-    private val clock: Clock
+    private val clock: ZonedClock
 ) : ViewModel() {
     private val period = MutableStateFlow(currentPeriod())
 
@@ -79,7 +79,11 @@ class DashboardViewModel(
         }
     }
 
-    private fun currentPeriod() = Period(java.time.YearMonth.now(clock).toKotlinYearMonth(), clock.zone.toKotlinTimeZone())
+    /** The zone is read once, so the month and its date range agree even if the zone changes meanwhile. */
+    private fun currentPeriod(): Period {
+        val zone = clock.timeZone
+        return Period(clock.todayIn(zone).yearMonth, zone)
+    }
 
     private fun observe(period: Period): Flow<DashboardUiState> {
         val (start, end) = DateUtils.monthRangeEpochMillis(period.month.year, period.month.month.number, period.zone)

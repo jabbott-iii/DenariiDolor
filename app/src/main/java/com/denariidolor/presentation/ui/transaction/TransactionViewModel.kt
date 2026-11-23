@@ -28,6 +28,7 @@ import com.denariidolor.domain.usecase.DomainException
 import com.denariidolor.domain.usecase.UpdateTransactionUseCase
 import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.presentation.ui.common.UiMessage
+import com.denariidolor.util.ZonedClock
 import com.denariidolor.util.runSuspendCatching
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
@@ -35,7 +36,6 @@ import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metrox.viewmodel.ViewModelAssistedFactory
 import dev.zacsweers.metrox.viewmodel.ViewModelAssistedFactoryKey
-import java.time.Clock
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,8 +48,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toKotlinLocalDate
-import kotlinx.datetime.toKotlinTimeZone
+import kotlinx.datetime.todayIn
 
 sealed interface TransactionFormState {
     data object Loading : TransactionFormState
@@ -72,7 +71,7 @@ constructor(
     categoryRepository: CategoryRepository,
     accountRepository: AccountRepository,
     private val ratePrompt: RatePromptStore,
-    private val clock: Clock,
+    private val clock: ZonedClock,
     @Assisted savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private val transactionId: Long? = savedStateHandle.get<Long>(ARG_TRANSACTION_ID)?.takeIf { it > 0L }
@@ -119,10 +118,10 @@ constructor(
     }
 
     /** The day the date picker opens on while the date field is empty, in the injected clock's zone (rule 5). */
-    fun today(): LocalDate = java.time.LocalDate.now(clock).toKotlinLocalDate()
+    fun today(): LocalDate = clock.todayIn(clock.timeZone)
 
     /** The zone the form shows and reads dates in: the injected clock's, read on each call so a zone change applies at once. */
-    fun timeZone(): TimeZone = clock.zone.toKotlinTimeZone()
+    fun timeZone(): TimeZone = clock.timeZone
 
     /** [dateEpochMillis] is null when the date field was left empty; the transaction is then dated now, by the injected clock. */
     fun saveTransaction(
@@ -146,7 +145,7 @@ constructor(
                     categoryId = categoryId,
                     accountId = accountId,
                     transferAccountId = transferAccountId,
-                    dateEpochMillis = dateEpochMillis ?: clock.millis()
+                    dateEpochMillis = dateEpochMillis ?: clock.now().toEpochMilliseconds()
                 )
             }.getOrElse { error ->
                 finishSave(Result.failure(error))

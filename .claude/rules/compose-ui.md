@@ -28,7 +28,8 @@ paths:
   - One that reads navigation arguments is `@AssistedInject` with an `@Assisted savedStateHandle: SavedStateHandle` and a
     nested `ViewModelAssistedFactory` that builds the handle with `extras.createSavedStateHandle()`. See
     `LegalDocumentViewModel`.
-  - They depend on use cases, repository interfaces and `Clock`.
+  - They depend on use cases, repository interfaces and `ZonedClock`, and use kotlinx-datetime types, never `java.time`
+    (`ClockBoundaryTest`), so they can move to shared code.
   - Keep Android types (`Context`, `Uri`, `Bitmap`) out, so JVM tests can cover them. The `Uri` that `BackupViewModel` and
     `ReportViewModel` take for picked files is the documented exception until shared code gets its own file handle. The
     `Cipher` that `LoginViewModel` and `SettingsViewModel` hand to the biometric prompt is JVM-only for the same reason.

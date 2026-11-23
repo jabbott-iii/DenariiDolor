@@ -53,6 +53,7 @@ import com.denariidolor.presentation.ui.common.UiMessage
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import kotlinx.datetime.toJavaLocalDateTime
 
 internal const val BACKUP_CREATE_BUTTON_TAG = "backupCreate"
 internal const val BACKUP_RESTORE_BUTTON_TAG = "backupRestore"
@@ -268,7 +269,8 @@ private fun RestoreConfirmationDialog(preview: BackupPreview, working: Boolean, 
     var typed by remember { mutableStateOf("") }
     val locale = LocalLocale.current.platformLocale
     val created = remember(preview.createdAt, locale) {
-        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(locale).format(preview.createdAt)
+        val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(locale)
+        formatter.format(preview.createdAt.toJavaLocalDateTime())
     }
     AlertDialog(
         onDismissRequest = onDismiss,

@@ -15,6 +15,7 @@ import com.denariidolor.testutil.FakeCategoryRepository
 import com.denariidolor.testutil.FakeTransactionRepository
 import com.denariidolor.testutil.MainDispatcherRule
 import com.denariidolor.testutil.TestData
+import com.denariidolor.util.asZonedClock
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -35,7 +36,7 @@ class SearchViewModelTest {
         SearchTransactionUseCase(FakeTransactionRepository(transactions)),
         FakeCategoryRepository(TestData.categories),
         FakeAccountRepository(TestData.accounts),
-        clock
+        clock.asZonedClock()
     )
 
     @Test

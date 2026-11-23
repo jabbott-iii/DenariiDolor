@@ -20,9 +20,11 @@ import com.denariidolor.presentation.ui.backup.BackupEvent
 import com.denariidolor.presentation.ui.backup.BackupPreview
 import com.denariidolor.presentation.ui.backup.BackupViewModel
 import com.denariidolor.presentation.ui.common.UiMessage
+import com.denariidolor.util.asZonedClock
 import java.io.IOException
 import java.time.Clock
 import java.time.Instant
+import java.time.ZoneId
 import java.time.ZoneOffset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +35,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.LocalDateTime
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -56,7 +59,7 @@ class BackupViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(dispatcher)
-        viewModel = BackupViewModel(service, Clock.fixed(Instant.parse("2026-10-04T18:30:00Z"), ZoneOffset.UTC))
+        viewModel = BackupViewModel(service, Clock.fixed(Instant.parse("2026-10-04T18:30:00Z"), ZoneOffset.UTC).asZonedClock())
         collector.launch { viewModel.events.collect { events += it } }
     }
 
@@ -93,6 +96,24 @@ class BackupViewModelTest {
         assertEquals(uri, service.saved.single().first)
         assertArrayEquals(FakeBackupService.FILE, service.saved.single().second)
         assertEquals(message(R.string.backup_saved), events.last())
+    }
+
+    @Test
+    fun theFileNameAndThePreviewUseTheClocksZone() {
+        // 18:30 UTC on October 4 is already October 5 in Kiritimati (UTC+14); SNAPSHOT's 21:40 UTC is 11:40 there.
+        val clock = Clock.fixed(Instant.parse("2026-10-04T18:30:00Z"), ZoneId.of("Pacific/Kiritimati"))
+        val kiritimati = BackupViewModel(service, clock.asZonedClock())
+        collector.launch { kiritimati.events.collect { events += it } }
+
+        kiritimati.startBackup()
+        kiritimati.submitNewPassphrase(PASSPHRASE, PASSPHRASE)
+        kiritimati.onDestinationChosen(null)
+        kiritimati.onBackupFileChosen(uri)
+        kiritimati.submitRestorePassphrase(PASSPHRASE)
+
+        assertEquals(BackupEvent.ChooseDestination("denarii-dolor-backup-2026-10-05.ddbackup"), events.single())
+        val preview = BackupPreview(LocalDateTime(2026, 10, 5, 11, 40), 0, 0, 0, 0)
+        assertEquals(BackupDialog.ConfirmRestore(preview), kiritimati.state.value.dialog)
     }
 
     @Test
@@ -145,7 +166,7 @@ class BackupViewModelTest {
         viewModel.onBackupFileChosen(uri)
         viewModel.submitRestorePassphrase(PASSPHRASE)
 
-        val preview = BackupPreview(Instant.ofEpochMilli(SNAPSHOT.createdAtEpochMillis).atZone(ZoneOffset.UTC), 0, 0, 0, 0)
+        val preview = BackupPreview(LocalDateTime(2026, 10, 4, 21, 40), 0, 0, 0, 0) // SNAPSHOT's time, in the clock's UTC
         assertEquals(BackupDialog.ConfirmRestore(preview), dialog)
         assertTrue(service.restored.isEmpty())
 

@@ -21,6 +21,7 @@ import com.denariidolor.testutil.FakeTransactionRepository
 import com.denariidolor.testutil.MainDispatcherRule
 import com.denariidolor.testutil.TestData
 import com.denariidolor.util.DateUtils
+import com.denariidolor.util.asZonedClock
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -60,7 +61,7 @@ class DashboardViewModelTest {
             FakeBudgetRepository(listOf(BudgetEntity(id = 1, categoryId = 4, monthlyLimitCents = 10_000))),
             DeleteTransactionUseCase(transactions),
             FakeOnboardingStore(),
-            clock
+            clock.asZonedClock()
         )
         val collector = launch { viewModel.uiState.collect {} }
 
@@ -88,6 +89,29 @@ class DashboardViewModelTest {
 
         assertEquals(YearMonth(2026, 9), state.period)
         collector.cancel()
+    }
+
+    @Test
+    fun theMonthAndItsTransactionsFollowTheClocksZone() = runTest {
+        // At 12:00 UTC on September 30 it is already October 1 in Kiritimati (UTC+14) and still September 30 in Los Angeles.
+        // The expense at 11:00 UTC falls in Kiritimati's October, though it is still September in UTC.
+        val now = Instant.parse("2026-09-30T12:00:00Z")
+        val expense = TestData.expense(
+            id = 1,
+            amountCents = 9_000
+        ).copy(dateEpochMillis = Instant.parse("2026-09-30T11:00:00Z").toEpochMilli())
+        val kiritimati = viewModel(FakeTransactionRepository(listOf(expense)), Clock.fixed(now, ZoneId.of("Pacific/Kiritimati")))
+        val losAngeles = viewModel(FakeTransactionRepository(listOf(expense)), Clock.fixed(now, ZoneId.of("America/Los_Angeles")))
+        val collectors = listOf(launch { kiritimati.uiState.collect {} }, launch { losAngeles.uiState.collect {} })
+
+        val october = kiritimati.uiState.first { it.period != null }
+        val september = losAngeles.uiState.first { it.period != null }
+
+        assertEquals(YearMonth(2026, 10), october.period)
+        assertEquals(9_000L, october.summary.expenseCents)
+        assertEquals(YearMonth(2026, 9), september.period)
+        assertEquals(9_000L, september.summary.expenseCents)
+        collectors.forEach { it.cancel() }
     }
 
     @Test
@@ -146,7 +170,7 @@ class DashboardViewModelTest {
             FakeBudgetRepository(),
             DeleteTransactionUseCase(transactions),
             onboarding,
-            clock
+            clock.asZonedClock()
         )
 
     private class MutableClock(var now: Instant) : Clock() {

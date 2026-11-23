@@ -108,11 +108,11 @@ Dependency rules:
    before sign-in fails to compile. The database binding is unscoped and `DatabaseHolder.database` throws while the vault
    is locked. That's a security control, not a bug to work around. `LockedVaultGraphTest` checks both graphs.
 5. Anything that depends on "now" takes an injected clock and reads the time zone from it, never from
-   `ZoneId.systemDefault()` or `TimeZone.currentSystemDefault()`. `domain/` and `util/` take `ZonedClock` (`clock.timeZone`),
-   and other code takes `java.time.Clock` (`clock.zone`); both come from `DeviceClock`. The one exception is
-   `SessionManager`, which uses the monotonic `SystemClock.elapsedRealtime()` (CS-01). Date formatting and parsing take the
-   zone as a required argument. `ClockBoundaryTest` checks that presentation code never reads the device's clock and that
-   only `DeviceClock` reads the system time zone.
+   `ZoneId.systemDefault()` or `TimeZone.currentSystemDefault()`. `domain/`, `util/` and the ViewModels take `ZonedClock`
+   (`clock.timeZone`) and kotlinx-datetime types; the data layer takes `java.time.Clock` (`clock.zone`). Both come from
+   `DeviceClock`. The one exception is `SessionManager`, which uses the monotonic `SystemClock.elapsedRealtime()` (CS-01).
+   Date formatting and parsing take the zone as a required argument. `ClockBoundaryTest` checks that presentation code never
+   reads the device's clock, that ViewModels use no `java.time`, and that only `DeviceClock` reads the system time zone.
 6. Logic that doesn't need Android stays in pure Kotlin so JVM tests can cover it. Examples are `Ledger`,
    `SecurityProfileService`, `SearchFilterParser` and `DashboardMappers`.
 

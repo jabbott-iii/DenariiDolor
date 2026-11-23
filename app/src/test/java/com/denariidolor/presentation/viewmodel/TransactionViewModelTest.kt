@@ -67,7 +67,7 @@ class TransactionViewModelTest {
             categories,
             accounts,
             ratePrompt,
-            clock,
+            clock.asZonedClock(),
             SavedStateHandle(transactionId?.let { mapOf(TransactionViewModel.ARG_TRANSACTION_ID to it) } ?: emptyMap())
         )
     }

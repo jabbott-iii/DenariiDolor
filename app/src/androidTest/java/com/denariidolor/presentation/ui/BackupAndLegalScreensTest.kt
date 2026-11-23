@@ -32,8 +32,7 @@ import com.denariidolor.presentation.ui.common.DenariiDolorTheme
 import com.denariidolor.presentation.ui.legal.LegalDocumentScreen
 import com.denariidolor.presentation.ui.legal.LegalUiState
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
+import kotlinx.datetime.LocalDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -112,7 +111,7 @@ class BackupAndLegalScreensTest {
     fun restoringShowsTheBackupsContentsAndNeedsTheTypedWord() {
         val events = mutableListOf<String>()
         val preview = BackupPreview(
-            createdAt = ZonedDateTime.of(2026, 10, 4, 14, 30, 0, 0, ZoneOffset.UTC),
+            createdAt = LocalDateTime(2026, 10, 4, 14, 30),
             accounts = 3,
             categories = 12,
             budgets = 4,
@@ -121,6 +120,7 @@ class BackupAndLegalScreensTest {
         showBackup(BackupUiState(dialog = BackupDialog.ConfirmRestore(preview)), events)
 
         composeRule.onNodeWithText("Transactions: 1234", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("Oct 4, 2026", substring = true).assertIsDisplayed()
         composeRule.onNodeWithTag(RESTORE_CONFIRM_BUTTON_TAG).assertIsNotEnabled()
         composeRule.onNodeWithTag(RESTORE_CONFIRMATION_FIELD_TAG).performTextInput("restore")
         composeRule.onNodeWithTag(RESTORE_CONFIRM_BUTTON_TAG).assertIsEnabled().performClick()

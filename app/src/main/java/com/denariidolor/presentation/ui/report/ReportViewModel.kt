@@ -16,11 +16,11 @@ import com.denariidolor.di.SessionScope
 import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.domain.usecase.GenerateReportUseCase
 import com.denariidolor.presentation.ui.common.UiMessage
+import com.denariidolor.util.ZonedClock
 import com.denariidolor.util.runSuspendCatching
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
-import java.time.Clock
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -33,7 +33,8 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.YearMonth
 import kotlinx.datetime.minusMonth
 import kotlinx.datetime.plusMonth
-import kotlinx.datetime.toKotlinYearMonth
+import kotlinx.datetime.todayIn
+import kotlinx.datetime.yearMonth
 
 data class ReportUiState(
     val period: YearMonth,
@@ -51,9 +52,12 @@ sealed interface ReportEvent {
 @ViewModelKey
 @ContributesIntoMap(SessionScope::class)
 @Inject
-class ReportViewModel(private val generateReportUseCase: GenerateReportUseCase, private val reportExporter: ReportExporter, clock: Clock) :
-    ViewModel() {
-    private val _state = MutableStateFlow(ReportUiState(period = java.time.YearMonth.now(clock).toKotlinYearMonth()))
+class ReportViewModel(
+    private val generateReportUseCase: GenerateReportUseCase,
+    private val reportExporter: ReportExporter,
+    clock: ZonedClock
+) : ViewModel() {
+    private val _state = MutableStateFlow(ReportUiState(period = clock.todayIn(clock.timeZone).yearMonth))
     val state: StateFlow<ReportUiState> = _state.asStateFlow()
 
     private val _events = Channel<ReportEvent>(Channel.BUFFERED)
