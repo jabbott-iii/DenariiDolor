@@ -17,6 +17,7 @@ import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.presentation.ui.common.TransactionRow
 import com.denariidolor.presentation.ui.common.buildTransactionRows
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Clock
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,13 +31,16 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.toKotlinLocalDate
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val searchTransactionUseCase: SearchTransactionUseCase,
     categoryRepository: CategoryRepository,
-    accountRepository: AccountRepository
+    accountRepository: AccountRepository,
+    private val clock: Clock
 ) : ViewModel() {
     private val filters = MutableStateFlow<SearchFilters?>(null)
 
@@ -58,6 +62,9 @@ class SearchViewModel @Inject constructor(
     ) { transactions, categories, accounts ->
         transactions?.let { buildTransactionRows(it, categories, accounts) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** The day the date pickers open on while their fields are empty, in the injected clock's zone (rule 5). */
+    fun today(): LocalDate = java.time.LocalDate.now(clock).toKotlinLocalDate()
 
     fun search(newFilters: SearchFilters) {
         filters.value = newFilters

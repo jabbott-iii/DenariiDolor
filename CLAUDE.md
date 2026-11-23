@@ -84,7 +84,8 @@ Dependency rules:
 5. Anything that depends on "now" takes an injected clock and reads the time zone from it, never from
    `ZoneId.systemDefault()` or `TimeZone.currentSystemDefault()`. `domain/` and `util/` take `ZonedClock` (`clock.timeZone`),
    and other code takes `java.time.Clock` (`clock.zone`); both come from `DeviceClock`. The one exception is
-   `SessionManager`, which uses the monotonic `SystemClock.elapsedRealtime()` (CS-01).
+   `SessionManager`, which uses the monotonic `SystemClock.elapsedRealtime()` (CS-01). `ClockBoundaryTest` checks that
+   presentation code never reads the device's clock itself.
 6. Logic that doesn't need Android stays in pure Kotlin so JVM tests can cover it. Examples are `Ledger`,
    `SecurityProfileService`, `SearchFilterParser` and `DashboardMappers`.
 

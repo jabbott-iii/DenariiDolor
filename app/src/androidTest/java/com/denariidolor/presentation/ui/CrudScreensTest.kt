@@ -48,6 +48,7 @@ import com.denariidolor.presentation.ui.dashboard.DashboardUiState
 import com.denariidolor.presentation.ui.dashboard.SPENDING_CHART_TAG
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
 import com.denariidolor.presentation.ui.transaction.TransactionFormInput
+import kotlinx.datetime.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -115,6 +116,7 @@ class CrudScreensTest {
                 AddTransactionScreen(
                     onSave = { _, _, _, _, _, _, _ -> },
                     onShowMessage = {},
+                    today = { LocalDate(2026, 9, 20) },
                     categories = listOf(PickerOption(4, "Dining")),
                     accounts = listOf(PickerOption(1, "Cash")),
                     initial = TransactionFormInput(
@@ -145,6 +147,7 @@ class CrudScreensTest {
                 AddTransactionScreen(
                     onSave = { _, _, _, _, _, _, _ -> },
                     onShowMessage = {},
+                    today = { LocalDate(2026, 9, 20) },
                     onBack = { backPressed = true }
                 )
             }
@@ -164,6 +167,7 @@ class CrudScreensTest {
                 AddTransactionScreen(
                     onSave = { _, _, _, _, _, _, date -> savedDate = date },
                     onShowMessage = {},
+                    today = { LocalDate(2026, 9, 20) },
                     initial = TransactionFormInput("EXPENSE", "Coffee", "4.5", "4", "1", "", "2026-09-20", 123_456L)
                 )
             }
@@ -390,7 +394,12 @@ class CrudScreensTest {
     fun saveButtonIsDisabledWhileSaving() {
         composeRule.setContent {
             DenariiDolorTheme {
-                AddTransactionScreen(onSave = { _, _, _, _, _, _, _ -> }, onShowMessage = {}, isSaving = true)
+                AddTransactionScreen(
+                    onSave = { _, _, _, _, _, _, _ -> },
+                    onShowMessage = {},
+                    today = { LocalDate(2026, 9, 20) },
+                    isSaving = true
+                )
             }
         }
 

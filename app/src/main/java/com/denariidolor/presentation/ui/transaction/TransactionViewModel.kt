@@ -27,6 +27,7 @@ import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.runSuspendCatching
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Clock
 import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -38,6 +39,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.toKotlinLocalDate
 
 sealed interface TransactionFormState {
     data object Loading : TransactionFormState
@@ -51,13 +54,17 @@ sealed interface TransactionEvent {
 }
 
 @HiltViewModel
-class TransactionViewModel @Inject constructor(
+class TransactionViewModel
+@Suppress("LongParameterList") // Intentional: only Hilt and tests call it; grouping its dependencies would hide what the form uses.
+@Inject
+constructor(
     private val addTransactionUseCase: AddTransactionUseCase,
     private val updateTransactionUseCase: UpdateTransactionUseCase,
     private val transactionRepository: TransactionRepository,
     categoryRepository: CategoryRepository,
     accountRepository: AccountRepository,
     private val ratePrompt: RatePromptStore,
+    private val clock: Clock,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private val transactionId: Long? = savedStateHandle.get<Long>(ARG_TRANSACTION_ID)?.takeIf { it > 0L }
@@ -103,6 +110,10 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
+    /** The day the date picker opens on while the date field is empty, in the injected clock's zone (rule 5). */
+    fun today(): LocalDate = java.time.LocalDate.now(clock).toKotlinLocalDate()
+
+    /** [dateEpochMillis] is null when the date field was left empty; the transaction is then dated now, by the injected clock. */
     fun saveTransaction(
         type: String,
         description: String,
@@ -110,7 +121,7 @@ class TransactionViewModel @Inject constructor(
         categoryId: Long,
         accountId: Long,
         transferAccountId: Long?,
-        dateEpochMillis: Long
+        dateEpochMillis: Long?
     ) {
         if (_isSaving.value || _overBudget.value != null) return
         _isSaving.value = true
@@ -124,7 +135,7 @@ class TransactionViewModel @Inject constructor(
                     categoryId = categoryId,
                     accountId = accountId,
                     transferAccountId = transferAccountId,
-                    dateEpochMillis = dateEpochMillis
+                    dateEpochMillis = dateEpochMillis ?: clock.millis()
                 )
             }.getOrElse { error ->
                 finishSave(Result.failure(error))
@@ -175,7 +186,7 @@ class TransactionViewModel @Inject constructor(
     private fun Throwable.budgetOverage(): BudgetOverage? =
         (this as? DomainException)?.takeIf { it.error == DomainError.BUDGET_EXCEEDED }?.arg as? BudgetOverage
 
-    @Suppress("LongParameterList")
+    @Suppress("LongParameterList") // Intentional: one argument per transaction field, named at its one call site.
     private fun buildTransaction(
         id: Long,
         type: TransactionType,

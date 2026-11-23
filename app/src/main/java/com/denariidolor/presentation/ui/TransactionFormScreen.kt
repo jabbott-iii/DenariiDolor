@@ -65,9 +65,7 @@ import com.denariidolor.util.Money
 import com.denariidolor.util.Validators
 import com.denariidolor.util.formatMoney
 import com.denariidolor.util.labelRes
-import kotlin.time.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
+import kotlinx.datetime.LocalDate
 
 internal const val TRANSACTION_TYPE_FIELD_TAG = "transactionTypeField"
 internal const val TRANSFER_ACCOUNT_FIELD_TAG = "transferAccountField"
@@ -113,6 +111,7 @@ internal fun AddTransactionRoute(onFinished: () -> Unit, viewModel: TransactionV
             AddTransactionScreen(
                 onSave = viewModel::saveTransaction,
                 onShowMessage = { notices.show(it) },
+                today = viewModel::today,
                 categories = categories,
                 accounts = accounts,
                 initial = state.initial,
@@ -158,9 +157,11 @@ fun AddTransactionScreen(
         categoryId: Long,
         accountId: Long,
         transferAccountId: Long?,
-        dateEpochMillis: Long
+        // Null when the date field is empty: the ViewModel dates the transaction now, by its clock.
+        dateEpochMillis: Long?
     ) -> Unit,
     onShowMessage: (String) -> Unit,
+    today: () -> LocalDate,
     categories: List<PickerOption> = emptyList(),
     accounts: List<PickerOption> = emptyList(),
     initial: TransactionFormInput? = null,
@@ -291,7 +292,7 @@ fun AddTransactionScreen(
         Spacer(modifier = Modifier.height(8.dp))
         DateSelectorButton(
             text = dateText.ifBlank { datePlaceholder },
-            onClick = { datePicker.pickForField(dateText, Clock.System.todayIn(TimeZone.currentSystemDefault())) { dateText = it } },
+            onClick = { datePicker.pickForField(dateText, today()) { dateText = it } },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -310,7 +311,7 @@ fun AddTransactionScreen(
                     null
                 }
                 val dateEpochMillis = when {
-                    dateText.isBlank() -> System.currentTimeMillis()
+                    dateText.isBlank() -> null
                     else -> runCatching {
                         initial?.resolveDateEpochMillis(dateText, DateUtils::parseIsoDateToStartOfDayEpochMillis)
                             ?: DateUtils.parseIsoDateToStartOfDayEpochMillis(dateText)

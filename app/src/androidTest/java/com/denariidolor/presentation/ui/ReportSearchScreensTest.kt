@@ -27,6 +27,7 @@ import com.denariidolor.presentation.ui.report.ReportUiState
 import com.denariidolor.presentation.ui.search.SEARCH_BUTTON_TAG
 import com.denariidolor.presentation.ui.search.SEARCH_RESULT_COUNT_TAG
 import com.denariidolor.presentation.ui.search.SearchScreen
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.YearMonth
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -95,7 +96,8 @@ class ReportSearchScreensTest {
                     categories = emptyList(),
                     results = listOf(TransactionRow(5, "Coffee", TransactionType.EXPENSE, "-$4.00", "Dining", "Cash", "2026-09-20")),
                     onSearch = {},
-                    onResultClick = { opened = it }
+                    onResultClick = { opened = it },
+                    today = { LocalDate(2026, 9, 20) }
                 )
             }
         }
@@ -111,7 +113,13 @@ class ReportSearchScreensTest {
         var searched = false
         composeRule.setContent {
             DenariiDolorTheme {
-                SearchScreen(categories = emptyList(), results = null, onSearch = { searched = it.categoryId == null }, onResultClick = {})
+                SearchScreen(
+                    categories = emptyList(),
+                    results = null,
+                    onSearch = { searched = it.categoryId == null },
+                    onResultClick = {},
+                    today = { LocalDate(2026, 9, 20) }
+                )
             }
         }
 

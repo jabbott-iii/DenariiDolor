@@ -31,6 +31,7 @@ import com.denariidolor.data.local.preferences.SecurityProfileService
 import com.denariidolor.presentation.ui.common.DenariiDolorTheme
 import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.util.Constants
+import kotlinx.datetime.LocalDate
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -177,6 +178,7 @@ class ComposeScreensTest {
                 AddTransactionScreen(
                     onSave = { _, _, _, _, _, _, _ -> },
                     onShowMessage = {},
+                    today = { LocalDate(2026, 9, 20) },
                     accounts = listOf(
                         PickerOption(Constants.DEFAULT_CASH_ACCOUNT_ID, "Cash"),
                         PickerOption(Constants.DEFAULT_SAVINGS_ACCOUNT_ID, "Savings")

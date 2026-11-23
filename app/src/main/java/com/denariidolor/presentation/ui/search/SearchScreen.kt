@@ -43,10 +43,7 @@ import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.presentation.ui.common.ReferencePicker
 import com.denariidolor.presentation.ui.common.TransactionRow
 import com.denariidolor.presentation.ui.common.TransactionRowItem
-import kotlin.time.Clock
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
 
 const val SEARCH_BUTTON_TAG = "searchButton"
 const val SEARCH_RESULT_COUNT_TAG = "searchResultCount"
@@ -60,7 +57,8 @@ fun SearchRoute(onEditTransaction: (Long) -> Unit, viewModel: SearchViewModel = 
         categories = categories,
         results = results,
         onSearch = viewModel::search,
-        onResultClick = onEditTransaction
+        onResultClick = onEditTransaction,
+        today = viewModel::today
     )
 }
 
@@ -69,7 +67,8 @@ fun SearchScreen(
     categories: List<PickerOption>,
     results: List<TransactionRow>?,
     onSearch: (SearchFilters) -> Unit,
-    onResultClick: (Long) -> Unit
+    onResultClick: (Long) -> Unit,
+    today: () -> LocalDate
 ) {
     val datePicker = rememberDatePicker()
     var description by rememberSaveable { mutableStateOf("") }
@@ -189,5 +188,3 @@ fun SearchScreen(
         }
     }
 }
-
-private fun today(): LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())

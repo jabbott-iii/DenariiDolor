@@ -29,9 +29,13 @@ import com.denariidolor.testutil.MainDispatcherRule
 import com.denariidolor.testutil.TestData
 import com.denariidolor.util.asZonedClock
 import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZoneOffset
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -49,11 +53,12 @@ class TransactionViewModelTest {
         transactionId: Long? = null,
         repository: TransactionRepository = transactions,
         budgets: FakeBudgetRepository = FakeBudgetRepository(),
-        ratePrompt: FakeRatePromptStore = FakeRatePromptStore()
+        ratePrompt: FakeRatePromptStore = FakeRatePromptStore(),
+        clock: Clock = Clock.systemDefaultZone()
     ): TransactionViewModel {
         val categories = FakeCategoryRepository(TestData.categories)
         val accounts = FakeAccountRepository(TestData.accounts)
-        val validate = ValidateTransactionUseCase(categories, accounts, budgets, repository, Clock.systemDefaultZone().asZonedClock())
+        val validate = ValidateTransactionUseCase(categories, accounts, budgets, repository, clock.asZonedClock())
         return TransactionViewModel(
             AddTransactionUseCase(validate, repository),
             UpdateTransactionUseCase(validate, repository),
@@ -61,8 +66,29 @@ class TransactionViewModelTest {
             categories,
             accounts,
             ratePrompt,
+            clock,
             SavedStateHandle(transactionId?.let { mapOf(TransactionViewModel.ARG_TRANSACTION_ID to it) } ?: emptyMap())
         )
+    }
+
+    @Test
+    fun aTransactionSavedWithoutADateIsDatedNowByTheInjectedClock() = runTest {
+        val clock = Clock.fixed(Instant.parse("2026-09-20T12:00:00Z"), ZoneOffset.UTC)
+        val vm = viewModel(clock = clock)
+
+        vm.saveTransaction("EXPENSE", "Lunch", 1_299, categoryId = 4, accountId = 1, transferAccountId = null, dateEpochMillis = null)
+
+        assertEquals(TransactionEvent.Saved, vm.events.first())
+        assertEquals(clock.millis(), transactions.items.last().dateEpochMillis)
+    }
+
+    @Test
+    fun theDatePickerOpensOnTodayInTheInjectedClocksZone() {
+        // 23:30 UTC is already the next day at UTC+14 and still the same day at UTC-7.
+        val instant = Instant.parse("2026-09-20T23:30:00Z")
+
+        assertEquals(LocalDate(2026, 9, 21), viewModel(clock = Clock.fixed(instant, ZoneId.of("Pacific/Kiritimati"))).today())
+        assertEquals(LocalDate(2026, 9, 20), viewModel(clock = Clock.fixed(instant, ZoneId.of("America/Los_Angeles"))).today())
     }
 
     @Test
