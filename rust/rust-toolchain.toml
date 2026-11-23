@@ -1,0 +1,5 @@
+# The toolchain every Rust check and build uses. A bump is a change of its own (.claude/rules/rust.md).
+[toolchain]
+channel = "1.100.0"
+components = ["clippy", "rustfmt"]
+profile = "minimal"

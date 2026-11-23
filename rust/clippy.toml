@@ -1,0 +1,5 @@
+# Tests may unwrap, expect, index, and panic: a failure there is the test failing, not a crash a user sees.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-indexing-slicing-in-tests = true
+allow-panic-in-tests = true

@@ -27,13 +27,17 @@ replay_pid*
 # Kotlin Gradle plugin data, see https://kotlinlang.org/docs/whatsnew20.html#new-directory-for-kotlin-data-in-gradle-projects
 .kotlin/
 
-# Gradle working directories
+# Rust build output
+/rust/target/
+
+# Gradle working directories (Flutter's android/ host app uses Gradle too)
 .gradle/
 build/
 */build/
 # Signing material must never be committed
 *.jks
 *.keystore
+key.properties
 service-account*.json
 
 # Machine-specific SDK path (CI uses ANDROID_HOME)
@@ -43,4 +47,5 @@ local.properties
 /app/release/
 *.apk
 *.aab
+*.ipa
 *.dm

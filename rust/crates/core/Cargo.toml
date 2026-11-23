@@ -1,0 +1,10 @@
+[package]
+name = "denarii-core"
+description = "Domain rules of Denarii Dolor: money in cents, transactions, balance changes, and validation."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true

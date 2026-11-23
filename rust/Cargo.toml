@@ -1,0 +1,43 @@
+# The Rust workspace of Denarii Dolor. Its crates and their layers are in docs/01-architecture.md.
+
+[workspace]
+resolver = "3"
+members = ["crates/core"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.100"
+publish = false
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+unreachable_pub = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+# Money and input handling: no silent wrapping, truncating casts, or panics on data.
+arithmetic_side_effects = "warn"
+as_conversions = "warn"
+indexing_slicing = "warn"
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+# Nothing in shipped code prints or logs (CLAUDE.md, "Security posture").
+print_stdout = "warn"
+print_stderr = "warn"
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
+
+[workspace.lints.rustdoc]
+broken_intra_doc_links = "warn"
+private_intra_doc_links = "warn"
+
+# Overflow is checked in every build, release included. The code uses checked arithmetic wherever
+# overflow is possible; this catches any place that was missed instead of letting a balance wrap.
+[profile.release]
+overflow-checks = true

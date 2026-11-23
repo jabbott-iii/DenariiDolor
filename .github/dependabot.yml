@@ -1,4 +1,5 @@
-# Keeps GitHub Actions and Gradle dependencies patched; each update runs through ci.yml and security.yml.
+# Keeps GitHub Actions and Rust crates patched; each update runs through ci.yml and security.yml.
+# The pub ecosystem (Dart packages) joins in M1.3, and Gradle for android/ when it has dependencies of its own.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -8,8 +9,8 @@ updates:
     groups:
       actions:
         patterns: ["*"]
-  - package-ecosystem: gradle
-    directory: /
+  - package-ecosystem: cargo
+    directory: /rust
     schedule:
       interval: weekly
     open-pull-requests-limit: 5

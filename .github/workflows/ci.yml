@@ -15,94 +15,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Style, static analysis, Android lint, unit tests + coverage, and a minified (R8) release build.
-  verify:
-    name: Lint, test, build
+  # Formatting, Clippy, tests and docs for the Rust workspace. The Flutter jobs join in M1.3 (docs/roadmap.md).
+  rust:
+    name: Rust checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: rust
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false # no later step pushes with git; keeps GITHUB_TOKEN out of .git/config
 
-      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
-        with:
-          distribution: temurin
-          java-version: '17'
+      # rustup is on the runner image; this installs the version pinned in rust/rust-toolchain.toml, so no
+      # third-party action is needed.
+      - name: Install the pinned toolchain
+        run: rustup toolchain install
 
-      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - name: Format
+        run: cargo fmt --all --check
 
-      - name: Kotlin style (ktlint)
-        run: ./gradlew ktlintCheck
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
 
-      - name: Static analysis (detekt)
-        run: ./gradlew detekt
+      - name: Tests
+        run: cargo test --workspace --locked
 
-      - name: Android lint
-        run: ./gradlew lintDebug
-
-      - name: Unit tests
-        run: ./gradlew testDebugUnitTest
-
-      - name: Coverage report (JaCoCo)
-        run: ./gradlew createDebugUnitTestCoverageReport
-
-      # Proves the release variant compiles and survives R8 shrinking (unsigned here; CD signs).
-      - name: Release build
-        run: ./gradlew assembleRelease
-
-      - name: Upload reports
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: verify-reports
-          path: |
-            app/build/reports/
-            app/build/test-results/
-          retention-days: 14
-
-  # Room/SQLCipher, migrations, Compose UI and PDF rendering need a real device runtime.
-  instrumented:
-    name: Instrumented tests (API ${{ matrix.api-level }})
-    needs: verify
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        api-level: [ 26, 36 ] # minSdk and targetSdk
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false # no later step pushes with git; keeps GITHUB_TOKEN out of .git/config
-
-      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
-
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-
-      - name: Run instrumented tests
-        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
-        with:
-          api-level: ${{ matrix.api-level }}
-          arch: x86_64
-          target: google_apis
-          disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot-save -camera-back none
-          script: ./gradlew connectedDebugAndroidTest
-
-      - name: Upload results
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: instrumented-results-api-${{ matrix.api-level }}
-          path: app/build/outputs/androidTest-results/
-          retention-days: 14
+      - name: Docs
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --workspace --no-deps --locked
