@@ -1,26 +1,23 @@
 ---
 paths:
-  - "app/src/main/java/com/denariidolor/presentation/ui/auth/**"
-  - "app/src/main/java/com/denariidolor/presentation/ui/LoginScreen.kt"
-  - "app/src/main/java/com/denariidolor/presentation/ui/backup/**"
-  - "app/src/main/java/com/denariidolor/data/local/**"
-  - "app/src/main/java/com/denariidolor/data/backup/**"
-  - "app/src/main/java/com/denariidolor/data/export/**"
-  - "shared/src/*/kotlin/com/denariidolor/data/local/**"
-  - "shared/src/*/kotlin/com/denariidolor/data/backup/**"
-  - "shared/src/*/kotlin/com/denariidolor/domain/report/ReportCsvFormatter.kt"
-  - "app/src/main/java/com/denariidolor/util/SessionManager.kt"
-  - "app/src/main/java/com/denariidolor/MainActivity.kt"
-  - "app/src/main/java/com/denariidolor/di/**"
-  - "app/src/main/AndroidManifest.xml"
-  - "app/src/main/res/xml/**"
-  - "app/proguard-rules.pro"
+  - "rust/Cargo.toml"
+  - "rust/Cargo.lock"
+  - "rust/rust-toolchain.toml"
+  - "rust/crates/store/**"
+  - "rust/crates/vault/**"
+  - "rust/crates/backup/**"
+  - "rust/crates/report/**"
+  - "rust/crates/bridge/**"
+  - "lib/features/auth/**"
+  - "lib/features/backup/**"
+  - "lib/features/report/**"
+  - "lib/platform/**"
+  - "android/**"
+  - "ios/**"
+  - "pubspec.yaml"
+  - "pubspec.lock"
+  - "docs/specs/android-v1-formats.md"
   - ".github/**"
-  - "gradle/**"
-  - "settings.gradle.kts"
-  - "build.gradle.kts"
-  - "app/build.gradle.kts"
-  - "shared/build.gradle.kts"
 ---
 
 # Security-sensitive code
@@ -28,6 +25,10 @@ paths:
 This file guards users' financial data. Name every change to it in your summary, so the maintainer reviews it. If a
 request would weaken a control below, don't make that part of the change: explain the conflict and propose an alternative
 that keeps the control.
+
+v1, the Kotlin app, built these controls. The class and file names below are v1's, readable with
+`git show 6d57526:<path>`, and `docs/specs/android-v1-formats.md` gives the exact keys and formats. The rewrite keeps every
+control (ADR-0002, existing installs upgrade in place); the roadmap task that rebuilds each one names its ID.
 
 ## Threat model
 
@@ -38,7 +39,7 @@ The app is offline and single-user.
   - someone holding the phone, locked or unlocked;
   - other apps on the device (overlays, task hijacking, crafted intents);
   - whoever gets a copied backup file;
-  - the supply chain (Gradle plugins, GitHub Actions).
+  - the supply chain (Rust crates, Dart packages and plugins, Gradle and CocoaPods dependencies, GitHub Actions).
 - **Out of scope:** network attackers, because there is no network. Attackers with root get best effort only (CS-27, CS-A2).
 
 ## Key management (CS-15)

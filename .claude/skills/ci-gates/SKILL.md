@@ -1,6 +1,6 @@
 ---
 name: ci-gates
-description: Run Denarii Dolor's blocking CI checks locally (ktlint, detekt, Android lint, JVM unit tests, the R8 release build, and the instrumented tests when a device is attached), fix or report the failures, and summarize each result. Use before calling a change done, before a pull request, or when asked to verify, check or validate the build.
+description: Run Denarii Dolor's blocking CI checks locally (Rust formatting, Clippy, tests and docs today; the Flutter checks once the Flutter app exists), fix or report the failures, and summarize each result. Use before calling a change done, before a pull request, or when asked to verify, check or validate the build.
 ---
 
 # Run the CI gates
@@ -15,84 +15,44 @@ git status --short
 
 Note which files are yours, so you can spot formatter changes to files you didn't touch.
 
-## 2. Static checks and unit tests
+## 2. Rust checks
 
-Run them in one Gradle invocation, so configuration is shared and every failure is collected:
+Run them from `rust/`. The toolchain comes from `rust/rust-toolchain.toml`; if it's missing, `rustup toolchain install`
+in that folder installs it.
 
 ```bash
-./gradlew --continue ktlintCheck detekt lintDebug testDebugUnitTest
+cd rust
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --workspace --locked
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
 ```
-
-This can take several minutes, so run it in the background if your shell has a timeout.
-
-If something fails, read the report rather than guessing:
-
-| Check | Report |
-|---|---|
-| ktlint | the console output, and `app/build/reports/ktlint/` |
-| detekt | `app/build/reports/detekt/` (`detekt.txt` or `.html`) |
-| Android lint | `app/build/reports/lint-results-debug.*` (HTML and XML) |
-| Unit tests | `app/build/reports/tests/testDebugUnitTest/index.html` and `app/build/test-results/testDebugUnitTest/TEST-*.xml`; for `:shared`, `shared/build/reports/tests/testAndroidHostTest/` and `shared/build/test-results/testAndroidHostTest/` |
 
 How to fix each kind of failure:
 
-- **ktlint:** run `./gradlew ktlintFormat`, then `git diff --stat`. Revert any hunks in files you didn't change, and run
-  `ktlintCheck` again.
-- **detekt:** refactor the code. Suppress only with a narrow `@Suppress("Rule") // Intentional: reason`. Never add a
-  baseline file.
-- **lint:**
-  - A `MissingTranslation` error means a string is missing from one of the six packs. Add it there (see
-    `.claude/rules/i18n-resources.md`).
-  - `NonObservableLocale` and `LocalContextGetResourceValueCall` mean a composable reads its locale or a string the wrong
-    way (see `.claude/rules/compose-ui.md`).
-  - Never add a lint baseline or a `lint {}` disable.
-- **Tests:** fix the cause. Never `@Ignore` a test or weaken an assertion.
+- **Format:** run `cargo fmt --all`, then `git diff --stat`, and revert hunks in files you didn't change. A generated file,
+  such as `crates/core/src/text/unicode_tables.rs`, is regenerated with the command in its generator's docstring.
+- **Clippy:** fix the code. Where a lint is wrong in one place, use `#[expect(clippy::lint_name, reason = "…")]` on the
+  smallest item. Never weaken `[workspace.lints]` or `clippy.toml`.
+- **`--locked` fails:** `Cargo.lock` is stale because a manifest changed. Run `cargo update -w` only if the change was
+  meant to alter dependencies, which needs the maintainer's approval (`docs/02-dependency-policy.md`).
+- **Tests:** fix the cause. Never `#[ignore]` a test or weaken an assertion. For one test file, run
+  `cargo test --locked -p denarii-core --test money`.
+- **Docs:** a broken intra-doc link or a link to a private item. Fix the link, or the item's visibility.
 
-## 3. Release build
+## 3. Flutter checks (from M1.1)
 
-Run this when the change touches dependencies, Gradle, the manifest, reflection, serialization, Room entities or anything
-else R8 could strip:
+The Flutter app doesn't exist yet (`docs/roadmap.md`, M1.1). Once `pubspec.yaml` exists, run these from the repository
+root as well, and add them to this skill with their failure fixes:
 
 ```bash
-./gradlew assembleRelease
+dart format --output=none --set-exit-if-changed .
+flutter analyze
+flutter test
 ```
 
-It is unsigned locally, which is expected. A failure that mentions missing classes needs a narrow keep rule in
-`app/proguard-rules.pro`.
+## 4. Report
 
-## 4. Instrumented tests (only with a device)
-
-```bash
-"$(sed -n 's/^sdk.dir=//p' local.properties)/platform-tools/adb" devices
-```
-
-If a device or emulator is listed, run the tests in the background, because they take several minutes:
-
-```bash
-./gradlew connectedDebugAndroidTest
-```
-
-To run one class:
-
-```bash
-./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.denariidolor.data.MigrationTest
-```
-
-The results are in `app/build/outputs/androidTest-results/`. If no device is attached, say so: CI runs these on API 26 and
-API 36.
-
-## 5. Report
-
-End with a table, and don't call a check passed unless you ran it and it passed:
-
-| Check | Result | Notes |
-|---|---|---|
-| ktlintCheck | ✅ / ❌ / not run | |
-| detekt | | |
-| lintDebug | | |
-| testDebugUnitTest | | X tests, Y failures |
-| assembleRelease | | |
-| connectedDebugAndroidTest | | the device's API level, or "no device" |
-
-Also list anything only CI or a person can check: the API 26 emulator, a signed release, biometrics, an update from the
-installed release.
+List each command with its result (pass, or the failure and what you did about it). Say which checks you couldn't run and
+why: the Flutter checks before M1.1, integration tests without an emulator or device, and biometric flows without a
+phone with an enrolled fingerprint.
