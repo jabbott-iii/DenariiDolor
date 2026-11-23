@@ -6,7 +6,7 @@
 
 import 'package:denarii_dolor/app/app_scope.dart';
 import 'package:denarii_dolor/app/signed_in_tree.dart';
-import 'package:denarii_dolor/features/auth/ui/sign_in_placeholder_screen.dart';
+import 'package:denarii_dolor/features/auth/ui/sign_in_placeholder_route.dart';
 import 'package:flutter/widgets.dart';
 
 /// Shows the sign-in flow while the vault is locked, and the signed-in tree while it's unlocked
@@ -25,7 +25,7 @@ class RootSwitch extends StatelessWidget {
       listenable: sessionLock,
       builder: (context, _) => sessionLock.isUnlocked
           ? const SignedInTree()
-          : const SignInPlaceholderScreen(),
+          : const SignInPlaceholderRoute(),
     );
   }
 }

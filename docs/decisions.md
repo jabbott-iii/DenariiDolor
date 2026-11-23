@@ -104,7 +104,8 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
 
 ## ADR-0005 — Dart calls Rust through `flutter_rust_bridge`
 
-- **Status:** Proposed
+- **Status:** Accepted by the maintainer on 2026-11-23, in M1.2. ADR-0014 adds the bridge's
+  version, features, and build.
 - **Date:** 2026-11-23
 - **Context:** Dart reaches native code through `dart:ffi`, which needs a C interface on the Rust
   side and `unsafe` code to build one. `flutter_rust_bridge` generates both sides from ordinary
@@ -333,3 +334,79 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
   and no integration tests on a device.
 - **Revisit when:** the Flutter tool can attach to an Android app without a network socket, or a
   merged release manifest is found to contain `INTERNET`.
+
+## ADR-0014 — Build the bridge with Flutter's native-assets hook, with `flutter_rust_bridge`'s default features off
+
+- **Status:** Accepted
+- **Date:** 2026-11-23
+- **Context:** M1.2 adds the `bridge` crate under ADR-0005 (Dart calls Rust through
+  `flutter_rust_bridge`). On 2026-11-23 the maintainer was asked three questions that ADR-0005
+  left open, and one more after the first answer turned out not to compile:
+  - **Features.** `flutter_rust_bridge` 2.13.0, released 2026-08-23 under the MIT license, turns
+    on eight Cargo features by default. Two of them, `log` and `user-utils`, bring the `log`,
+    `android_logger`, and `oslog` crates and a setup function that sends Rust's log records to
+    logcat and the iOS console. Shipped code may not log (`CLAUDE.md`, "Security posture"). The
+    Dart runtime package depends on `package:logging` from the Dart team, which stays silent
+    unless generated code connects a Rust log stream to it.
+  - **Build.** Flutter has to compile the Rust library for each Android ABI (the processor
+    architecture a native library is built for) and package it in the app. The codegen's default
+    way, CargoKit, copies 66 files (about 4,700 lines) of build scripts into the repository as a
+    local plugin. Its build tool fetches its own Dart packages, among them `http` and `github`,
+    at build time with no lock file. Flutter's native-assets build hooks instead run a Dart script,
+    `hook/build.dart`, that Flutter calls with the target ABI and the NDK of its Android build.
+    `flutter_rust_bridge` supports them from 2.13.0, through its `flutter_rust_bridge_hooks`
+    package over `native_toolchain_rust`.
+  - **ABIs.** M1.2's `Do` line listed `arm64-v8a`, `armeabi-v7a`, `x86_64`, and `x86`, but
+    Flutter 3.50.1 builds apps only for `android-arm`, `android-arm64`, and `android-x64`
+    (`flutter build apk -h`), so an `x86` library could never load.
+  - **The features the generated code needs.** The maintainer first chose `thread-pool` alone,
+    but the code that the 2.13.0 codegen writes uses items behind `rust-async` and `dart-opaque`
+    as well, and doesn't compile without them. The maintainer was asked again the same day. With
+    those three features on, 30 third-party crates ship in the Android library:
+    `flutter_rust_bridge`, `tokio` 1.54.1, and `slab` under MIT; `allo-isolate` under Apache-2.0;
+    and each of the other 26 under MIT or, at the licensee's choice, another permissive license
+    (Apache-2.0, 0BSD, Unlicense, or Zlib). `dart-sys` compiles `dart_api_dl.c` from the Dart SDK
+    3.2.3 headers, under the Dart project's BSD-3-Clause license, with the NDK's C compiler.
+- **Decision** (the maintainer chose the recommended option for each question on 2026-11-23, and
+  the three features below when asked again):
+  - Pin `flutter_rust_bridge` 2.13.0 exactly in the Rust crate, the Dart package, the codegen,
+    and `flutter_rust_bridge_hooks`, and change them only together.
+  - Turn the crate's default features off, and turn on only the three that the generated code
+    needs: `thread-pool`, which runs each call on a worker thread off Flutter's UI thread, and
+    `rust-async` and `dart-opaque`. The bridge sets up no logger. `package:logging` is
+    allowed in the app as a dependency of the Dart runtime, on the condition that nothing in the
+    app connects a Rust log stream or listens to its records.
+  - Build with Flutter's native-assets hook: `hook/build.dart` calls `flutter_rust_bridge_hooks`,
+    which runs `cargo build` through `native_toolchain_rust` with the NDK of Flutter's Android
+    build. `native_toolchain_rust` reads an exact Rust version and a `targets` list from a
+    `rust-toolchain.toml` beside the crate's `Cargo.toml`, so `rust/crates/bridge/rust-toolchain.toml`
+    is a symbolic link to `rust/rust-toolchain.toml`, and the toolchain is still pinned in one file.
+  - Build `arm64-v8a`, `armeabi-v7a`, and `x86_64`, the ABIs Flutter supports, and not `x86`.
+  - Exempt only the generated Rust module from `unsafe_code` and the other lints it trips, with
+    `#[expect(…, reason = "…")]` on its `mod` line. Cargo can't relax one lint that a crate
+    inherits from the workspace, so the `bridge` crate repeats the workspace's lints in a table of
+    its own, with `unsafe_code` at `deny` instead of `forbid`.
+- **Consequences:**
+  - Good: no logging crate ships, and no Rust log record can reach logcat. Every package the
+    build hook uses is pinned in `pubspec.lock`, and no build script is copied into the repository. The
+    Rust library builds with the same NDK as the rest of the app, and its 64-bit builds are aligned
+    to 16 KB memory pages, which Google Play requires for 64-bit ABIs.
+  - Bad: `rust-async` makes the bridge create a multi-threaded `tokio` runtime at its first call,
+    with one worker thread per CPU core that waits idle, because no bridge function is `async`.
+    The native-assets way is new in `flutter_rust_bridge` (2.13.0 is its first stable release
+    with it), and `native_toolchain_rust` has a single maintainer. Every Flutter build and
+    `flutter test` run now compiles the Rust library, so wherever Flutter builds, the Rust
+    toolchain and its targets must be installed. The codegen runs `cargo expand`, and installs the
+    latest `cargo-expand` by itself when it is missing, so contributors install a pinned version
+    first (`CONTRIBUTING.md`). The bridge's lints table must change whenever the workspace's does.
+  - Follow-up: M1.3 (CI installs the targets, the codegen, and `cargo-expand`, and checks that the
+    generated files are current); M6.2 (notices for the new crates and packages); M7.1 (the iOS
+    targets in `rust-toolchain.toml`).
+- **Alternatives considered:** the default features, which ship three logging crates;
+  `thread-pool` alone, which the generated code doesn't compile with;
+  CargoKit, which copies build scripts into the repository and fetches unlocked packages at build
+  time; a hand-written Gradle task that runs `cargo-ndk`, which leaves iOS needing its own build
+  script in M7 and the glue code to maintain; building `x86` as well, which no Flutter app can
+  load.
+- **Revisit when:** `flutter_rust_bridge` drops its native-assets support, `native_toolchain_rust`
+  stops supporting the pinned Flutter release, or a Flutter release adds or drops an Android ABI.

@@ -15,12 +15,18 @@ import 'package:denarii_dolor/features/session/ui/signed_in_placeholder_screen.d
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../fakes/fake_money_parser.dart';
 import '../fakes/fake_session_lock.dart';
 
 void main() {
   Future<void> pumpApp(WidgetTester tester, SessionLock sessionLock) async {
     await tester.pumpWidget(
-      DenariiDolorApp(services: AppServices(sessionLock: sessionLock)),
+      DenariiDolorApp(
+        services: AppServices(
+          sessionLock: sessionLock,
+          moneyParser: FakeMoneyParser(),
+        ),
+      ),
     );
   }
 
@@ -130,6 +136,9 @@ void main() {
       final sessionLock = FakeSessionLock();
       await pumpApp(tester, sessionLock);
 
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
       await expectLater(tester, meetsGuideline(textContrastGuideline));
 
       sessionLock.unlock();

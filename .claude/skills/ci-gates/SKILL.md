@@ -45,7 +45,9 @@ How to fix each kind of failure:
 ## 3. Flutter checks
 
 Run them from the repository root, with Flutter 3.50.1, the exact release that `pubspec.yaml` pins (ADR-0009). On the
-maintainer's Linux machine, Flutter is in `~/flutter` and not on `PATH`. Each shell command starts a fresh shell, so put
+maintainer's Linux machine, Flutter is in `~/flutter` and not on `PATH`. Every Flutter build and `flutter test` run also
+compiles the Rust bridge through `hook/build.dart` (ADR-0014), so the Rust toolchain and the targets in
+`rust/rust-toolchain.toml` must be installed. Each shell command starts a fresh shell, so put
 the `export` in the same command as the checks:
 
 ```bash
@@ -100,8 +102,19 @@ offline; ADR-0013, only debug and profile builds keep it). The merged release ma
 
 ## 5. Integration tests
 
-None exist yet. M1.2 adds the first ones and the command that runs them on an emulator. Until then, write "none yet" in
-the report's row.
+Run them on an emulator, one at a time on API 26 and API 36, the levels v1's CI ran. Start one, find its ID, run the
+tests, and close it before you start the next:
+
+```bash
+export PATH="$HOME/flutter/bin:$PATH"
+flutter emulators --launch Denarii_API_26
+flutter devices
+flutter test integration_test -d <the emulator's ID from flutter devices>
+"$(sed -n 's/^sdk.dir=//p' local.properties)/platform-tools/adb" emu kill
+```
+
+`integration_test/bridge_test.dart` calls the real Rust library that the build hook packaged. If no emulator can run,
+say so in the report's row.
 
 ## 6. Report
 
@@ -118,7 +131,7 @@ End with a table, and don't call a check passed unless you ran it in this sessio
 | `flutter test` | | X passed, Y failed |
 | `flutter build apk --release` | | or why the change didn't need it |
 | Release permissions | | the permissions `aapt2` listed |
-| Integration tests | | none yet (M1.2) |
+| Integration tests | | X passed on API 26, Y passed on API 36 |
 
 Also list what you couldn't run here, and why: iOS builds need a Mac with Xcode (M7), upgrade checks need a phone with v1
 installed, and biometric flows need a phone with an enrolled fingerprint.

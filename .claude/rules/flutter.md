@@ -70,7 +70,9 @@ so they can fill them in.
   (`hi`), Spanish (`es`), Arabic (`ar`, right to left), French (`fr`), and Portuguese (`pt`). ARB
   files go in `lib/l10n/`, ported from v1's `app/src/main/res/values*/strings.xml` in M1.4. The
   packs were machine-drafted, so a native speaker reviews every string you translate
-- **Platform channels:** the Rust core through `flutter_rust_bridge` (ADR-0005, Proposed), and
+- **Platform channels:** the Rust core through `flutter_rust_bridge` (ADR-0005), whose bindings
+  live in `lib/platform/rust/` and which view models reach through hand-written interfaces in
+  `lib/platform/`, such as `MoneyParser`; and
   Pigeon for the Kotlin and Swift code that holds hardware-backed keys and shows the biometric
   prompt (ADR-0007, Proposed: hardware-key operations stay in platform code)
 - **Data layer:** no network client, because the app is offline. Every record, the vault profile,
@@ -79,10 +81,10 @@ so they can fill them in.
 - **Security controls:** `.claude/rules/security.md` (the controls, with their `CS-NN` IDs) and
   `docs/specs/android-v1-formats.md` (keys and formats on phones today). The history of every
   finding is in `git show aba0b55:intel/cybersec.md`
-- **Code generation:** `flutter_rust_bridge_codegen` for the bridge and `flutter gen-l10n` for
-  strings, from M1.2 and M1.4. Their output is committed and never edited by hand; CI regenerates
-  it and fails on any difference (M1.3), and the analyzer and the formatter skip only the
-  generated paths (ADR-0012)
+- **Code generation:** `flutter_rust_bridge_codegen generate` for the bridge, configured by
+  `flutter_rust_bridge.yaml` (from M1.2), and `flutter gen-l10n` for strings (from M1.4). Their
+  output is committed and never edited by hand; CI regenerates it and fails on any difference
+  (M1.3), and the analyzer and the formatter skip only the generated paths (ADR-0012)
 - **Test layout:** unit and widget tests in `test/`, with hand-written fakes; whole
   flows in `integration_test/` (from M1.2) on an emulator or device (API 26 and API 36, as v1's CI ran). Rust
   tests live in `rust/` (see `rust.md`)

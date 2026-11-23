@@ -37,7 +37,7 @@ flowchart TB
         SW["Swift in ios/:<br/>Keychain, Face ID"]
     end
     subgraph Rust["Rust workspace (rust/)"]
-        BR["bridge — M1.2"]
+        BR["bridge: the API Dart calls"]
         ST["store — M2"]
         VA["vault — M3"]
         BK["backup — M5.1"]
@@ -51,6 +51,7 @@ flowchart TB
     BR --> VA
     BR --> BK
     BR --> RP
+    BR --> CO
     ST --> CO
     VA --> CO
     BK --> CO
@@ -58,8 +59,8 @@ flowchart TB
 
     classDef built stroke-width:2px
     classDef planned stroke-dasharray: 5 5
-    class CO,UI built
-    class KT,SW,BR,ST,VA,BK,RP planned
+    class CO,UI,BR built
+    class KT,SW,ST,VA,BK,RP planned
 ```
 
 Solid boxes are built; dashed boxes are planned, labeled with the task that builds them.
@@ -114,8 +115,10 @@ to the vault.
 | :- | :- | :- |
 | `rust/Cargo.toml` | The workspace, shared package fields, and lints | M0.4 |
 | `rust/crates/core` | `denarii-core`; its design is in `docs/specs/core.md` | M0.4–M0.7 |
-| `rust/crates/{store,vault,backup,report,bridge}` | The planned crates in the table above | M1.2–M5.1 |
-| `pubspec.yaml`, `lib/`, `test/`, `integration_test/` | The Flutter app and its tests | M1.1; `integration_test/` in M1.2 |
+| `rust/crates/bridge` | `denarii-bridge`, the API Dart calls, with its generated glue; its design is in `docs/specs/bridge.md` | M1.2 |
+| `rust/crates/{store,vault,backup,report}` | The planned crates in the table above | M2.1–M5.1 |
+| `pubspec.yaml`, `lib/`, `test/`, `integration_test/` | The Flutter app and its tests; the bridge's generated Dart bindings are in `lib/platform/rust/` | M1.1; `integration_test/` and `lib/platform/` in M1.2 |
+| `hook/build.dart`, `flutter_rust_bridge.yaml` | The native-assets build hook that compiles the bridge in every Flutter build, and the codegen's settings (ADR-0014: the bridge's pinned version, its Cargo features, and this build) | M1.2 |
 | `android/` | Flutter's Android host app and the Kotlin platform code | M1.1, M3.2 |
 | `ios/` | Flutter's iOS host app and the Swift platform code | M1.1, M7.1 |
 | `docs/` | These documents, the decision log, the roadmap, and the specs | M0.3 |
@@ -152,10 +155,16 @@ it with `git show 6d57526:<path>`. Where v1's code now goes:
 
 ## Threading
 
-`core` and the other crates expose synchronous functions and start no threads. The database is one
-connection that one caller uses at a time. The bridge runs each call off Flutter's UI thread, so a
-slow call (PBKDF2 takes hundreds of milliseconds) never freezes the screen; how it does that is
-decided with ADR-0005 in M1.2.
+`core` and the domain crates (`store`, `vault`, `backup`, and `report`) expose synchronous functions
+and start no threads. The bridge runs each call off Flutter's UI thread, so a slow call (PBKDF2
+takes hundreds of milliseconds) never freezes the screen: Dart awaits a `Future`, and
+`flutter_rust_bridge`'s generated handler runs the function on a pool of worker threads, one per
+CPU core, started at the first call. The bridge also starts an idle `tokio` runtime at that call,
+because the generated code needs the crate's `rust-async` feature (ADR-0014).
+`docs/specs/bridge.md` describes how a call crosses.
+
+The database is one connection that one caller uses at a time. The bridge's worker threads can run
+two calls at once, so `store` decides how it serializes them (M2.1).
 
 ## Configuration
 

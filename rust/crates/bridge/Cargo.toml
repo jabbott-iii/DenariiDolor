@@ -1,0 +1,47 @@
+[package]
+name = "denarii-bridge"
+description = "The API the Flutter app calls in Denarii Dolor, through flutter_rust_bridge."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+# The library name is the stem the generated Dart code loads: libdenarii_bridge.so on Android.
+name = "denarii_bridge"
+# `cdylib` is the library Flutter's build hook packages for Android (ADR-0014); `lib` lets this
+# crate's tests link against it. M7.1 adds `staticlib` if iOS needs it.
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+denarii-core.workspace = true
+flutter_rust_bridge.workspace = true
+
+# The workspace's lints from rust/Cargo.toml, repeated because Cargo can't relax one inherited lint.
+# The difference is `unsafe_code`: `deny` here, not `forbid`, so that `src/lib.rs` can exempt the
+# generated module, the only unsafe code allowed (ADR-0005, ADR-0014). Keep the rest the same as
+# the workspace's.
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "warn"
+unreachable_pub = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+arithmetic_side_effects = "warn"
+as_conversions = "warn"
+indexing_slicing = "warn"
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+print_stdout = "warn"
+print_stderr = "warn"
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
+
+[lints.rustdoc]
+broken_intra_doc_links = "warn"
+private_intra_doc_links = "warn"

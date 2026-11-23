@@ -11,12 +11,14 @@ files with `git show 6d57526:<path>`. The new app must open what v1 left on user
 
 ## Status
 
-As of 2026-11-23, all of M0's tasks and M1.1 are done. M0's exit criteria are the maintainer's to check, and they
-include deciding ADR-0004 to ADR-0007, which are still Proposed. Built: the Doctrina rules, the `ci-gates` and
-`dependency-upgrade` skills, the planning documents in `docs/`, the spec of v1's stored formats, the `denarii-core` crate
-(money, transactions, balance changes and validation) with its tests, and the Flutter project (M1.1): the Android and iOS
-host apps, the app scope, and a root switch between placeholder sign-in and signed-in screens, with its tests. Planned:
-the rest of M1 (the bridge, CI for Flutter, strings, theme and formatting), storage (M2), sign-in (M3), the screens (M4),
+As of 2026-11-23, all of M0's tasks, M1.1 and M1.2 are done. M0's exit criteria are the maintainer's to check, and they
+include deciding ADR-0004, ADR-0006 and ADR-0007, which are still Proposed; the maintainer accepted ADR-0005 in M1.2.
+Built: the Doctrina rules, the `ci-gates` and `dependency-upgrade` skills, the planning documents in `docs/`, the spec of
+v1's stored formats, the `denarii-core` crate (money, transactions, balance changes and validation) with its tests, the
+Flutter project (M1.1): the Android and iOS host apps, the app scope, and a root switch between placeholder sign-in and
+signed-in screens, with its tests, and the `denarii-bridge` crate (M1.2), which Dart calls through `flutter_rust_bridge`,
+built by a native-assets hook, with an integration test that the sign-in placeholder shows the cents Rust parsed.
+Planned: the rest of M1 (CI for Flutter, strings, theme and formatting), storage (M2), sign-in (M3), the screens (M4),
 backups (M5), the Android release (M6) and iOS (M7). Nothing from the rewrite has shipped. `docs/roadmap.md` has the
 details.
 
@@ -31,8 +33,9 @@ details.
   has no such file yet, copy v1's behavior from `git show 6d57526:<path>` and its design from `docs/`.
 - Keep user-visible behavior, stored data and backup formats as v1 has them unless a task and a decision record change them.
 - Report honestly. List the commands you ran with their results, and what you couldn't run: Flutter checks need Flutter
-  3.50.1 (in `~/flutter` on the maintainer's Linux machine, not on `PATH`, as of 2026-11-23), integration tests need an
-  emulator or device, upgrade checks need a phone with v1 installed, and biometric flows need a phone with an enrolled
+  3.50.1 (in `~/flutter` on the maintainer's Linux machine, not on `PATH`, as of 2026-11-23) and the Rust toolchain with
+  the targets in `rust/rust-toolchain.toml`, because every Flutter build compiles the bridge; integration tests need an
+  emulator or device; upgrade checks need a phone with v1 installed; and biometric flows need a phone with an enrolled
   fingerprint.
 
 ## Read before working
@@ -40,7 +43,7 @@ details.
 | Before you touch | Read |
 |---|---|
 | Anything | `docs/00-overview.md`, `docs/01-architecture.md`, and the task in `docs/roadmap.md` |
-| `rust/` | `.claude/rules/rust.md`, and the crate's spec in `docs/specs/` (`core.md` today) |
+| `rust/` | `.claude/rules/rust.md`, and the crate's spec in `docs/specs/` (`core.md` and `bridge.md` today) |
 | `lib/`, `test/`, `pubspec.yaml`, ARB files (from M1.1) | `.claude/rules/flutter.md` |
 | Stored data, keys, sign-in, the session, backups, exports, `android/`, `ios/`, `.github/` | `.claude/rules/security.md` and `docs/specs/android-v1-formats.md` |
 | `docs/`, `README.md`, `CONTRIBUTING.md` | `.claude/rules/roadmap-and-docs.md` and `.claude/rules/writing.md` |
@@ -52,7 +55,10 @@ details.
 ## Stack
 
 - **Rust:** a workspace in `rust/`, edition 2024, Rust 1.100.0 pinned in `rust/rust-toolchain.toml`. `crates/core`
-  (`denarii-core`) is built and uses `std` only. The `store`, `vault`, `backup`, `report` and `bridge` crates are planned.
+  (`denarii-core`) is built and uses `std` only. `crates/bridge` (`denarii-bridge`) is built: the API Dart calls through
+  `flutter_rust_bridge` 2.13.0 (ADR-0005), with only the `dart-opaque`, `rust-async` and `thread-pool` features, compiled by
+  Flutter's native-assets hook in `hook/build.dart` (ADR-0014). The `store`, `vault`, `backup` and `report` crates are
+  planned.
 - **Flutter:** a Dart app at the repository root, created in M1.1: Flutter 3.50.1 pinned in `pubspec.yaml`, iOS 15 and
   later (ADR-0009), `ChangeNotifier` view models with no package (ADR-0010), and Flutter's `Navigator` with no package
   (ADR-0011).
@@ -79,6 +85,9 @@ RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
   flutter analyze
   flutter test
   ```
+- Run the integration tests on an emulator or device: `flutter test integration_test -d <device>`.
+- After changing the bridge's `api` module, regenerate its bindings from the repository root and commit them:
+  `flutter_rust_bridge_codegen generate`. Install the codegen and `cargo-expand` as `CONTRIBUTING.md` says.
 - `adb` may not be on `PATH`. The SDK location is `sdk.dir` in `local.properties`.
 - Use the `ci-gates` skill to run the full set and report the results.
 
@@ -93,7 +102,7 @@ rust/crates/store     SQLCipher database, schema v2 and migrations, use cases   
 rust/crates/vault     profile, key wrapping, PIN and answer, lockout, session                         M3
 rust/crates/backup    backup files, every format version                                              M5.1
 rust/crates/report    monthly report, search, CSV                                                     M2.7
-rust/crates/bridge    the API Dart calls (flutter_rust_bridge, ADR-0005, Proposed)                    M1.2
+rust/crates/bridge    the API Dart calls (flutter_rust_bridge, ADR-0005, ADR-0014)                    built (M1.2)
 lib/                  screens, ChangeNotifier view models, two scopes, locale formatting, ARB strings  M1.1
 android/, ios/        Keystore and Keychain keys, the biometric prompt                                 M3.2, M7.1
 ```
@@ -144,7 +153,9 @@ Dependency rules:
 Details are in `.claude/rules/security.md`, which loads when you touch security-sensitive files.
 
 - Add no logging to shipped code: no `print!`, `eprintln!` or `dbg!` in Rust, no `print` or `debugPrint` in Dart, no `Log` or
-  `println` in Kotlin, and no logging crate or package.
+  `println` in Kotlin, and no logging crate or package. The one exception is `package:logging`, which
+  `flutter_rust_bridge`'s Dart runtime depends on; it stays inactive, because nothing connects a Rust log stream to it
+  (ADR-0014).
 - Add no `INTERNET` permission, network code, analytics, crash reporting or ads SDK (ADR-0008). The one exception is the
   `INTERNET` permission in Flutter's debug and profile manifests, which the Flutter tool needs to attach to a running app;
   the release build never has it (ADR-0013).

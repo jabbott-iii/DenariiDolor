@@ -2,7 +2,7 @@
 
 [workspace]
 resolver = "3"
-members = ["crates/core"]
+members = ["crates/bridge", "crates/core"]
 
 [workspace.package]
 version = "0.1.0"
@@ -10,6 +10,15 @@ edition = "2024"
 rust-version = "1.100"
 publish = false
 
+# Each third-party crate is approved in the register in docs/02-dependency-policy.md.
+[workspace.dependencies]
+denarii-core = { path = "crates/core" }
+# Pinned exactly, with its Dart package, its codegen, and flutter_rust_bridge_hooks (ADR-0014). The
+# default features would bring logging crates. `thread-pool` runs each call off Flutter's UI thread,
+# and the generated code doesn't compile without `dart-opaque` and `rust-async`.
+flutter_rust_bridge = { version = "=2.13.0", default-features = false, features = ["dart-opaque", "rust-async", "thread-pool"] }
+
+# crates/bridge/Cargo.toml repeats these lints, with `unsafe_code` at `deny` (ADR-0014). Change both.
 [workspace.lints.rust]
 unsafe_code = "forbid"
 missing_docs = "warn"

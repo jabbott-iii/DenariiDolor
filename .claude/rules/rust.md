@@ -28,20 +28,25 @@ yet. Work out that value from the repository itself, and tell the user which val
 so they can fill them in.
 
 - **Crates:** the workspace in `rust/`. `crates/core` (`denarii-core`) holds the domain rules:
-  money in cents, transactions, balance changes, and validation. The planned crates (`store`,
-  `vault`, `backup`, `report`, and `bridge`) and the tasks that build them are in
-  `docs/01-architecture.md`
+  money in cents, transactions, balance changes, and validation. `crates/bridge`
+  (`denarii-bridge`) is the API Dart calls through `flutter_rust_bridge` (ADR-0005), with its
+  generated glue in `src/frb_generated.rs`. The planned crates (`store`, `vault`, `backup`, and
+  `report`) and the tasks that build them are in `docs/01-architecture.md`
 - **Toolchain:** edition 2024, Rust 1.100.0 pinned in `rust/rust-toolchain.toml`, and
   `rust-version = "1.100"` in `[workspace.package]`
 - **Check commands:** run from `rust/`: `cargo fmt --all --check`, `cargo clippy --workspace
   --all-targets --locked -- -D warnings`, `cargo test --workspace --locked`, and `RUSTDOCFLAGS="-D
   warnings" cargo doc --workspace --no-deps --locked`
-- **Lint configuration:** `[workspace.lints]` in `rust/Cargo.toml`, plus `rust/clippy.toml`
+- **Lint configuration:** `[workspace.lints]` in `rust/Cargo.toml`, plus `rust/clippy.toml`.
+  `crates/bridge/Cargo.toml` repeats those lints in a `[lints]` table of its own, with
+  `unsafe_code` at `deny`, because Cargo can't relax one inherited lint (ADR-0014); change both
+  tables together
 - **Dependency policy:** ask first, and record each decision in `docs/02-dependency-policy.md`.
   `denarii-core` uses `std` only
-- **Unsafe policy:** forbidden in every crate (`unsafe_code = "forbid"`). The bridge's generated
-  foreign function interface code is the one planned exception, and it needs ADR-0005 accepted
-  first
+- **Unsafe policy:** forbidden in every crate (`unsafe_code = "forbid"`). The one exception is
+  the bridge's generated foreign function interface code, `crates/bridge/src/frb_generated.rs`,
+  which `src/lib.rs` exempts with `#[expect(…, reason = "…")]` on its `mod` line (ADR-0005,
+  ADR-0014). Hand-written code in `bridge` has `unsafe_code` at `deny`, and no `unsafe`
 - **Untrusted input:** money text a user types (`core::money`, limited by `Cents::MAX_PARSED`);
   later, backup files (`backup`, M5.1), the v1 database and profile read during the upgrade
   (`store` and `vault`, M2 and M3), and every value that crosses the bridge from Dart. Format
@@ -51,12 +56,14 @@ so they can fill them in.
   Dart UI maps to a localized message; users never see `Display` text
 - **Logging:** none. No crate prints or logs, because shipped code may not log (`CLAUDE.md`,
   "Security posture")
-- **Concurrency:** none: every API is synchronous. How the bridge runs calls off the UI thread is
-  decided with ADR-0005 in M1.2
+- **Concurrency:** none in the hand-written code: every API is synchronous, and no crate starts a
+  thread itself. `flutter_rust_bridge`'s generated handler runs each bridge call on a pool of
+  worker threads, so two calls can run at once, and its `rust-async` feature starts an idle
+  `tokio` runtime (ADR-0014, `docs/specs/bridge.md`)
 - **Public API:** none published. The `bridge` crate's API is what Dart calls, so a change to it
   regenerates the Dart bindings in the same change
 - **Published crates:** none
-- **Design docs:** `docs/specs/<crate>.md`, for example `docs/specs/core.md`
+- **Design docs:** `docs/specs/<crate>.md`: `docs/specs/core.md` and `docs/specs/bridge.md`
 - **Test layout:** unit tests in a `#[cfg(test)] mod tests` beside the code; integration tests
   that use only the public API in each crate's `tests/`; compatibility fixtures, such as a v1
   database and one backup per `FORMAT_VERSION`, in `tests/fixtures/` of the crate that reads them

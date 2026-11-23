@@ -1,5 +1,15 @@
 # The toolchain every Rust check and build uses. A bump is a change of its own (.claude/rules/rust.md).
+# crates/bridge/rust-toolchain.toml links here, because the bridge's native-assets build reads the
+# version and the targets from a file beside its Cargo.toml (ADR-0014).
 [toolchain]
 channel = "1.100.0"
 components = ["clippy", "rustfmt"]
 profile = "minimal"
+# The Android ABIs Flutter builds (arm64-v8a, armeabi-v7a, x86_64), and the Linux host that runs
+# `flutter test`. M7.1 adds the iOS targets.
+targets = [
+    "aarch64-linux-android",
+    "armv7-linux-androideabi",
+    "x86_64-linux-android",
+    "x86_64-unknown-linux-gnu",
+]

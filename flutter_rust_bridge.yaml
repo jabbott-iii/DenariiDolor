@@ -1,0 +1,13 @@
+# flutter_rust_bridge_codegen 2.13.0 reads this file (ADR-0005, ADR-0014). Regenerate the bindings
+# with `flutter_rust_bridge_codegen generate` from the repository root, and commit what it writes
+# (ADR-0012).
+rust_input: crate::api
+rust_root: rust/crates/bridge/
+dart_output: lib/platform/rust/
+# lib.rs declares the generated module itself, with its lint exception (ADR-0014).
+add_mod_to_lib: false
+# The app ships on Android and iOS only.
+web: false
+# Never run `flutter pub add` or `cargo add` on its own; dependencies change only by approval
+# (docs/02-dependency-policy.md).
+auto_upgrade_dependency: false

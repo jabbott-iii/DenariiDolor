@@ -27,7 +27,10 @@ Today's pins:
 | Flutter 3.50.1 with Dart 3.14 | `environment` in `pubspec.yaml` | ADR-0009 pins it exactly. A new release needs a new decision record that supersedes ADR-0009 |
 | Rust 1.100.0 | `channel` in `rust/rust-toolchain.toml`, and `rust-version` in `rust/Cargo.toml` | The Rust rule's "Toolchain". A bump is a change of its own |
 | minSdk 26, targetSdk 36, compileSdk 37 | `android/app/build.gradle.kts` | v1's levels, so installs upgrade in place (ADR-0002). Ask before changing one: a higher minSdk drops users on older phones |
-| The NDK | `ndkVersion = flutter.ndkVersion` in `android/app/build.gradle.kts`, which is 28.2.13676358 in Flutter 3.50.1 | The Rust library from M1.2 builds with the same NDK |
+| The NDK | `ndkVersion = flutter.ndkVersion` in `android/app/build.gradle.kts`, which is 28.2.13676358 in Flutter 3.50.1 | The bridge's Rust library builds with the same NDK, through `hook/build.dart` (ADR-0014) |
+| `flutter_rust_bridge` 2.13.0 | `=2.13.0` in `[workspace.dependencies]` of `rust/Cargo.toml`, with only the `dart-opaque`, `rust-async` and `thread-pool` features; `flutter_rust_bridge` and `flutter_rust_bridge_hooks` in `pubspec.yaml`; the codegen, installed with `cargo install flutter_rust_bridge_codegen --version 2.13.0 --locked` | ADR-0014 pins all four exactly. `RustLib.init` fails when the codegen and the runtime differ |
+| `cargo-expand` 1.0.127 | Installed with `cargo install cargo-expand --version 1.0.127 --locked` | The codegen runs it, and installs the latest one by itself if it's missing (ADR-0014) |
+| The Rust targets | `targets` in `rust/rust-toolchain.toml` | The three Android ABIs Flutter builds and the Linux host; the build hook refuses a target that isn't listed (ADR-0014) |
 | Android Gradle plugin 9.3.1 and Kotlin Gradle plugin 2.4.20 | `android/settings.gradle.kts` | The versions the app builds with today. `flutter analyze --suggestions` checks that the four Android build tools in these rows work together |
 | Gradle 9.5.0 | `android/gradle/wrapper/gradle-wrapper.properties` | The same check |
 | Java 17 | `compileOptions` and `kotlin.compilerOptions` in `android/app/build.gradle.kts` | The same check |
@@ -38,8 +41,10 @@ Change these together, and nothing else in the same commit:
 - the Flutter release and the Dart SDK constraint. Check the `environment` constraint of every package from the Flutter
   authors as well; `material_ui` 1.11.1, for example, needs Flutter 3.47 or later;
 - the Android Gradle plugin, the Kotlin Gradle plugin, Gradle, and Java;
-- from M1.2, the version of `flutter_rust_bridge`'s Dart package, its Rust crate, and its code generator, which must
-  match (ADR-0005, Proposed: Dart calls Rust through `flutter_rust_bridge`);
+- `flutter_rust_bridge`'s Rust crate, its Dart package, `flutter_rust_bridge_hooks`, and its codegen, which must match
+  (ADR-0014: the bridge is pinned exactly). Regenerate the bindings with the new codegen
+  (`flutter_rust_bridge_codegen generate`) and commit them in the same change (ADR-0012), and check the features the new
+  generated code needs, because ADR-0014 allows only the ones it can't compile without;
 - from M2.1, `rusqlite` and the SQLCipher build it bundles (ADR-0006, Proposed: the database stays SQLCipher, opened from
   Rust with `rusqlite`).
 

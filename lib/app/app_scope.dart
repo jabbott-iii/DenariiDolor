@@ -5,15 +5,20 @@
  */
 
 import 'package:denarii_dolor/app/session_lock.dart';
+import 'package:denarii_dolor/platform/money_parser.dart';
 import 'package:flutter/widgets.dart';
 
-/// The services that live as long as the app (ADR-0010). M1.2 adds the bridge, and later tasks add
-/// the platform channels and the settings.
+/// The services that live as long as the app (ADR-0010). Later tasks add the vault's sign-in calls,
+/// the platform channels, and the settings.
 @immutable
 final class AppServices {
-  const AppServices({required this.sessionLock});
+  const AppServices({required this.sessionLock, required this.moneyParser});
 
   final SessionLock sessionLock;
+
+  /// Reads typed amounts through the Rust core. It touches no stored data, so it may live outside
+  /// the session.
+  final MoneyParser moneyParser;
 }
 
 /// Gives the widgets below it the [AppServices]. Route widgets pass them to their view models'

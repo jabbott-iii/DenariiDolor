@@ -174,11 +174,11 @@ The same report exported as **PDF** has the title, period, timestamp, totals and
 
 ## For developers
 
-**Status:** the app is being rewritten as a Flutter app over a Rust core, for Android and then iOS. As of 2026-11-23 the plan, the decision records, the Rust domain core (`rust/crates/core`) and the Flutter project with placeholder screens are done; the bridge to Rust, storage, sign-in, the real screens and backups are planned. Google Play still serves v1, the Kotlin app, whose source is at commit `6d57526` (`git show 6d57526:<path>`). New builds keep the application ID `com.denariidolor` and open the data v1 left on each phone.
+**Status:** the app is being rewritten as a Flutter app over a Rust core, for Android and then iOS. As of 2026-11-23 the plan, the decision records, the Rust domain core (`rust/crates/core`), the Flutter project with placeholder screens, and the bridge through which Dart calls Rust (`rust/crates/bridge`) are done; storage, sign-in, the real screens and backups are planned. Google Play still serves v1, the Kotlin app, whose source is at commit `6d57526` (`git show 6d57526:<path>`). New builds keep the application ID `com.denariidolor` and open the data v1 left on each phone.
 
 ```mermaid
 flowchart LR
-    UI[Flutter app<br/>placeholder screens] --> BR[Rust bridge<br/>planned] --> ST[store, vault, backup, report<br/>planned] --> CO[core: money, transactions,<br/>balance changes, validation]
+    UI[Flutter app<br/>placeholder screens] --> BR[Rust bridge] --> ST[store, vault, backup, report<br/>planned] --> CO[core: money, transactions,<br/>balance changes, validation]
     UI --> PL[Kotlin and Swift:<br/>Keystore, Keychain, biometrics<br/>planned]
 ```
 
@@ -191,7 +191,7 @@ cargo fmt --all                                                   # format
 
 | Path | Contents |
 |---|---|
-| `rust/` | The Rust workspace; `crates/core` holds money in cents, transactions, balance changes and validation |
+| `rust/` | The Rust workspace; `crates/core` holds money in cents, transactions, balance changes and validation, and `crates/bridge` is the API the Flutter app calls |
 | `docs/` | The overview, architecture, dependency policy, decision log, roadmap, and specs, including `specs/android-v1-formats.md`: what v1 stores on phones and in backups |
 | `PRIVACY.md`, `THIRD_PARTY_NOTICES.md`, `licenses/` | Privacy policy and open-source notices, which the app shows in Settings |
 | `.github/workflows` | `ci.yml` (Rust checks) and `security.yml` (CodeQL, dependency review, gitleaks) |

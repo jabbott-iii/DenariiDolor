@@ -9,8 +9,8 @@
 //!
 //! This crate uses only `std` and depends on no other crate of the workspace. The planned storage,
 //! vault, backup, and report crates build on it, and the Flutter app reaches it through the
-//! planned bridge crate (`docs/01-architecture.md`). Its design, and where it differs from v1's
-//! Kotlin code, is in `docs/specs/core.md`.
+//! bridge crate, `denarii-bridge` (`docs/01-architecture.md`). Its design, and where it differs
+//! from v1's Kotlin code, is in `docs/specs/core.md`.
 //!
 //! # The parts
 //!

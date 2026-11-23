@@ -156,11 +156,29 @@ and displays an amount that Rust parsed and Dart formatted.
     - `flutter pub get` fails on a Flutter release other than 3.50.1.
   - Verify: `dart format --output=none --set-exit-if-changed .`; `flutter analyze`; `flutter test`
     (expect no issues)
-- [ ] **M1.2 — bridge: call Rust from Dart**
+- [x] **M1.2 — bridge: call Rust from Dart**
+  - Note: 2026-11-23: the maintainer accepted ADR-0005 and chose ADR-0014: `flutter_rust_bridge`
+    2.13.0 pinned exactly, with its default features off and only `dart-opaque`, `rust-async`, and
+    `thread-pool` on (the least the generated code compiles with), built by Flutter's
+    native-assets hook (`hook/build.dart`). By the user's choice, `x86` is dropped from the `Do`
+    line below, because Flutter 3.50.1 builds only `android-arm`, `android-arm64`, and
+    `android-x64`.
   - Note: 2026-11-23: `flutter_rust_bridge` 2.13.0 was tested against Flutter 3.44, so check it
     on Flutter 3.50.1 (ADR-0009) before anything else.
   - Note: 2026-11-23: NDK 28.2.13676358, the version Flutter 3.50's Gradle plugin defaults to, is
     installed on the maintainer's machine; build the Rust library with the same version.
+  - Note: 2026-11-23: `flutter_rust_bridge` 2.13.0 works on Flutter 3.50.1. Pinned:
+    `flutter_rust_bridge` 2.13.0 (crate, Dart package, and `flutter_rust_bridge_codegen`),
+    `flutter_rust_bridge_hooks` 2.13.0, `native_toolchain_rust` 1.1.1, and `cargo-expand` 1.0.127
+    for the codegen. `rust/rust-toolchain.toml` lists the three Android targets and
+    `x86_64-unknown-linux-gnu`, and `rust/crates/bridge/rust-toolchain.toml` links to it.
+  - Note: 2026-11-23: the bridge has one function, `parse_cents` (`docs/specs/bridge.md`). The
+    sign-in placeholder got a view model, a route, and an amount field that shows the cents Rust
+    returned, or the `AmountError` it gave. `flutter test integration_test` passed (3 tests) on
+    `Denarii_API_26` and `Denarii_API_36`, and the app showed `123456 cents` for `1,234.56` on API
+    36, in the light theme and in the dark theme at 200% text. The release APK holds `libdenarii_bridge.so` for the
+    three ABIs and asks for no new permission. The first integration build downloaded Android SDK
+    Platform 36, which `integration_test`'s Android module compiles against.
   - Depends: M1.1
   - Decide first: accept or change ADR-0005 (`flutter_rust_bridge`).
   - Do:
@@ -170,6 +188,14 @@ and displays an amount that Rust parsed and Dart formatted.
     - The placeholder screen shows the cents that `core::parse_cents` returned for a typed amount.
   - Verify: `flutter test integration_test` on an emulator (expect pass)
 - [ ] **M1.3 — ci: Flutter checks and the Android build in CI**
+  - Note (from M1.2): every Flutter build and `flutter test` run compiles the bridge through
+    `hook/build.dart`, so the Flutter job needs Rust 1.100.0 with the targets in
+    `rust/rust-toolchain.toml`. The check that the bindings are current runs
+    `flutter_rust_bridge_codegen generate` and fails on `git diff --exit-code`; it needs
+    `flutter_rust_bridge_codegen` 2.13.0 and `cargo-expand` 1.0.127 installed with
+    `cargo install --locked`. Keep `flutter_rust_bridge`'s crate and its two Dart packages in one
+    Dependabot group, because they must move together (ADR-0014). The integration tests need an
+    emulator: `flutter test integration_test -d <device>`.
   - Depends: M1.2
   - Do:
     - Add jobs to `ci.yml` for the Flutter check commands and a debug app bundle, with actions
@@ -183,6 +209,10 @@ and displays an amount that Rust parsed and Dart formatted.
   - Note (from M1.1): the placeholder sign-out button's tooltip is v1's English `sign_out` string,
     hard-coded in `lib/features/session/ui/signed_in_placeholder_screen.dart`; move it to the ARB
     files.
+  - Note (from M1.2): the sign-in placeholder's `Amount` label and its result line
+    (`<cents> cents` and `Rejected: <error>`) are hard-coded English in
+    `lib/features/auth/ui/sign_in_placeholder_screen.dart`; move them to the ARB files, or drop
+    them if M3.5 has removed the amount field by then.
   - Depends: M1.1
   - Do:
     - Convert `app/src/main/res/values*/strings.xml` at `6d57526` into `lib/l10n/app_*.arb` for
@@ -200,6 +230,9 @@ and displays an amount that Rust parsed and Dart formatted.
     - The placeholder screen matches v1's colors in both themes.
   - Verify: a widget test per theme; a look on an emulator in both themes
 - [ ] **M1.6 — ui: money and month text in Dart**
+  - Note (from M1.2): `SignInPlaceholderViewModel.placeholderSymbols` sends `.` and no currency
+    marks to the bridge's `parse_cents`; build the `NumberSymbols` from the user's locale with
+    `package:intl`, as `docs/specs/core.md` ("Money") describes.
   - Depends: M1.1
   - Do:
     - Format amounts and month names with `package:intl` so they match the snapshot tables in v1's
@@ -220,6 +253,8 @@ and shows an amount parsed by Rust.
 rules.
 
 - [ ] **M2.1 — store: open SQLCipher from Rust**
+  - Note (from M1.2): the bridge runs each call on a pool of worker threads, so two calls can reach
+    `store` at the same time; decide how `store` serializes them on its one connection.
   - Depends: M0.7
   - Decide first: accept or change ADR-0006 (`rusqlite` with bundled SQLCipher).
   - Do:
@@ -328,6 +363,9 @@ and fingerprint, and sees the same balances.
     - Fixture F9 upgrades and signs in.
   - Verify: an instrumented test on an emulator
 - [ ] **M3.5 — auth: setup, sign-in, and recovery screens**
+  - Note (from M1.2): the sign-in placeholder now has a route (`SignInPlaceholderRoute`) and a view
+    model with M1.2's amount field. Remove the field with the placeholder, and point
+    `integration_test/bridge_test.dart`'s screen check at a screen that still calls the bridge.
   - Note (from M1.1): replace `LockedSessionLock` in `lib/main.dart` with a `SessionLock` over the
     vault; wrap `SignedInTree` in the session scope (ADR-0010); and push the sign-in screens on a
     `Navigator` inside the sign-in flow, not the app's root `Navigator`, so unlocking removes them.
@@ -473,11 +511,20 @@ restores in the new app on another phone.
 - [ ] **M6.2 — legal: notices, privacy policy, and Data safety**
   - Note (from M1.1): the app ships `material_ui`, `cupertino_ui`, `intl`, `clock` (Apache-2.0),
     and `path`, besides Flutter's own packages; see the register in `docs/02-dependency-policy.md`.
+  - Note (from M1.2): `libdenarii_bridge.so` ships 30 third-party crates, listed with their
+    licenses in ADR-0014; `allo-isolate` is Apache-2.0 only, and `dart-sys` compiles the Dart SDK's
+    `dart_api_dl.c` (BSD-3-Clause). The app also ships the `flutter_rust_bridge` Dart package (MIT)
+    and the packages its runtime imports (`logging`, `async`, `args`, and `web` from the Dart team,
+    BSD-3-Clause, and `build_cli_annotations`, MIT); check which the release build keeps. The build
+    hook's packages run only during the build and don't ship.
   - Depends: M6.1
   - Do:
     - Rewrite `THIRD_PARTY_NOTICES.md` and `licenses/` for the new dependencies; review
       `PRIVACY.md`; tell the maintainer what the Play Data safety form needs.
 - [ ] **M6.3 — build: obfuscation and size**
+  - Note (from M1.2): `libdenarii_bridge.so` is 661 KB (`arm64-v8a`), 444 KB (`armeabi-v7a`), and
+    695 KB (`x86_64`) in M1.2's release APK. It includes backtrace symbolization (`backtrace`,
+    `gimli`, `object`, `addr2line`), which `flutter_rust_bridge` turns on in `allo-isolate`.
   - Depends: M6.1
   - Do:
     - Build with `--obfuscate --split-debug-info`, keep the symbols private, and record the size
@@ -502,6 +549,8 @@ maintainer approves a staged rollout to production.
 **Goal:** The app ships on the App Store with the same features and protections.
 
 - [ ] **M7.1 — ios: Keychain and Secure Enclave design, and the Swift code**
+  - Note (from M1.2): add the iOS targets to `rust/rust-toolchain.toml`, add `staticlib` to the
+    bridge's `crate-type` if the iOS build links it statically, and check `hook/build.dart` on iOS.
   - Depends: M6.4
   - Decide first: how the device key, the storage key, and the biometric key map to the Keychain
     and the Secure Enclave, in a new decision record; add a `swift.md` rule.

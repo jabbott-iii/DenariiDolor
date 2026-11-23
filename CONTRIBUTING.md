@@ -15,6 +15,13 @@ The app is being rewritten as a Flutter app over a Rust core ([ADR-0001](docs/de
 - Git.
 - `rustup`. The Rust version is pinned in `rust/rust-toolchain.toml`, and `rustup toolchain install` in `rust/` installs it with Clippy and rustfmt.
 - From milestone M1.1: Flutter 3.50.1, the exact version `pubspec.yaml` pins (`flutter pub get` fails on any other), the Android SDK with platform 37, and an emulator or device running API 26 or newer. CI will run API 26 and 36, as it did for v1.
+- From milestone M1.2: the Android targets of the pinned Rust toolchain, because every Flutter build and `flutter test` run compiles the Rust bridge through `hook/build.dart`. Install them from `rust/` with `rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android`.
+- To change the bridge's API: the codegen and `cargo-expand`, both pinned. Install `cargo-expand` first, because the codegen installs an unpinned one by itself when it finds none:
+
+  ```bash
+  cargo install cargo-expand --version 1.0.127 --locked
+  cargo install flutter_rust_bridge_codegen --version 2.13.0 --locked
+  ```
 - For iOS work (milestone M7): a Mac with Xcode.
 
 ```bash
@@ -51,6 +58,7 @@ Also run these from the repository root, with Flutter 3.50.1. CI runs them from 
 dart format --output=none --set-exit-if-changed .
 flutter analyze
 flutter test
+flutter test integration_test -d <device>   # on an emulator or device, from milestone M1.2
 ```
 
 The security workflow also runs CodeQL, gitleaks and, on pull requests, dependency review, which fails on high-severity vulnerabilities.
@@ -69,7 +77,7 @@ The security workflow also runs CodeQL, gitleaks and, on pull requests, dependen
 - **Tests:**
   - New logic needs unit tests, and a bug fix a test that fails without the fix.
   - Code that reads v1's data needs a test against a fixture that v1 wrote.
-  - Integration tests run on an emulator or device (from M1.2).
+  - Integration tests live in `integration_test/` and run on an emulator or device.
 - **Style:**
   - Start every source file with the proprietary copyright notice (copy it from an existing `.rs` file).
   - Follow `rustfmt` and the workspace lints. Silence a lint only on the smallest item, with `#[expect(…, reason = "…")]`.
@@ -93,6 +101,7 @@ Update the documents a change affects in the same pull request:
 | A significant or hard-to-reverse decision | A new record in `docs/decisions.md` (`Proposed` until the maintainer accepts it) |
 | A roadmap task done | Its tick and notes in `docs/roadmap.md`, the "Status" section of `CLAUDE.md`, and the status line in `README.md` |
 | A new command, module or rule | The "Read before working" table in `CLAUDE.md` |
+| The bridge's API (`rust/crates/bridge/src/api/`) | The bindings, regenerated from the repository root with `flutter_rust_bridge_codegen generate` and committed with the change (ADR-0012), and `docs/specs/bridge.md` |
 | User-visible behavior | The user guide in `README.md` |
 | What the app stores, exports or shares, or its permissions | `PRIVACY.md`, and tell the maintainer about the Play Data safety form |
 | The workflow or the checks | This file |
