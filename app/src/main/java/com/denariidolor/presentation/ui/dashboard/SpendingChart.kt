@@ -9,6 +9,7 @@ package com.denariidolor.presentation.ui.dashboard
 import android.icu.text.CompactDecimalFormat
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -20,24 +21,22 @@ import androidx.compose.ui.unit.dp
 import com.denariidolor.presentation.ui.common.LocalVizColors
 import com.denariidolor.util.Money
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
+import com.patrykandpatrick.vico.compose.cartesian.axis.HorizontalAxis
+import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelComponent
+import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModel
+import com.patrykandpatrick.vico.compose.cartesian.data.CartesianValueFormatter
+import com.patrykandpatrick.vico.compose.cartesian.data.ColumnCartesianLayerModel
+import com.patrykandpatrick.vico.compose.cartesian.layer.ColumnCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
+import com.patrykandpatrick.vico.compose.common.Fill
+import com.patrykandpatrick.vico.compose.common.Insets
 import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
 import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
-import com.patrykandpatrick.vico.compose.common.fill
-import com.patrykandpatrick.vico.compose.common.shape.rounded
 import com.patrykandpatrick.vico.compose.m3.common.rememberM3VicoTheme
-import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
-import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
-import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModel
-import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
-import com.patrykandpatrick.vico.core.cartesian.data.ColumnCartesianLayerModel
-import com.patrykandpatrick.vico.core.cartesian.layer.ColumnCartesianLayer
-import com.patrykandpatrick.vico.core.common.shape.CorneredShape
 import kotlin.math.roundToInt
 
 const val SPENDING_CHART_TAG = "spendingChart"
@@ -67,20 +66,23 @@ fun SpendingChart(bars: List<Pair<String, Long>>, description: String, modifier:
             textColor = colors.onSurfaceVariant
         )
     ) {
+        // Vico 3 doubled the axis labels' vertical padding, which spaces the amount axis in odd steps (160, 320…); Vico 2's
+        // padding keeps it at round ones.
+        val axisLabel = rememberAxisLabelComponent(padding = Insets(horizontal = 4.dp, vertical = 2.dp))
         CartesianChartHost(
             chart = rememberCartesianChart(
                 rememberColumnCartesianLayer(
                     columnProvider = ColumnCartesianLayer.ColumnProvider.series(
                         rememberLineComponent(
-                            fill = fill(viz.series1),
+                            fill = Fill(viz.series1),
                             thickness = 20.dp,
-                            shape = CorneredShape.rounded(topLeft = 4.dp, topRight = 4.dp)
+                            shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
                         )
                     ),
                     columnCollectionSpacing = 16.dp
                 ),
-                startAxis = VerticalAxis.rememberStart(valueFormatter = yFormatter),
-                bottomAxis = HorizontalAxis.rememberBottom(valueFormatter = xFormatter)
+                startAxis = VerticalAxis.rememberStart(label = axisLabel, valueFormatter = yFormatter),
+                bottomAxis = HorizontalAxis.rememberBottom(label = axisLabel, valueFormatter = xFormatter)
             ),
             model = model,
             scrollState = rememberVicoScrollState(scrollEnabled = false),

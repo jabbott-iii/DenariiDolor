@@ -214,8 +214,7 @@ Don't "fix" these unless you're asked:
 - Presentation uses Room entities such as `CategoryEntity` directly for reference data.
 - Navigation uses string routes in `MainDestination`, not type-safe routes.
 - The data layer calls `Dispatchers.IO` directly instead of injecting a dispatcher.
-- detekt 1.23.8, ktlint 1.3.1, Vico 2.0.0 and `security-crypto` (kept only for the v1.0.x upgrade path) are held back on
-  purpose.
+- detekt 1.23.8, ktlint 1.3.1 and `security-crypto` (kept only for the v1.0.x upgrade path) are held back on purpose.
 - No instrumented test opens `MainActivity` under AppCompat. After any AndroidX, Compose or Navigation upgrade, sign in on an
   emulator before you call the change done.
 - The language packs were machine-drafted. Strings you translate need a native speaker's review, so say so in your summary.

@@ -135,7 +135,6 @@ dependencies {
     implementation(libs.sqlcipher.android)
     implementation(libs.vico.compose)
     implementation(libs.vico.compose.m3)
-    implementation(libs.vico.core)
     implementation(libs.metrox.viewmodel)
     implementation(libs.metrox.viewmodel.compose)
     implementation(libs.kotlinx.coroutines.android)

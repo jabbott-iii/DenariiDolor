@@ -58,7 +58,7 @@ paths:
 | AppCompat 1.7.1 or later | 1.7.0 crashes `MainActivity` right after sign-in: there is no `NavigationEventDispatcherOwner` for Navigation 2.10's `NavHost`. Never go below 1.7.1. |
 | kotlinx-serialization 1.8.1 (constraint) | Room's `MigrationTestHelper` needs it, and AGP 9 doesn't align test dependencies with the app's. Keep it at least at what Room needs. |
 | `security-crypto` 1.1.0-alpha06 | Deprecated, and used only for the v1.0.x upgrade path (CS-09). Removing it is the maintainer's decision. |
-| detekt 1.23.8, ktlint 1.3.1, Vico 2.0.0 | Held back on purpose. detekt embeds Kotlin 2.0.21, so its configuration is pinned in `app/build.gradle.kts`, and detekt 2 is alpha. A newer ktlint reformats the codebase. Vico 3 rewrites the chart API. |
+| detekt 1.23.8, ktlint 1.3.1 | Held back on purpose. detekt embeds Kotlin 2.0.21, so its configuration is pinned in `app/build.gradle.kts`, and detekt 2 is alpha. A newer ktlint reformats the codebase. |
 | AGP 9.4.1, Gradle 9.6.1, JDK 17 | AGP 9.4 needs Gradle 9.6 or later. CI and CD use Temurin 17. |
 | compileSdk 37, targetSdk 36, minSdk 26 | targetSdk 36 has been Play's requirement since 2026-08-31. Plan the next raise before Play's next deadline, which has fallen on August 31 each year, and review that API level's behavior changes. |
 | `build*` entries | Build-tool-only patches for known advisories (CS-22, CS-23, CS-25); see below. |
@@ -78,6 +78,10 @@ Use the `dependency-upgrade` skill, and ask before adding a new library. A libra
 
 - an entry in `THIRD_PARTY_NOTICES.md`, with its license text in `licenses/` when the license requires it;
 - 16 KB page-size alignment, if it has native code. Play requires this for apps targeting Android 15 or later.
+
+Vico 3 depends on JetBrains' Compose Multiplatform artifacts. On Android these hold no code and point to AndroidX Compose, so
+a Vico upgrade can raise AndroidX Compose above the BOM. Compare the `releaseRuntimeClasspath` graph, and if AndroidX Compose
+moves, treat it as a Compose upgrade.
 
 ## GitHub Actions
 

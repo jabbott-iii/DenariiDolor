@@ -11,7 +11,7 @@ description: Add, upgrade or remove a library, Gradle plugin, SDK level or toolc
   license, its size, any native code, and whether it needs a permission or network access. Network access is never
   allowed.
 - **An upgrade:** read the pin table in `.claude/rules/build-gradle.md`. If the library is pinned or held back (Kotlin and
-  KSP, Metro, Room, SQLCipher, AppCompat, kotlinx-serialization, `security-crypto`, detekt, ktlint, Vico), check that the
+  KSP, Metro, Room, SQLCipher, AppCompat, kotlinx-serialization, `security-crypto`, detekt, ktlint), check that the
   constraint behind the pin no longer applies, and say so before you change it.
 - Change one coupled group at a time:
   - Kotlin, KSP and Metro together;
