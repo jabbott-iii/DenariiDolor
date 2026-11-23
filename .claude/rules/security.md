@@ -6,7 +6,9 @@ paths:
   - "app/src/main/java/com/denariidolor/data/local/**"
   - "app/src/main/java/com/denariidolor/data/backup/**"
   - "app/src/main/java/com/denariidolor/data/export/**"
-  - "app/src/main/java/com/denariidolor/domain/report/ReportCsvFormatter.kt"
+  - "shared/src/*/kotlin/com/denariidolor/data/local/**"
+  - "shared/src/*/kotlin/com/denariidolor/data/backup/**"
+  - "shared/src/*/kotlin/com/denariidolor/domain/report/ReportCsvFormatter.kt"
   - "app/src/main/java/com/denariidolor/util/SessionManager.kt"
   - "app/src/main/java/com/denariidolor/MainActivity.kt"
   - "app/src/main/java/com/denariidolor/di/DatabaseModule.kt"
@@ -18,6 +20,7 @@ paths:
   - "settings.gradle.kts"
   - "build.gradle.kts"
   - "app/build.gradle.kts"
+  - "shared/build.gradle.kts"
 ---
 
 # Security-sensitive code

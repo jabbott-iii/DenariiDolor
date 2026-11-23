@@ -6,16 +6,17 @@
 
 package com.denariidolor.domain.report
 
+import com.denariidolor.util.PlatformLocale
+import com.denariidolor.util.defaultLocale
 import com.denariidolor.util.localeMonthYearText
 import com.denariidolor.util.zonedDateTimeText
-import java.util.Locale
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.YearMonth
 
 object ReportText {
     const val TITLE = "Monthly Spending Report"
 
-    fun periodLabel(period: YearMonth, locale: Locale = Locale.getDefault()): String = localeMonthYearText(period, locale)
+    fun periodLabel(period: YearMonth, locale: PlatformLocale = defaultLocale()): String = localeMonthYearText(period, locale)
 
     fun generatedLabel(epochMillis: Long, timeZone: TimeZone): String = zonedDateTimeText(epochMillis, timeZone)
 

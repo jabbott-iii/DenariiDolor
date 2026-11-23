@@ -11,6 +11,11 @@ plugins {
 kotlin {
     jvmToolchain(17)
 
+    compilerOptions {
+        // PlatformLocale and PlatformCurrency are expect classes; this acknowledges that Kotlin still calls them Beta.
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+
     android {
         namespace = "com.denariidolor.shared"
         compileSdk = 37

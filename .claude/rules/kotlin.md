@@ -66,17 +66,22 @@ Match the file you're editing first. These rules cover what it doesn't show.
   use `java.time` until they move.
   - Domain and util code injects `ZonedClock` and takes the zone from `clock.timeZone`. Other code injects `java.time.Clock`
     and takes the zone from `clock.zone`. Both come from `DeviceClock`; `asZonedClock()` adapts one to the other.
-  - Two files keep `java.time`: `DeviceClock`, which is the Android clock, and `PlatformFormat.kt` (see below).
+  - Two files keep `java.time`: `DeviceClock`, which is the Android clock, and `PlatformFormat.android.kt` (see below).
   - Dates are stored as epoch millis. Month ranges come from `DateUtils`.
   - A function that formats or parses a date takes the zone as a required argument, never with a system-zone default. Pass
     the injected clock's zone. A `MonthlyReport` carries the zone its month was computed in, and the Report screen and both
     exports show its dates in it. `ClockBoundaryTest` fails if anything but `DeviceClock` reads the system time zone.
 - Amounts are `Long` cents. `Money` parses and scales them in plain Kotlin, without `BigDecimal`. Never use `Float` or `Double`
   for a value that is stored, compared or summed.
-- Whatever depends on the device's locale data goes through `util/PlatformFormat.kt`: how money is written, the decimal mark
-  and currency symbols that parsing needs, month names and zone names. It is the only file in `domain/` and `util/` that may
-  use `java.text`, `java.math` or `java.time` for text. `java.util.Locale` and `Currency` still appear in signatures until the
-  shared module replaces them.
+- Whatever depends on the device's locale data goes through `PlatformFormat`: how money is written, the decimal mark and
+  currency symbols that parsing needs, month names and zone names, and which currency a code or region means.
+  - `shared/src/commonMain/.../util/PlatformFormat.kt` declares it with `expect`, and `PlatformFormat.android.kt` in
+    `androidMain` implements it on `java.text`, `java.math` and `java.time`. An iOS version must match `MoneySnapshotTest`.
+  - Shared code names locales and currencies `PlatformLocale` and `PlatformCurrency`. On Android these are typealiases of
+    `java.util.Locale` and `java.util.Currency`, so Android code keeps passing those. `:shared` compiles with
+    `-Xexpect-actual-classes` because Kotlin still calls expect classes Beta.
+  - Amounts and `parseToCents` default to the format locale (`defaultFormatLocale()`); transfer arrows, month names and the
+    CSV period follow the language (`defaultLocale()`). `DefaultLocalesTest` pins which is which.
 
 ## Static analysis
 

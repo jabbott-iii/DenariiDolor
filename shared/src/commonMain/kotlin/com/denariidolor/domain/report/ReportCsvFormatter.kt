@@ -9,7 +9,8 @@ package com.denariidolor.domain.report
 import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.util.DateUtils
 import com.denariidolor.util.Money
-import java.util.Locale
+import com.denariidolor.util.PlatformLocale
+import com.denariidolor.util.defaultLocale
 
 object ReportCsvFormatter {
     private val FORMULA_TRIGGERS = setOf('=', '+', '-', '@')
@@ -20,7 +21,7 @@ object ReportCsvFormatter {
     private val INNER_FORMULA = Regex("(?<=[;\t])(\\s*)([=+\\-@][^;\t]*)")
 
     /** Times and dates are written in [MonthlyReport.timeZone]. */
-    fun format(report: MonthlyReport, locale: Locale = Locale.getDefault()): String = buildString {
+    fun format(report: MonthlyReport, locale: PlatformLocale = defaultLocale()): String = buildString {
         appendRow("title", report.title)
         appendRow("period", ReportText.periodLabel(report.period, locale))
         appendRow("generated_at", ReportText.generatedLabel(report.generatedAtEpochMillis, report.timeZone))

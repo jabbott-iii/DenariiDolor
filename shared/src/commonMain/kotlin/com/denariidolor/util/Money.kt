@@ -7,8 +7,7 @@
 package com.denariidolor.util
 
 import com.denariidolor.domain.model.TransactionType
-import java.util.Currency
-import java.util.Locale
+import kotlin.concurrent.Volatile
 import kotlin.math.abs
 
 /** What parsing needs from a locale: its decimal separator, and the symbols and code it writes a currency with. */
@@ -35,7 +34,7 @@ object Money {
 
     /** The currency amounts are shown in. `CurrencyPreferences` keeps it in step with the saved setting. */
     @Volatile
-    var currency: Currency = Currencies.DEFAULT
+    var currency: PlatformCurrency = Currencies.DEFAULT
 
     // Spaces (regular, no-break, narrow no-break) and apostrophes only ever group thousands, e.g. fr `1 234,5`, de-CH `1'234.5`.
     private val GROUP_ONLY_MARKS = setOf(' ', ' ', ' ', '\'', '’')
@@ -49,7 +48,7 @@ object Money {
      * if it is [locale]'s decimal separator, and a thousands separator otherwise.
      * Returns null for blanks, malformed grouping, more than 2 decimals, or out-of-range values.
      */
-    fun parseToCents(text: String, locale: Locale = Locale.getDefault(Locale.Category.FORMAT), currency: Currency = this.currency): Long? =
+    fun parseToCents(text: String, locale: PlatformLocale = defaultFormatLocale(), currency: PlatformCurrency = this.currency): Long? =
         parseToCents(text, localeNumberSymbols(locale, currency))
 
     /** [parseToCents] with [symbols] in place of a locale and currency. */
@@ -165,8 +164,8 @@ object Money {
  */
 fun formatMoney(
     cents: Long,
-    currency: Currency = Money.currency,
-    locale: Locale = Locale.getDefault(Locale.Category.FORMAT),
+    currency: PlatformCurrency = Money.currency,
+    locale: PlatformLocale = defaultFormatLocale(),
     showPlus: Boolean = false
 ): String = localeMoneyText(cents, currency, locale, showPlus)
 
@@ -174,8 +173,8 @@ fun formatMoney(
 fun formatSignedAmount(
     type: TransactionType,
     cents: Long,
-    currency: Currency = Money.currency,
-    locale: Locale = Locale.getDefault(Locale.Category.FORMAT)
+    currency: PlatformCurrency = Money.currency,
+    locale: PlatformLocale = defaultFormatLocale()
 ): String = when (type) {
     TransactionType.EXPENSE -> formatMoney(-cents, currency, locale)
     TransactionType.INCOME -> formatMoney(cents, currency, locale, showPlus = true)

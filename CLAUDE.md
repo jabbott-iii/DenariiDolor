@@ -60,11 +60,12 @@ data/          local/db (Room, DAOs, Migrations, DatabaseHolder), local/vault (V
 presentation/  ui/<feature>/ — *Route + stateless *Screen + @HiltViewModel; shared composables in ui/common
                platform/ — what screens ask of Android: toasts, sharing, store and email, pickers, the biometric prompt
 di/            AppModule (Clock, ZonedClock), DatabaseModule, RepositoryModule (@Binds, unscoped)
-util/          Money, PlatformFormat (locale formatting), Validators, DateUtils, SessionManager, Constants, runSuspendCatching
+util/          DeviceClock, SessionManager, Constants, StoreLinks, TransactionTypeLabels
 
 shared/        src/commonMain: the same packages, for code that needs nothing from Java, Android or Hilt. So far the
-               domain models, Validators, ZonedClock, runSuspendCatching, BackupSnapshot and the crypto, guidance
-               and theme interfaces
+               domain models, Money, Currencies, DateUtils, Validators, ZonedClock, runSuspendCatching, transferRoute,
+               ReportText, ReportCsvFormatter, BackupSnapshot and the crypto, guidance and theme interfaces.
+               PlatformFormat declares what the platform's locale data decides; src/androidMain implements it
 ```
 
 Code moves into `:shared` one reviewed step at a time, keeping its package, so imports don't change. Until `:shared` has a

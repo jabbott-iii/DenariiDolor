@@ -53,17 +53,25 @@ class ClockBoundaryTest {
 
     private fun presentationSources(): List<File> = sourcesUnder("com/denariidolor/presentation")
 
-    private fun appSources(): List<File> = sourcesUnder("com/denariidolor")
+    /** Both modules: :app, and :shared's common and Android code. */
+    private fun appSources(): List<File> = sourcesUnder("com/denariidolor") +
+        SHARED_SOURCE_SETS.flatMap { sourceSet -> kotlinFilesIn(File(projectDir().parentFile, "shared/src/$sourceSet/kotlin")) }
 
-    private fun sourcesUnder(packagePath: String): List<File> {
-        val root = listOf(File("src/main/java"), File("app/src/main/java"))
-            .map { File(it, packagePath) }
-            .first { it.isDirectory }
+    private fun sourcesUnder(packagePath: String): List<File> = kotlinFilesIn(File(projectDir(), "src/main/java/$packagePath"))
+
+    /** The :app directory, wherever the test runs from. */
+    private fun projectDir(): File = listOf(File("."), File("app")).map { it.absoluteFile.normalize() }
+        .first { File(it, "src/main/java").isDirectory }
+
+    private fun kotlinFilesIn(root: File): List<File> {
+        check(root.isDirectory) { "No sources at $root" }
         return root.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
     }
 
     private companion object {
         const val DEVICE_CLOCK = "DeviceClock.kt"
+
+        val SHARED_SOURCE_SETS = listOf("commonMain", "androidMain")
 
         val SYSTEM_ZONE_READS = listOf("currentSystemDefault", "ZoneId.systemDefault", "TimeZone.getDefault", "systemDefaultZone")
 

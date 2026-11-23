@@ -19,18 +19,31 @@ import kotlinx.datetime.YearMonth
 import kotlinx.datetime.toJavaYearMonth
 import kotlinx.datetime.toJavaZoneId
 
-// The device's own rules for writing money, month names and zone names, which each platform keeps in its own locale data. The
-// code that calls these is plain Kotlin. This is the Android version, on java.text and java.time; once there is a shared module
-// they become expect/actual functions, and the iOS version must produce what MoneySnapshotTest pins.
+// Android's side of PlatformFormat.kt, on java.util, java.text and java.time. Android callers keep passing Locale and
+// Currency, because these are the same types.
 
-/** What [Money.parseToCents] needs from [locale]: its decimal separator and the ways it writes [currency]. */
-internal fun localeNumberSymbols(locale: Locale, currency: Currency): NumberSymbols = NumberSymbols(
+actual typealias PlatformLocale = Locale
+
+actual typealias PlatformCurrency = Currency
+
+actual fun defaultFormatLocale(): PlatformLocale = Locale.getDefault(Locale.Category.FORMAT)
+
+actual fun defaultLocale(): PlatformLocale = Locale.getDefault()
+
+internal actual fun languageCode(locale: PlatformLocale): String = locale.language
+
+internal actual fun currencyForCode(code: String): PlatformCurrency? = runCatching { Currency.getInstance(code) }.getOrNull()
+
+internal actual fun currencyForRegion(locale: PlatformLocale): PlatformCurrency? = runCatching { Currency.getInstance(locale) }.getOrNull()
+
+internal actual fun fractionDigits(currency: PlatformCurrency): Int = currency.defaultFractionDigits
+
+internal actual fun localeNumberSymbols(locale: PlatformLocale, currency: PlatformCurrency): NumberSymbols = NumberSymbols(
     decimalSeparator = DecimalFormatSymbols.getInstance(locale).decimalSeparator,
     currencyMarks = listOf(currency.getSymbol(locale), currency.symbol, currency.currencyCode)
 )
 
-/** [cents] in [currency] as [locale] writes money; [showPlus] adds a `+` to positive amounts. */
-internal fun localeMoneyText(cents: Long, currency: Currency, locale: Locale, showPlus: Boolean): String {
+internal actual fun localeMoneyText(cents: Long, currency: PlatformCurrency, locale: PlatformLocale, showPlus: Boolean): String {
     val format = NumberFormat.getCurrencyInstance(locale).apply {
         this.currency = currency
         minimumFractionDigits = 2
@@ -40,12 +53,10 @@ internal fun localeMoneyText(cents: Long, currency: Currency, locale: Locale, sh
     return format.format(BigDecimal.valueOf(cents, 2))
 }
 
-/** The month and year as [locale] names them, such as `septiembre 2026`. */
-internal fun localeMonthYearText(period: YearMonth, locale: Locale): String =
+internal actual fun localeMonthYearText(period: YearMonth, locale: PlatformLocale): String =
     period.toJavaYearMonth().format(DateTimeFormatter.ofPattern("MMMM yyyy", locale))
 
-/** `2026-09-21 12:00 EDT`: digits in every locale, with the zone's short name. */
-internal fun zonedDateTimeText(epochMillis: Long, timeZone: TimeZone): String {
+internal actual fun zonedDateTimeText(epochMillis: Long, timeZone: TimeZone): String {
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm z", Locale.US).withZone(timeZone.toJavaZoneId())
     return formatter.format(Instant.ofEpochMilli(epochMillis))
 }

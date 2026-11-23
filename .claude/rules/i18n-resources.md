@@ -1,10 +1,11 @@
 ---
 paths:
   - "app/src/main/res/**"
-  - "app/src/main/java/com/denariidolor/util/Money.kt"
-  - "app/src/main/java/com/denariidolor/util/Currencies.kt"
-  - "app/src/main/java/com/denariidolor/util/DateUtils.kt"
-  - "app/src/main/java/com/denariidolor/util/TextDirection.kt"
+  - "shared/src/*/kotlin/com/denariidolor/util/Money.kt"
+  - "shared/src/*/kotlin/com/denariidolor/util/Currencies.kt"
+  - "shared/src/*/kotlin/com/denariidolor/util/DateUtils.kt"
+  - "shared/src/*/kotlin/com/denariidolor/util/TextDirection.kt"
+  - "shared/src/*/kotlin/com/denariidolor/util/PlatformFormat*.kt"
   - "app/src/main/java/com/denariidolor/util/TransactionTypeLabels.kt"
   - "app/src/main/java/com/denariidolor/data/local/preferences/CurrencyPreferences.kt"
 ---
@@ -45,8 +46,8 @@ paths:
 - **Currency** is a saved setting (an ISO code in `CurrencyPreferences`), not part of a language pack.
   - Only currencies with 2 decimals are allowed, and amounts are never converted.
   - Never write `$`, `€` or any other symbol into strings or code. `formatMoney` formats through `NumberFormat` for the
-    device's locale, in `PlatformFormat.kt`. `MoneySnapshotTest` pins the output in each language; update it only when the
-    change is meant.
+    device's locale, in `PlatformFormat.android.kt`. `MoneySnapshotTest` pins the output in each language; update it only
+    when the change is meant.
 - **Parsing:** `Money.parseToCents` and `DateUtils.parseIsoDate` accept the currency's symbol or code and digits from any
   Unicode script (`Money.normalizeDigits`). Keep that when you change either one, and add `MoneyTest` or `DateUtilsTest`
   cases for the scripts involved.

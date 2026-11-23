@@ -3,6 +3,8 @@ paths:
   - "app/src/main/java/com/denariidolor/data/**"
   - "app/src/main/java/com/denariidolor/di/**"
   - "app/src/main/java/com/denariidolor/domain/**"
+  - "shared/src/*/kotlin/com/denariidolor/data/**"
+  - "shared/src/*/kotlin/com/denariidolor/domain/**"
   - "app/schemas/**"
   - "app/src/androidTest/java/com/denariidolor/data/**"
 ---
