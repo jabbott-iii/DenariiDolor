@@ -10,7 +10,6 @@ import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.util.DateUtils
 import com.denariidolor.util.Money
 import java.util.Locale
-import kotlinx.datetime.TimeZone
 
 object ReportCsvFormatter {
     private val FORMULA_TRIGGERS = setOf('=', '+', '-', '@')
@@ -20,27 +19,27 @@ object ReportCsvFormatter {
     // A spreadsheet that splits on `;` or tab starts a new cell after one, so a trigger there needs the same guard (CS-20).
     private val INNER_FORMULA = Regex("(?<=[;\t])(\\s*)([=+\\-@][^;\t]*)")
 
-    fun format(report: MonthlyReport, timeZone: TimeZone = TimeZone.currentSystemDefault(), locale: Locale = Locale.getDefault()): String =
-        buildString {
-            appendRow("title", report.title)
-            appendRow("period", ReportText.periodLabel(report.period, locale))
-            appendRow("generated_at", ReportText.generatedLabel(report.generatedAtEpochMillis, timeZone))
-            appendRow("total_income", Money.toPlain(report.totalIncomeCents))
-            appendRow("total_expense", Money.toPlain(report.totalExpenseCents))
-            appendRow("net", Money.toPlain(report.netCents))
-            append("\r\n")
-            appendRow("date", "type", "category", "description", "amount", "payment_method")
-            report.rows.forEach { row ->
-                appendRow(
-                    DateUtils.formatLocalDate(row.dateEpochMillis, timeZone),
-                    row.type.name,
-                    row.categoryName,
-                    row.description,
-                    Money.toPlain(row.amountCents),
-                    row.paymentMethod
-                )
-            }
+    /** Times and dates are written in [MonthlyReport.timeZone]. */
+    fun format(report: MonthlyReport, locale: Locale = Locale.getDefault()): String = buildString {
+        appendRow("title", report.title)
+        appendRow("period", ReportText.periodLabel(report.period, locale))
+        appendRow("generated_at", ReportText.generatedLabel(report.generatedAtEpochMillis, report.timeZone))
+        appendRow("total_income", Money.toPlain(report.totalIncomeCents))
+        appendRow("total_expense", Money.toPlain(report.totalExpenseCents))
+        appendRow("net", Money.toPlain(report.netCents))
+        append("\r\n")
+        appendRow("date", "type", "category", "description", "amount", "payment_method")
+        report.rows.forEach { row ->
+            appendRow(
+                DateUtils.formatLocalDate(row.dateEpochMillis, report.timeZone),
+                row.type.name,
+                row.categoryName,
+                row.description,
+                Money.toPlain(row.amountCents),
+                row.paymentMethod
+            )
         }
+    }
 
     /**
      * RFC 4180 quoting plus an apostrophe before text that spreadsheets would evaluate as a formula: at the start of the value,

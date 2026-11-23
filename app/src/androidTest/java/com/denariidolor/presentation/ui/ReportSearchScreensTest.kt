@@ -28,6 +28,7 @@ import com.denariidolor.presentation.ui.search.SEARCH_BUTTON_TAG
 import com.denariidolor.presentation.ui.search.SEARCH_RESULT_COUNT_TAG
 import com.denariidolor.presentation.ui.search.SearchScreen
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.YearMonth
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -42,6 +43,7 @@ class ReportSearchScreensTest {
         title = ReportText.TITLE,
         period = period,
         generatedAtEpochMillis = 0L,
+        timeZone = TimeZone.UTC,
         totalIncomeCents = 10_000,
         totalExpenseCents = 4_000,
         netCents = 6_000,
@@ -97,7 +99,8 @@ class ReportSearchScreensTest {
                     results = listOf(TransactionRow(5, "Coffee", TransactionType.EXPENSE, "-$4.00", "Dining", "Cash", "2026-09-20")),
                     onSearch = {},
                     onResultClick = { opened = it },
-                    today = { LocalDate(2026, 9, 20) }
+                    today = { LocalDate(2026, 9, 20) },
+                    timeZone = { TimeZone.UTC }
                 )
             }
         }
@@ -118,7 +121,8 @@ class ReportSearchScreensTest {
                     results = null,
                     onSearch = { searched = it.categoryId == null },
                     onResultClick = {},
-                    today = { LocalDate(2026, 9, 20) }
+                    today = { LocalDate(2026, 9, 20) },
+                    timeZone = { TimeZone.UTC }
                 )
             }
         }

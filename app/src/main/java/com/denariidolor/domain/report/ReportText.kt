@@ -17,8 +17,7 @@ object ReportText {
 
     fun periodLabel(period: YearMonth, locale: Locale = Locale.getDefault()): String = localeMonthYearText(period, locale)
 
-    fun generatedLabel(epochMillis: Long, timeZone: TimeZone = TimeZone.currentSystemDefault()): String =
-        zonedDateTimeText(epochMillis, timeZone)
+    fun generatedLabel(epochMillis: Long, timeZone: TimeZone): String = zonedDateTimeText(epochMillis, timeZone)
 
     fun fileName(period: YearMonth, extension: String): String = "spending-report-$period.$extension"
 }

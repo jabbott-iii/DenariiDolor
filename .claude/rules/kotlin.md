@@ -64,6 +64,9 @@ Match the file you're editing first. These rules cover what it doesn't show.
     and takes the zone from `clock.zone`. Both come from `DeviceClock`; `asZonedClock()` adapts one to the other.
   - Two files keep `java.time`: `DeviceClock`, which is the Android clock, and `PlatformFormat.kt` (see below).
   - Dates are stored as epoch millis. Month ranges come from `DateUtils`.
+  - A function that formats or parses a date takes the zone as a required argument, never with a system-zone default. Pass
+    the injected clock's zone. A `MonthlyReport` carries the zone its month was computed in, and the Report screen and both
+    exports show its dates in it. `ClockBoundaryTest` fails if anything but `DeviceClock` reads the system time zone.
 - Amounts are `Long` cents. `Money` parses and scales them in plain Kotlin, without `BigDecimal`. Never use `Float` or `Double`
   for a value that is stored, compared or summed.
 - Whatever depends on the device's locale data goes through `util/PlatformFormat.kt`: how money is written, the decimal mark

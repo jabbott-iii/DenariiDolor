@@ -75,12 +75,9 @@ object ReportPdfRenderer {
         val line = Paint().apply { strokeWidth = 0.5f }
     }
 
-    fun render(
-        report: MonthlyReport,
-        out: OutputStream,
-        timeZone: TimeZone = TimeZone.currentSystemDefault(),
-        labels: ReportPdfLabels = ReportPdfLabels()
-    ) {
+    /** Times and dates are written in [MonthlyReport.timeZone]. */
+    fun render(report: MonthlyReport, out: OutputStream, labels: ReportPdfLabels = ReportPdfLabels()) {
+        val timeZone = report.timeZone
         val paints = Paints()
         val rows = report.rows.map { row ->
             listOf(

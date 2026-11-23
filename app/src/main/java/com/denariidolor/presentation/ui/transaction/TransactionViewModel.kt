@@ -40,7 +40,9 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toKotlinLocalDate
+import kotlinx.datetime.toKotlinTimeZone
 
 sealed interface TransactionFormState {
     data object Loading : TransactionFormState
@@ -104,7 +106,7 @@ constructor(
         transactionId?.let { id ->
             viewModelScope.launch {
                 val entity = runSuspendCatching { transactionRepository.getById(id) }.getOrNull()
-                _formState.value = entity?.let { TransactionFormState.Ready(TransactionFormInput.from(it)) }
+                _formState.value = entity?.let { TransactionFormState.Ready(TransactionFormInput.from(it, timeZone())) }
                     ?: TransactionFormState.NotFound
             }
         }
@@ -112,6 +114,9 @@ constructor(
 
     /** The day the date picker opens on while the date field is empty, in the injected clock's zone (rule 5). */
     fun today(): LocalDate = java.time.LocalDate.now(clock).toKotlinLocalDate()
+
+    /** The zone the form shows and reads dates in: the injected clock's, read on each call so a zone change applies at once. */
+    fun timeZone(): TimeZone = clock.zone.toKotlinTimeZone()
 
     /** [dateEpochMillis] is null when the date field was left empty; the transaction is then dated now, by the injected clock. */
     fun saveTransaction(

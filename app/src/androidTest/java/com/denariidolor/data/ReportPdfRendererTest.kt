@@ -17,6 +17,7 @@ import com.denariidolor.domain.model.ReportRow
 import com.denariidolor.domain.model.TransactionType
 import com.denariidolor.domain.report.ReportText
 import java.io.File
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.YearMonth
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -33,6 +34,7 @@ class ReportPdfRendererTest {
         title = ReportText.TITLE,
         period = YearMonth(2026, 9),
         generatedAtEpochMillis = 0L,
+        timeZone = TimeZone.UTC,
         totalIncomeCents = 0L,
         totalExpenseCents = rowCount * 100L,
         netCents = -rowCount * 100L,

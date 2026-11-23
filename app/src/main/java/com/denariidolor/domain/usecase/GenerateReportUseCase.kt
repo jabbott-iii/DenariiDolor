@@ -29,7 +29,8 @@ class GenerateReportUseCase @Inject constructor(
     private val clock: ZonedClock
 ) {
     suspend operator fun invoke(period: YearMonth): MonthlyReport {
-        val (start, end) = DateUtils.monthRangeEpochMillis(period.year, period.month.number, clock.timeZone)
+        val timeZone = clock.timeZone
+        val (start, end) = DateUtils.monthRangeEpochMillis(period.year, period.month.number, timeZone)
         val transactions = transactionRepository.observeByDateRange(start, end).first()
             .sortedWith(compareBy({ it.dateEpochMillis }, { it.id }))
         val categoryNames = categoryRepository.getAll().first().associate { it.id to it.name }
@@ -52,6 +53,7 @@ class GenerateReportUseCase @Inject constructor(
             title = ReportText.TITLE,
             period = period,
             generatedAtEpochMillis = clock.now().toEpochMilliseconds(),
+            timeZone = timeZone,
             totalIncomeCents = rows.filter { it.type == TransactionType.INCOME }.sumOf { it.amountCents },
             totalExpenseCents = rows.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amountCents },
             netCents = transactions.mapNotNull { it.toDomainTransactionOrNull() }.sumOf { it.balanceImpact() },

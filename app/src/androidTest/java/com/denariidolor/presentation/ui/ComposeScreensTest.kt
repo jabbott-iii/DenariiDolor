@@ -32,6 +32,7 @@ import com.denariidolor.presentation.ui.common.DenariiDolorTheme
 import com.denariidolor.presentation.ui.common.PickerOption
 import com.denariidolor.util.Constants
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -179,6 +180,7 @@ class ComposeScreensTest {
                     onSave = { _, _, _, _, _, _, _ -> },
                     onShowMessage = {},
                     today = { LocalDate(2026, 9, 20) },
+                    timeZone = { TimeZone.UTC },
                     accounts = listOf(
                         PickerOption(Constants.DEFAULT_CASH_ACCOUNT_ID, "Cash"),
                         PickerOption(Constants.DEFAULT_SAVINGS_ACCOUNT_ID, "Savings")

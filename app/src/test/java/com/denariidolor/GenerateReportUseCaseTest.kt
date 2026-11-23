@@ -84,6 +84,20 @@ class GenerateReportUseCaseTest {
     )
 
     @Test
+    fun reportRecordsTheZoneItsMonthWasComputedIn() = runBlocking<Unit> {
+        val kiritimati = ZoneId.of("Pacific/Kiritimati")
+        val inKiritimati = GenerateReportUseCase(
+            transactions,
+            FakeCategoryRepository(TestData.categories),
+            FakeAccountRepository(TestData.accounts),
+            Clock.fixed(clock.instant(), kiritimati).asZonedClock()
+        )
+
+        assertEquals(kiritimati.toKotlinTimeZone(), inKiritimati(september).timeZone)
+        assertEquals(zone.toKotlinTimeZone(), useCase(september).timeZone)
+    }
+
+    @Test
     fun reportHasTitlePeriodTimestampAndTotals() = runBlocking<Unit> {
         val report = useCase(september)
 

@@ -53,6 +53,7 @@ import com.denariidolor.util.DateUtils
 import com.denariidolor.util.formatMoney
 import com.denariidolor.util.formatSignedAmount
 import com.denariidolor.util.labelRes
+import kotlinx.datetime.TimeZone
 
 const val REPORT_TABLE_TAG = "reportTable"
 
@@ -135,7 +136,7 @@ fun ReportScreen(
         }
         Text(text = stringResource(R.string.report_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Text(
-            text = stringResource(R.string.report_generated, ReportText.generatedLabel(report.generatedAtEpochMillis)),
+            text = stringResource(R.string.report_generated, ReportText.generatedLabel(report.generatedAtEpochMillis, report.timeZone)),
             style = MaterialTheme.typography.bodySmall
         )
         Spacer(modifier = Modifier.height(4.dp))
@@ -153,7 +154,7 @@ fun ReportScreen(
         if (report.rows.isEmpty()) {
             Text(text = stringResource(R.string.report_empty))
         } else {
-            ReportTable(rows = report.rows, modifier = Modifier.weight(1f))
+            ReportTable(rows = report.rows, timeZone = report.timeZone, modifier = Modifier.weight(1f))
         }
     }
 }
@@ -181,7 +182,7 @@ private fun ExportButtons(enabled: Boolean, onSave: (ReportFormat) -> Unit, onSh
 }
 
 @Composable
-private fun ReportTable(rows: List<ReportRow>, modifier: Modifier = Modifier) {
+private fun ReportTable(rows: List<ReportRow>, timeZone: TimeZone, modifier: Modifier = Modifier) {
     val tableWidth = reportColumns.fold(0.dp) { total, column -> total + column.width }
     Box(
         modifier = modifier
@@ -200,7 +201,7 @@ private fun ReportTable(rows: List<ReportRow>, modifier: Modifier = Modifier) {
                 items(rows, key = { it.transactionId }) { row ->
                     TableRow(
                         cells = listOf(
-                            DateUtils.formatLocalDate(row.dateEpochMillis),
+                            DateUtils.formatLocalDate(row.dateEpochMillis, timeZone),
                             stringResource(row.type.labelRes()),
                             row.categoryName,
                             row.description,

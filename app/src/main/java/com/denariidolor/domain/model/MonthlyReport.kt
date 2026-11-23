@@ -6,12 +6,15 @@
 
 package com.denariidolor.domain.model
 
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.YearMonth
 
 data class MonthlyReport(
     val title: String,
     val period: YearMonth,
     val generatedAtEpochMillis: Long,
+    /** The zone the month's range was computed in; the report's times and dates are shown in it, on screen and in exports. */
+    val timeZone: TimeZone,
     val totalIncomeCents: Long,
     val totalExpenseCents: Long,
     val netCents: Long,

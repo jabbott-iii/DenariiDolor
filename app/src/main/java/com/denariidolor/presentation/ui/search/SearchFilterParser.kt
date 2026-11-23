@@ -19,7 +19,7 @@ object SearchFilterParser {
         maxAmount: String,
         startDate: String,
         endDate: String,
-        timeZone: TimeZone = TimeZone.currentSystemDefault()
+        timeZone: TimeZone
     ): SearchFilters {
         val filters = SearchFilters(
             description = description.trim().takeIf { it.isNotEmpty() },

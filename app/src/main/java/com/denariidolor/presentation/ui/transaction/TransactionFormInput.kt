@@ -25,7 +25,7 @@ data class TransactionFormInput(
         if (currentDateText == dateText) dateEpochMillis else parse(currentDateText)
 
     companion object {
-        fun from(entity: TransactionEntity, timeZone: TimeZone = TimeZone.currentSystemDefault()) = TransactionFormInput(
+        fun from(entity: TransactionEntity, timeZone: TimeZone) = TransactionFormInput(
             type = entity.type.name,
             description = entity.description,
             amount = Money.toInput(entity.amountCents),

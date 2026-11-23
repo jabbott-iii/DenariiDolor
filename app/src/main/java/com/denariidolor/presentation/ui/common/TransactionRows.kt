@@ -52,7 +52,7 @@ fun buildTransactionRows(
     categories: List<CategoryEntity>,
     accounts: List<AccountEntity>,
     limit: Int = Int.MAX_VALUE,
-    timeZone: TimeZone = TimeZone.currentSystemDefault()
+    timeZone: TimeZone
 ): List<TransactionRow> {
     val categoriesById = categories.associateBy { it.id }
     val accountNames = accounts.associate { it.id to it.name }

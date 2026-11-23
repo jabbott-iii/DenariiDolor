@@ -66,6 +66,7 @@ import com.denariidolor.util.Validators
 import com.denariidolor.util.formatMoney
 import com.denariidolor.util.labelRes
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 
 internal const val TRANSACTION_TYPE_FIELD_TAG = "transactionTypeField"
 internal const val TRANSFER_ACCOUNT_FIELD_TAG = "transferAccountField"
@@ -112,6 +113,7 @@ internal fun AddTransactionRoute(onFinished: () -> Unit, viewModel: TransactionV
                 onSave = viewModel::saveTransaction,
                 onShowMessage = { notices.show(it) },
                 today = viewModel::today,
+                timeZone = viewModel::timeZone,
                 categories = categories,
                 accounts = accounts,
                 initial = state.initial,
@@ -162,6 +164,7 @@ fun AddTransactionScreen(
     ) -> Unit,
     onShowMessage: (String) -> Unit,
     today: () -> LocalDate,
+    timeZone: () -> TimeZone,
     categories: List<PickerOption> = emptyList(),
     accounts: List<PickerOption> = emptyList(),
     initial: TransactionFormInput? = null,
@@ -313,8 +316,9 @@ fun AddTransactionScreen(
                 val dateEpochMillis = when {
                     dateText.isBlank() -> null
                     else -> runCatching {
-                        initial?.resolveDateEpochMillis(dateText, DateUtils::parseIsoDateToStartOfDayEpochMillis)
-                            ?: DateUtils.parseIsoDateToStartOfDayEpochMillis(dateText)
+                        val zone = timeZone()
+                        initial?.resolveDateEpochMillis(dateText) { DateUtils.parseIsoDateToStartOfDayEpochMillis(it, zone) }
+                            ?: DateUtils.parseIsoDateToStartOfDayEpochMillis(dateText, zone)
                     }.getOrElse {
                         onShowMessage(invalidDateMessage)
                         return@Button

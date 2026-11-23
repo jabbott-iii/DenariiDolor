@@ -36,6 +36,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.toKotlinTimeZone
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -89,6 +90,23 @@ class TransactionViewModelTest {
 
         assertEquals(LocalDate(2026, 9, 21), viewModel(clock = Clock.fixed(instant, ZoneId.of("Pacific/Kiritimati"))).today())
         assertEquals(LocalDate(2026, 9, 20), viewModel(clock = Clock.fixed(instant, ZoneId.of("America/Los_Angeles"))).today())
+    }
+
+    @Test
+    fun editModeShowsTheStoredDateInTheClocksZone() = runTest {
+        // 23:30 UTC on Sep 20 is already Sep 21 at UTC+14.
+        val stored = TestData.expense(id = 7).copy(dateEpochMillis = Instant.parse("2026-09-20T23:30:00Z").toEpochMilli())
+        val kiritimati = ZoneId.of("Pacific/Kiritimati")
+        val vm = viewModel(
+            transactionId = 7,
+            repository = FakeTransactionRepository(listOf(stored)),
+            clock = Clock.fixed(Instant.EPOCH, kiritimati)
+        )
+
+        val state = vm.formState.first { it !is TransactionFormState.Loading } as TransactionFormState.Ready
+
+        assertEquals("2026-09-21", state.initial?.dateText)
+        assertEquals(kiritimati.toKotlinTimeZone(), vm.timeZone())
     }
 
     @Test

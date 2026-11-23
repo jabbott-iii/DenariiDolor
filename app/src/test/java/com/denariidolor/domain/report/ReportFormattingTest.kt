@@ -13,6 +13,7 @@ import java.util.Locale
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.YearMonth
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ReportFormattingTest {
@@ -21,6 +22,7 @@ class ReportFormattingTest {
         title = ReportText.TITLE,
         period = YearMonth(2026, 9),
         generatedAtEpochMillis = 1_789_992_000_000L,
+        timeZone = TimeZone.of("UTC"),
         totalIncomeCents = 200_000,
         totalExpenseCents = 90_050,
         netCents = 109_950,
@@ -52,7 +54,7 @@ class ReportFormattingTest {
 
     @Test
     fun csvContainsMetadataHeaderAndRows() {
-        val lines = ReportCsvFormatter.format(report, utc, Locale.US).split("\r\n")
+        val lines = ReportCsvFormatter.format(report, Locale.US).split("\r\n")
 
         assertEquals("title,Monthly Spending Report", lines[0])
         assertEquals("period,September 2026", lines[1])
@@ -60,6 +62,15 @@ class ReportFormattingTest {
         assertEquals("total_expense,900.50", lines[4])
         assertEquals("date,type,category,description,amount,payment_method", lines[7])
         assertEquals("2026-09-01,EXPENSE,Dining,\"Lunch, \"\"team\"\"\",12.50,Cash", lines[8])
+    }
+
+    @Test
+    fun csvWritesTimesAndDatesInTheReportsZone() {
+        // 12:00 UTC on Sep 21 is 05:00 in Phoenix, and midnight UTC on Sep 1 is still Aug 31 there.
+        val lines = ReportCsvFormatter.format(report.copy(timeZone = TimeZone.of("America/Phoenix")), Locale.US).split("\r\n")
+
+        assertTrue(lines[2], lines[2].startsWith("generated_at,2026-09-21 05:00 "))
+        assertTrue(lines[8], lines[8].startsWith("2026-08-31,EXPENSE,Dining,"))
     }
 
     @Test

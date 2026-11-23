@@ -32,7 +32,9 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toKotlinLocalDate
+import kotlinx.datetime.toKotlinTimeZone
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -60,11 +62,14 @@ class SearchViewModel @Inject constructor(
         categoryRepository.getAll(),
         accountRepository.getAll()
     ) { transactions, categories, accounts ->
-        transactions?.let { buildTransactionRows(it, categories, accounts) }
+        transactions?.let { buildTransactionRows(it, categories, accounts, timeZone = timeZone()) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** The day the date pickers open on while their fields are empty, in the injected clock's zone (rule 5). */
     fun today(): LocalDate = java.time.LocalDate.now(clock).toKotlinLocalDate()
+
+    /** The zone filters are read and results shown in: the injected clock's, read on each call so a zone change applies at once. */
+    fun timeZone(): TimeZone = clock.zone.toKotlinTimeZone()
 
     fun search(newFilters: SearchFilters) {
         filters.value = newFilters

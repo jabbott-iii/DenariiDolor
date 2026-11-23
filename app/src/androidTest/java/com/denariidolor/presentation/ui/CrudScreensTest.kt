@@ -49,6 +49,7 @@ import com.denariidolor.presentation.ui.dashboard.SPENDING_CHART_TAG
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
 import com.denariidolor.presentation.ui.transaction.TransactionFormInput
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -117,6 +118,7 @@ class CrudScreensTest {
                     onSave = { _, _, _, _, _, _, _ -> },
                     onShowMessage = {},
                     today = { LocalDate(2026, 9, 20) },
+                    timeZone = { TimeZone.UTC },
                     categories = listOf(PickerOption(4, "Dining")),
                     accounts = listOf(PickerOption(1, "Cash")),
                     initial = TransactionFormInput(
@@ -148,6 +150,7 @@ class CrudScreensTest {
                     onSave = { _, _, _, _, _, _, _ -> },
                     onShowMessage = {},
                     today = { LocalDate(2026, 9, 20) },
+                    timeZone = { TimeZone.UTC },
                     onBack = { backPressed = true }
                 )
             }
@@ -168,6 +171,7 @@ class CrudScreensTest {
                     onSave = { _, _, _, _, _, _, date -> savedDate = date },
                     onShowMessage = {},
                     today = { LocalDate(2026, 9, 20) },
+                    timeZone = { TimeZone.UTC },
                     initial = TransactionFormInput("EXPENSE", "Coffee", "4.5", "4", "1", "", "2026-09-20", 123_456L)
                 )
             }
@@ -398,6 +402,7 @@ class CrudScreensTest {
                     onSave = { _, _, _, _, _, _, _ -> },
                     onShowMessage = {},
                     today = { LocalDate(2026, 9, 20) },
+                    timeZone = { TimeZone.UTC },
                     isSaving = true
                 )
             }
