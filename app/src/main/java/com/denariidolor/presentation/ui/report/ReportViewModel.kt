@@ -8,12 +8,12 @@ package com.denariidolor.presentation.ui.report
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.denariidolor.R
 import com.denariidolor.data.export.ReportExporter
 import com.denariidolor.data.export.ReportFormat
 import com.denariidolor.di.SessionScope
 import com.denariidolor.domain.model.MonthlyReport
 import com.denariidolor.domain.usecase.GenerateReportUseCase
+import com.denariidolor.presentation.ui.common.StringKey
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.PlatformUri
 import com.denariidolor.util.ZonedClock
@@ -89,13 +89,13 @@ class ReportViewModel(
 
     fun save(uri: PlatformUri, format: ReportFormat) = export { report ->
         val result = runSuspendCatching { reportExporter.writeTo(uri, report, format) }
-        _events.send(ReportEvent.Message(exportMessage(result, R.string.report_saved)))
+        _events.send(ReportEvent.Message(exportMessage(result, StringKey.REPORT_SAVED)))
     }
 
     fun share(format: ReportFormat) = export { report ->
         runSuspendCatching { reportExporter.createShareUri(report, format) }
             .onSuccess { _events.send(ReportEvent.Share(it, format.mimeType)) }
-            .onFailure { _events.send(ReportEvent.Message(UiMessage.Resource(R.string.report_export_failed))) }
+            .onFailure { _events.send(ReportEvent.Message(UiMessage.Resource(StringKey.REPORT_EXPORT_FAILED))) }
     }
 
     /** Runs one export at a time; repeated taps while one is in flight are ignored (BUG-02). */
@@ -118,6 +118,6 @@ class ReportViewModel(
         refresh()
     }
 
-    private fun exportMessage(result: Result<*>, successResId: Int): UiMessage =
-        if (result.isSuccess) UiMessage.Resource(successResId) else UiMessage.Resource(R.string.report_export_failed)
+    private fun exportMessage(result: Result<*>, success: StringKey): UiMessage =
+        if (result.isSuccess) UiMessage.Resource(success) else UiMessage.Resource(StringKey.REPORT_EXPORT_FAILED)
 }

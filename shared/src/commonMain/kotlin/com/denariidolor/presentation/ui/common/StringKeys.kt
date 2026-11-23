@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2026 Joseph Anthony Abbott III. All rights reserved.
+ * Proprietary and confidential. Use is governed by the LICENSE file; copying, modifying or distributing this file without
+ * written permission is prohibited.
+ */
+
+package com.denariidolor.presentation.ui.common
+
+// Text that shared code shows the user, named by key so it needs no platform resources. Each platform keeps the words in all
+// seven languages: Android under the key's lowercase name in res/values*/strings.xml (StringKeyResources.kt maps them).
+
+/** A string, such as [BACKUP_SAVED] for `R.string.backup_saved`. */
+enum class StringKey {
+    ACCOUNT_DELETED,
+    ACCOUNT_SAVED,
+    BACKUP_ERROR_READ,
+    BACKUP_RESTORE_FAILED,
+    BACKUP_SAVE_FAILED,
+    BACKUP_SAVED,
+    BIOMETRIC_ENABLE_FAILED,
+    BIOMETRIC_ENABLED,
+    BIOMETRIC_SIGN_IN_INVALIDATED,
+    BUDGET_DELETED,
+    BUDGET_SAVED,
+    CATEGORY_DELETED,
+    CATEGORY_SAVED,
+    ERROR_ACCOUNT_NOT_FOUND,
+    ERROR_BLANK_DESCRIPTION,
+    ERROR_BUDGET_EXCEEDED,
+    ERROR_CATEGORY_NOT_FOUND,
+    ERROR_DEFAULT_ACCOUNT,
+    ERROR_DEFAULT_CATEGORY,
+    ERROR_DESCRIPTION_TOO_LONG,
+    ERROR_DUPLICATE_ACCOUNT_NAME,
+    ERROR_DUPLICATE_CATEGORY_NAME,
+    ERROR_ID_REQUIRED,
+    ERROR_INVALID_DATE,
+    ERROR_INVALID_NAME,
+    ERROR_INVALID_WARNING_PERCENT,
+    ERROR_ITEM_NOT_FOUND,
+    ERROR_TRANSFER_DESTINATION_REQUIRED,
+    ERROR_TRANSFER_DESTINATION_SAME,
+    GENERIC_ERROR,
+    INVALID_AMOUNT_MESSAGE,
+    INVALID_BUDGET_INPUT,
+    INVALID_OPENING_BALANCE,
+    INVALID_PIN_ATTEMPTS_LEFT,
+    INVALID_SEARCH_RANGE_MESSAGE,
+    INVALID_SECURITY_ANSWER,
+    PIN_CONFIRMATION_MISMATCH,
+    PIN_FORMAT_ERROR,
+    PIN_LOCKED_OUT,
+    PIN_RECOVERY_SUCCESS,
+    PROFILE_ALREADY_CONFIGURED,
+    PROFILE_NOT_CONFIGURED,
+    PROFILE_SETUP_SUCCESS,
+    REPORT_EXPORT_FAILED,
+    REPORT_SAVED,
+    SECURITY_ANSWER_IN_QUESTION,
+    SECURITY_ANSWER_MATCHES_PIN,
+    SECURITY_ANSWER_REQUIRED,
+    SECURITY_ANSWER_TOO_LONG,
+    SECURITY_ANSWER_TOO_SHORT,
+    SECURITY_QUESTION_REQUIRED,
+    SECURITY_QUESTION_TOO_LONG,
+    TRANSACTION_DELETED,
+    TRANSACTION_REFERENCE_REQUIRED_MESSAGE,
+    WIPE_DATA_ERROR,
+    WIPE_DATA_SUCCESS
+}
+
+/** A plural string, chosen by count, such as [ERROR_ACCOUNT_IN_USE] for `R.plurals.error_account_in_use`. */
+enum class PluralKey {
+    ERROR_ACCOUNT_IN_USE,
+    ERROR_CATEGORY_IN_USE
+}

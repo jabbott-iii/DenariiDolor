@@ -28,6 +28,7 @@ import androidx.core.net.toUri
 import androidx.fragment.app.FragmentActivity
 import com.denariidolor.presentation.ui.auth.BiometricAuthManager
 import com.denariidolor.presentation.ui.common.UiMessage
+import com.denariidolor.presentation.ui.common.resolve
 import com.denariidolor.util.StoreLinks
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.number

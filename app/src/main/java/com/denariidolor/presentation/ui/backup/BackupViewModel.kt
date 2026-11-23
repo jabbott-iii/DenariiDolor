@@ -8,13 +8,13 @@ package com.denariidolor.presentation.ui.backup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.denariidolor.R
 import com.denariidolor.data.backup.BackupError
 import com.denariidolor.data.backup.BackupException
 import com.denariidolor.data.backup.BackupFile
 import com.denariidolor.data.backup.BackupService
 import com.denariidolor.data.backup.BackupSnapshot
 import com.denariidolor.di.SessionScope
+import com.denariidolor.presentation.ui.common.StringKey
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.PlatformUri
 import com.denariidolor.util.ZonedClock
@@ -95,7 +95,7 @@ class BackupViewModel(private val backupService: BackupService, private val cloc
                 }
                 .onFailure {
                     showDialog(null)
-                    _events.send(BackupEvent.Message(UiMessage.Resource(R.string.backup_save_failed)))
+                    _events.send(BackupEvent.Message(UiMessage.Resource(StringKey.BACKUP_SAVE_FAILED)))
                 }
         }
     }
@@ -109,10 +109,10 @@ class BackupViewModel(private val backupService: BackupService, private val cloc
         pendingFile = null
         when {
             uri == null -> Unit
-            file == null -> viewModelScope.launch { _events.send(BackupEvent.Message(UiMessage.Resource(R.string.backup_save_failed))) }
+            file == null -> viewModelScope.launch { _events.send(BackupEvent.Message(UiMessage.Resource(StringKey.BACKUP_SAVE_FAILED))) }
             else -> work {
                 val saved = runSuspendCatching { backupService.save(uri, file) }.isSuccess
-                _events.send(BackupEvent.Message(UiMessage.Resource(if (saved) R.string.backup_saved else R.string.backup_save_failed)))
+                _events.send(BackupEvent.Message(UiMessage.Resource(if (saved) StringKey.BACKUP_SAVED else StringKey.BACKUP_SAVE_FAILED)))
             }
         }
     }
@@ -141,7 +141,7 @@ class BackupViewModel(private val backupService: BackupService, private val cloc
             val restored = runSuspendCatching { backupService.restore(snapshot) }.isSuccess
             pendingSnapshot = null
             showDialog(null)
-            _events.send(if (restored) BackupEvent.Restored else BackupEvent.Message(UiMessage.Resource(R.string.backup_restore_failed)))
+            _events.send(if (restored) BackupEvent.Restored else BackupEvent.Message(UiMessage.Resource(StringKey.BACKUP_RESTORE_FAILED)))
         }
     }
 

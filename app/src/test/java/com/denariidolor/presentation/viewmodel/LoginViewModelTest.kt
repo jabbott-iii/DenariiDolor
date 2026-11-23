@@ -6,7 +6,6 @@
 
 package com.denariidolor.presentation.viewmodel
 
-import com.denariidolor.R
 import com.denariidolor.data.local.preferences.RecoverPinResult
 import com.denariidolor.data.local.preferences.SecureStorageException
 import com.denariidolor.data.local.preferences.SecurityProfileService
@@ -20,6 +19,7 @@ import com.denariidolor.presentation.ui.LoginScreenMode
 import com.denariidolor.presentation.ui.auth.LoginEvent
 import com.denariidolor.presentation.ui.auth.LoginField
 import com.denariidolor.presentation.ui.auth.LoginViewModel
+import com.denariidolor.presentation.ui.common.StringKey
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.testutil.FakeBiometricCapability
 import com.denariidolor.testutil.FakeCurrencySettings
@@ -60,7 +60,7 @@ class LoginViewModelTest {
 
     private fun LoginViewModel.inputs() = state.value.run { listOf(pin, pinConfirmation, securityQuestion, securityAnswer) }
 
-    private fun message(resId: Int, arg: Any? = null) = UiMessage.Resource(resId, arg)
+    private fun message(key: StringKey, arg: Any? = null) = UiMessage.Resource(key, arg)
 
     @Test
     fun aNewInstallOpensOnSetup() {
@@ -109,7 +109,7 @@ class LoginViewModelTest {
 
         viewModel.onPrimaryAction()
 
-        assertEquals(message(R.string.pin_format_error), viewModel.state.value.feedback)
+        assertEquals(message(StringKey.PIN_FORMAT_ERROR), viewModel.state.value.feedback)
         assertTrue(vault.calls.none { it.startsWith("signIn") })
     }
 
@@ -135,7 +135,7 @@ class LoginViewModelTest {
         viewModel.onPrimaryAction()
 
         assertEquals("", viewModel.state.value.pin)
-        assertEquals(message(R.string.invalid_pin_attempts_left, 3), viewModel.state.value.feedback)
+        assertEquals(message(StringKey.INVALID_PIN_ATTEMPTS_LEFT, 3), viewModel.state.value.feedback)
     }
 
     @Test
@@ -148,9 +148,9 @@ class LoginViewModelTest {
         viewModel.onPrimaryAction()
 
         assertEquals("", viewModel.state.value.pin)
-        assertEquals(message(R.string.pin_locked_out, 2L), viewModel.state.value.feedback)
-        assertEquals(message(R.string.pin_locked_out, 1L), LoginViewModel.lockoutMessage(0))
-        assertEquals(message(R.string.pin_locked_out, 30L), LoginViewModel.lockoutMessage(30_000))
+        assertEquals(message(StringKey.PIN_LOCKED_OUT, 2L), viewModel.state.value.feedback)
+        assertEquals(message(StringKey.PIN_LOCKED_OUT, 1L), LoginViewModel.lockoutMessage(0))
+        assertEquals(message(StringKey.PIN_LOCKED_OUT, 30L), LoginViewModel.lockoutMessage(30_000))
     }
 
     /** Taps on any control, including the biometric and wipe ones that don't check `signInEnabled`. */
@@ -189,7 +189,7 @@ class LoginViewModelTest {
         assertTrue(onboarding.tourPending.value)
         assertEquals(LoginScreenMode.SIGN_IN, viewModel.state.value.mode)
         assertEquals(listOf("", "", "", ""), viewModel.inputs())
-        assertEquals(message(R.string.profile_setup_success), viewModel.state.value.feedback)
+        assertEquals(message(StringKey.PROFILE_SETUP_SUCCESS), viewModel.state.value.feedback)
     }
 
     @Test
@@ -200,7 +200,7 @@ class LoginViewModelTest {
 
         viewModel.onPrimaryAction()
 
-        assertEquals(message(R.string.security_answer_too_short, SecurityProfileService.MIN_ANSWER_LENGTH), viewModel.state.value.feedback)
+        assertEquals(message(StringKey.SECURITY_ANSWER_TOO_SHORT, SecurityProfileService.MIN_ANSWER_LENGTH), viewModel.state.value.feedback)
         assertEquals(listOf(PIN, PIN, QUESTION, "short"), viewModel.inputs())
         assertEquals(LoginScreenMode.SETUP, viewModel.state.value.mode)
         assertEquals(0, currency.resets)
@@ -230,7 +230,7 @@ class LoginViewModelTest {
         assertEquals("recoverPin:$ANSWER,$NEW_PIN,$NEW_PIN", vault.calls.last())
         assertEquals(LoginScreenMode.SIGN_IN, viewModel.state.value.mode)
         assertEquals(listOf("", "", "", ""), viewModel.inputs())
-        assertEquals(message(R.string.pin_recovery_success), viewModel.state.value.feedback)
+        assertEquals(message(StringKey.PIN_RECOVERY_SUCCESS), viewModel.state.value.feedback)
     }
 
     @Test
@@ -242,12 +242,12 @@ class LoginViewModelTest {
 
         viewModel.onPrimaryAction()
         assertEquals(LoginScreenMode.RECOVER_PIN, viewModel.state.value.mode)
-        assertEquals(message(R.string.invalid_security_answer), viewModel.state.value.feedback)
+        assertEquals(message(StringKey.INVALID_SECURITY_ANSWER), viewModel.state.value.feedback)
         assertEquals(listOf(NEW_PIN, NEW_PIN, "", "wrong"), viewModel.inputs())
 
         vault.recoveryResult = RecoveryResult.Finished(RecoverPinResult.LOCKED_OUT, lockoutRemainingMillis = 5_000)
         viewModel.onPrimaryAction()
-        assertEquals(message(R.string.pin_locked_out, 5L), viewModel.state.value.feedback)
+        assertEquals(message(StringKey.PIN_LOCKED_OUT, 5L), viewModel.state.value.feedback)
     }
 
     @Test
@@ -287,7 +287,7 @@ class LoginViewModelTest {
 
         viewModel.onPrimaryAction()
 
-        assertEquals(message(R.string.security_question_required), viewModel.state.value.feedback)
+        assertEquals(message(StringKey.SECURITY_QUESTION_REQUIRED), viewModel.state.value.feedback)
         assertEquals(LoginScreenMode.UPGRADE_RECOVERY, viewModel.state.value.mode)
     }
 
@@ -331,7 +331,7 @@ class LoginViewModelTest {
 
         viewModel.onPrimaryAction()
 
-        assertEquals(message(R.string.generic_error), viewModel.state.value.feedback)
+        assertEquals(message(StringKey.GENERIC_ERROR), viewModel.state.value.feedback)
         assertEquals(LoginScreenMode.SIGN_IN, viewModel.state.value.mode)
         assertTrue(viewModel.state.value.signInEnabled)
     }
@@ -362,7 +362,7 @@ class LoginViewModelTest {
         assertFalse(viewModel.state.value.showWipeConfirmation)
         assertEquals(LoginScreenMode.SETUP, viewModel.state.value.mode)
         assertEquals(listOf("", "", "", ""), viewModel.inputs())
-        assertEquals(message(R.string.wipe_data_success), viewModel.state.value.feedback)
+        assertEquals(message(StringKey.WIPE_DATA_SUCCESS), viewModel.state.value.feedback)
     }
 
     @Test
@@ -376,7 +376,7 @@ class LoginViewModelTest {
 
         assertEquals(stateReads, vault.calls.count { it == "state" })
         assertEquals(LoginScreenMode.SIGN_IN, viewModel.state.value.mode)
-        assertEquals(message(R.string.wipe_data_error), viewModel.state.value.feedback)
+        assertEquals(message(StringKey.WIPE_DATA_ERROR), viewModel.state.value.feedback)
     }
 
     @Test
@@ -404,7 +404,7 @@ class LoginViewModelTest {
 
         vault.biometricSignIn = BiometricSignIn.Invalidated
         viewModel.onBiometricLogin()
-        assertEquals(message(R.string.biometric_sign_in_invalidated), viewModel.state.value.feedback)
+        assertEquals(message(StringKey.BIOMETRIC_SIGN_IN_INVALIDATED), viewModel.state.value.feedback)
     }
 
     @Test
@@ -428,7 +428,7 @@ class LoginViewModelTest {
         viewModel.onBiometricAuthenticated(Cipher.getInstance("AES/GCM/NoPadding"))
 
         assertFalse(viewModel.state.value.biometricAvailable)
-        assertEquals(message(R.string.biometric_sign_in_invalidated), viewModel.state.value.feedback)
+        assertEquals(message(StringKey.BIOMETRIC_SIGN_IN_INVALIDATED), viewModel.state.value.feedback)
     }
 
     private fun configured(biometricEnrolled: Boolean = false, upgradeStarted: Boolean = false) =

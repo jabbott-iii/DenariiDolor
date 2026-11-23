@@ -8,7 +8,6 @@ package com.denariidolor.presentation.ui
 
 import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.denariidolor.R
 import com.denariidolor.data.backup.BackupError
 import com.denariidolor.data.backup.BackupException
 import com.denariidolor.data.backup.BackupFile
@@ -19,6 +18,7 @@ import com.denariidolor.presentation.ui.backup.BackupDialog
 import com.denariidolor.presentation.ui.backup.BackupEvent
 import com.denariidolor.presentation.ui.backup.BackupPreview
 import com.denariidolor.presentation.ui.backup.BackupViewModel
+import com.denariidolor.presentation.ui.common.StringKey
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.asZonedClock
 import java.io.IOException
@@ -71,7 +71,7 @@ class BackupViewModelTest {
 
     private val dialog get() = viewModel.state.value.dialog
 
-    private fun message(resId: Int) = BackupEvent.Message(UiMessage.Resource(resId))
+    private fun message(key: StringKey) = BackupEvent.Message(UiMessage.Resource(key))
 
     @Test
     fun aWeakPassphraseIsRejectedBeforeAnythingIsRead() {
@@ -95,7 +95,7 @@ class BackupViewModelTest {
 
         assertEquals(uri, service.saved.single().first)
         assertArrayEquals(FakeBackupService.FILE, service.saved.single().second)
-        assertEquals(message(R.string.backup_saved), events.last())
+        assertEquals(message(StringKey.BACKUP_SAVED), events.last())
     }
 
     @Test
@@ -135,7 +135,7 @@ class BackupViewModelTest {
         viewModel.onDestinationChosen(uri)
 
         assertTrue(service.saved.isEmpty())
-        assertEquals(message(R.string.backup_save_failed), events.last())
+        assertEquals(message(StringKey.BACKUP_SAVE_FAILED), events.last())
     }
 
     @Test
@@ -145,7 +145,7 @@ class BackupViewModelTest {
         viewModel.submitNewPassphrase(PASSPHRASE, PASSPHRASE)
 
         assertNull(dialog)
-        assertEquals(listOf(message(R.string.backup_save_failed)), events)
+        assertEquals(listOf(message(StringKey.BACKUP_SAVE_FAILED)), events)
     }
 
     @Test
@@ -197,7 +197,7 @@ class BackupViewModelTest {
         viewModel.confirmRestore()
 
         assertNull(dialog)
-        assertEquals(message(R.string.backup_restore_failed), events.last())
+        assertEquals(message(StringKey.BACKUP_RESTORE_FAILED), events.last())
     }
 
     private class FakeBackupService : BackupService {

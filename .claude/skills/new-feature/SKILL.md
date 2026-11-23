@@ -28,8 +28,8 @@ and what's confirmed.
   - an `@Inject constructor` class that returns `Result<T>` through `runSuspendCatching { }`;
   - rule violations throw `domainFailure(DomainError.NEW_RULE, "dev message", arg)`.
   - Examples: `CategoryUseCases`, `ValidateTransactionUseCase`.
-- For a new `DomainError`, add the constant, its mapping in `UiMessage.DOMAIN_ERROR_STRINGS` (or a plural branch), and the
-  string resource in all seven `strings.xml` files.
+- For a new `DomainError`, add the constant, its `StringKey` in `UiMessage.DOMAIN_ERROR_STRINGS` (or a plural branch), the
+  string resource in all seven `strings.xml` files, and the key's entry in `StringKeyResources.kt`.
 - "Now" comes from the injected `ZonedClock`, and the zone from `clock.timeZone`. Use kotlinx-datetime types, not `java.time`.
 
 ## 2. Data
@@ -63,7 +63,8 @@ class FeatureViewModel(private val useCases: FeatureUseCases, repository: Featur
 - No `Context` and no Android types. Navigation arguments come from a `SavedStateHandle`, taken as `@Assisted` through a
   `ViewModelAssistedFactory`, as `LegalDocumentViewModel` does.
 - Write actions ignore repeat calls while one is in flight, and expose `isSaving` so the button disables.
-- Turn results into messages with `UiMessage.fromResult(result, R.string.feature_saved)` or `UiMessage.fromError(e)`.
+- Turn results into messages with `UiMessage.fromResult(result, StringKey.FEATURE_SAVED)` or `UiMessage.fromError(e)`. A
+  new message adds its key to `StringKeys.kt` and its entry to `StringKeyResources.kt`. ViewModels never use `R`.
 
 ## 4. UI
 
@@ -89,6 +90,7 @@ Put it in `presentation/ui/<feature>/<Feature>Screen.kt`.
 - Add every new string to `res/values/strings.xml` and to the six packs: `values-zh-rCN`, `values-hi`, `values-es`,
   `values-ar`, `values-fr` and `values-pt`.
 - Plurals need every quantity each language requires (see `.claude/rules/i18n-resources.md`).
+- A string a ViewModel shows needs a `StringKey` (or `PluralKey`) and its entry in `StringKeyResources.kt`.
 - Your summary lists the new keys as needing review by a native speaker.
 
 ## 6. Tests

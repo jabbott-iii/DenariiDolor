@@ -38,4 +38,4 @@ enum class DomainError {
     INVALID_SEARCH_RANGE
 }
 
-internal fun domainFailure(error: DomainError, message: String, arg: Any? = null): Nothing = throw DomainException(error, message, arg)
+fun domainFailure(error: DomainError, message: String, arg: Any? = null): Nothing = throw DomainException(error, message, arg)

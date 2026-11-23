@@ -8,6 +8,8 @@ paths:
   - "shared/src/*/kotlin/com/denariidolor/util/PlatformFormat*.kt"
   - "shared/src/*/kotlin/com/denariidolor/util/PlatformCurrency*.kt"
   - "shared/src/*/kotlin/com/denariidolor/util/PlatformLocale*.kt"
+  - "shared/src/*/kotlin/com/denariidolor/presentation/ui/common/StringKeys.kt"
+  - "app/src/main/java/com/denariidolor/presentation/ui/common/StringKeyResources.kt"
   - "app/src/main/java/com/denariidolor/util/TransactionTypeLabels.kt"
   - "app/src/main/java/com/denariidolor/data/local/preferences/CurrencyPreferences.kt"
 ---
@@ -42,6 +44,10 @@ paths:
 - Name keys in snake_case with the feature's prefix, matching their neighbours, and put a new key next to its feature group in
   every file.
 - Translations you write are drafts. List the new keys in your summary as needing review by a native speaker.
+- **Text from shared code** (a `UiMessage` from a ViewModel) is named by a `StringKey` or `PluralKey` in
+  `shared/.../presentation/ui/common/StringKeys.kt`, whose lowercase name is the resource's: `StringKey.BACKUP_SAVED` is
+  `R.string.backup_saved`. Add the key, the string in all seven files, and the pair in `StringKeyResources.kt`;
+  `StringKeyResourcesTest` fails on a key that is missing or reads the wrong resource. Screens still read `R` directly.
 
 ## Currency, numbers and dates
 

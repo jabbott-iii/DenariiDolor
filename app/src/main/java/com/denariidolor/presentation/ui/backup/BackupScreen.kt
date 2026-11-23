@@ -49,6 +49,7 @@ import com.denariidolor.presentation.platform.rememberNotices
 import com.denariidolor.presentation.platform.rememberOpenFilePicker
 import com.denariidolor.presentation.platform.rememberSaveFilePicker
 import com.denariidolor.presentation.ui.common.ScreenHeader
+import com.denariidolor.presentation.ui.common.StringKey
 import com.denariidolor.presentation.ui.common.UiMessage
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import java.time.format.DateTimeFormatter
@@ -71,9 +72,9 @@ fun BackupRoute(onBack: () -> Unit, onRestored: () -> Unit, viewModel: BackupVie
     // A device without a document picker (some managed or TV builds) can't open one; say so instead of crashing.
     val chooseDestination = rememberSaveFilePicker(
         BackupFile.MIME_TYPE,
-        onUnavailable = { notices.show(UiMessage.Resource(R.string.backup_save_failed)) }
+        onUnavailable = { notices.show(UiMessage.Resource(StringKey.BACKUP_SAVE_FAILED)) }
     ) { viewModel.onDestinationChosen(it) }
-    val chooseBackup = rememberOpenFilePicker(onUnavailable = { notices.show(UiMessage.Resource(R.string.backup_error_read)) }) {
+    val chooseBackup = rememberOpenFilePicker(onUnavailable = { notices.show(UiMessage.Resource(StringKey.BACKUP_ERROR_READ)) }) {
         viewModel.onBackupFileChosen(it)
     }
 

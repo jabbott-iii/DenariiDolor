@@ -45,8 +45,8 @@ Run these from the repository root. CI (`.github/workflows/ci.yml`) runs every o
 ./gradlew connectedDebugAndroidTest    # device/emulator required; CI runs API 26 and API 36
 ```
 
-- One unit test class: `./gradlew testDebugUnitTest --tests "com.denariidolor.presentation.ui.UiMessageTest"`. For a class
-  in `:shared`, use `./gradlew :shared:testAndroidHostTest --tests "com.denariidolor.LedgerTest"`.
+- One unit test class: `./gradlew testDebugUnitTest --tests "com.denariidolor.presentation.ui.CategoryIconsTest"`. For a
+  class in `:shared`, use `./gradlew :shared:testAndroidHostTest --tests "com.denariidolor.LedgerTest"`.
 - One instrumented class: `./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.denariidolor.data.MigrationTest`.
 - The machine's `java` may be newer than 17. Gradle provisions JDK 17 through the toolchain, so don't change `jvmToolchain(17)`.
 - `adb` may not be on `PATH`. The SDK location is `sdk.dir` in `local.properties`.
@@ -63,14 +63,13 @@ presentation/  ui/<feature>/ — *Route + stateless *Screen + Metro ViewModel; s
 di/            AppGraph (Metro), AppViewModelFactory, AppModule (Clock, ZonedClock), DatabaseModule, RepositoryModule
 util/          DeviceClock, SessionManager, Constants, StoreLinks, TransactionTypeLabels
 
-shared/        src/commonMain: the same packages, for code that needs nothing from Java or Android and isn't
-               injected yet. So far the domain models, Money, Currencies, DateUtils, Validators, ZonedClock,
-               runSuspendCatching, transferRoute, ReportText, ReportCsvFormatter, BackupSnapshot and the crypto,
-               guidance and theme interfaces. PlatformLocale, PlatformCurrency and PlatformFormat declare what the
-               platform's locale and currency data decide, and PlatformUri and PlatformCipher name a picked file and
-               the biometric cipher; src/androidMain implements them. src/commonTest holds their tests
-               (kotlin.test); src/androidHostTest holds the few that compare against java.* or set the JVM's
-               default locale
+shared/        src/commonMain: the same packages, for code that needs nothing from Java or Android and isn't injected yet. So
+               far the domain models, Money, Currencies, DateUtils, Validators, ZonedClock, runSuspendCatching,
+               transferRoute, ReportText, ReportCsvFormatter, BackupSnapshot, DomainError, UiMessage with its StringKey and
+               PluralKey, and the crypto, guidance and theme interfaces. PlatformLocale, PlatformCurrency and PlatformFormat
+               declare what the platform's locale and currency data decide, and PlatformUri and PlatformCipher name a picked
+               file and the biometric cipher; src/androidMain implements them. src/commonTest holds their tests
+               (kotlin.test); src/androidHostTest holds the few that compare against java.* or set the JVM's default locale
 ```
 
 Code moves into `:shared` one reviewed step at a time, keeping its package, so imports don't change. Until `:shared` has a
@@ -94,7 +93,9 @@ A ViewModel is `@Inject` plus `@ViewModelKey @ContributesIntoMap(SessionScope::c
 `AppScope`. A Route gets it with `metroViewModel()`. A ViewModel that reads navigation arguments takes an
 `@Assisted SavedStateHandle` through a `ViewModelAssistedFactory`, as `TransactionViewModel` does. ViewModels, and the
 interfaces they call, use no Java or Android types, so they can move to `:shared` once Room does (`ViewModelBoundaryTest`).
-A picked file is a `PlatformUri`, the biometric cipher a `PlatformCipher` and a currency a `PlatformCurrency`.
+A picked file is a `PlatformUri`, the biometric cipher a `PlatformCipher` and a currency a `PlatformCurrency`. Text for the
+user is a `UiMessage` naming a `StringKey` or `PluralKey`, never an `R` resource; `StringKeyResources.kt` gives each key the
+Android string of the same name.
 
 Dependency rules:
 
@@ -139,7 +140,8 @@ Dependency rules:
     `CancellationException`.
   - A broken business rule throws `DomainException(DomainError, …)` through `domainFailure(...)`.
   - The UI shows errors only through `UiMessage.fromError`, never an exception's `message`.
-  - A new `DomainError` needs a string mapping in `UiMessage`, and `UiMessageTest` enforces it.
+  - A new `DomainError` needs a `StringKey` in `UiMessage`'s mapping, its string in all seven languages and an entry in
+    `StringKeyResources.kt`. `UiMessageTest` and `StringKeyResourcesTest` enforce it.
 - **Protected data stays protected.** The seeded defaults in `Constants` (accounts 1–2 and categories 1–3) can't be deleted.
   Neither can a category or account that is still referenced.
 - **One write at a time.** A write or export action ignores repeat calls while one is in flight, and it exposes that state so

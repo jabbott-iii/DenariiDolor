@@ -8,7 +8,6 @@ package com.denariidolor.presentation.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.denariidolor.R
 import com.denariidolor.data.local.preferences.OnboardingStore
 import com.denariidolor.data.repository.AccountRepository
 import com.denariidolor.data.repository.BudgetRepository
@@ -16,6 +15,7 @@ import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.data.repository.TransactionRepository
 import com.denariidolor.di.SessionScope
 import com.denariidolor.domain.usecase.DeleteTransactionUseCase
+import com.denariidolor.presentation.ui.common.StringKey
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.presentation.ui.common.buildTransactionRows
 import com.denariidolor.util.DateUtils
@@ -75,7 +75,7 @@ class DashboardViewModel(
 
     fun deleteTransaction(id: Long) {
         viewModelScope.launch {
-            _messages.send(UiMessage.fromResult(deleteTransactionUseCase(id), R.string.transaction_deleted))
+            _messages.send(UiMessage.fromResult(deleteTransactionUseCase(id), StringKey.TRANSACTION_DELETED))
         }
     }
 

@@ -8,7 +8,6 @@ package com.denariidolor.presentation.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.denariidolor.R
 import com.denariidolor.data.local.preferences.CurrencySettings
 import com.denariidolor.data.local.preferences.ThemeSettings
 import com.denariidolor.data.local.vault.PlatformCipher
@@ -17,6 +16,7 @@ import com.denariidolor.data.local.vault.VaultState
 import com.denariidolor.di.SessionScope
 import com.denariidolor.presentation.platform.BiometricPromptResult
 import com.denariidolor.presentation.ui.auth.BiometricCapability
+import com.denariidolor.presentation.ui.common.StringKey
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.Constants
 import com.denariidolor.util.Currencies
@@ -117,7 +117,7 @@ class SettingsViewModel(
                 if (cipher != null) {
                     _events.send(SettingsEvent.ShowEnrollmentPrompt(cipher))
                 } else {
-                    _messages.send(UiMessage.Resource(R.string.biometric_enable_failed))
+                    _messages.send(UiMessage.Resource(StringKey.BIOMETRIC_ENABLE_FAILED))
                     finishBiometricChange()
                 }
             } else {
@@ -135,9 +135,9 @@ class SettingsViewModel(
             when (result) {
                 is BiometricPromptResult.Authorized -> {
                     val enrolled = runSuspendCatching { vault.completeBiometricEnrollment(result.cipher) }.getOrDefault(false)
-                    _messages.send(UiMessage.Resource(if (enrolled) R.string.biometric_enabled else R.string.biometric_enable_failed))
+                    _messages.send(UiMessage.Resource(if (enrolled) StringKey.BIOMETRIC_ENABLED else StringKey.BIOMETRIC_ENABLE_FAILED))
                 }
-                BiometricPromptResult.Failed -> _messages.send(UiMessage.Resource(R.string.biometric_enable_failed))
+                BiometricPromptResult.Failed -> _messages.send(UiMessage.Resource(StringKey.BIOMETRIC_ENABLE_FAILED))
                 BiometricPromptResult.Canceled -> Unit
             }
             finishBiometricChange()

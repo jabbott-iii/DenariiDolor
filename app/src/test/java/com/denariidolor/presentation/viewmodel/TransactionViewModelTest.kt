@@ -7,7 +7,6 @@
 package com.denariidolor.presentation.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
-import com.denariidolor.R
 import com.denariidolor.data.local.db.entity.BudgetEntity
 import com.denariidolor.data.local.db.entity.TransactionEntity
 import com.denariidolor.data.local.preferences.RatePromptPolicy
@@ -16,6 +15,7 @@ import com.denariidolor.domain.usecase.AddTransactionUseCase
 import com.denariidolor.domain.usecase.BudgetOverage
 import com.denariidolor.domain.usecase.UpdateTransactionUseCase
 import com.denariidolor.domain.usecase.ValidateTransactionUseCase
+import com.denariidolor.presentation.ui.common.StringKey
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.presentation.ui.transaction.TransactionEvent
 import com.denariidolor.presentation.ui.transaction.TransactionFormState
@@ -170,7 +170,7 @@ class TransactionViewModelTest {
 
         vm.saveTransaction("TRANSFER", "Move", 100, categoryId = 3, accountId = 1, transferAccountId = null, dateEpochMillis = 1L)
 
-        assertEquals(TransactionEvent.Failed(UiMessage.Resource(R.string.error_transfer_destination_required)), vm.events.first())
+        assertEquals(TransactionEvent.Failed(UiMessage.Resource(StringKey.ERROR_TRANSFER_DESTINATION_REQUIRED)), vm.events.first())
     }
 
     @Test

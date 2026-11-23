@@ -8,7 +8,6 @@ package com.denariidolor.presentation.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.denariidolor.R
 import com.denariidolor.data.local.preferences.CurrencySettings
 import com.denariidolor.data.local.preferences.OnboardingStore
 import com.denariidolor.data.local.preferences.RecoverPinResult
@@ -22,6 +21,7 @@ import com.denariidolor.data.local.vault.SignInResult
 import com.denariidolor.data.local.vault.SignInVault
 import com.denariidolor.data.local.vault.VaultState
 import com.denariidolor.presentation.ui.LoginScreenMode
+import com.denariidolor.presentation.ui.common.StringKey
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.SessionManager
 import com.denariidolor.util.runSuspendCatching
@@ -135,7 +135,7 @@ class LoginViewModel(
             is BiometricSignIn.Ready -> _events.send(LoginEvent.ShowBiometricPrompt(prepared.cipher))
             BiometricSignIn.NotEnrolled -> _state.update { it.copy(biometricAvailable = false) }
             BiometricSignIn.Invalidated -> _state.update {
-                it.copy(biometricAvailable = false, feedback = UiMessage.Resource(R.string.biometric_sign_in_invalidated))
+                it.copy(biometricAvailable = false, feedback = UiMessage.Resource(StringKey.BIOMETRIC_SIGN_IN_INVALIDATED))
             }
         }
     }
@@ -156,7 +156,7 @@ class LoginViewModel(
             sessionManager.invalidate()
             _state.update { it.clearedInputs() }
             if (wiped) showState(vault.state())
-            _state.update { it.copy(feedback = UiMessage.Resource(if (wiped) R.string.wipe_data_success else R.string.wipe_data_error)) }
+            _state.update { it.copy(feedback = UiMessage.Resource(if (wiped) StringKey.WIPE_DATA_SUCCESS else StringKey.WIPE_DATA_ERROR)) }
         }
     }
 
@@ -182,7 +182,7 @@ class LoginViewModel(
                 it.clearedInputs().copy(biometricAvailable = false, feedback = null, mode = LoginScreenMode.STORAGE_ERROR)
             }
         } else {
-            _state.update { it.copy(feedback = UiMessage.Resource(R.string.generic_error)) }
+            _state.update { it.copy(feedback = UiMessage.Resource(StringKey.GENERIC_ERROR)) }
         }
     }
 
@@ -206,7 +206,7 @@ class LoginViewModel(
 
     private fun signIn(pin: String) {
         if (!SecurityProfileService.isValidPin(pin)) {
-            _state.update { it.copy(feedback = UiMessage.Resource(R.string.pin_format_error)) }
+            _state.update { it.copy(feedback = UiMessage.Resource(StringKey.PIN_FORMAT_ERROR)) }
             return
         }
         runVaultAction { showSignInResult(vault.signIn(pin)) }
@@ -217,11 +217,11 @@ class LoginViewModel(
             SignInResult.Unlocked -> _events.send(LoginEvent.SignedIn)
             SignInResult.UpgradeRequired -> showUpgradeStep()
             is SignInResult.InvalidPin -> _state.update {
-                it.copy(pin = "", feedback = UiMessage.Resource(R.string.invalid_pin_attempts_left, result.attemptsBeforeLockout))
+                it.copy(pin = "", feedback = UiMessage.Resource(StringKey.INVALID_PIN_ATTEMPTS_LEFT, result.attemptsBeforeLockout))
             }
             is SignInResult.LockedOut -> _state.update { it.copy(pin = "", feedback = lockoutMessage(result.remainingMillis)) }
             SignInResult.BiometricFailed -> _state.update {
-                it.copy(biometricAvailable = false, feedback = UiMessage.Resource(R.string.biometric_sign_in_invalidated))
+                it.copy(biometricAvailable = false, feedback = UiMessage.Resource(StringKey.BIOMETRIC_SIGN_IN_INVALIDATED))
             }
         }
     }
@@ -272,33 +272,33 @@ class LoginViewModel(
         /** Whole seconds, rounded up, and at least one, so the message never says to wait 0 seconds. */
         fun lockoutMessage(remainingMillis: Long): UiMessage {
             val seconds = ((remainingMillis + MILLIS_PER_SECOND - 1) / MILLIS_PER_SECOND).coerceAtLeast(1)
-            return UiMessage.Resource(R.string.pin_locked_out, seconds)
+            return UiMessage.Resource(StringKey.PIN_LOCKED_OUT, seconds)
         }
 
         fun setupMessage(result: SetupProfileResult): UiMessage = when (result) {
-            SetupProfileResult.SUCCESS -> UiMessage.Resource(R.string.profile_setup_success)
-            SetupProfileResult.ALREADY_CONFIGURED -> UiMessage.Resource(R.string.profile_already_configured)
-            SetupProfileResult.INVALID_PIN_FORMAT -> UiMessage.Resource(R.string.pin_format_error)
-            SetupProfileResult.PIN_MISMATCH -> UiMessage.Resource(R.string.pin_confirmation_mismatch)
-            SetupProfileResult.SECURITY_QUESTION_REQUIRED -> UiMessage.Resource(R.string.security_question_required)
+            SetupProfileResult.SUCCESS -> UiMessage.Resource(StringKey.PROFILE_SETUP_SUCCESS)
+            SetupProfileResult.ALREADY_CONFIGURED -> UiMessage.Resource(StringKey.PROFILE_ALREADY_CONFIGURED)
+            SetupProfileResult.INVALID_PIN_FORMAT -> UiMessage.Resource(StringKey.PIN_FORMAT_ERROR)
+            SetupProfileResult.PIN_MISMATCH -> UiMessage.Resource(StringKey.PIN_CONFIRMATION_MISMATCH)
+            SetupProfileResult.SECURITY_QUESTION_REQUIRED -> UiMessage.Resource(StringKey.SECURITY_QUESTION_REQUIRED)
             SetupProfileResult.SECURITY_QUESTION_TOO_LONG ->
-                UiMessage.Resource(R.string.security_question_too_long, SecurityProfileService.MAX_QUESTION_LENGTH)
-            SetupProfileResult.SECURITY_ANSWER_REQUIRED -> UiMessage.Resource(R.string.security_answer_required)
+                UiMessage.Resource(StringKey.SECURITY_QUESTION_TOO_LONG, SecurityProfileService.MAX_QUESTION_LENGTH)
+            SetupProfileResult.SECURITY_ANSWER_REQUIRED -> UiMessage.Resource(StringKey.SECURITY_ANSWER_REQUIRED)
             SetupProfileResult.SECURITY_ANSWER_TOO_SHORT ->
-                UiMessage.Resource(R.string.security_answer_too_short, SecurityProfileService.MIN_ANSWER_LENGTH)
+                UiMessage.Resource(StringKey.SECURITY_ANSWER_TOO_SHORT, SecurityProfileService.MIN_ANSWER_LENGTH)
             SetupProfileResult.SECURITY_ANSWER_TOO_LONG ->
-                UiMessage.Resource(R.string.security_answer_too_long, SecurityProfileService.MAX_ANSWER_LENGTH)
-            SetupProfileResult.SECURITY_ANSWER_IN_QUESTION -> UiMessage.Resource(R.string.security_answer_in_question)
-            SetupProfileResult.SECURITY_ANSWER_MATCHES_PIN -> UiMessage.Resource(R.string.security_answer_matches_pin)
+                UiMessage.Resource(StringKey.SECURITY_ANSWER_TOO_LONG, SecurityProfileService.MAX_ANSWER_LENGTH)
+            SetupProfileResult.SECURITY_ANSWER_IN_QUESTION -> UiMessage.Resource(StringKey.SECURITY_ANSWER_IN_QUESTION)
+            SetupProfileResult.SECURITY_ANSWER_MATCHES_PIN -> UiMessage.Resource(StringKey.SECURITY_ANSWER_MATCHES_PIN)
         }
 
         fun recoveryMessage(outcome: RecoveryResult.Finished): UiMessage = when (outcome.result) {
-            RecoverPinResult.SUCCESS -> UiMessage.Resource(R.string.pin_recovery_success)
-            RecoverPinResult.PROFILE_NOT_CONFIGURED -> UiMessage.Resource(R.string.profile_not_configured)
-            RecoverPinResult.SECURITY_ANSWER_REQUIRED -> UiMessage.Resource(R.string.security_answer_required)
-            RecoverPinResult.INVALID_SECURITY_ANSWER -> UiMessage.Resource(R.string.invalid_security_answer)
-            RecoverPinResult.INVALID_PIN_FORMAT -> UiMessage.Resource(R.string.pin_format_error)
-            RecoverPinResult.PIN_MISMATCH -> UiMessage.Resource(R.string.pin_confirmation_mismatch)
+            RecoverPinResult.SUCCESS -> UiMessage.Resource(StringKey.PIN_RECOVERY_SUCCESS)
+            RecoverPinResult.PROFILE_NOT_CONFIGURED -> UiMessage.Resource(StringKey.PROFILE_NOT_CONFIGURED)
+            RecoverPinResult.SECURITY_ANSWER_REQUIRED -> UiMessage.Resource(StringKey.SECURITY_ANSWER_REQUIRED)
+            RecoverPinResult.INVALID_SECURITY_ANSWER -> UiMessage.Resource(StringKey.INVALID_SECURITY_ANSWER)
+            RecoverPinResult.INVALID_PIN_FORMAT -> UiMessage.Resource(StringKey.PIN_FORMAT_ERROR)
+            RecoverPinResult.PIN_MISMATCH -> UiMessage.Resource(StringKey.PIN_CONFIRMATION_MISMATCH)
             RecoverPinResult.LOCKED_OUT -> lockoutMessage(outcome.lockoutRemainingMillis)
         }
     }

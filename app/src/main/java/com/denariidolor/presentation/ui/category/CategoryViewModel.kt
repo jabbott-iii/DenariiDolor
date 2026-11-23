@@ -8,11 +8,11 @@ package com.denariidolor.presentation.ui.category
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.denariidolor.R
 import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.di.SessionScope
 import com.denariidolor.domain.usecase.CategoryUseCases
+import com.denariidolor.presentation.ui.common.StringKey
 import com.denariidolor.presentation.ui.common.UiMessage
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
@@ -35,13 +35,13 @@ class CategoryViewModel(private val categoryUseCases: CategoryUseCases, category
     private val _messages = Channel<UiMessage>(Channel.BUFFERED)
     val messages: Flow<UiMessage> = _messages.receiveAsFlow()
 
-    fun add(name: String, iconKey: String) = report(R.string.category_saved) { categoryUseCases.add(name, iconKey) }
+    fun add(name: String, iconKey: String) = report(StringKey.CATEGORY_SAVED) { categoryUseCases.add(name, iconKey) }
 
-    fun update(id: Long, name: String, iconKey: String) = report(R.string.category_saved) { categoryUseCases.update(id, name, iconKey) }
+    fun update(id: Long, name: String, iconKey: String) = report(StringKey.CATEGORY_SAVED) { categoryUseCases.update(id, name, iconKey) }
 
-    fun delete(id: Long) = report(R.string.category_deleted) { categoryUseCases.delete(id) }
+    fun delete(id: Long) = report(StringKey.CATEGORY_DELETED) { categoryUseCases.delete(id) }
 
-    private fun report(successResId: Int, action: suspend () -> Result<*>) {
-        viewModelScope.launch { _messages.send(UiMessage.fromResult(action(), successResId)) }
+    private fun report(success: StringKey, action: suspend () -> Result<*>) {
+        viewModelScope.launch { _messages.send(UiMessage.fromResult(action(), success)) }
     }
 }

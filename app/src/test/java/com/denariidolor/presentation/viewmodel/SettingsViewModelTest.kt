@@ -6,11 +6,11 @@
 
 package com.denariidolor.presentation.viewmodel
 
-import com.denariidolor.R
 import com.denariidolor.data.local.preferences.SecureStorageException
 import com.denariidolor.data.local.vault.SettingsVault
 import com.denariidolor.data.local.vault.VaultState
 import com.denariidolor.presentation.platform.BiometricPromptResult
+import com.denariidolor.presentation.ui.common.StringKey
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.presentation.ui.settings.SettingsEvent
 import com.denariidolor.presentation.ui.settings.SettingsScreenState
@@ -76,7 +76,7 @@ class SettingsViewModelTest {
         return (nextEvent() as SettingsEvent.ShowEnrollmentPrompt).cipher
     }
 
-    private fun message(resId: Int) = UiMessage.Resource(resId)
+    private fun message(key: StringKey) = UiMessage.Resource(key)
 
     @Test
     fun showsBiometricSignInAsTheVaultHasIt() = runTest {
@@ -137,7 +137,7 @@ class SettingsViewModelTest {
 
         viewModel.onEnrollmentPromptResult(BiometricPromptResult.Authorized(cipher))
 
-        assertEquals(message(R.string.biometric_enabled), viewModel.nextMessage())
+        assertEquals(message(StringKey.BIOMETRIC_ENABLED), viewModel.nextMessage())
         assertSame(cipher, vault.authorizedCipher)
         assertFalse(viewModel.stateWhen { it.biometricEnabled }.biometricChanging)
     }
@@ -148,7 +148,7 @@ class SettingsViewModelTest {
 
         viewModel.onEnrollmentPromptResult(BiometricPromptResult.Authorized(viewModel.startEnrollment()))
 
-        assertEquals(message(R.string.biometric_enable_failed), viewModel.nextMessage())
+        assertEquals(message(StringKey.BIOMETRIC_ENABLE_FAILED), viewModel.nextMessage())
         assertFalse(viewModel.stateWhen { !it.biometricChanging }.biometricEnabled)
     }
 
@@ -158,7 +158,7 @@ class SettingsViewModelTest {
 
         viewModel.onEnrollmentPromptResult(BiometricPromptResult.Authorized(viewModel.startEnrollment()))
 
-        assertEquals(message(R.string.biometric_enable_failed), viewModel.nextMessage())
+        assertEquals(message(StringKey.BIOMETRIC_ENABLE_FAILED), viewModel.nextMessage())
         assertFalse(viewModel.stateWhen { !it.biometricChanging }.biometricEnabled)
     }
 
@@ -168,7 +168,7 @@ class SettingsViewModelTest {
 
         viewModel.onBiometricChange(true)
 
-        assertEquals(message(R.string.biometric_enable_failed), viewModel.nextMessage())
+        assertEquals(message(StringKey.BIOMETRIC_ENABLE_FAILED), viewModel.nextMessage())
         assertNull(viewModel.nextEvent())
         assertFalse(viewModel.stateWhen { !it.biometricChanging }.biometricEnabled)
     }
@@ -179,7 +179,7 @@ class SettingsViewModelTest {
 
         viewModel.onEnrollmentPromptResult(BiometricPromptResult.Failed)
 
-        assertEquals(message(R.string.biometric_enable_failed), viewModel.nextMessage())
+        assertEquals(message(StringKey.BIOMETRIC_ENABLE_FAILED), viewModel.nextMessage())
         assertFalse(viewModel.stateWhen { !it.biometricChanging }.biometricEnabled)
         assertFalse("complete" in vault.calls)
     }

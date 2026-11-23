@@ -38,7 +38,9 @@ paths:
   - Navigation arguments come from `SavedStateHandle`.
 - **State and events.**
   - Long-lived state is one immutable `…UiState` data class (or a few `StateFlow`s) per screen.
-  - One-shot outcomes (saved, deleted, failed) are a `UiMessage` sent over a `Channel`.
+  - One-shot outcomes (saved, deleted, failed) are a `UiMessage` sent over a `Channel`. It names its text with a
+    `StringKey` or `PluralKey` (shared code), which `StringKeyResources.kt` maps to the Android string of the same name.
+    ViewModels never use `R` (`ViewModelBoundaryTest`).
   - Format text from `Result` and `DomainException` only through `UiMessage.fromResult` and `UiMessage.fromError`.
 - **In-flight guard.** A write or export action returns early while the previous one is running. It exposes `isSaving` or
   `exporting` so the button is disabled (BUG-02).

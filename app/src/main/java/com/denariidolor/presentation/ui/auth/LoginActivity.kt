@@ -26,6 +26,7 @@ import com.denariidolor.appGraph
 import com.denariidolor.data.export.ReportExporter
 import com.denariidolor.data.local.preferences.ThemePreferences
 import com.denariidolor.presentation.ui.LoginScreen
+import com.denariidolor.presentation.ui.common.resolve
 import com.denariidolor.presentation.ui.common.setThemedContent
 import com.denariidolor.util.SessionManager
 import dev.zacsweers.metro.Inject

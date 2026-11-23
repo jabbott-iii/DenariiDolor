@@ -8,11 +8,11 @@ package com.denariidolor.presentation.ui.account
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.denariidolor.R
 import com.denariidolor.data.local.db.entity.AccountEntity
 import com.denariidolor.data.repository.AccountRepository
 import com.denariidolor.di.SessionScope
 import com.denariidolor.domain.usecase.AccountUseCases
+import com.denariidolor.presentation.ui.common.StringKey
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.Money
 import dev.zacsweers.metro.ContributesIntoMap
@@ -39,18 +39,18 @@ class AccountViewModel(private val accountUseCases: AccountUseCases, accountRepo
     fun add(name: String, openingBalanceText: String) {
         val openingBalance = parseOpeningBalance(openingBalanceText)
         if (openingBalance == null) {
-            viewModelScope.launch { _messages.send(UiMessage.Resource(R.string.invalid_opening_balance)) }
+            viewModelScope.launch { _messages.send(UiMessage.Resource(StringKey.INVALID_OPENING_BALANCE)) }
             return
         }
-        report(R.string.account_saved) { accountUseCases.add(name, openingBalance) }
+        report(StringKey.ACCOUNT_SAVED) { accountUseCases.add(name, openingBalance) }
     }
 
-    fun rename(id: Long, name: String) = report(R.string.account_saved) { accountUseCases.rename(id, name) }
+    fun rename(id: Long, name: String) = report(StringKey.ACCOUNT_SAVED) { accountUseCases.rename(id, name) }
 
-    fun delete(id: Long) = report(R.string.account_deleted) { accountUseCases.delete(id) }
+    fun delete(id: Long) = report(StringKey.ACCOUNT_DELETED) { accountUseCases.delete(id) }
 
-    private fun report(successResId: Int, action: suspend () -> Result<*>) {
-        viewModelScope.launch { _messages.send(UiMessage.fromResult(action(), successResId)) }
+    private fun report(success: StringKey, action: suspend () -> Result<*>) {
+        viewModelScope.launch { _messages.send(UiMessage.fromResult(action(), success)) }
     }
 
     companion object {

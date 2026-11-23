@@ -14,8 +14,8 @@ import org.junit.Test
 /**
  * ViewModels move to :shared once Room does, so they and the interfaces they call must not need Java or Android. A picked
  * file and the biometric cipher reach them as PlatformUri and PlatformCipher, which on Android are android.net.Uri and
- * javax.crypto.Cipher; the Android code behind those interfaces keeps the Android names. androidx.lifecycle is
- * multiplatform, and string resources are a later step, so neither is checked here.
+ * javax.crypto.Cipher; the Android code behind those interfaces keeps the Android names. Text reaches them as StringKey and
+ * PluralKey inside a UiMessage, never as an R resource. androidx.lifecycle is multiplatform, so it isn't checked.
  */
 class ViewModelBoundaryTest {
     @Test
@@ -72,7 +72,9 @@ class ViewModelBoundaryTest {
             Regex("^import (java|javax|android)\\.", RegexOption.MULTILINE),
             Regex("\\b(java|javax|android)\\.[a-z]+\\."),
             // Same-package or already-imported uses that no import line shows.
-            Regex("\\b(Uri|Cipher)\\b")
+            Regex("\\b(Uri|Cipher)\\b"),
+            Regex("^import com\\.denariidolor\\.R$", RegexOption.MULTILINE),
+            Regex("\\bR\\.(string|plurals)\\.")
         )
     }
 }

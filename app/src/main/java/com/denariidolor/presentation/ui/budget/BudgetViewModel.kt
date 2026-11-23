@@ -8,13 +8,13 @@ package com.denariidolor.presentation.ui.budget
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.denariidolor.R
 import com.denariidolor.data.local.db.entity.BudgetEntity
 import com.denariidolor.data.local.db.entity.CategoryEntity
 import com.denariidolor.data.repository.BudgetRepository
 import com.denariidolor.data.repository.CategoryRepository
 import com.denariidolor.di.SessionScope
 import com.denariidolor.domain.usecase.BudgetUseCases
+import com.denariidolor.presentation.ui.common.StringKey
 import com.denariidolor.presentation.ui.common.UiMessage
 import com.denariidolor.util.Money
 import dev.zacsweers.metro.ContributesIntoMap
@@ -57,9 +57,9 @@ class BudgetViewModel(
         val warningPercent = warningPercentText.trim().toIntOrNull()
         viewModelScope.launch {
             val message = if (limitCents == null || warningPercent == null) {
-                UiMessage.Resource(R.string.invalid_budget_input)
+                UiMessage.Resource(StringKey.INVALID_BUDGET_INPUT)
             } else {
-                UiMessage.fromResult(budgetUseCases.set(categoryId, limitCents, warningPercent), R.string.budget_saved)
+                UiMessage.fromResult(budgetUseCases.set(categoryId, limitCents, warningPercent), StringKey.BUDGET_SAVED)
             }
             _messages.send(message)
         }
@@ -67,7 +67,7 @@ class BudgetViewModel(
 
     fun deleteBudget(categoryId: Long) {
         viewModelScope.launch {
-            _messages.send(UiMessage.fromResult(budgetUseCases.delete(categoryId), R.string.budget_deleted))
+            _messages.send(UiMessage.fromResult(budgetUseCases.delete(categoryId), StringKey.BUDGET_DELETED))
         }
     }
 }
