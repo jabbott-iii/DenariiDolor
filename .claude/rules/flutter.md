@@ -36,11 +36,13 @@ so they can fill them in.
   the rules and the data)
 - **Platforms:** Android with minSdk 26, targetSdk 36, and compileSdk 37, the same as v1, set in
   `android/app/build.gradle.kts` once M1.1 creates it; the application ID stays `com.denariidolor`
-  (ADR-0002, existing installs upgrade in place). iOS follows in M7, with its minimum version
-  decided in M1.1
-- **Toolchain:** not chosen yet. M1.1 picks a Flutter stable release, pins it in `.fvmrc`, and
-  sets the SDK constraints in `pubspec.yaml`. As of 2026-11-23 the Flutter SDK isn't installed on
-  the maintainer's Linux machine
+  (ADR-0002, existing installs upgrade in place). iOS 15 and later, set in the Xcode project, with
+  the iOS app following in M7 (ADR-0009, Flutter 3.50.1 and iOS 15)
+- **Toolchain:** Flutter 3.50.1 (stable, with Dart 3.14.0), pinned exactly by
+  `environment: flutter: 3.50.1` and `sdk: ^3.14.0` in `pubspec.yaml` once M1.1 creates it; no
+  version manager (ADR-0009). As of 2026-11-23 the maintainer's Linux machine has Flutter 3.50.1
+  in `~/flutter`, not on `PATH`, and an Android SDK with the command-line tools, NDK
+  28.2.13676358 (Flutter 3.50's default), and emulators for API 26, 36, and 37
 - **Check commands:** from M1.1: `dart format --output=none --set-exit-if-changed .`, `flutter
   analyze`, and `flutter test`, plus the Rust **Check commands** in `rust.md`
 - **Lint configuration:** from M1.1: `package:flutter_lints/flutter.yaml` in
@@ -49,10 +51,16 @@ so they can fill them in.
 - **Dependency policy:** ask first, and record each decision in `docs/02-dependency-policy.md`. No
   network, analytics, crash-reporting, or ads package, ever. A plugin must support both Android
   and iOS. No mocking package: tests use hand-written fakes
-- **State management:** not chosen yet; M1.1 decides it ("Decide first" in the roadmap). Whatever
-  it is, screens keep v1's shape: a route that wires a state holder, a stateless screen, and state
-  holders that call the Rust core and expose one write at a time (`isSaving`)
-- **Navigation:** not chosen yet; M1.1 decides it. v1's destinations are listed in
+- **State management:** `ChangeNotifier` view models, with no package (ADR-0010). Each screen keeps
+  v1's shape: a route widget creates and disposes its view model, and a stateless screen takes its
+  state and callbacks. View models hold immutable state, call the bridge, and expose one write at a
+  time (`isSaving`). Services reach them through constructors, from two `InheritedWidget` scopes:
+  the app scope, created at startup, and the session scope, created after sign-in and disposed
+  when the vault locks
+- **Navigation:** Flutter's `Navigator`, with no package (ADR-0011). The root widget shows the
+  sign-in flow or the signed-in tree, whose own `Navigator` lives inside the session scope, so no
+  signed-in screen exists while the vault is locked (CS-02). Screens are pushed as widget classes
+  that take IDs as constructor arguments. v1's destinations are listed in
   `app/src/main/java/com/denariidolor/presentation/ui/AppScreens.kt` at 6d57526
 - **Design system:** Material 3 with v1's colors (`ThemedContent.kt` and `VizColors.kt` at
   6d57526) and its light, dark, and system theme setting, built in M1.5. How far iOS adapts its
@@ -71,7 +79,9 @@ so they can fill them in.
   `docs/specs/android-v1-formats.md` (keys and formats on phones today). The history of every
   finding is in `git show aba0b55:intel/cybersec.md`
 - **Code generation:** `flutter_rust_bridge_codegen` for the bridge and `flutter gen-l10n` for
-  strings, from M1.2 and M1.4. Whether their output is committed is decided in M1.1
+  strings, from M1.2 and M1.4. Their output is committed and never edited by hand; CI regenerates
+  it and fails on any difference (M1.3), and the analyzer and the formatter skip only the
+  generated paths (ADR-0012)
 - **Test layout:** from M1.1: unit and widget tests in `test/`, with hand-written fakes; whole
   flows in `integration_test/` on an emulator or device (API 26 and API 36, as v1's CI ran). Rust
   tests live in `rust/` (see `rust.md`)

@@ -35,7 +35,8 @@ so they can fill them in.
   example `M2.4 — store: transaction writes`
 - **Environments:** Linux with Rust, then an Android emulator (API 26 and API 36), then an Android
   phone with v1 installed (for upgrade checks) and an enrolled fingerprint (for biometric checks),
-  then a Mac with Xcode (for iOS). As of 2026-11-23 the Linux machine has Rust but not Flutter
+  then a Mac with Xcode (for iOS). As of 2026-11-23 the Linux machine has Rust, Flutter 3.50.1,
+  and emulators for API 26 (`Denarii_API_26`), API 36 (`Denarii_API_36`), and API 37
 - **Definition of done:** "Definition of done" in `CLAUDE.md`. No single command runs every check
   yet; the `ci-gates` skill runs them
 - **Decision log:** `docs/decisions.md`, with `ADR-NNNN` records

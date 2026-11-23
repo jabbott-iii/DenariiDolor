@@ -50,7 +50,9 @@ A version upgrade is a change of its own, in a commit of its own.
 | SQLCipher from Rust | Buy: `rusqlite` with its bundled SQLCipher build | Proposed (ADR-0006) | M2.1 |
 | PBKDF2-HMAC-SHA256, AES-256-GCM, and wiping secrets from memory | Open: the RustCrypto crates (`pbkdf2`, `hmac`, `sha2`, `aes-gcm`, `zeroize`) or `ring` | Open | M3.3 |
 | Month boundaries in the user's time zone | Open: Dart computes them and passes them in, or a Rust time-zone crate | Open | M2.4 |
-| State management and navigation in Flutter | Open | Open | M1.1 |
+| State management in Flutter | Build: `ChangeNotifier` view models and two `InheritedWidget` scopes, no package | Decided, 2026-11-23 (ADR-0010) | M1.1 |
+| Navigation in Flutter | Build: Flutter's `Navigator`, no package | Decided, 2026-11-23 (ADR-0011) | M1.1 |
+| Pinning the Flutter release | Build: an exact constraint in `pubspec.yaml`, no version manager | Decided, 2026-11-23 (ADR-0009) | M1.1 |
 | Charts on the dashboard (v1 used Vico) | Open | Open | M4.1 |
 | PDF reports (v1 used Android's `PdfDocument`) | Open | Open | M4.5 |
 | The v1.0.x profile upgrade, which needs `androidx.security:security-crypto` in Kotlin | Open: keep it, or drop support for upgrading v1.0.x installs | Open | M3.4 |

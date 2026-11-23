@@ -193,3 +193,110 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
 - **Alternatives considered:** none were proposed.
 - **Revisit when:** the maintainer decides to offer sync or cloud backup, which needs a new
   record, a `PRIVACY.md` change, and a Data safety update.
+
+## ADR-0009 — Pin Flutter 3.50.1 and support iOS 15 and later
+
+- **Status:** Accepted
+- **Date:** 2026-11-23
+- **Context:** M1.1 needs a Flutter release and an iOS minimum. On 2026-11-23 the stable release was
+  Flutter 3.50.1 with Dart 3.14.0, released 2026-11-20. Flutter 3.50 supports Android API 24 to 37
+  and iOS 15 to 27 (the "Supported deployment platforms" page on docs.flutter.dev, updated
+  2026-11-11). `flutter_rust_bridge` 2.13.0, its latest stable release, was tested against Flutter
+  3.44. v1's Android levels (minSdk 26, targetSdk 36, compileSdk 37) are inside Flutter's range. The
+  maintainer was offered 3.50.1 with iOS 15, 3.47.6 with iOS 15, or 3.50.1 with iOS 16.
+- **Decision** (the maintainer chose Flutter 3.50.1 with iOS 15 on 2026-11-23): pin Flutter 3.50.1
+  exactly in `pubspec.yaml` (`environment: flutter: 3.50.1`, with `sdk: ^3.14.0` for Dart), so
+  `flutter pub get` fails on any other Flutter release. No version-manager tool. Android keeps v1's
+  levels, and iOS supports version 15 and later.
+- **Consequences:**
+  - Good: the newest fixes and APIs; the version is stated in one file that the build itself
+    enforces; no extra tool to install or trust.
+  - Bad: `flutter_rust_bridge` isn't verified on Flutter 3.50 yet; every contributor and CI must
+    install exactly 3.50.1; each upgrade is a change of its own.
+  - Follow-up: M1.1 writes the pin; M1.2 checks `flutter_rust_bridge` on 3.50.1 before anything
+    else; M1.3 makes CI install the pinned release; M7.1 revisits the iOS minimum.
+- **Alternatives considered:** Flutter 3.47.6, the previous line with more patch releases, which
+  is just as unverified with the bridge and older by release time; iOS 16, which drops iOS 15
+  devices for no API the app needs; a version manager such as FVM with an `.fvmrc` file, which adds
+  a tool while the `pubspec.yaml` pin already enforces the version.
+- **Revisit when:** `flutter_rust_bridge` fails on Flutter 3.50.1 in M1.2, or Flutter raises its
+  iOS minimum above 15 before M7 ships.
+
+## ADR-0010 — Screens hold state in `ChangeNotifier` view models, with services from two scopes
+
+- **Status:** Accepted
+- **Date:** 2026-11-23
+- **Context:** Each v1 feature had a route that wired a ViewModel (state as a `StateFlow`) to a
+  stateless screen. Dependencies came from two Metro graphs: `AppGraph`, for process-wide services
+  and sign-in, and `SessionGraph`, for everything that reads the database, created after sign-in and
+  dropped with the signed-in activity. The flutter rule allows one state-management approach. The
+  maintainer was offered `ChangeNotifier` with no package, Riverpod 3 (3.5.0), or Bloc
+  (`flutter_bloc` 9.1.1, last released in April 2025).
+- **Decision** (the maintainer chose `ChangeNotifier` with no package on 2026-11-23):
+  - Each screen has a view model that extends `ChangeNotifier`, holds immutable state, calls the
+    bridge, and exposes one write at a time (`isSaving`).
+  - A route widget creates its view model, passes state and callbacks to a stateless screen, and
+    disposes the view model with itself.
+  - Services reach view models through their constructors, from two `InheritedWidget` scopes: an
+    app scope (the bridge, the platform channels, settings) created at startup, and a session scope
+    (everything that reads the database) created after sign-in and disposed when the vault locks.
+  - Tests build view models directly, with hand-written fakes.
+- **Consequences:**
+  - Good: no dependency; the same shape as v1, so screens port one to one; view models are plain
+    Dart that tests use without a widget tree; the session scope makes "the database exists only
+    after sign-in" a structural fact.
+  - Bad: the two scope widgets and every disposal are written by hand; there is no built-in
+    caching or async state helper, so each view model handles its own loading and errors.
+  - Follow-up: M1.1 adds the app scope and the first view model; M3.5 adds the session scope.
+- **Alternatives considered:** Riverpod 3, which builds dependency injection and scoping in, but
+  adds at least two packages and idioms of its own; Bloc, with no release since April 2025, the most
+  boilerplate of the three, and `provider` pulled in with it.
+- **Revisit when:** state must be shared across three or more screens in a way the two scopes
+  can't express, or "setState() called after dispose()" bugs appear in two different view models.
+
+## ADR-0011 — Navigate with Flutter's `Navigator`, switching the root between signed-out and signed-in
+
+- **Status:** Accepted
+- **Date:** 2026-11-23
+- **Context:** v1 navigated with string routes in Navigation Compose (`MainDestination`, recorded
+  as known debt because the routes aren't type-safe). Sign-in lived in its own activity, and the
+  signed-in activity checked the session before building any UI (CS-02). v1 has no deep links: only
+  the launcher activity is exported. The maintainer was offered Flutter's `Navigator` with no
+  package, or `go_router` 18.1.4 (by flutter.dev, declared feature-complete).
+- **Decision** (the maintainer chose `Navigator` with no package on 2026-11-23): the root widget
+  follows the vault's lock state and shows either the sign-in flow or the signed-in tree, which has
+  its own `Navigator` inside the session scope (ADR-0010). Locking replaces the signed-in tree, so
+  its screens and view models are disposed. Screens are pushed as widget classes whose constructor
+  arguments are the IDs they need, and Back is handled with `PopScope`.
+- **Consequences:**
+  - Good: no dependency; typed arguments without code generation; CS-02 holds by construction,
+    because no signed-in screen exists while the vault is locked.
+  - Bad: no URL routes, so a future deep link needs a new record.
+  - Follow-up: M1.1 builds the root switch with placeholder screens; M3.5 connects it to the vault.
+- **Alternatives considered:** `go_router`, whose declarative routes and redirect guard would also
+  enforce the lock, but whose typed routes need `go_router_builder` (code generation), and whose
+  string routes would repeat v1's known debt.
+- **Revisit when:** the app needs deep links, app links, or a notification that opens a given
+  screen.
+
+## ADR-0012 — Commit generated code, and check in CI that it is current
+
+- **Status:** Accepted
+- **Date:** 2026-11-23
+- **Context:** `flutter_rust_bridge_codegen` writes Dart bindings (`lib/src/rust/`) and Rust glue
+  (`frb_generated*.rs`), and `flutter gen-l10n` writes the localizations class from the ARB files.
+  The `flutter_rust_bridge` documentation doesn't say whether to commit its output. This was the
+  last open question of M1.1, drafted for the maintainer's review.
+- **Decision** (the maintainer accepted the draft on 2026-11-23): commit every generated file and never edit one by hand. CI regenerates them and
+  fails if the result differs from what is committed (M1.3). The analyzer and the formatter skip
+  only the generated paths.
+- **Consequences:**
+  - Good: a fresh clone builds without running a generator; reviewers see binding changes in the
+    diff; a generator upgrade shows exactly what it changed.
+  - Bad: larger diffs; every change to the bridge API or the ARB files includes regenerated files.
+  - Follow-up: M1.2 (bindings), M1.3 (the CI check), M1.4 (localizations).
+- **Alternatives considered:** ignoring generated output and running the generators in every
+  build, which requires the generators on every machine and in CI, and hides generator drift from
+  review.
+- **Revisit when:** generated files make up most of the lines in typical pull requests, or a
+  generator's output changes between two runs on the same input.

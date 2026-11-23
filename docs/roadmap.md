@@ -82,6 +82,9 @@ domain rules to Rust with their tests.
 - [ ] **M0.8 — claude: skills for the new stack**
   - Note: 2026-11-23: `ci-gates` now runs the Rust checks. `new-feature`, `room-migration`, and
     `dependency-upgrade` were Kotlin-only and left with ADR-0003; their text is at `6d57526`.
+  - Note: 2026-11-23: at the maintainer's request, the skills `next-task` and `fix-doc-drift`
+    are copied unchanged from Doctrina commit `96b996b`. They take their values from the rules'
+    "Project details" and name no project command, so the new stack needs no rewrite of them.
   - Depends: M1.1
   - Do:
     - Extend `ci-gates` with the Flutter checks; write `new-feature`, `schema-migration`, and
@@ -101,19 +104,33 @@ order, and accepted, changed, or rejected ADR-0004 to ADR-0007.
 and displays an amount that Rust parsed and Dart formatted.
 
 - [ ] **M1.1 — ui: create the Flutter project at the repository root**
-  - ⏳ needs the Flutter SDK, which the maintainer's machine doesn't have as of 2026-11-23
+  - Note: 2026-11-23: the maintainer chose Flutter 3.50.1 pinned in `pubspec.yaml` with iOS 15
+    and later (ADR-0009), `ChangeNotifier` view models with no package (ADR-0010), and Flutter's
+    `Navigator` with no package (ADR-0011). The maintainer also accepted ADR-0012: generated code
+    is committed, and CI checks that it is current.
+  - Note: 2026-11-23: Flutter 3.50.1 is installed on the maintainer's machine, in `~/flutter`. Its
+    Android SDK has platform 37, build-tools 36.0.0, the command-line tools, NDK 28.2.13676358,
+    and the emulators `Denarii_API_26` and `Denarii_API_36` (Google APIs x86_64 images), which
+    both boot.
   - Depends: M0.3
-  - Decide first: the Flutter release and its pin (`.fvmrc`); the iOS minimum version; the state
-    management approach; the navigation approach; whether generated code is committed.
   - Do:
     - Run `flutter create` with the application ID `com.denariidolor`, set minSdk 26, targetSdk
-      36, and compileSdk 37, and fill the remaining values in `.claude/rules/flutter.md`.
+      36, and compileSdk 37, set the iOS deployment target to 15.0, and pin the SDK in
+      `pubspec.yaml` as ADR-0009 says.
     - Add `analysis_options.yaml` with the strict modes in the flutter rule.
+    - Add the app scope, a root widget that switches between a placeholder sign-in screen and a
+      placeholder signed-in tree, and one placeholder view model with its test (ADR-0010,
+      ADR-0011).
   - Accept:
     - `flutter run` starts the app on an API 26 and an API 36 emulator.
+    - `flutter pub get` fails on a Flutter release other than 3.50.1.
   - Verify: `dart format --output=none --set-exit-if-changed .`; `flutter analyze`; `flutter test`
     (expect no issues)
 - [ ] **M1.2 — bridge: call Rust from Dart**
+  - Note: 2026-11-23: `flutter_rust_bridge` 2.13.0 was tested against Flutter 3.44, so check it
+    on Flutter 3.50.1 (ADR-0009) before anything else.
+  - Note: 2026-11-23: NDK 28.2.13676358, the version Flutter 3.50's Gradle plugin defaults to, is
+    installed on the maintainer's machine; build the Rust library with the same version.
   - Depends: M1.1
   - Decide first: accept or change ADR-0005 (`flutter_rust_bridge`).
   - Do:
@@ -127,6 +144,8 @@ and displays an amount that Rust parsed and Dart formatted.
   - Do:
     - Add jobs to `ci.yml` for the Flutter check commands and a debug app bundle, with actions
       pinned to commit SHAs (CS-08); add the `pub` ecosystem to `dependabot.yml`.
+    - Regenerate the bridge bindings and the localizations in CI, and fail on any difference from
+      the committed files (ADR-0012).
   - Accept:
     - A pull request runs the Rust and Flutter jobs and blocks on either.
   - Verify: a pull request's checks (expect green)

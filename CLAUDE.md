@@ -27,9 +27,10 @@ details.
 - Copy the pattern in the nearest comparable file before you introduce a new abstraction, library or style. Where the new app
   has no such file yet, copy v1's behavior from `git show 6d57526:<path>` and its design from `docs/`.
 - Keep user-visible behavior, stored data and backup formats as v1 has them unless a task and a decision record change them.
-- Report honestly. List the commands you ran with their results, and what you couldn't run: Flutter checks need the Flutter
-  SDK (not installed on the maintainer's Linux machine as of 2026-11-23), integration tests need an emulator or device, upgrade
-  checks need a phone with v1 installed, and biometric flows need a phone with an enrolled fingerprint.
+- Report honestly. List the commands you ran with their results, and what you couldn't run: Flutter checks need Flutter
+  3.50.1 (in `~/flutter` on the maintainer's Linux machine, not on `PATH`, as of 2026-11-23), integration tests need an
+  emulator or device, upgrade checks need a phone with v1 installed, and biometric flows need a phone with an enrolled
+  fingerprint.
 
 ## Read before working
 
@@ -49,8 +50,9 @@ details.
 
 - **Rust:** a workspace in `rust/`, edition 2024, Rust 1.100.0 pinned in `rust/rust-toolchain.toml`. `crates/core`
   (`denarii-core`) is built and uses `std` only. The `store`, `vault`, `backup`, `report` and `bridge` crates are planned.
-- **Flutter:** a Dart app at the repository root, created in M1.1. Its toolchain, state management and navigation are
-  decided then.
+- **Flutter:** a Dart app at the repository root, created in M1.1: Flutter 3.50.1 pinned in `pubspec.yaml`, iOS 15 and
+  later (ADR-0009), `ChangeNotifier` view models with no package (ADR-0010), and Flutter's `Navigator` with no package
+  (ADR-0011).
 - **Platform code:** Kotlin in `android/` for the Android Keystore and `BiometricPrompt` (M3.2), and Swift in `ios/` for the
   Keychain and Face ID (M7.1).
 - **Data:** v1's SQLCipher 4 database, opened from Rust (ADR-0006, Proposed). The application ID stays `com.denariidolor`.
@@ -83,19 +85,20 @@ rust/crates/vault     profile, key wrapping, PIN and answer, lockout, session   
 rust/crates/backup    backup files, every format version                                              M5.1
 rust/crates/report    monthly report, search, CSV                                                     M2.7
 rust/crates/bridge    the API Dart calls (flutter_rust_bridge, ADR-0005, Proposed)                    M1.2
-lib/                  screens and state holders, locale formatting, ARB strings                        M1.1
+lib/                  screens, ChangeNotifier view models, two scopes, locale formatting, ARB strings  M1.1
 android/, ios/        Keystore and Keychain keys, the biometric prompt                                 M3.2, M7.1
 ```
 
 Dependency rules:
 
 1. `core` depends on nothing but `std`, and no crate depends on `bridge`.
-2. Screens talk only to their state holders, and state holders only to the bridge and the platform channels. Dart never sees a
-   database row or a key.
+2. Screens talk only to their view models, and view models only to the bridge and the platform channels, which they get
+   through their constructors from the app scope or the session scope. Dart never sees a database row or a key.
 3. Every transaction write goes through a `store` use case, which runs `core::validate_transaction` and the budget check, then
    applies `core::balance_deltas` in the same database transaction as the row.
 4. The database exists only after sign-in. The bridge offers no storage call until the vault has unlocked the database key,
-   and locking closes the database and wipes the key. That's a security control, not something to work around.
+   and locking closes the database, wipes the key, and disposes the session scope with every signed-in screen. That's a
+   security control, not something to work around.
 5. Rust reads no clock and no time zone. Callers pass dates as `EpochMillis`, and how month boundaries in the user's time zone
    reach Rust is decided in M2.4. The session timeout runs on the monotonic clock (CS-01).
 6. Logic that doesn't need the platform lives in Rust, where `cargo test` covers it.
@@ -149,6 +152,8 @@ Details are in `.claude/rules/security.md`, which loads when you touch security-
 - Rust follows `rustfmt` and the lints in `rust/Cargo.toml`; a lint exception is an `#[expect(…, reason = "…")]` on the
   smallest item.
 - Comment only intent that isn't obvious.
+- Generated files (the bridge bindings from M1.2 and the localizations from M1.4) are committed and never edited by hand.
+  Change their source and rerun the generator in the same change (ADR-0012).
 - User-facing text lives only in the ARB files (from M1.4), in English and **all six language packs** (zh-CN, hi, es, ar, fr,
   pt). Rust returns codes, never user-facing sentences.
 - Add a new dependency only when the platform and the existing dependencies can't do the job, and ask first
@@ -181,6 +186,11 @@ Skills in `.claude/skills/`:
 | Skill | Use it to |
 |---|---|
 | `ci-gates` | Run the blocking checks and report the results |
+| `next-task` | Carry the next unblocked roadmap task, or the one named, through the definition of done (`/next-task M1.1`) |
+| `fix-doc-drift` | Find and correct statements in the docs that no longer match the code or the records (`/fix-doc-drift docs/`) |
+
+`next-task` and `fix-doc-drift` come from Doctrina unchanged and read their values from the rules' "Project details". Only
+the maintainer can start them, but you can read and follow them.
 
 v1's `new-feature`, `room-migration` and `dependency-upgrade` skills were Kotlin-only and left with ADR-0003; M0.8 writes
 their replacements.

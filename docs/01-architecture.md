@@ -30,7 +30,7 @@ names the task that builds each planned part.
 ```mermaid
 flowchart TB
     subgraph Dart["Flutter app (lib/) — M1.1"]
-        UI["Screens and state holders"]
+        UI["Screens and view models"]
     end
     subgraph Native["Platform code — M3.2, M7.1"]
         KT["Kotlin in android/:<br/>Keystore, BiometricPrompt"]
@@ -66,7 +66,7 @@ Solid boxes are built; dashed boxes are planned, labeled with the task that buil
 
 | Layer | Lives in | Owns | May call |
 | :- | :- | :- | :- |
-| Screens and state holders | `lib/` | Layout, navigation, input, locale formatting, one write at a time | `bridge`, the platform channels |
+| Screens and view models | `lib/` | Layout, navigation, input, locale formatting, one write at a time | `bridge`, the platform channels |
 | Platform code | `android/`, `ios/` | Hardware-backed keys, the biometric prompt, file pickers, the share sheet | The operating system only |
 | `bridge` | `rust/crates/bridge` | The API Dart calls; turning errors into stable codes | `store`, `vault`, `backup`, `report`, `core` |
 | `store` | `rust/crates/store` | The SQLCipher database, schema and migrations, queries, and the transaction, category, account, and budget use cases | `core`, approved crates |
@@ -88,6 +88,24 @@ Dependency rules, each carried over from v1's `CLAUDE.md` in the new terms:
    the time, and the time zone's month boundaries, in each call that needs them (decided in M2.4).
 6. Text shown to users comes from the ARB files in `lib/l10n/`. Rust returns a `DomainError` code
    such as `BUDGET_EXCEEDED`, never a sentence for users.
+
+## Screens
+
+Each screen has a view model that extends `ChangeNotifier` (ADR-0010, `ChangeNotifier` view models
+with no package). A route widget creates the view model and disposes it, and a stateless screen
+shows its state and sends events back as callbacks. View models get their services through their
+constructors, from two scopes:
+
+| Scope | Created | Holds | Ends |
+| :- | :- | :- | :- |
+| App scope | At startup | The bridge's sign-in calls, the platform channels, settings | With the app |
+| Session scope | After sign-in | Everything that reads the database | When the vault locks |
+
+The root widget follows the vault's lock state and shows either the sign-in flow or the signed-in
+tree, which has its own `Navigator` inside the session scope (ADR-0011, Flutter's `Navigator` with no
+package). Locking replaces that tree, so no signed-in screen or view model outlives the session
+(CS-02). Screens are pushed as widget classes that take the IDs they need. Both scopes and the root
+switch land in M1.1 with placeholder screens; M3.5 connects them to the vault.
 
 ## Source layout
 
@@ -117,17 +135,19 @@ it with `git show 6d57526:<path>`. Where v1's code now goes:
 
 ## Main control flow
 
-1. **Start.** The app opens on the sign-in screen. Nothing reads the database yet.
+1. **Start.** The root widget shows the sign-in flow inside the app scope. Nothing reads the
+   database yet.
 2. **Sign in.** The screen sends the PIN to the vault. With ADR-0007's proposed split, Rust
    stretches the PIN with PBKDF2, the Kotlin code mixes the result with the Keystore device key,
    and Rust unwraps the database key. The biometric path unwraps it in Kotlin through a
    `CryptoObject` instead.
 3. **Open.** `store` opens the SQLCipher database with that key and checks its `user_version`,
-   migrating forward if needed. The session timer starts.
+   migrating forward if needed. The root widget creates the session scope and shows the
+   signed-in tree, and the session timer starts.
 4. **Use.** Each screen calls the bridge. A write runs validation, then one database transaction
    that writes the row and the balance changes together.
 5. **Lock.** Sign-out, the 5-minute timeout (CS-01), or wipe closes the database and wipes the
-   key from memory.
+   key from memory, and the root widget disposes the session scope and every signed-in screen.
 
 ## Threading
 

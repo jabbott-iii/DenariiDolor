@@ -14,7 +14,7 @@ The app is being rewritten as a Flutter app over a Rust core ([ADR-0001](docs/de
 
 - Git.
 - `rustup`. The Rust version is pinned in `rust/rust-toolchain.toml`, and `rustup toolchain install` in `rust/` installs it with Clippy and rustfmt.
-- From milestone M1.1: the Flutter SDK at the version pinned in `.fvmrc`, the Android SDK with platform 37, and an emulator or device running API 26 or newer. CI will run API 26 and 36, as it did for v1.
+- From milestone M1.1: Flutter 3.50.1, the exact version `pubspec.yaml` pins (`flutter pub get` fails on any other), the Android SDK with platform 37, and an emulator or device running API 26 or newer. CI will run API 26 and 36, as it did for v1.
 - For iOS work (milestone M7): a Mac with Xcode.
 
 ```bash
