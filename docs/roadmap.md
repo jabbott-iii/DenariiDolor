@@ -24,6 +24,10 @@ domain rules to Rust with their tests.
   - Note: 2026-11-23: copied from the Doctrina repository with their "Project details" filled in.
     `flutter.md` points to `kotlin.md`, `android.md`, and `swift.md`, which this repository
     doesn't have yet; M3.1 and M7.1 add them.
+  - Note: 2026-11-24: at the maintainer's request, `testing.md` is copied from Doctrina commit
+    `3afa240` with its "Project details" filled in. No coverage, mutation-testing, or fuzzing tool
+    exists here yet, so those values read "none yet"; choosing each tool is the maintainer's
+    decision.
   - Do:
     - Add `commits.md`, `flutter.md`, `roadmap-and-docs.md`, `rust.md`, and `writing.md` to
       `.claude/rules/`, and point `security.md` and `legal-docs.md` at the new layout.
@@ -96,6 +100,12 @@ domain rules to Rust with their tests.
     crates, Dart packages, the Rust and Flutter pins, the Android build tools and SDK levels, and
     GitHub Actions. Every command in both skills ran once, including `flutter run --no-resident`
     on `Denarii_API_26` and the pin check, which ran in a scratch copy of `pubspec.yaml`.
+  - Note: 2026-11-24: at the maintainer's request, the other eight Doctrina skills are copied
+    unchanged from Doctrina commit `3afa240`: `sweep-code`, `security-sweep`, `simplify-code`,
+    `draw-diagrams`, `phase-gates`, `build-language-packs`, `set-up-github`, and `build-course`.
+    `next-task` and `fix-doc-drift` are the same there as at `96b996b`. `build-course` needs
+    `teaching-materials.md`, which this repository doesn't have, so it stops without doing
+    anything.
   - Depends: M1.1
   - Do:
     - Extend `ci-gates` with the Flutter checks; write `new-feature`, `schema-migration`, and

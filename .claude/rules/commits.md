@@ -14,8 +14,9 @@ so they can fill them in. Until **Git access** is filled in, treat it as "read-o
 - **Git access:** "commit on request". The default is still a drafted message: stage or commit
   only when the maintainer asks in the current conversation (`CLAUDE.md`, "Working agreement").
 - **Done checks:** the "Definition of done" in `CLAUDE.md`, which runs the "Before finishing"
-  steps of `rust.md`, `flutter.md` (once M1.1 creates the Flutter app), `roadmap-and-docs.md` and
-  `writing.md`. Today that means the Rust **Check commands** in `rust.md`, run from `rust/`.
+  steps of `rust.md`, `flutter.md`, `testing.md`, `roadmap-and-docs.md` and `writing.md`. Today
+  that means the **Check commands** in `rust.md`, run from `rust/`, and in `flutter.md`, run from
+  the repository root.
 - **Never commit:** `build/` (it holds drafted commit messages), `rust/target/`, `.dart_tool/`,
   `.idea/`, `.gradle/`, `.kotlin/`, `local.properties`, `key.properties`, signing material
   (`*.jks`, `*.keystore`), store credentials (`service-account*.json`), and release outputs

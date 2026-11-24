@@ -54,6 +54,7 @@ details.
 | Anything | `docs/00-overview.md`, `docs/01-architecture.md`, and the task in `docs/roadmap.md` |
 | `rust/` | `.claude/rules/rust.md`, and the crate's spec in `docs/specs/` (`core.md`, `bridge.md` and `store.md` today) |
 | `lib/`, `test/`, `pubspec.yaml`, ARB files (from M1.1) | `.claude/rules/flutter.md` |
+| A test, a test fixture or a CI check | `.claude/rules/testing.md` |
 | Stored data, keys, sign-in, the session, backups, exports, `android/`, `ios/`, `.github/` | `.claude/rules/security.md` and `docs/specs/android-v1-formats.md` |
 | `docs/`, `README.md`, `CONTRIBUTING.md` | `.claude/rules/roadmap-and-docs.md` and `.claude/rules/writing.md` |
 | A dependency, a plugin or a GitHub Action | `docs/02-dependency-policy.md`, and the `dependency-upgrade` skill |
@@ -212,6 +213,7 @@ Rules in `.claude/rules/` load automatically when you work on matching files:
 |---|---|
 | `rust.md` | The Rust workspace: types, errors, untrusted input, `unsafe`, docs, tests, lints |
 | `flutter.md` | Dart and Flutter: widgets, state, navigation, localization, platform code, tests, release |
+| `testing.md` | All tests: never weakening one to make it pass, coverage, strict tests, performance, hostile input, CI |
 | `security.md` | Keys, sign-in, the session, exports, backups, manifests, workflows: controls that must stay |
 | `legal-docs.md` | `PRIVACY.md`, `THIRD_PARTY_NOTICES.md`, `licenses/`, `LICENSE` |
 | `roadmap-and-docs.md` | The overview, architecture, roadmap, decision records and specs in `docs/` |
@@ -229,9 +231,17 @@ Skills in `.claude/skills/`:
 | `dependency-upgrade` | Add, upgrade or remove a crate, package or plugin, or change a pinned version or action |
 | `next-task` | Carry the next unblocked roadmap task, or the one named, through the definition of done (`/next-task M1.1`) |
 | `fix-doc-drift` | Find and correct statements in the docs that no longer match the code or the records (`/fix-doc-drift docs/`) |
+| `sweep-code` | Find bugs and dead code, prove each finding, and fix the ones the maintainer approves (`/sweep-code rust/crates/store`) |
+| `security-sweep` | Find security vulnerabilities, prove each one locally, and patch the ones the maintainer approves (`/security-sweep`) |
+| `simplify-code` | Simplify the approved long or convoluted code without changing what it does (`/simplify-code lib/`) |
+| `draw-diagrams` | Draw or rebuild the architecture diagrams as Mermaid (`/draw-diagrams`) |
+| `phase-gates` | Group the roadmap's tasks into phases with checkable gates, or check a phase's gate (`/phase-gates M2`) |
+| `build-language-packs` | Draft language packs of the app's text. Name the six the app ships, because with no languages it writes nine |
+| `set-up-github` | Write or update the files GitHub reads, such as CodeQL, Dependabot and `CODEOWNERS` (`/set-up-github dependabot`) |
+| `build-course` | Build a course. It stops in this repository, which hasn't adopted `teaching-materials.md` |
 
-`next-task` and `fix-doc-drift` come from Doctrina unchanged and read their values from the rules' "Project details". Only
-the maintainer can start them, but you can read and follow them.
+`next-task`, `fix-doc-drift` and the eight skills after them come from Doctrina unchanged and read their values from the
+rules' "Project details". Only the maintainer can start them, but you can read and follow them.
 
 v1's `new-feature` and `room-migration` skills were Kotlin-only and left with ADR-0003. Their replacements need layers
 that don't exist yet: M4.9 writes `new-feature` after the transaction form (M4.2), and M5.3 writes `schema-migration`
@@ -272,8 +282,8 @@ Don't "fix" these unless you're asked:
 ## Definition of done
 
 1. The change follows these rules and matches the code and the design around it.
-2. Tests cover it: new logic has unit tests, a bug fix has a test that fails without the fix, and code that reads v1's data
-   has a test against a fixture v1 wrote.
+2. Tests cover it, as `.claude/rules/testing.md` says: new logic has unit tests, a bug fix has a test that fails without
+   the fix, and code that reads v1's data has a test against a fixture v1 wrote.
 3. The Rust check commands pass, and from M1.1 the Flutter check commands too.
 4. The documents the change affects are updated: the roadmap's ticks and notes, the "Status" section above, the crate's
    spec, and a decision record for any significant choice.
