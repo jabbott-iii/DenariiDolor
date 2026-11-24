@@ -155,7 +155,7 @@ the list is updated. The hand-written modules keep every lint.
 | :- | :- |
 | 2, 3, 4 | `tests/money.rs`, which covers each error variant, the locale symbols, separators of zero, two, and supplementary-plane characters, and 100,000-character text; the doc tests in `src/lib.rs` and `src/api/money.rs` |
 | 1, 5 | Review of `rust/Cargo.toml` and `cargo tree`; no automated check yet |
-| 6 | Running the codegen again and comparing; CI does this from M1.3 (ADR-0012) |
+| 6 | The `generated` job in `.github/workflows/ci.yml`, which installs codegen 2.13.0, runs it again, and fails if any file differs from the committed one (ADR-0012). The same job fails when the crate's version in `rust/Cargo.lock`, the two Dart packages' versions in `pubspec.lock`, and the codegen's version differ |
 | Dart reaches the packaged library on a device | `integration_test/bridge_test.dart`: `flutter test integration_test` on an emulator, which calls the real library and checks the placeholder screen |
 | The view model and screen | `test/features/auth/state/sign_in_placeholder_view_model_test.dart` and `test/features/auth/ui/sign_in_placeholder_route_test.dart`, with a fake `MoneyParser` |
 

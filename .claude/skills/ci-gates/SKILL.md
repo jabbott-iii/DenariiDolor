@@ -5,9 +5,9 @@ description: Run Denarii Dolor's blocking checks locally (Rust formatting, Clipp
 
 # Run the CI gates
 
-Run every check below, in this order, and report each result. CI (`.github/workflows/ci.yml`) runs the Rust checks
-today, and each one blocks a merge. The Flutter checks join CI in M1.3, the task that adds Flutter jobs to `ci.yml`.
-Until then they run only here, and the "Definition of done" in `CLAUDE.md` still requires them.
+Run every check below, in this order, and report each result. CI (`.github/workflows/ci.yml`) runs the Rust checks and
+the Flutter checks, builds a debug app bundle, and reruns the bridge's codegen to check that the committed bindings are
+current. The release build, its permissions and the integration tests run only here.
 
 ## 1. Look at what changed
 

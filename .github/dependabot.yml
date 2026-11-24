@@ -1,5 +1,5 @@
-# Keeps GitHub Actions and Rust crates patched; each update runs through ci.yml and security.yml.
-# The pub ecosystem (Dart packages) joins in M1.3, and Gradle for android/ when it has dependencies of its own.
+# Keeps GitHub Actions, Rust crates and Dart packages patched; each update runs through ci.yml and security.yml.
+# Gradle joins for android/ when it has dependencies of its own.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -14,3 +14,13 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+  # flutter_rust_bridge's two Dart packages come in one pull request and its crate in a Cargo one. Both stay red in CI
+  # until the crate, the packages, the codegen in ci.yml and the bindings move together (ADR-0014).
+  - package-ecosystem: pub
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      flutter-rust-bridge:
+        patterns: ["flutter_rust_bridge*"]

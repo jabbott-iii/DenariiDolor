@@ -174,7 +174,7 @@ The same report exported as **PDF** has the title, period, timestamp, totals and
 
 ## For developers
 
-**Status:** the app is being rewritten as a Flutter app over a Rust core, for Android and then iOS. As of 2026-11-23 the plan, the decision records, the Rust domain core (`rust/crates/core`), the Flutter project with placeholder screens, and the bridge through which Dart calls Rust (`rust/crates/bridge`) are done; storage, sign-in, the real screens and backups are planned. Google Play still serves v1, the Kotlin app, whose source is at commit `6d57526` (`git show 6d57526:<path>`). New builds keep the application ID `com.denariidolor` and open the data v1 left on each phone.
+**Status:** the app is being rewritten as a Flutter app over a Rust core, for Android and then iOS. As of 2026-11-23 the plan, the decision records, the Rust domain core (`rust/crates/core`), the Flutter project with placeholder screens, and the bridge through which Dart calls Rust (`rust/crates/bridge`) are done; CI jobs for the Flutter app are written but haven't run on GitHub yet; storage, sign-in, the real screens and backups are planned. Google Play still serves v1, the Kotlin app, whose source is at commit `6d57526` (`git show 6d57526:<path>`). New builds keep the application ID `com.denariidolor` and open the data v1 left on each phone.
 
 ```mermaid
 flowchart LR

@@ -196,6 +196,42 @@ and displays an amount that Rust parsed and Dart formatted.
     `cargo install --locked`. Keep `flutter_rust_bridge`'s crate and its two Dart packages in one
     Dependabot group, because they must move together (ADR-0014). The integration tests need an
     emulator: `flutter test integration_test -d <device>`.
+  - Note: 2026-11-23: the maintainer chose the recommended answer to three questions, which change
+    the M1.2 note above where they differ:
+    - CI installs Flutter with a shallow clone of `github.com/flutter/flutter` at the `3.50.1` tag,
+      and fails unless the tag points to commit `ae9b586f34a8443573f82ef57c3bf914a908cbf7`, the
+      commit it pointed to that day. No third-party action installs it; the alternatives were
+      Google's release archive checked against a SHA-256, and `subosito/flutter-action`.
+    - CI caches nothing between runs for now; the backlog has the trigger. The alternative was
+      `actions/cache`.
+    - Dependabot groups `flutter_rust_bridge`'s two Dart packages in one `pub` pull request and
+      sends the crate in a Cargo pull request of its own. A CI step fails while the crate, the two
+      packages, and the codegen version in `ci.yml` differ, so either pull request stays red until
+      someone finishes the upgrade with the `dependency-upgrade` skill. The alternatives were one
+      multi-ecosystem group, whose effect on the other crates and packages GitHub's documentation
+      doesn't state, and ignoring `flutter_rust_bridge` in Dependabot.
+  - Note: 2026-11-23: `ci.yml` keeps "Rust checks" and adds two jobs, whose versions are pinned in
+    the workflow's `env` block. "Flutter checks" installs the Rust toolchain and Flutter, then runs
+    `flutter pub get --enforce-lockfile`, the three Flutter check commands, and
+    `flutter build appbundle --debug`. Before the build, it points `ANDROID_NDK_HOME` at NDK
+    28.2.13676358: the runner image points that variable at NDK 27.3, and Flutter hands the NDK it
+    names to the bridge's build hook. "Generated code is current" checks that the crate, the two
+    Dart packages, and `FRB_VERSION` agree, installs `cargo-expand` 1.0.127 and the codegen 2.13.0,
+    reruns the codegen, and fails on any changed or new file. The localizations have no source
+    until M1.4, which adds them to that job. `dependabot.yml` adds the `pub` ecosystem.
+  - Note: 2026-11-23: a local script ran each new job's `run` steps in order on a fresh clone of
+    this change, on the maintainer's Linux machine, and both jobs passed. It ran 23 Flutter tests,
+    built a 77 MB debug app bundle with `libdenarii_bridge.so` for the three ABIs, each built with
+    NDK 28.2.13676358, and regenerated bindings identical to the committed ones. The shallow clone
+    reports `Flutter 3.50.1` on the channel `[user-branch]`, and `pub get` accepts it. Each check
+    also failed when it should: on a wrong `FLUTTER_COMMIT`, a hand-edited binding, a
+    `flutter_rust_bridge_hooks` 2.14.0 in `pubspec.lock`, and an `FRB_VERSION` of 2.14.0. The
+    slowest local steps were the debug app bundle (239 s), compiling the codegen tools (103 s),
+    and Flutter's first-run download (about 90 s). Times on GitHub's runners aren't measured yet.
+  - ⏳ needs GitHub: open a pull request with this change, and expect "Rust checks", "Flutter
+    checks", and "Generated code is current" to pass. Then make the three jobs required status
+    checks for `main`: on 2026-11-23 the repository's branch ruleset requires none, so a failing
+    job doesn't block a merge.
   - Depends: M1.2
   - Do:
     - Add jobs to `ci.yml` for the Flutter check commands and a debug app bundle, with actions
@@ -213,6 +249,9 @@ and displays an amount that Rust parsed and Dart formatted.
     (`<cents> cents` and `Rejected: <error>`) are hard-coded English in
     `lib/features/auth/ui/sign_in_placeholder_screen.dart`; move them to the ARB files, or drop
     them if M3.5 has removed the amount field by then.
+  - Note (from M1.3): add `flutter gen-l10n` to the `generated` job in `.github/workflows/ci.yml`,
+    before its "Compare with the committed files" step, so CI fails when the committed
+    localizations differ from the ARB files (ADR-0012).
   - Depends: M1.1
   - Do:
     - Convert `app/src/main/res/values*/strings.xml` at `6d57526` into `lib/l10n/app_*.arb` for
@@ -571,3 +610,4 @@ maintainer approves a staged rollout to production.
 | Moving a backup between Android and iOS | M7 ships and a user asks to move their records between platforms |
 | A feature list file tied to roadmap tasks | Parity tracking in M4 outgrows the roadmap's task list |
 | Desktop or web builds | The maintainer decides to sell beyond phones, in a new decision record |
+| Caching Flutter, packages, Gradle, and the codegen between CI runs with `actions/cache`, which M1.3 left out by the maintainer's choice | A `ci.yml` run on a pull request takes longer than 30 minutes |

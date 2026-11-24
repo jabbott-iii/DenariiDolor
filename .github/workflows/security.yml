@@ -17,9 +17,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Static analysis of the Rust source. CodeQL reads Rust without a build. Dart and the Kotlin in android/ join
-  # when M1.3 and M3.2 add them (docs/roadmap.md). GitHub reads rust/Cargo.lock for the dependency graph itself,
-  # so the Gradle dependency-submission job left with the Kotlin app.
+  # Static analysis of the Rust source. CodeQL reads Rust without a build. CodeQL has no Dart extractor, so the Dart
+  # code isn't scanned here; the Kotlin in android/ joins when M3.2 adds it (docs/roadmap.md). GitHub reads
+  # rust/Cargo.lock for the dependency graph itself, so the Gradle dependency-submission job left with the Kotlin app.
   codeql:
     name: CodeQL (rust)
     runs-on: ubuntu-24.04

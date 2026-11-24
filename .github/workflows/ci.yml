@@ -14,8 +14,21 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# The versions the Flutter jobs install. Change each one together with the file its comment names, through the
+# dependency-upgrade skill.
+env:
+  # Flutter 3.50.1, pinned in pubspec.yaml (ADR-0009), and the commit that tag points to in github.com/flutter/flutter.
+  FLUTTER_VERSION: 3.50.1
+  FLUTTER_COMMIT: ae9b586f34a8443573f82ef57c3bf914a908cbf7
+  # flutter.ndkVersion in Flutter 3.50.1: the NDK that Gradle builds the app with, and so the bridge too (ADR-0014).
+  ANDROID_NDK_VERSION: 28.2.13676358
+  # flutter_rust_bridge, pinned exactly in rust/Cargo.toml and pubspec.yaml, and the cargo-expand its codegen runs
+  # (ADR-0014).
+  FRB_VERSION: 2.13.0
+  CARGO_EXPAND_VERSION: 1.0.127
+
 jobs:
-  # Formatting, Clippy, tests and docs for the Rust workspace. The Flutter jobs join in M1.3 (docs/roadmap.md).
+  # Formatting, Clippy, tests and docs for the Rust workspace.
   rust:
     name: Rust checks
     runs-on: ubuntu-24.04
@@ -46,3 +59,141 @@ jobs:
         env:
           RUSTDOCFLAGS: -D warnings
         run: cargo doc --workspace --no-deps --locked
+
+  # The Flutter checks in CLAUDE.md, then a debug app bundle. Every Flutter build and `flutter test` run compiles the
+  # bridge through hook/build.dart, so this job needs the Rust toolchain too (ADR-0014). The integration tests need
+  # an emulator and run only on a contributor's machine.
+  flutter:
+    name: Flutter checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false # no later step pushes with git; keeps GITHUB_TOKEN out of .git/config
+
+      # The version and the targets in rust/rust-toolchain.toml.
+      - name: Install the pinned Rust toolchain
+        working-directory: rust
+        run: rustup toolchain install
+
+      # A shallow clone of the official repository at the pinned tag, refused unless the tag points to the pinned
+      # commit, so no third-party action installs Flutter. The generated job has the same step.
+      - name: Install Flutter
+        run: |
+          git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$FLUTTER_VERSION" \
+            https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          commit="$(git -C "$RUNNER_TEMP/flutter" rev-parse HEAD)"
+          if [ "$commit" != "$FLUTTER_COMMIT" ]; then
+            echo "::error::Flutter's $FLUTTER_VERSION tag points to $commit, not the pinned $FLUTTER_COMMIT."
+            exit 1
+          fi
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+
+      # The tools already skip analytics when they detect CI; this states it.
+      - name: Turn off the tools' analytics
+        run: |
+          flutter --disable-analytics
+          dart --disable-analytics
+          flutter --version
+
+      # Fails if pubspec.lock is stale or a package's hash differs from it, as --locked does for Cargo.
+      - name: Get packages
+        run: flutter pub get --enforce-lockfile
+
+      - name: Format
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Tests
+        run: flutter test
+
+      # Flutter gives the build hook the NDK that ANDROID_NDK_HOME names, and the runner image points that variable at
+      # another version, so point it at the one Gradle uses.
+      - name: Select the NDK
+        run: |
+          ndk="$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
+          if [ ! -d "$ndk" ]; then
+            "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$ANDROID_NDK_VERSION"
+          fi
+          echo "ANDROID_NDK_HOME=$ndk" >> "$GITHUB_ENV"
+
+      - name: Debug app bundle
+        run: flutter build appbundle --debug
+
+  # Generated files are committed and never edited by hand, so regenerate them and fail on any difference
+  # (ADR-0012). M1.4 adds the localizations.
+  generated:
+    name: Generated code is current
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false # no later step pushes with git; keeps GITHUB_TOKEN out of .git/config
+
+      - name: Install the pinned Rust toolchain
+        working-directory: rust
+        run: rustup toolchain install
+
+      # The crate, its two Dart packages and the codegen move only together (ADR-0014). A Dependabot pull request
+      # that moves some of them fails here until the rest move with it.
+      - name: Check that flutter_rust_bridge's versions agree
+        run: |
+          locked() {
+            awk -v pkg="  $1:" '$0 == pkg { found = 1; next } found && /^    version:/ { gsub(/"/, "", $2); print $2; exit }' pubspec.lock
+          }
+          expect() {
+            if [ "$2" != "$FRB_VERSION" ]; then
+              echo "::error::$1 is ${2:-missing}, but ci.yml installs the codegen at $FRB_VERSION. Upgrade them together (ADR-0014)."
+              failed=1
+            fi
+          }
+          failed=0
+          crate="$(cd rust && cargo pkgid --locked flutter_rust_bridge)"
+          expect "The flutter_rust_bridge crate in rust/Cargo.lock" "${crate##*@}"
+          expect "flutter_rust_bridge in pubspec.lock" "$(locked flutter_rust_bridge)"
+          expect "flutter_rust_bridge_hooks in pubspec.lock" "$(locked flutter_rust_bridge_hooks)"
+          exit "$failed"
+
+      # cargo-expand goes first, because the codegen installs an unpinned one by itself when it finds none
+      # (ADR-0014). Running from rust/ builds both with the pinned toolchain.
+      - name: Install the codegen
+        working-directory: rust
+        run: |
+          cargo install --locked cargo-expand --version "$CARGO_EXPAND_VERSION"
+          cargo install --locked flutter_rust_bridge_codegen --version "$FRB_VERSION"
+
+      # The same step as in the flutter job.
+      - name: Install Flutter
+        run: |
+          git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$FLUTTER_VERSION" \
+            https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          commit="$(git -C "$RUNNER_TEMP/flutter" rev-parse HEAD)"
+          if [ "$commit" != "$FLUTTER_COMMIT" ]; then
+            echo "::error::Flutter's $FLUTTER_VERSION tag points to $commit, not the pinned $FLUTTER_COMMIT."
+            exit 1
+          fi
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Turn off the tools' analytics
+        run: |
+          flutter --disable-analytics
+          dart --disable-analytics
+
+      - name: Get packages
+        run: flutter pub get --enforce-lockfile
+
+      - name: Regenerate the bridge bindings
+        run: flutter_rust_bridge_codegen generate
+
+      - name: Compare with the committed files
+        run: |
+          if [ -n "$(git status --porcelain --untracked-files=all)" ]; then
+            git status --short --untracked-files=all
+            git diff
+            echo "::error::The generated files differ from the committed ones. Run the generator and commit its output (ADR-0012)."
+            exit 1
+          fi

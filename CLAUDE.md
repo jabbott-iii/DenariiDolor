@@ -11,14 +11,15 @@ files with `git show 6d57526:<path>`. The new app must open what v1 left on user
 
 ## Status
 
-As of 2026-11-23, all of M0's tasks, M1.1 and M1.2 are done. M0's exit criteria are the maintainer's to check, and they
+As of 2026-11-23, all of M0's tasks, M1.1 and M1.2 are done, and M1.3's Flutter jobs are in `ci.yml` but haven't run
+on a pull request yet. M0's exit criteria are the maintainer's to check, and they
 include deciding ADR-0004, ADR-0006 and ADR-0007, which are still Proposed; the maintainer accepted ADR-0005 in M1.2.
 Built: the Doctrina rules, the `ci-gates` and `dependency-upgrade` skills, the planning documents in `docs/`, the spec of
 v1's stored formats, the `denarii-core` crate (money, transactions, balance changes and validation) with its tests, the
 Flutter project (M1.1): the Android and iOS host apps, the app scope, and a root switch between placeholder sign-in and
 signed-in screens, with its tests, and the `denarii-bridge` crate (M1.2), which Dart calls through `flutter_rust_bridge`,
 built by a native-assets hook, with an integration test that the sign-in placeholder shows the cents Rust parsed.
-Planned: the rest of M1 (CI for Flutter, strings, theme and formatting), storage (M2), sign-in (M3), the screens (M4),
+Planned: the rest of M1 (strings, theme and formatting), storage (M2), sign-in (M3), the screens (M4),
 backups (M5), the Android release (M6) and iOS (M7). Nothing from the rewrite has shipped. `docs/roadmap.md` has the
 details.
 
@@ -78,7 +79,8 @@ RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
 ```
 
 - One test file: `cargo test --locked -p denarii-core --test money`.
-- Run the Flutter checks from the repository root. CI runs them from M1.3:
+- Run the Flutter checks from the repository root. CI runs them too, then builds a debug app bundle, and a separate job
+  reruns the bridge's codegen and fails if the committed bindings differ (ADR-0012):
 
   ```bash
   dart format --output=none --set-exit-if-changed .

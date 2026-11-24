@@ -52,7 +52,7 @@ cargo test --workspace --locked                                 # unit, integrat
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
 ```
 
-Also run these from the repository root, with Flutter 3.50.1. CI runs them from milestone M1.3.
+Also run these from the repository root, with Flutter 3.50.1. CI runs the first three, then builds a debug app bundle. A separate CI job reruns the bridge's codegen and fails if the committed bindings differ from its output (ADR-0012: generated code is committed, and CI checks that it is current). The integration tests need an emulator, so CI doesn't run them.
 
 ```bash
 dart format --output=none --set-exit-if-changed .
