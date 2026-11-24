@@ -199,7 +199,9 @@ Room did after a migration.
   | `-12.345` | `-1234.5` | `-1235` |
 
   These come from SQLite 3.54.1, the version this build compiles. v1 ran the same statements on
-  SQLCipher 4.19.0's SQLite; fixture F4 (M2.3), which v1 writes, checks that the two agree.
+  SQLCipher 4.19.0's SQLite, and the two agree: fixture F4, a version 1 file that v1 migrated on
+  an emulator, came out with the same cents as the store's migration gives it, for all 12 of its
+  money values, these four among them (`tests/fixtures/README.md`).
 - **`AUTOINCREMENT` counters.** Dropping a table deletes its row in `sqlite_sequence`, and copying
   rows into the new table records only the highest ID copied, or 0 when there is none. So after
   the migration, an ID deleted before it can be handed out again. v1's migration did the same.
@@ -280,22 +282,28 @@ environment that Flutter's build hook or a contributor sets up. The register in
    file v1 wrote.
 10. A file at a schema version above 2, below 0, at version 2 without version 2's identity hash,
     or at version 0 after holding a byte, is refused, and no byte of it changes.
+11. In a file that v1's use cases wrote, each account's stored balance is its opening balance plus
+    the account impacts that `core` computes for every transaction still stored. A transfer with
+    no destination has no impact (BUG-06).
 
 ## Tests
 
 | Invariant | Checked by |
 | :- | :- |
 | 1, 2 | `tests/open.rs`: another key, noise, the fixture cut off at six lengths from 15 bytes to two pages, a changed byte, and an unchanged file after each; `src/store.rs`: a plaintext file; `src/migration.rs`: a failed migration |
-| 3 | `tests/open.rs` (`user_version`, and every byte unchanged after closing) and `src/store.rs` (the two accounts, the table names, and the cipher settings), against `tests/fixtures/v1-sqlcipher-android-4.19.1.db`, which `tests/fixtures/README.md` describes |
+| 3 | `tests/open.rs` (`user_version`, and every byte unchanged after closing) and `src/store.rs` (the two accounts, the table names, and the cipher settings), against `tests/fixtures/v1-sqlcipher-android-4.19.1.db`, which `tests/fixtures/README.md` describes; the same checks, with every name, budget, and ID counter, against fixture F3, `tests/fixtures/v1-f3-ledger.db` |
 | 4 | `src/store.rs`: a new database, reopened with its key and refused with another |
 | 5 | `src/store.rs`: `foreign_keys` is 1 and `cipher_log_level` is `NONE` after opening the fixture; `tests/concurrent_open.rs` for the setup |
 | 6 | `src/key.rs`: the `Debug` output |
 | 7 | `tests/open.rs`: a compile-time check, and eight threads sharing one `Store`; `tests/concurrent_open.rs`: 64 stores opened at the same moment, the first opens of a process of their own. The races it guards against are rare, so one passing run proves little; the evidence is the loop counts in the roadmap's note on M2.1 |
 | 8 | `src/migration.rs`: an absent and an empty file, compared with the fixture's `sqlite_master`, `room_master_table`, and journal mode; `tests/open.rs`: the same two files through the public API |
-| 9 | `src/migration.rs`: a version 1 file written with Room's version 1 statements and the rows of v1's `MigrationTest`, then its cents, its table shapes against the fixture's, its foreign key check, its rounding, and its `sqlite_sequence` |
+| 9 | `src/migration.rs`: a version 1 file written with Room's version 1 statements and the rows of v1's `MigrationTest`, then its cents, its table shapes against the fixture's, its foreign key check, its rounding, and its `sqlite_sequence`; and fixture F4, whose version 1 file the store migrates to the same rows, counters, schema text, and table shapes as v1's own migration of it, and whose cents from v1 are checked one by one |
 | 10 | `src/migration.rs`: each refused case, with the file's bytes compared before and after; `tests/open.rs`: the 1-byte file |
+| 11 | `src/store.rs`: fixture F3, whose rows are mapped with `TransactionKind::from_stored` and added up with `Transaction::account_impacts` from each account's opening balance in `tests/fixtures/README.md` |
 | The key pragma's text | `src/key.rs`: v1's raw-key syntax for a known key, and a length equal to the capacity |
 
-Run them with `cargo test --locked -p denarii-store` from `rust/`, or only the schema's with
-`cargo test --locked -p denarii-store migration`. Fixtures F3, with every transaction type, and
-F4, a version 1 file written by v1 itself, come in M2.3.
+Run them with `cargo test --locked -p denarii-store` from `rust/`, only the schema's with
+`cargo test --locked -p denarii-store migration`, or those whose names mention a fixture, every
+test of F3 and F4 among them, with `cargo test --locked -p denarii-store fixture`. The F3 tests
+use `denarii-core`, a
+dev-dependency of the store until its use cases need it (M2.4).

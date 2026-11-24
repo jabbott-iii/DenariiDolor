@@ -11,7 +11,7 @@ files with `git show 6d57526:<path>`. The new app must open what v1 left on user
 
 ## Status
 
-As of 2026-11-23, all of M0's tasks, M1.1, M1.2, M1.4, M1.5, M1.6, M2.1 and M2.2 are done, and M1.3's Flutter jobs are in `ci.yml`
+As of 2026-11-23, all of M0's tasks, M1.1, M1.2, M1.4, M1.5, M1.6, M2.1, M2.2 and M2.3 are done, and M1.3's Flutter jobs are in `ci.yml`
 but haven't run on a pull request yet. M0's exit criteria are the maintainer's to check, and they
 include deciding ADR-0004 and ADR-0007, which are still Proposed; the maintainer accepted ADR-0005 in M1.2 and ADR-0006
 in M2.1, and decided ADR-0018 in M2.2.
@@ -24,8 +24,10 @@ v1's strings in seven ARB files (M1.4), with a locale resolver that walks the ph
 v1's colors as Material 3 light and dark themes (M1.5), with its chart colors and system bars, and money and month
 text in Dart (M1.6), with currency symbols generated from Java 25's CLDR data (ADR-0016), and the `denarii-store` crate
 (M2.1), which opens v1's SQLCipher database with SQLCipher and OpenSSL compiled from source (ADR-0017), with tests
-against a database that v1's own code wrote, and brings its schema to version 2 as v1 did (M2.2, ADR-0018).
-Planned: the rest of storage (M2.3–M2.7), sign-in (M3), the screens (M4), backups (M5), the Android release (M6) and iOS (M7). Nothing from the rewrite has shipped. `docs/roadmap.md` has the
+against a database that v1's own code wrote, and brings its schema to version 2 as v1 did (M2.2, ADR-0018), with
+fixtures that v1's use cases and migration wrote, from which Rust reproduces every stored balance and v1's migrated cents
+(M2.3).
+Planned: the rest of storage (M2.4–M2.7), sign-in (M3), the screens (M4), backups (M5), the Android release (M6) and iOS (M7). Nothing from the rewrite has shipped. `docs/roadmap.md` has the
 details.
 
 ## Working agreement

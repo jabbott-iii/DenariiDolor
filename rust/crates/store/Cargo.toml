@@ -9,5 +9,9 @@ publish.workspace = true
 [dependencies]
 rusqlite.workspace = true
 
+[dev-dependencies]
+# The fixture tests check stored balances against `core`'s rules for each transaction.
+denarii-core.workspace = true
+
 [lints]
 workspace = true

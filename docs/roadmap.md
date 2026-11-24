@@ -484,7 +484,7 @@ rules.
   - Accept:
     - A version 2 database opens with no row changed; a version 1 database migrates as v1 did.
   - Verify: `cd rust && cargo test --locked -p denarii-store migration` (expect pass)
-- [ ] **M2.3 — store: a database fixture written by v1**
+- [x] **M2.3 — store: a database fixture written by v1**
   - Note (from M2.1): `rust/crates/store/tests/fixtures/README.md` has the steps that wrote M2.1's
     fixture: a throwaway instrumented test in a scratch copy of v1 at `6d57526`, which builds
     offline with the maintainer's Gradle cache, run on `Denarii_API_36` and copied out with
@@ -496,7 +496,30 @@ rules.
     the first to the same rows as the second, which shows whether v1's SQLite rounded the same
     way. The tests in `src/migration.rs` write a version 1 file from Room's statements, and show
     how.
-  - ⏳ needs an Android emulator to run the v1 app at `6d57526`
+  - Note: 2026-11-23: the fixtures are `v1-f3-ledger.db`, `v1-f4-version-1.db`, and
+    `v1-f4-migrated-by-v1.db` in `rust/crates/store/tests/fixtures/`, written on
+    `Denarii_API_36` by a throwaway instrumented test in a scratch copy of v1. The folder's
+    `README.md` has every row, the writer's source, and the steps. F3 went through v1's own
+    `DatabaseHolder.open`, `DefaultDataInitializer`, use cases, and repositories, with the budget
+    check's clock fixed at 2026-11-23T12:00:00Z in UTC. It holds 10 transactions of every type,
+    two of them edited and one an over-budget expense saved with `allowOverBudget`, the gap of an
+    eleventh that was deleted, two budgets, non-ASCII names, emoji, and Arabic text, and a
+    malformed transfer as row 12. The malformed transfer went through
+    `TransactionDao.insert`, as v1's `TransactionRepositoryImplTest` writes one, because no use
+    case writes one. F4's version 1 file came from Room's `MigrationTestHelper` with write-ahead
+    logging on, and its migrated copy from `DatabaseHolder.open`. The emulator ran with
+    `-read-only`, so it kept nothing, and both apps were uninstalled afterward.
+  - Note: 2026-11-23: v1's own migration on the emulator gave the same cents as this build's
+    SQLite 3.54.1 for all 12 money values in F4, among them 1.005 dollars to 100 cents, 19.995 to
+    2,000, and 2.675 to 268. F4 is kept as two files, as the note from M2.2 asked, so the tests
+    compare the store's migration with v1's row for row. `denarii-store` gains `denarii-core` as a
+    dev-dependency for `Transaction::account_impacts`. The tests map rows to `core::Transaction`
+    themselves, because the store's row types come with the use cases (M2.4).
+  - Note: 2026-11-23: `cargo test --locked -p denarii-store fixture` passed: 5 unit tests and 2
+    integration tests (`src/store.rs`, `src/migration.rs`, `tests/open.rs`). Each of three
+    deliberate breakages failed a test: a transfer that doesn't debit its source account in
+    `core`, a malformed transfer read as a transfer to account 1, and a migration that truncates
+    amounts instead of rounding them.
   - Depends: M2.2
   - Do:
     - Build fixtures F3 and F4 of the format spec with the v1 app, including a malformed transfer
@@ -505,6 +528,12 @@ rules.
     - Rust reproduces every stored balance from the fixture's transactions.
   - Verify: `cd rust && cargo test --locked -p denarii-store fixture` (expect pass)
 - [ ] **M2.4 — store: transaction writes**
+  - Note (from M2.3): fixture F3 (`rust/crates/store/tests/fixtures/v1-f3-ledger.db`) is a ready
+    budget case. Category 4 has a 40,000-cent budget, and November 2026 already holds 42,345 cents
+    of its expenses in UTC, so any further expense there fails with `BUDGET_EXCEEDED` unless the
+    caller allows it. October's 35,000 cents fall outside that month. The F3 tests in
+    `src/store.rs` map rows to `core::Transaction` with `TransactionKind::from_stored`; the use
+    cases' row mapping can replace that helper.
   - Depends: M2.2
   - Decide first: whether Dart passes each month's start and end, or Rust gets a time-zone crate.
   - Do:
@@ -626,6 +655,11 @@ and fingerprint, and sees the same balances.
     - Biometric sign-in works, and stops working after a new enrollment.
   - Verify: a manual check on the phone
 - [ ] **M3.7 — session: timeout, lock, and wipe**
+  - Note (from M2.3): after Room migrated a database on an emulator, an empty `<name>.lck` file
+    was left beside it, and `Context.deleteDatabase` didn't remove it. A database Room only
+    created had none. A phone whose database v1 migrated may hold an empty
+    `databases/denarii_dolor.db.lck`, which holds no data; decide whether wipe deletes it
+    (`rust/crates/store/tests/fixtures/README.md`, fixture F4).
   - Depends: M3.5
   - Do:
     - Keep CS-01, CS-02, CS-04, CS-16, and CS-17.

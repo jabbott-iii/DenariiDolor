@@ -195,15 +195,32 @@ fn check_key(connection: &Connection) -> Result<(), StoreError> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
     use std::fs;
     use std::path::{Path, PathBuf};
 
+    use denarii_core::{
+        AccountId, CategoryId, Cents, EpochMillis, Transaction, TransactionId, TransactionKind,
+        TransactionType,
+    };
     use rusqlite::Connection;
+    use rusqlite::types::Value;
 
     use super::{Store, prepare_sqlcipher};
     use crate::{DatabaseKey, StoreError};
 
     const PLAINTEXT_HEADER: &[u8] = b"SQLite format 3\0";
+
+    /// Fixture F3, which v1's own seeding and use cases wrote: every transaction type, edits, a
+    /// delete, two budgets, and one malformed transfer (`tests/fixtures/README.md`).
+    const LEDGER_FIXTURE: &str = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/fixtures/v1-f3-ledger.db"
+    );
+
+    /// Each F3 account's opening balance in cents. v1 keeps it nowhere but in the stored balance,
+    /// so it comes from the code that wrote the fixture.
+    const LEDGER_OPENING_BALANCES: [(i64, i64); 4] = [(1, 0), (2, 0), (3, 125_000), (4, -30_000)];
 
     /// A fresh folder for one test, under the system's temporary folder.
     fn scratch_dir(test: &str) -> PathBuf {
@@ -229,6 +246,250 @@ mod tests {
         )
         .unwrap();
         path
+    }
+
+    fn copy_ledger_fixture(dir: &Path) -> PathBuf {
+        let path = dir.join("ledger.db");
+        fs::copy(LEDGER_FIXTURE, &path).unwrap();
+        path
+    }
+
+    /// A pragma's value, written as text.
+    fn pragma(connection: &Connection, name: &str) -> String {
+        connection
+            .query_row(&format!("PRAGMA {name}"), [], |row| row.get::<_, Value>(0))
+            .map(|value| match value {
+                Value::Integer(number) => number.to_string(),
+                Value::Text(text) => text,
+                other => format!("{other:?}"),
+            })
+            .unwrap()
+    }
+
+    /// Every row of `transactions` with its ID, mapped as v1's `toDomainTransactionOrNull` mapped
+    /// one: a transfer with no destination maps to `None` (BUG-06).
+    fn stored_transactions(connection: &Connection) -> Vec<(i64, Option<Transaction>)> {
+        let mut statement = connection
+            .prepare(
+                "SELECT id, type, description, amountCents, categoryId, accountId, \
+                 transferAccountId, dateEpochMillis FROM transactions ORDER BY id",
+            )
+            .unwrap();
+        statement
+            .query_map([], |row| {
+                let id: i64 = row.get(0)?;
+                let stored_type: String = row.get(1)?;
+                let transfer_account: Option<i64> = row.get(6)?;
+                let kind = TransactionKind::from_stored(
+                    TransactionType::parse(&stored_type).unwrap(),
+                    transfer_account.map(AccountId),
+                );
+                let transaction = match kind {
+                    None => None,
+                    Some(kind) => Some(Transaction {
+                        id: Some(TransactionId(id)),
+                        description: row.get(2)?,
+                        amount: Cents(row.get(3)?),
+                        category_id: CategoryId(row.get(4)?),
+                        account_id: AccountId(row.get(5)?),
+                        date: EpochMillis(row.get(7)?),
+                        kind,
+                    }),
+                };
+                Ok((id, transaction))
+            })
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap()
+    }
+
+    fn stored_balances(connection: &Connection) -> BTreeMap<AccountId, Cents> {
+        let mut statement = connection
+            .prepare("SELECT id, balanceCents FROM accounts ORDER BY id")
+            .unwrap();
+        statement
+            .query_map([], |row| Ok((AccountId(row.get(0)?), Cents(row.get(1)?))))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap()
+    }
+
+    /// Every row a query returns, each as a list of SQLite values.
+    fn rows(connection: &Connection, sql: &str) -> Vec<Vec<Value>> {
+        let mut statement = connection.prepare(sql).unwrap();
+        let columns = statement.column_count();
+        statement
+            .query_map([], |row| (0..columns).map(|i| row.get(i)).collect())
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap()
+    }
+
+    fn text(value: &str) -> Value {
+        Value::Text(value.to_owned())
+    }
+
+    /// Invariant 11 of `docs/specs/store.md`, on the balances v1's own writes left: each stored
+    /// balance is the opening balance plus the impact of every transaction still stored, as
+    /// `core` computes it. A malformed transfer has no impact (invariant 11 of
+    /// `docs/specs/android-v1-formats.md`).
+    #[test]
+    fn reproduces_every_stored_balance_of_the_f3_fixture_from_its_transactions() {
+        let dir =
+            scratch_dir("reproduces_every_stored_balance_of_the_f3_fixture_from_its_transactions");
+        let store = Store::open(copy_ledger_fixture(&dir), &fixture_key()).unwrap();
+        let connection = store.lock().unwrap();
+        let mut computed: BTreeMap<AccountId, Cents> = LEDGER_OPENING_BALANCES
+            .iter()
+            .map(|&(id, cents)| (AccountId(id), Cents(cents)))
+            .collect();
+        let mut malformed = Vec::new();
+        for (id, transaction) in stored_transactions(&connection) {
+            let Some(transaction) = transaction else {
+                malformed.push(id);
+                continue;
+            };
+            for (account, impact) in transaction.account_impacts().unwrap() {
+                let balance = computed.get_mut(&account).unwrap_or_else(|| {
+                    panic!("transaction {id} names {account:?}, which has no row")
+                });
+                *balance = balance.checked_add(impact).unwrap();
+            }
+        }
+        let stored = stored_balances(&connection);
+        assert_eq!(computed, stored);
+        assert_eq!(
+            stored,
+            BTreeMap::from([
+                (AccountId(1), Cents(-2_300)),
+                (AccountId(2), Cents(50_000)),
+                (AccountId(3), Cents(269_655)),
+                (AccountId(4), Cents(-44_000)),
+            ])
+        );
+        assert_eq!(malformed, [12]);
+    }
+
+    #[test]
+    fn reads_the_f3_fixtures_names_budgets_and_id_counters() {
+        let dir = scratch_dir("reads_the_f3_fixtures_names_budgets_and_id_counters");
+        let store = Store::open(copy_ledger_fixture(&dir), &fixture_key()).unwrap();
+        let connection = store.lock().unwrap();
+        assert_eq!(pragma(&connection, "integrity_check"), "ok");
+        let violations = rows(&connection, "PRAGMA foreign_key_check");
+        assert_eq!(violations, Vec::<Vec<Value>>::new());
+        // The defaults v1 seeds in English, then the accounts and categories its use cases added.
+        // Account 5 was added and deleted.
+        assert_eq!(
+            rows(&connection, "SELECT id, name FROM accounts ORDER BY id"),
+            [
+                [Value::Integer(1), text("Cash")],
+                [Value::Integer(2), text("Savings")],
+                [Value::Integer(3), text("Carte bancaire \u{1f4b3}")],
+                [Value::Integer(4), text("Carte de cr\u{e9}dit")],
+            ]
+        );
+        assert_eq!(
+            rows(
+                &connection,
+                "SELECT id, name, iconName FROM categories ORDER BY id"
+            ),
+            [
+                [
+                    Value::Integer(1),
+                    text("General Expense"),
+                    text("ic_category_default")
+                ],
+                [Value::Integer(2), text("General Income"), text("income")],
+                [Value::Integer(3), text("Transfer"), text("transfer")],
+                [
+                    Value::Integer(4),
+                    text("\u{c9}picerie \u{1f6d2}"),
+                    text("groceries")
+                ],
+                [Value::Integer(5), text("Restaurants"), text("dining")],
+                [Value::Integer(6), text("Salaire"), text("income")],
+            ]
+        );
+        assert_eq!(
+            rows(
+                &connection,
+                "SELECT id, categoryId, monthlyLimitCents, warningThresholdPercent \
+                 FROM budgets ORDER BY id"
+            ),
+            [[1, 4, 40_000, 75], [2, 5, 15_000, 80]].map(|row| row.map(Value::Integer))
+        );
+        assert_eq!(
+            rows(
+                &connection,
+                "SELECT name, seq FROM sqlite_sequence ORDER BY name"
+            ),
+            [
+                [text("accounts"), Value::Integer(5)],
+                [text("budgets"), Value::Integer(2)],
+                [text("categories"), Value::Integer(6)],
+                [text("transactions"), Value::Integer(12)],
+            ]
+        );
+        // Descriptions are stored trimmed (BUG-08), and the edits replaced rows 9 and 10.
+        assert_eq!(
+            rows(
+                &connection,
+                "SELECT id, type, description, amountCents, transferAccountId \
+                 FROM transactions WHERE id IN (3, 9, 10, 12) ORDER BY id"
+            ),
+            [
+                [
+                    Value::Integer(3),
+                    text("EXPENSE"),
+                    text("Caf\u{e9} \u{2615}"),
+                    Value::Integer(450),
+                    Value::Null
+                ],
+                [
+                    Value::Integer(9),
+                    text("INCOME"),
+                    text("\u{647}\u{62f}\u{64a}\u{629}"),
+                    Value::Integer(8_000),
+                    Value::Null
+                ],
+                [
+                    Value::Integer(10),
+                    text("TRANSFER"),
+                    text("Mouvement"),
+                    Value::Integer(12_000),
+                    Value::Integer(3)
+                ],
+                [
+                    Value::Integer(12),
+                    text("TRANSFER"),
+                    text("Virement sans destination"),
+                    Value::Integer(4_200),
+                    Value::Null
+                ],
+            ]
+        );
+    }
+
+    /// Invariant 8 of the format spec: the file v1's use cases wrote decrypts and authenticates
+    /// with SQLCipher 4's settings, which section 5 of the format spec says v1 relied on.
+    #[test]
+    fn opens_the_f3_fixture_with_sqlcipher_4_settings_and_foreign_keys_on() {
+        let dir = scratch_dir("opens_the_f3_fixture_with_sqlcipher_4_settings_and_foreign_keys_on");
+        let path = copy_ledger_fixture(&dir);
+        assert!(!fs::read(&path).unwrap().starts_with(PLAINTEXT_HEADER));
+        let store = Store::open(&path, &fixture_key()).unwrap();
+        assert_eq!(store.user_version().unwrap(), 2);
+        let connection = store.lock().unwrap();
+        assert_eq!(pragma(&connection, "cipher_page_size"), "4096");
+        assert_eq!(pragma(&connection, "cipher_hmac_algorithm"), "HMAC_SHA512");
+        assert_eq!(
+            pragma(&connection, "cipher_kdf_algorithm"),
+            "PBKDF2_HMAC_SHA512"
+        );
+        assert_eq!(pragma(&connection, "cipher_plaintext_header_size"), "0");
+        assert_eq!(pragma(&connection, "foreign_keys"), "1");
+        assert_eq!(pragma(&connection, "journal_mode"), "wal");
     }
 
     #[test]

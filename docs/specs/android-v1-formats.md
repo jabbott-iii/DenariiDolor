@@ -297,9 +297,9 @@ Locking before step 5 discards the pending upgrade, and the v1 files stay until 
 - **Cipher settings:** the code runs no `PRAGMA` and sets no `cipher_*` option, so SQLCipher 4's defaults apply. SQLCipher's
   documentation gives them as a 4,096-byte page, HMAC-SHA512 page authentication, PBKDF2-HMAC-SHA512 as the key derivation
   (unused for the encryption key under a raw key), no plaintext header, and a random 16-byte salt at the start of the file.
-  These defaults come from SQLCipher, not from this repository; fixture F3 must confirm them. A smaller file that v1's
-  code wrote on an API 36 emulator in M2.1 (`rust/crates/store/tests/fixtures/`) already shows the page size, both
-  algorithms, and no plaintext header, and that file was in write-ahead-log mode.
+  These defaults come from SQLCipher, not from this repository. Fixture F3, which v1's use cases filled on an API 36
+  emulator (`rust/crates/store/tests/fixtures/v1-f3-ledger.db`), confirms them: it opens with these settings, has no
+  plaintext header, and is in write-ahead-log mode, as is the smaller file that v1's code wrote there in M2.1.
 - **Open:** one worker thread opens, closes, and deletes, so those steps never overlap. Opening forces the writable database,
   which creates or migrates it, and closes it again if that fails (`app:data/local/db/DatabaseHolder.kt:33-34`, `:52-68`).
 - **Close:** closing zeroes the passphrase array, which SQLCipher holds by reference, so a stray query fails instead of
@@ -433,7 +433,9 @@ needs SQLite 3.35 or later. Room runs migrations before it turns foreign keys on
 (`:17-18`). Dropping each old table also deletes its `sqlite_sequence` row, so afterward each table's counter is the highest
 ID copied, or 0 for a table with no rows, and an ID deleted before the migration can be handed out again (SQLite behavior;
 `rust/crates/store/src/migration.rs` tests it). A phone that hasn't opened the app since version 1 may still hold a version 1
-database.
+database. On an API 36 emulator, v1's migration turned 0.005, 1.005, 19.995, -12.345, and 2.675 dollars into 1, 100, 2,000,
+-1,235, and 268 cents, as SQLite's `ROUND` does on the binary product (fixture F4,
+`rust/crates/store/tests/fixtures/README.md`).
 
 ## 7. Backup files (CS-28)
 
@@ -641,7 +643,8 @@ reads real data.
    Kotlin layer. Whether any v1.0.x install remains un-upgraded is unknown; that is a decision for the maintainer.
 6. **SQLCipher defaults.** The code relies on SQLCipher 4's defaults without naming them. The Rust build must link a
    SQLCipher 4 that keeps those defaults, or set them explicitly; fixture F3 checks either way. `denarii-store` sets them
-   explicitly with `PRAGMA cipher_compatibility = 4` (`docs/specs/store.md`).
+   explicitly with `PRAGMA cipher_compatibility = 4` (`docs/specs/store.md`), and F3 opens with them, so this one is
+   settled.
 7. **Profile corruption reads as "no profile".** An out-of-range iteration count or a blank wrap makes the vault offer setup,
    and setup deletes the database (`app:data/local/preferences/SecurityProfileService.kt:111-117`;
    `app:data/local/vault/Vault.kt:83-84`). That is today's behavior; the rewrite must not delete data in more cases than this.
@@ -699,8 +702,8 @@ appears in this document.
 | :- | :- | :- | :- |
 | F1 | Crypto known answers: PBKDF2 (including non-ASCII secrets), AES-256-GCM with the PIN slot's associated data, and NFC and NFKC samples | Reuse the vectors in `app/src/test/java/com/denariidolor/data/local/preferences/CryptoKnownAnswerTest.kt:98-145` | Invariant 4 primitives |
 | F2 | A format version 1 backup file and its decrypted payload, including an emoji stored as two surrogates | Reuse `app/src/test/java/com/denariidolor/data/backup/BackupGoldenFiles.kt:20-50` and `BackupSamples.kt:13`. Never edit them. | Invariants 12–14 |
-| F3 | A version 2 SQLCipher database written by the shipped app, with a known test key, every transaction type, one malformed transfer, a non-ASCII name, an emoji, and a budget | An instrumented test at `6d57526` on an emulator, exporting the file and its key | Invariants 8, 9, 11 |
-| F4 | A version 1 database with `REAL` amounts, including values that round, such as 0.005 and 19.995 | Room's migration test helper, as `app/src/androidTest/java/com/denariidolor/data/MigrationTest.kt:27` does | Invariant 9 |
+| F3 | A version 2 SQLCipher database written by the shipped app, with a known test key, every transaction type, one malformed transfer, a non-ASCII name, an emoji, and a budget | An instrumented test at `6d57526` on an emulator, exporting the file and its key. Made in M2.3: `rust/crates/store/tests/fixtures/v1-f3-ledger.db` | Invariants 8, 9, 11 |
+| F4 | A version 1 database with `REAL` amounts, including values that round, such as 0.005 and 19.995 | Room's migration test helper, as `app/src/androidTest/java/com/denariidolor/data/MigrationTest.kt:27` does. Made in M2.3, with a copy that v1 migrated: `rust/crates/store/tests/fixtures/v1-f4-version-1.db` and `v1-f4-migrated-by-v1.db` | Invariant 9 |
 | F5 | An in-place upgrade on a device: install the `6d57526` build, set up a profile, add data, turn on biometric sign-in, fail the PIN a few times, then install the new build over it with the same signing key and sign in with the PIN, the answer, and a fingerprint | A manual or UiAutomator run on API 26 and API 36 emulators | Invariants 2–4, 6, 7 |
 | F6 | A `ui_prefs.xml` with every key set, and one with none | Copy from the F5 device | Invariant 18 |
 | F7 | Answer normalization vectors computed on the device: NBSP, U+3000, U+2028, U+2029, U+1680, U+000B, tabs, Turkish dotted and dotless I, a word-final Greek sigma, fullwidth letters, and combining accents | An instrumented test at `6d57526` on API 26 and API 36 that records `normalizeAnswer` output | Invariant 5 and open questions 2–3 |

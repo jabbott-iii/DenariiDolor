@@ -246,6 +246,18 @@ mod tests {
         "/tests/fixtures/v1-sqlcipher-android-4.19.1.db"
     );
 
+    /// Fixture F4: a version 1 file with `REAL` dollars that round, which Room's migration test
+    /// helper wrote on an emulator, and the same file after v1's own `DatabaseHolder.open`
+    /// migrated it there (`tests/fixtures/README.md`).
+    const VERSION_1_FIXTURE: &str = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/fixtures/v1-f4-version-1.db"
+    );
+    const MIGRATED_BY_V1_FIXTURE: &str = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/fixtures/v1-f4-migrated-by-v1.db"
+    );
+
     /// Version 1's tables, as Room created them, with money in `REAL` dollars, and Room's
     /// bookkeeping for version 1 (`app/schemas/com.denariidolor.data.local.db.AppDatabase/1.json`
     /// at `6d57526`).
@@ -319,6 +331,13 @@ mod tests {
     fn copy_fixture(dir: &Path) -> PathBuf {
         let path = dir.join("denarii_dolor.db");
         fs::copy(FIXTURE, &path).unwrap();
+        path
+    }
+
+    /// A copy of `fixture` named `name` in `dir`, for the same reason as [`copy_fixture`].
+    fn copy_to(dir: &Path, fixture: &str, name: &str) -> PathBuf {
+        let path = dir.join(name);
+        fs::copy(fixture, &path).unwrap();
         path
     }
 
@@ -618,6 +637,90 @@ mod tests {
                 [Value::Text("accounts".into()), 1.into()],
                 [Value::Text("budgets".into()), 0.into()],
                 [Value::Text("transactions".into()), 0.into()],
+            ]
+        );
+    }
+
+    /// Invariant 9 of the format spec, against v1 itself: the store migrates fixture F4's version
+    /// 1 file to the same rows, counters, and schema as v1's `DatabaseHolder.open` did on an
+    /// emulator, so the SQLite in this build and SQLCipher 4.19.0's round the same way.
+    #[test]
+    fn migrates_the_f4_fixture_to_what_v1s_own_migration_wrote() {
+        let dir = scratch_dir("migrates_the_f4_fixture_to_what_v1s_own_migration_wrote");
+        let path = copy_to(&dir, VERSION_1_FIXTURE, "version-1.db");
+        let before = keyed(&path);
+        assert_eq!(user_version(&before), 1);
+        assert_eq!(
+            rows(&before, "SELECT id, identity_hash FROM room_master_table"),
+            [[
+                42.into(),
+                Value::Text("15f1c4acb81d97b124713b69e7ec869d".into())
+            ]]
+        );
+        before.close().unwrap();
+
+        let store = Store::open(&path, &fixture_key()).unwrap();
+        assert_eq!(store.user_version().unwrap(), 2);
+        store.close().unwrap();
+
+        let migrated = keyed(&path);
+        let by_v1 = keyed(&copy_to(&dir, MIGRATED_BY_V1_FIXTURE, "migrated-by-v1.db"));
+        for query in [
+            "SELECT * FROM accounts ORDER BY id",
+            "SELECT * FROM budgets ORDER BY id",
+            "SELECT * FROM categories ORDER BY id",
+            "SELECT * FROM transactions ORDER BY id",
+            "SELECT name, seq FROM sqlite_sequence ORDER BY name",
+            "SELECT id, identity_hash FROM room_master_table",
+            "SELECT type, name, tbl_name, sql FROM sqlite_master ORDER BY name",
+            "PRAGMA user_version",
+            "PRAGMA journal_mode",
+        ] {
+            assert_eq!(rows(&migrated, query), rows(&by_v1, query), "{query}");
+        }
+        for table in ["accounts", "budgets", "categories", "transactions"] {
+            assert_eq!(
+                table_shape(&migrated, table),
+                table_shape(&by_v1, table),
+                "{table}"
+            );
+        }
+    }
+
+    /// The cents v1's own migration wrote into fixture F4, so the agreement above can't come from
+    /// both files being wrong the same way. Each matches `ROUND(<dollars> * 100)` as the module's
+    /// rounding test describes, including 2.675, whose product rounds up to exactly 267.5.
+    #[test]
+    fn the_f4_fixture_holds_the_cents_v1s_own_migration_rounded_to() {
+        let dir = scratch_dir("the_f4_fixture_holds_the_cents_v1s_own_migration_rounded_to");
+        let by_v1 = keyed(&copy_to(&dir, MIGRATED_BY_V1_FIXTURE, "migrated-by-v1.db"));
+        let cents = |sql: &str| -> Vec<Value> { rows(&by_v1, sql).into_iter().flatten().collect() };
+        // 0.005, 1.005, 19.995, and -12.345 dollars.
+        assert_eq!(
+            cents("SELECT balanceCents FROM accounts ORDER BY id"),
+            [1, 100, 2_000, -1_235].map(Value::Integer)
+        );
+        // 250.5 and 99.995 dollars.
+        assert_eq!(
+            cents("SELECT monthlyLimitCents FROM budgets ORDER BY id"),
+            [25_050, 10_000].map(Value::Integer)
+        );
+        // 19.99, 0.29, 2500.0, 2.675, 1.005, and 12345678.915 dollars.
+        assert_eq!(
+            cents("SELECT amountCents FROM transactions ORDER BY id"),
+            [1_999, 29, 250_000, 268, 100, 1_234_567_892].map(Value::Integer)
+        );
+        // Account 5 was deleted at version 1, and the migration reset the counter to 4.
+        assert_eq!(
+            rows(
+                &by_v1,
+                "SELECT name, seq FROM sqlite_sequence ORDER BY name"
+            ),
+            [
+                [Value::Text("accounts".into()), 4.into()],
+                [Value::Text("budgets".into()), 2.into()],
+                [Value::Text("categories".into()), 4.into()],
+                [Value::Text("transactions".into()), 6.into()],
             ]
         );
     }

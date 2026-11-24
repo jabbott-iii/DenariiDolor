@@ -21,6 +21,12 @@ const FIXTURE: &str = concat!(
     "/tests/fixtures/v1-sqlcipher-android-4.19.1.db"
 );
 
+/// Fixture F3, with the same key.
+const LEDGER_FIXTURE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/tests/fixtures/v1-f3-ledger.db"
+);
+
 /// The fixture's key, a test value: the bytes 0x00 to 0x1f.
 const FIXTURE_KEY: [u8; DatabaseKey::LEN] = [
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -65,6 +71,20 @@ fn opening_reading_and_closing_leave_every_byte_of_the_file_unchanged() {
     assert_eq!(store.user_version().unwrap(), 2);
     store.close().unwrap();
     assert_eq!(fs::read(&path).unwrap(), fs::read(FIXTURE).unwrap());
+}
+
+/// Fixture F3, which v1's use cases filled with every kind of transaction, is at version 2 too, so
+/// opening it writes nothing (invariant 9 of the format spec).
+#[test]
+fn opening_and_closing_leave_every_byte_of_the_f3_fixture_unchanged() {
+    let dir =
+        scratch_dir("opening_and_closing_leave_every_byte_of_the_f3_fixture_unchanged").unwrap();
+    let path = dir.join("denarii_dolor.db");
+    fs::copy(LEDGER_FIXTURE, &path).unwrap();
+    let store = Store::open(&path, &fixture_key()).unwrap();
+    assert_eq!(store.user_version().unwrap(), 2);
+    store.close().unwrap();
+    assert_eq!(fs::read(&path).unwrap(), fs::read(LEDGER_FIXTURE).unwrap());
 }
 
 #[test]

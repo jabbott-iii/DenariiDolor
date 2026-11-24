@@ -156,6 +156,7 @@ version = "0.1.0"
 name = "denarii-store"
 version = "0.1.0"
 dependencies = [
+ "denarii-core",
  "rusqlite",
 ]
 
