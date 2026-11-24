@@ -38,7 +38,7 @@ void main() {
     expect(find.textContaining('Rejected'), findsNothing);
   });
 
-  testWidgets('shows the cents the parser returned for the typed amount', (
+  testWidgets('shows the cents the parser returned, as money and as cents', (
     tester,
   ) async {
     await pumpApp(tester);
@@ -47,8 +47,43 @@ void main() {
     await tester.enterText(find.byType(TextField), '1,234.56');
     await tester.pump();
 
+    expect(find.text('\$1,234.56'), findsOneWidget);
     expect(find.text('123456 cents'), findsOneWidget);
     expect(moneyParser.calls.map((call) => call.$1), ['1,234.56']);
+  });
+
+  testWidgets('reads and writes amounts in the language the app picked', (
+    tester,
+  ) async {
+    tester.platformDispatcher.localesTestValue = const [Locale('fr', 'FR')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    await pumpApp(tester);
+    moneyParser.answers['1 234,56'] = const AmountInCents(123456);
+
+    await tester.enterText(find.byType(TextField), '1 234,56');
+    await tester.pump();
+
+    final (_, symbols) = moneyParser.calls.single;
+    expect(symbols.decimalSeparator, ',');
+    expect(symbols.currencyMarks, ['\$US', 'USD']);
+    expect(find.text('1\u{202F}234,56\u{A0}\$US'), findsOneWidget);
+  });
+
+  testWidgets('writes English amounts when no pack matches the phone', (
+    tester,
+  ) async {
+    tester.platformDispatcher.localesTestValue = const [Locale('de', 'DE')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    await pumpApp(tester);
+    moneyParser.answers['1,234.56'] = const AmountInCents(123456);
+
+    await tester.enterText(find.byType(TextField), '1,234.56');
+    await tester.pump();
+
+    final (_, symbols) = moneyParser.calls.single;
+    expect(symbols.decimalSeparator, '.');
+    expect(symbols.currencyMarks, ['\$', 'USD']);
+    expect(find.text('\$1,234.56'), findsOneWidget);
   });
 
   testWidgets('shows why the parser rejected the typed amount', (tester) async {
@@ -73,7 +108,7 @@ void main() {
 
     expect(
       tester.getSemantics(find.text('1200 cents')),
-      matchesSemantics(label: '1200 cents', isLiveRegion: true),
+      matchesSemantics(label: '\$12.00\n1200 cents', isLiveRegion: true),
     );
     handle.dispose();
   });

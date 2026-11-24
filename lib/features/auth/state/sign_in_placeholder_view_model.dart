@@ -29,12 +29,9 @@ final class SignInPlaceholderState {
 final class SignInPlaceholderViewModel extends ChangeNotifier {
   SignInPlaceholderViewModel({required this._moneyParser});
 
-  /// The symbols of US English with no currency, until M1.6 fills them from the user's locale with
-  /// `package:intl`.
-  static const NumberSymbols placeholderSymbols = NumberSymbols(
-    decimalSeparator: '.',
-    currencyMarks: <String>[],
-  );
+  /// The currency the placeholder reads and writes amounts in: US dollars, which every v1 install
+  /// showed before it had a currency setting. M4.6 passes the saved currency instead.
+  static const String currencyCode = 'USD';
 
   final MoneyParser _moneyParser;
   SignInPlaceholderState _state = const SignInPlaceholderState();
@@ -43,11 +40,11 @@ final class SignInPlaceholderViewModel extends ChangeNotifier {
 
   SignInPlaceholderState get state => _state;
 
-  /// Parses [text] in Rust. Calls can finish out of order, so only the latest call's result is
-  /// kept.
-  Future<void> onAmountChanged(String text) async {
+  /// Parses [text] in Rust with [symbols], which `moneyParsingSymbols` gives for the user's locale
+  /// and [currencyCode]. Calls can finish out of order, so only the latest call's result is kept.
+  Future<void> onAmountChanged(String text, NumberSymbols symbols) async {
     final request = ++_latestRequest;
-    final parsed = await _moneyParser.parseCents(text, placeholderSymbols);
+    final parsed = await _moneyParser.parseCents(text, symbols);
     if (request != _latestRequest) {
       return;
     }

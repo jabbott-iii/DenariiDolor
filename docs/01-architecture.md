@@ -119,6 +119,7 @@ to the vault.
 | `rust/crates/{store,vault,backup,report}` | The planned crates in the table above | M2.1–M5.1 |
 | `pubspec.yaml`, `lib/`, `test/`, `integration_test/` | The Flutter app and its tests; the bridge's generated Dart bindings are in `lib/platform/rust/` | M1.1; `integration_test/` and `lib/platform/` in M1.2 |
 | `l10n.yaml`, `lib/l10n/` | The seven language packs as ARB files, the localizations `flutter gen-l10n` generates from them, and `resolveAppLocale`, which picks a pack from the phone's language list (ADR-0015: the whole list, matched by script as Android does) | M1.4 |
+| `lib/l10n/money_format.dart`, `lib/l10n/currency_symbols.dart`, `tool/CurrencySymbols.java` | Money and month text written with `intl`, and the currency symbols that the Java tool generates from Unicode CLDR (ADR-0016: CLDR's symbols, the locale `resolveAppLocale` picked, and fixes for Arabic regions) | M1.6 |
 | `hook/build.dart`, `flutter_rust_bridge.yaml` | The native-assets build hook that compiles the bridge in every Flutter build, and the codegen's settings (ADR-0014: the bridge's pinned version, its Cargo features, and this build) | M1.2 |
 | `android/` | Flutter's Android host app and the Kotlin platform code | M1.1, M3.2 |
 | `ios/` | Flutter's iOS host app and the Swift platform code | M1.1, M7.1 |
@@ -137,7 +138,7 @@ it with `git show 6d57526:<path>`. Where v1's code now goes:
 | `app/.../presentation/ui/**` | `lib/features/**` | M3.5–M4.7 |
 | `app/src/main/res/values*/strings.xml` | `lib/l10n/*.arb` | M1.4 |
 | `app/.../presentation/ui/common/ThemedContent.kt`, `VizColors.kt`, and the theme in `Composables.kt` | `lib/app/theme.dart`, `lib/app/viz_colors.dart` | M1.5 |
-| `util/PlatformFormat.kt` (money and month text) | Dart, with `package:intl` | M1.6 |
+| `util/PlatformFormat.kt` (money and month text) | `lib/l10n/money_format.dart`, with `package:intl` | M1.6 |
 
 ## Main control flow
 

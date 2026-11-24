@@ -11,8 +11,8 @@ files with `git show 6d57526:<path>`. The new app must open what v1 left on user
 
 ## Status
 
-As of 2026-11-23, all of M0's tasks, M1.1, M1.2, M1.4 and M1.5 are done, and M1.3's Flutter jobs are in `ci.yml` but
-haven't run on a pull request yet. M0's exit criteria are the maintainer's to check, and they
+As of 2026-11-23, all of M0's tasks, M1.1, M1.2, M1.4, M1.5 and M1.6 are done, and M1.3's Flutter jobs are in `ci.yml`
+but haven't run on a pull request yet. M0's exit criteria are the maintainer's to check, and they
 include deciding ADR-0004, ADR-0006 and ADR-0007, which are still Proposed; the maintainer accepted ADR-0005 in M1.2.
 Built: the Doctrina rules, the `ci-gates` and `dependency-upgrade` skills, the planning documents in `docs/`, the spec of
 v1's stored formats, the `denarii-core` crate (money, transactions, balance changes and validation) with its tests, the
@@ -20,9 +20,9 @@ Flutter project (M1.1): the Android and iOS host apps, the app scope, and a root
 signed-in screens, with its tests, and the `denarii-bridge` crate (M1.2), which Dart calls through `flutter_rust_bridge`,
 built by a native-assets hook, with an integration test that the sign-in placeholder shows the cents Rust parsed, and
 v1's strings in seven ARB files (M1.4), with a locale resolver that walks the phone's language list (ADR-0015), and
-v1's colors as Material 3 light and dark themes (M1.5), with its chart colors and system bars.
-Planned: the rest of M1 (money and month formatting), storage (M2), sign-in (M3), the screens (M4),
-backups (M5), the Android release (M6) and iOS (M7). Nothing from the rewrite has shipped. `docs/roadmap.md` has the
+v1's colors as Material 3 light and dark themes (M1.5), with its chart colors and system bars, and money and month
+text in Dart (M1.6), with currency symbols generated from Java 25's CLDR data (ADR-0016).
+Planned: storage (M2), sign-in (M3), the screens (M4), backups (M5), the Android release (M6) and iOS (M7). Nothing from the rewrite has shipped. `docs/roadmap.md` has the
 details.
 
 ## Working agreement
@@ -94,6 +94,8 @@ RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
   `flutter_rust_bridge_codegen generate`. Install the codegen and `cargo-expand` as `CONTRIBUTING.md` says.
 - After changing an ARB file in `lib/l10n/`, regenerate the localizations and commit them: `flutter gen-l10n`
   (`flutter pub get` and every build also run it, because `pubspec.yaml` sets `generate: true`).
+- After changing `tool/CurrencySymbols.java`, regenerate the currency symbols with Java 25 and commit them (ADR-0016):
+  `java tool/CurrencySymbols.java > lib/l10n/currency_symbols.dart`, then `dart format lib/l10n/currency_symbols.dart`.
 - `adb` may not be on `PATH`. The SDK location is `sdk.dir` in `local.properties`.
 - Use the `ci-gates` skill to run the full set and report the results.
 
@@ -130,7 +132,7 @@ Dependency rules:
 ## Invariants (never break these)
 
 - **Money is whole cents end to end.**
-  - `Cents(i64)` in Rust and `int` in Dart. Parse input with `core::parse_cents`. Display formatting is Dart's job (M1.6).
+  - `Cents(i64)` in Rust and `int` in Dart. Parse input with `core::parse_cents`. Display formatting is Dart's job (`lib/l10n/money_format.dart`, ADR-0016).
   - Floating point is only for display values such as charts.
   - Never hard-code a currency symbol. The currency is a saved label that is never converted, and only currencies with 2
     decimals are allowed.
@@ -180,7 +182,8 @@ Details are in `.claude/rules/security.md`, which loads when you touch security-
 - Rust follows `rustfmt` and the lints in `rust/Cargo.toml`; a lint exception is an `#[expect(…, reason = "…")]` on the
   smallest item.
 - Comment only intent that isn't obvious.
-- Generated files (the bridge bindings from M1.2 and the localizations from M1.4) are committed and never edited by hand.
+- Generated files (the bridge bindings from M1.2, the localizations from M1.4 and the currency symbols from M1.6) are
+  committed and never edited by hand.
   Change their source and rerun the generator in the same change (ADR-0012).
 - User-facing text lives only in the ARB files (from M1.4), in English and **all six language packs** (zh-CN, hi, es, ar, fr,
   pt). Rust returns codes, never user-facing sentences.

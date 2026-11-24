@@ -30,7 +30,7 @@ void main() {
   test('shows the cents the parser returned', () async {
     moneyParser.answers['1,234.56'] = const AmountInCents(123456);
 
-    await viewModel.onAmountChanged('1,234.56');
+    await viewModel.onAmountChanged('1,234.56', _symbols);
 
     expect(viewModel.state.parsed, const AmountInCents(123456));
     viewModel.dispose();
@@ -41,7 +41,7 @@ void main() {
       AmountError.tooManyDecimals,
     );
 
-    await viewModel.onAmountChanged('1.005');
+    await viewModel.onAmountChanged('1.005', _symbols);
 
     expect(
       viewModel.state.parsed,
@@ -50,16 +50,10 @@ void main() {
     viewModel.dispose();
   });
 
-  test('sends the placeholder symbols with the typed text', () async {
-    await viewModel.onAmountChanged('12');
+  test('sends the symbols it is given with the typed text', () async {
+    await viewModel.onAmountChanged('12', _symbols);
 
-    expect(moneyParser.calls, [
-      ('12', SignInPlaceholderViewModel.placeholderSymbols),
-    ]);
-    expect(
-      SignInPlaceholderViewModel.placeholderSymbols.currencyMarks,
-      isEmpty,
-    );
+    expect(moneyParser.calls, [('12', _symbols)]);
     viewModel.dispose();
   });
 
@@ -71,8 +65,8 @@ void main() {
     final seen = <ParsedAmount?>[];
     viewModel.addListener(() => seen.add(viewModel.state.parsed));
 
-    final first = viewModel.onAmountChanged('1');
-    await viewModel.onAmountChanged('12');
+    final first = viewModel.onAmountChanged('1', _symbols);
+    await viewModel.onAmountChanged('12', _symbols);
     slow.complete();
     await first;
 
@@ -87,7 +81,7 @@ void main() {
     var notifications = 0;
     viewModel.addListener(() => notifications += 1);
 
-    final parse = viewModel.onAmountChanged('5');
+    final parse = viewModel.onAmountChanged('5', _symbols);
     viewModel.dispose();
     slow.complete();
     await parse;
@@ -95,3 +89,9 @@ void main() {
     expect(notifications, 0);
   });
 }
+
+/// US English's symbols for US dollars, as `moneyParsingSymbols` gives them.
+const NumberSymbols _symbols = NumberSymbols(
+  decimalSeparator: '.',
+  currencyMarks: ['\$', 'USD'],
+);

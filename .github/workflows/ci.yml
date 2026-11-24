@@ -124,7 +124,7 @@ jobs:
         run: flutter build appbundle --debug
 
   # Generated files are committed and never edited by hand, so regenerate them and fail on any difference
-  # (ADR-0012). M1.4 adds the localizations.
+  # (ADR-0012): the bridge bindings, the localizations (M1.4), and the currency symbols (M1.6).
   generated:
     name: Generated code is current
     runs-on: ubuntu-24.04
@@ -193,6 +193,17 @@ jobs:
       # because pubspec.yaml sets `generate: true`; this step keeps the check if that setting goes.
       - name: Regenerate the localizations
         run: flutter gen-l10n
+
+      # The currency symbols from the CLDR data of Java 25 (M1.6, ADR-0016). The runner image has
+      # Temurin 25 preinstalled, so nothing is downloaded; the tool refuses any other Java release.
+      - name: Regenerate the currency symbols
+        run: |
+          if [ -z "${JAVA_HOME_25_X64:-}" ]; then
+            echo "::error::The runner image has no Java 25 (JAVA_HOME_25_X64), which tool/CurrencySymbols.java needs (ADR-0016)."
+            exit 1
+          fi
+          "$JAVA_HOME_25_X64/bin/java" tool/CurrencySymbols.java > lib/l10n/currency_symbols.dart
+          dart format lib/l10n/currency_symbols.dart
 
       - name: Compare with the committed files
         run: |

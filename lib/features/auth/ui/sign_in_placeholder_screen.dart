@@ -6,22 +6,29 @@
 
 import 'package:denarii_dolor/features/auth/state/sign_in_placeholder_view_model.dart';
 import 'package:denarii_dolor/l10n/app_localizations.dart';
+import 'package:denarii_dolor/l10n/money_format.dart';
 import 'package:denarii_dolor/platform/money_parser.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Stands in for the sign-in flow until M3.5. Nothing here unlocks the vault, so until then the
 /// app can't reach the signed-in tree.
 ///
-/// Its amount field shows that the bridge works (M1.2): the line under it shows the cents that the
-/// Rust core returned for the typed text, or why it rejected it.
+/// Its amount field shows that the bridge works (M1.2): under it are the cents that the Rust core
+/// returned for the typed text, written as money in [currencyCode] and as a number (M1.6), or why
+/// the core rejected the text.
 class SignInPlaceholderScreen extends StatelessWidget {
   const SignInPlaceholderScreen({
     super.key,
     required this.state,
+    required this.currencyCode,
     required this.onAmountChanged,
   });
 
   final SignInPlaceholderState state;
+
+  /// The ISO 4217 code of the currency the amount is written in.
+  final String currencyCode;
+
   final ValueChanged<String> onAmountChanged;
 
   @override
@@ -52,11 +59,20 @@ class SignInPlaceholderScreen extends StatelessWidget {
                   onChanged: onAmountChanged,
                 ),
                 const SizedBox(height: 16),
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    _resultText(l10n, state.parsed),
-                    style: textTheme.bodyLarge,
+                // One live region for the result's lines, so a screen reader reads them together.
+                MergeSemantics(
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (final line in _resultLines(
+                          l10n,
+                          Localizations.localeOf(context),
+                        ))
+                          Text(line, style: textTheme.bodyLarge),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -67,13 +83,16 @@ class SignInPlaceholderScreen extends StatelessWidget {
     );
   }
 
-  /// The cents Rust returned, or the code name of its error.
-  static String _resultText(AppLocalizations l10n, ParsedAmount? parsed) =>
-      switch (parsed) {
-        null => '',
-        AmountInCents(:final cents) => l10n.placeholderAmountInCents(cents),
-        RejectedAmount(:final error) => l10n.placeholderAmountRejected(
-          error.name,
-        ),
+  /// The cents Rust returned, as money and as a number, or the code name of its error.
+  List<String> _resultLines(AppLocalizations l10n, Locale locale) =>
+      switch (state.parsed) {
+        null => const [],
+        AmountInCents(:final cents) => [
+          formatMoney(cents, currencyCode: currencyCode, locale: locale),
+          l10n.placeholderAmountInCents(cents),
+        ],
+        RejectedAmount(:final error) => [
+          l10n.placeholderAmountRejected(error.name),
+        ],
       };
 }

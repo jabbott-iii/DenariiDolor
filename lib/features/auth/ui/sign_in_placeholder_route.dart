@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:denarii_dolor/app/app_scope.dart';
 import 'package:denarii_dolor/features/auth/state/sign_in_placeholder_view_model.dart';
 import 'package:denarii_dolor/features/auth/ui/sign_in_placeholder_screen.dart';
+import 'package:denarii_dolor/l10n/money_format.dart';
 import 'package:flutter/widgets.dart';
 
 /// Creates the [SignInPlaceholderViewModel], gives its state to the screen, and disposes it with
@@ -39,11 +40,19 @@ class _SignInPlaceholderRouteState extends State<SignInPlaceholderRoute> {
 
   @override
   Widget build(BuildContext context) {
+    // The language resolveAppLocale picked, with its region, writes and reads money (ADR-0016).
+    const currencyCode = SignInPlaceholderViewModel.currencyCode;
+    final symbols = moneyParsingSymbols(
+      currencyCode,
+      Localizations.localeOf(context),
+    );
     return ListenableBuilder(
       listenable: _viewModel,
       builder: (context, _) => SignInPlaceholderScreen(
         state: _viewModel.state,
-        onAmountChanged: (text) => unawaited(_viewModel.onAmountChanged(text)),
+        currencyCode: currencyCode,
+        onAmountChanged: (text) =>
+            unawaited(_viewModel.onAmountChanged(text, symbols)),
       ),
     );
   }

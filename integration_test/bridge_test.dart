@@ -7,6 +7,9 @@
 import 'package:denarii_dolor/app/app.dart';
 import 'package:denarii_dolor/app/app_scope.dart';
 import 'package:denarii_dolor/app/session_lock.dart';
+import 'package:denarii_dolor/l10n/app_localizations.dart';
+import 'package:denarii_dolor/l10n/locale_resolution.dart';
+import 'package:denarii_dolor/l10n/money_format.dart';
 import 'package:denarii_dolor/platform/money_parser.dart';
 import 'package:denarii_dolor/platform/rust/frb_generated.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -80,9 +83,57 @@ void main() {
     await tester.enterText(find.byType(TextField), '1,234.56');
     // The answer comes back from a Rust worker thread, so wait for it rather than for a frame.
     await _pumpUntilFound(tester, find.text('123456 cents'));
+    // Dart writes the same cents as money (M1.6), in the language the device's list picked.
+    final locale = resolveAppLocale(
+      tester.platformDispatcher.locales,
+      AppLocalizations.supportedLocales,
+    );
+    expect(
+      find.text(formatMoney(123456, currencyCode: 'USD', locale: locale)),
+      findsOneWidget,
+    );
 
     await tester.enterText(find.byType(TextField), '12,345,67');
     await _pumpUntilFound(tester, find.text('Rejected: malformed'));
+  });
+
+  // v1's MoneyCompatibilityTest.kt read shown amounts back in these locales and currencies.
+  test('the Rust core reads back the amounts Dart writes', () async {
+    const parser = RustMoneyParser();
+    const amounts = [0, 1, 5, 99, 100, 1250, 123450, 123456789, 999999999999];
+    const cases = {
+      'en-US': 'USD', 'en-IN': 'INR', 'zh-CN': 'CNY', 'hi-IN': 'INR', //
+      'es-ES': 'EUR', 'es-MX': 'MXN', 'ar-SA': 'SAR', 'ar-EG': 'EGP',
+      'ar-MA': 'MAD', 'fr-FR': 'EUR', 'fr-CA': 'CAD', 'fr-CH': 'CHF',
+      'de-DE': 'EUR', 'de-CH': 'CHF', 'pt-BR': 'BRL', 'pt-PT': 'EUR',
+    };
+
+    for (final MapEntry(key: tag, value: regionCurrency) in cases.entries) {
+      final [language, region] = tag.split('-');
+      final locale = Locale(language, region);
+      for (final currencyCode in {regionCurrency, 'USD'}) {
+        final symbols = moneyParsingSymbols(currencyCode, locale);
+        for (final cents in [
+          for (final amount in amounts) ...[amount, -amount],
+        ]) {
+          final text = formatMoney(
+            cents,
+            currencyCode: currencyCode,
+            locale: locale,
+          );
+          // The core, like v1's parser, reads only groups of three digits, so Indian grouping of a
+          // lakh (1,00,000) or more doesn't read back. v1 on Android grouped the same way.
+          final indianGrouping = region == 'IN' && cents.abs() >= 10000000;
+          expect(
+            await parser.parseCents(text, symbols),
+            indianGrouping
+                ? const RejectedAmount(AmountError.malformed)
+                : AmountInCents(cents),
+            reason: '$tag $currencyCode $text',
+          );
+        }
+      }
+    }
   });
 }
 

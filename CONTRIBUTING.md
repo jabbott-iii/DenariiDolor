@@ -22,6 +22,7 @@ The app is being rewritten as a Flutter app over a Rust core ([ADR-0001](docs/de
   cargo install cargo-expand --version 1.0.127 --locked
   cargo install flutter_rust_bridge_codegen --version 2.13.0 --locked
   ```
+- To change the currency symbols' generator (`tool/CurrencySymbols.java`): Java 25, because each Java release carries other Unicode CLDR data and the tool refuses any other release (ADR-0016).
 - For iOS work (milestone M7): a Mac with Xcode.
 
 ```bash
@@ -52,7 +53,7 @@ cargo test --workspace --locked                                 # unit, integrat
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
 ```
 
-Also run these from the repository root, with Flutter 3.50.1. CI runs the first three, then builds a debug app bundle. A separate CI job reruns the bridge's codegen and `flutter gen-l10n`, and fails if the committed bindings or localizations differ from their output (ADR-0012: generated code is committed, and CI checks that it is current). After editing an ARB file in `lib/l10n/`, run `flutter gen-l10n` and commit what it writes. The integration tests need an emulator, so CI doesn't run them.
+Also run these from the repository root, with Flutter 3.50.1. CI runs the first three, then builds a debug app bundle. A separate CI job reruns the bridge's codegen, `flutter gen-l10n`, and `tool/CurrencySymbols.java` with Java 25, and fails if the committed bindings, localizations, or currency symbols differ from their output (ADR-0012: generated code is committed, and CI checks that it is current). After editing an ARB file in `lib/l10n/`, run `flutter gen-l10n` and commit what it writes. The integration tests need an emulator, so CI doesn't run them.
 
 ```bash
 dart format --output=none --set-exit-if-changed .
@@ -102,6 +103,7 @@ Update the documents a change affects in the same pull request:
 | A roadmap task done | Its tick and notes in `docs/roadmap.md`, the "Status" section of `CLAUDE.md`, and the status line in `README.md` |
 | A new command, module or rule | The "Read before working" table in `CLAUDE.md` |
 | The bridge's API (`rust/crates/bridge/src/api/`) | The bindings, regenerated from the repository root with `flutter_rust_bridge_codegen generate` and committed with the change (ADR-0012), and `docs/specs/bridge.md` |
+| The currency symbols' generator (`tool/CurrencySymbols.java`) | `lib/l10n/currency_symbols.dart`, regenerated with Java 25 (`java tool/CurrencySymbols.java > lib/l10n/currency_symbols.dart`, then `dart format lib/l10n/currency_symbols.dart`) and committed with the change (ADR-0016) |
 | User-visible behavior | The user guide in `README.md` |
 | What the app stores, exports or shares, or its permissions | `PRIVACY.md`, and tell the maintainer about the Play Data safety form |
 | The workflow or the checks | This file |

@@ -413,7 +413,7 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
 
 ## ADR-0015 — Pick the app's language from the whole phone language list, matching script as Android does
 
-- **Status:** Accepted
+- **Status:** Accepted. ADR-0016 writes money and months in the locale this record picks.
 - **Date:** 2026-11-23
 - **Context:** M1.4 ports v1's strings to seven ARB files, the language packs: English, Simplified
   Chinese, Hindi, Spanish, Arabic, French, and Portuguese. A phone holds an ordered list of
@@ -469,3 +469,85 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
 - **Revisit when:** a Traditional Chinese pack is added, the app offers its own language setting
   or declares its languages to Android (a `LocaleConfig`, which changes how Android hands over the
   list), or a user reports the app in a language they didn't list.
+
+## ADR-0016 — Write money and months with `intl`, with currency symbols from CLDR and fixes for Arabic regions
+
+- **Status:** Accepted
+- **Date:** 2026-11-23
+- **Context:** M1.6 ports v1's money and month text (`PlatformFormat.kt`) to Dart with
+  `package:intl` 0.20.3, whose number and date data come from Unicode CLDR 48.
+  - **What v1 showed.** v1 wrote money with `java.text.NumberFormat` and the device's default
+    locale, and months with the `java.time` pattern `MMMM yyyy`. Its `MoneySnapshotTest.kt` pins
+    29 locale and currency rows of eight amounts each, and 15 month rows. JDK 17.0.20.1, v1's test
+    toolchain (CLDR 39), reproduces every row. On phones, though, `java.text` runs on Android's
+    ICU data, which changes between releases: on 2026-11-23 the same code on an API 26 emulator
+    differed from the snapshot in 19 of the 29 money rows, and on an API 36 emulator (Android 16)
+    in 11.
+  - **What `intl` lacks.** With v1's symbols supplied, `intl` alone matched 164 of the 232 money
+    strings and 14 of the 15 month rows. Its gaps:
+    - It has one symbol per currency for every language (`simpleCurrencySymbols`): US dollars are
+      `$` in Mexico, as Mexican pesos are, and Saudi riyals are `Riyal` in Arabic text. v1 wrote
+      `USD` and `ر.س.` (followed by a right-to-left mark).
+    - It has Arabic number data only for `ar`, `ar_DZ`, and `ar_EG`. Plain `ar` writes Latin
+      digits, as Android 16 does, but Saudi Arabia and 19 other regions write Arabic-Indic digits
+      there, and Morocco, Tunisia, and Libya a decimal comma.
+    - It ignores CLDR's separate decimal mark for money, which Swiss French sets to `.`.
+    - It has no Moroccan month names.
+  - **Where `intl` agrees with phones.** Indian grouping (`₹12,34,567.89`), the right-to-left mark
+    at the start of Arabic amounts, and the Moroccan currency's position match Android 16, though
+    not the JDK 17 snapshot.
+  - On 2026-11-23 the maintainer was asked three questions, each with the options below.
+- **Decision** (the maintainer chose the recommended option for all three on 2026-11-23):
+  - **Symbols:** `tool/CurrencySymbols.java` writes `lib/l10n/currency_symbols.dart` from the
+    locale data of Java 25 (CLDR 47): the symbol that each of Java's 266 locales in the app's seven
+    languages writes for every currency with two decimals, 476 entries in all. A currency the table
+    doesn't list is written as its ISO 4217 code, as CLDR does. CI reruns the tool with the
+    runner's Java 25 (`JAVA_HOME_25_X64`) and fails on any difference (ADR-0012).
+  - **Locale:** money and months are written in the locale that `resolveAppLocale` returned
+    (ADR-0015), which widgets read with `Localizations.localeOf`: the phone language that matched
+    a pack, with its region, or English when none matched.
+  - **Gaps:** `lib/l10n/money_format.dart` sends each Arabic region to `intl`'s Egyptian data
+    (Arabic-Indic digits) or Algerian data (Latin digits and a decimal comma), as Android 16
+    groups them, and writes Swiss French money with `.`.
+  - Money is `intl`'s currency format with exactly two decimals, fed whole cents through
+    `MicroMoney` so no floating point touches the amount. A plus sign goes in front of a positive
+    amount when asked, as v1 put it in front of the positive prefix. A month is the month's name
+    from `intl`'s date data, a space, and the year in four ASCII digits, which is what `MMMM yyyy`
+    wrote.
+- **Consequences:**
+  - Good:
+    - Each currency keeps the symbol its language gives it: `US$` in British English, Chinese, and
+      Portuguese, `$US` in French, `USD` in Mexican Spanish, and Arabic symbols in Arabic.
+    - Saudi, Egyptian, and Moroccan users see the digits and separators Android 16 shows them.
+      Swiss French users keep `1 234.50 CHF`.
+    - Money and words on one screen use the same language.
+    - `test/money_format_test.dart` checks every row of v1's snapshot, and lists each row where
+      the app differs with the reason.
+  - Bad:
+    - The table and the Arabic map are data the project keeps. The table changes when Java's CLDR
+      data does, and CI fails until someone reruns the tool.
+    - A phone whose first language has no pack writes money the English way: a German-only phone
+      showed `1.234,50 $` in v1 and shows `$1,234.50` now.
+    - Flutter's `Locale` carries no Unicode extensions, so a phone set to Latin digits for Arabic
+      (`-u-nu-latn`) still gets its region's digits.
+    - The text differs from v1's snapshot in these rows, each listed in the test: Indian grouping
+      in en-IN and hi-IN, the right-to-left mark in ar-SA and ar-EG, Moroccan amounts and month
+      names, and Canadian French dollars (`$`, where JDK 17 wrote `$ CA`).
+  - Follow-up:
+    - M1.3: the "Generated code is current" job runs the tool, so its pull request check covers
+      the step.
+    - M4.6 passes the saved currency, which v1 kept as `currency` in `ui_prefs`.
+    - M6.2 lists the CLDR data in `THIRD_PARTY_NOTICES.md` under the Unicode License V3.
+- **Alternatives considered:**
+  - For the symbols, `intl`'s single symbols, which make US dollars look like pesos and write
+    Arabic currencies in Latin letters; or ISO codes everywhere, which never mislead but match no
+    row of v1's.
+  - For the locale, the phone's first language as v1 did, which would need symbols for every
+    language rather than seven.
+  - For the gaps, keeping `intl`'s data, which would switch Saudi users from Arabic-Indic digits to
+    Latin ones.
+  - Asking the platform's own formatter through a channel, which would match v1 on each Android
+    release but needs Kotlin, Swift, and an asynchronous call before M3.2 sets up platform code.
+- **Revisit when:** `intl` ships symbols per locale or data for more Arabic regions; GitHub's
+  `ubuntu-24.04` image drops Java 25; the app gets its own language setting; or a user reports a
+  symbol or digits that differ from the rest of their phone.

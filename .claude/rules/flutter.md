@@ -89,8 +89,9 @@ so they can fill them in.
   `docs/specs/android-v1-formats.md` (keys and formats on phones today). The history of every
   finding is in `git show aba0b55:intel/cybersec.md`
 - **Code generation:** `flutter_rust_bridge_codegen generate` for the bridge, configured by
-  `flutter_rust_bridge.yaml` (from M1.2), and `flutter gen-l10n` for strings (from M1.4). Their
-  output is committed and never edited by hand; CI regenerates it and fails on any difference
+  `flutter_rust_bridge.yaml` (from M1.2), `flutter gen-l10n` for strings (from M1.4), and
+  `tool/CurrencySymbols.java`, run with Java 25, for `lib/l10n/currency_symbols.dart` (from M1.6,
+  ADR-0016). Their output is committed and never edited by hand; CI regenerates it and fails on any difference
   (M1.3), and the analyzer and the formatter skip only the generated paths (ADR-0012)
 - **Test layout:** unit and widget tests in `test/`, with hand-written fakes; whole
   flows in `integration_test/` (from M1.2) on an emulator or device (API 26 and API 36, as v1's CI ran). Rust

@@ -228,6 +228,11 @@ and displays an amount that Rust parsed and Dart formatted.
     `flutter_rust_bridge_hooks` 2.14.0 in `pubspec.lock`, and an `FRB_VERSION` of 2.14.0. The
     slowest local steps were the debug app bundle (239 s), compiling the codegen tools (103 s),
     and Flutter's first-run download (about 90 s). Times on GitHub's runners aren't measured yet.
+  - Note (from M1.6): the "Generated code is current" job also regenerates
+    `lib/l10n/currency_symbols.dart` with the runner's Java 25 (`JAVA_HOME_25_X64`, which GitHub's
+    `ubuntu-24.04` release notes list as Temurin 25). Locally, Ubuntu's OpenJDK 25.0.5 writes the
+    committed table; whether Temurin's build writes the same bytes is first checked by this pull
+    request.
   - ⏳ needs GitHub: open a pull request with this change, and expect "Rust checks", "Flutter
     checks", and "Generated code is current" to pass. Then make the three jobs required status
     checks for `main`: on 2026-11-23 the repository's branch ruleset requires none, so a failing
@@ -327,7 +332,7 @@ and displays an amount that Rust parsed and Dart formatted.
   - Accept:
     - The placeholder screen matches v1's colors in both themes.
   - Verify: a widget test per theme; a look on an emulator in both themes
-- [ ] **M1.6 — ui: money and month text in Dart**
+- [x] **M1.6 — ui: money and month text in Dart**
   - Note (from M1.2): `SignInPlaceholderViewModel.placeholderSymbols` sends `.` and no currency
     marks to the bridge's `parse_cents`; build the `NumberSymbols` from the user's locale with
     `package:intl`, as `docs/specs/core.md` ("Money") describes.
@@ -336,6 +341,41 @@ and displays an amount that Rust parsed and Dart formatted.
     Android's `String.format` and the app's locale, and Java's `Formatter` writes the locale's own
     digits. Check Arabic and Hindi against v1, and give those placeholders a `format` where they
     differ. Amounts and dates reach the ARB messages as preformatted `String`s.
+  - Note: 2026-11-23: the maintainer chose the recommended answer to three questions, recorded in
+    ADR-0016: currency symbols come from a table that `tool/CurrencySymbols.java` generates from
+    Java 25's CLDR 47 data (`intl` has one symbol per currency for every language); money and
+    months are written in the locale `resolveAppLocale` picked (`Localizations.localeOf`), not the
+    phone's first language as v1 did; and the Arabic regions and Swiss French money that `intl`
+    lacks data for are corrected.
+  - Note: 2026-11-23: `lib/l10n/money_format.dart` has `formatMoney`, `currencySymbol`,
+    `moneyParsingSymbols`, and `formatMonthYear`. The generated `lib/l10n/currency_symbols.dart`
+    holds 476 symbols for Java's 266 locales in the seven languages; the "Generated code is
+    current" job reruns the tool with the runner's `JAVA_HOME_25_X64`, and the tool refuses any
+    other Java release. Amounts reach `intl` as `MicroMoney`, which holds up to
+    922,337,203,685,477 cents; past that the whole units are written as an `int`, so every `int`
+    is written exactly. Months come from `intl`'s date data (`dateTimeSymbolMap`), not
+    `DateFormat`, whose global table Material's localizations also fill.
+  - Note: 2026-11-23: JDK 17.0.20.1, v1's test toolchain, reproduces every row of v1's snapshot.
+    v1's same code on phones differed from it in 19 of the 29 money rows on `Denarii_API_26` and in
+    11 on `Denarii_API_36`. The app writes 172 of the snapshot's 232 money strings and 14 of its 15
+    month rows; `test/money_format_test.dart` lists the other 60 strings and the Moroccan months,
+    with why. 220 of the 232 match Android 16; the other 12 are negative Arabic-Indic amounts,
+    where the app keeps the Arabic letter mark before the minus that v1 wrote and Android 16 drops.
+  - Note: 2026-11-23: the sign-in placeholder now sends `moneyParsingSymbols('USD', locale)` to the
+    bridge (the note from M1.2) and shows the parsed cents as money above the cents line. On the
+    note from M1.4: v1's `%d` wrote ASCII digits in Hindi on JDK 17, API 26, and API 36, as the app
+    does. In Arabic, v1 wrote Arabic-Indic digits for ar-SA and ar-EG everywhere (and for plain
+    Arabic and ar-AE on API 26), where the app writes ASCII. An ARB `format` can't fix that,
+    because the generated Arabic class formats with the pack's locale, `ar`, whose `intl` data
+    writes Latin digits; the note under M4.8 carries it.
+  - Note: 2026-11-23: `flutter test test/money_format_test.dart` passed (18 tests), and
+    `flutter test integration_test` passed (4 tests) on `Denarii_API_26` and `Denarii_API_36`. The
+    new integration test reads back, through the Rust core, the amounts Dart writes in v1's 16
+    compatibility locales, each in its region's currency and US dollars. Indian grouping of a lakh
+    (`1,00,000`) or more doesn't read back, because the core, like v1's parser, accepts only groups
+    of three digits. On `Denarii_API_36`, in Arabic (ar-SA) with the dark theme and 200% text,
+    typing `-1234.5` showed the amount right to left in Arabic-Indic digits, with its minus and
+    `US$`, above the cents line.
   - Depends: M1.1
   - Do:
     - Format amounts and month names with `package:intl` so they match the snapshot tables in v1's
@@ -531,6 +571,9 @@ over it keeps the data, and the same PIN, answer, and fingerprint sign in.
 **Goal:** Each flow in the README's user guide works in the new app as it does in v1.
 
 - [ ] **M4.1 — dashboard: balances and the spending chart**
+  - Note (from M1.6): v1's rows wrote an amount with `formatSignedAmount`: an expense as
+    `formatMoney(-cents)`, an income with `showPlus: true`, and a transfer as is. That sign is only
+    display; totals and balances still come from `Transaction::balance_impact` in Rust.
   - Note (from M1.5): take the chart's and the budgets' colors from
     `Theme.of(context).extension<VizColors>()` as v1's dashboard did: `series1` for the chart's
     columns and a budget within its limit, `statusWarning` for one near it, `statusCritical` for
@@ -546,6 +589,8 @@ over it keeps the data, and the same PIN, answer, and fingerprint sign in.
 - [ ] **M4.2 — transaction: the add and edit form**
   - Depends: M3.5
   - Note: keeps one write at a time (`isSaving`) and the over-budget confirmation.
+  - Note (from M1.6): fill the edit field with v1's plain input text (`Cents::to_input`), not
+    `formatMoney`: the core doesn't read back Indian grouping of a lakh or more.
 - [ ] **M4.9 — claude: the `new-feature` skill**
   - Note: 2026-11-23: split from M0.8 by the user's choice, because the layers the skill walks
     through (a `store` use case, the bridge, a view model, a screen, and ARB strings) don't all
@@ -570,12 +615,20 @@ over it keeps the data, and the same PIN, answer, and fingerprint sign in.
     `ui_prefs` means the dark theme when true, the light theme when false, and the device's choice
     when missing. v1 switched themes at once, while `MaterialApp` animates the change over 200 ms
     (`themeAnimationDuration`).
+  - Note (from M1.6): pass the saved currency to `formatMoney` and `moneyParsingSymbols`. v1 kept
+    it as `currency` in `ui_prefs`; an install with none showed US dollars, and setup saved the
+    region's currency (`Currencies.regionDefault`). The sign-in placeholder uses
+    `SignInPlaceholderViewModel.currencyCode`, US dollars, until M3.5 replaces it.
   - Depends: M3.6
 - [ ] **M4.7 — legal: help, legal documents, welcome tour, and rating prompt**
   - Depends: M3.5
   - Note: `PRIVACY.md`, `THIRD_PARTY_NOTICES.md`, and `licenses/` ship as app assets, as
     `.claude/rules/legal-docs.md` describes.
 - [ ] **M4.8 — ui: accessibility, right-to-left, and large text**
+  - Note (from M1.6): the ARB messages' `int` placeholders write ASCII digits in Arabic, where v1
+    wrote Arabic-Indic digits for ar-SA and ar-EG. An ARB `format` uses the pack's locale (`ar`,
+    Latin digits), so the region's digits need the number passed already written, for example
+    with `intl`'s data for `ar_EG`. Decide whether to match v1 before this check.
   - Depends: M4.1–M4.7
   - Do:
     - Check every screen with TalkBack, in Arabic, and at 200% text size, as the flutter rule's
@@ -645,6 +698,9 @@ restores in the new app on another phone.
     and the packages its runtime imports (`logging`, `async`, `args`, and `web` from the Dart team,
     BSD-3-Clause, and `build_cli_annotations`, MIT); check which the release build keeps. The build
     hook's packages run only during the build and don't ship.
+  - Note (from M1.6): `lib/l10n/currency_symbols.dart` holds data from Unicode CLDR 47, which
+    `tool/CurrencySymbols.java` reads from Java 25, under the Unicode License V3 (the JDK's
+    `legal/java.base/cldr.md` has its text). `intl`'s own number and date data come from CLDR 48.
   - Depends: M6.1
   - Do:
     - Rewrite `THIRD_PARTY_NOTICES.md` and `licenses/` for the new dependencies; review

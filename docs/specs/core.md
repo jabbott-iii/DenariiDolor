@@ -41,12 +41,18 @@ impl Cents { pub fn to_plain(self) -> String; pub fn to_input(self) -> String; /
   Its rules are in its doc comment.
 - The caller supplies `NumberSymbols`: the locale's decimal separator, then the currency's symbol
   in the user's locale, its symbol in the default locale, and its ISO 4217 code, as v1's
-  `localeNumberSymbols` built them. The Flutter app fills them from `package:intl` (M1.6).
+  `localeNumberSymbols` built them. The Flutter app fills them with `moneyParsingSymbols` in
+  `lib/l10n/money_format.dart` (ADR-0016): `intl`'s decimal separator for the locale, then the
+  currency's symbol in that locale and its code. v1's symbol in the default locale is left out,
+  because on a phone the default locale was the user's.
 - Digits and currency signs are recognized only in the Basic Multilingual Plane (U+0000 to
   U+FFFF), because v1 read text one UTF-16 code unit at a time. The tables in
   `src/text/unicode_tables.rs` come from `tools/unicode_tables.py`.
 - The largest accepted amount is `Cents::MAX_PARSED`, 9,999,999,999.99.
-- Formatting for display (`$1,234.50`) isn't here; Dart does it (M1.6).
+- Formatting for display (`$1,234.50`) isn't here; Dart does it with `formatMoney` in
+  `lib/l10n/money_format.dart` (ADR-0016). The core reads back what `formatMoney` writes, except
+  Indian grouping of a lakh (`1,00,000`) or more: `parse_cents`, like v1, accepts only groups of
+  three digits.
 
 ## Transactions and balance changes
 
