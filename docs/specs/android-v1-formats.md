@@ -352,8 +352,8 @@ CREATE TABLE `accounts` (
   `balanceCents` INTEGER NOT NULL);
 CREATE UNIQUE INDEX `index_accounts_name` ON `accounts` (`name`);
 
-CREATE TABLE room_master_table (id INTEGER PRIMARY KEY, identity_hash TEXT);
-INSERT OR REPLACE INTO room_master_table (id, identity_hash) VALUES (42, '425274f1a5ac9232a36cc07f4f479e7c');
+CREATE TABLE room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT);
+INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '425274f1a5ac9232a36cc07f4f479e7c');
 ```
 
 - The export writes each `CREATE` with `IF NOT EXISTS` and the placeholder `${TABLE_NAME}`; the statements above fill in the
@@ -364,7 +364,8 @@ INSERT OR REPLACE INTO room_master_table (id, identity_hash) VALUES (42, '425274
 - `transferAccountId` has no foreign key, so an account delete can leave a transfer pointing nowhere. Reads map a `TRANSFER`
   row without a destination to "no transaction" with no balance impact (BUG-06)
   (`app:domain/model/TransactionEntityMappings.kt:25-32`).
-- `AUTOINCREMENT` means SQLite also keeps a `sqlite_sequence` table, so a deleted row's ID is never handed out again.
+- `AUTOINCREMENT` means SQLite also keeps a `sqlite_sequence` table, so a deleted row's ID is never handed out again, except
+  for IDs deleted before the 1→2 migration (below).
 - The unique name indexes use SQLite's default binary collation, so they are case-sensitive. The use cases add a
   case-insensitive duplicate check on top (`app:data/local/db/dao/AccountDao.kt:33`).
 - Room turns on `PRAGMA foreign_keys = ON` each time it opens a database with foreign keys (Room's generated code, not in this
@@ -429,7 +430,10 @@ Version 1 (identity hash `15f1c4acb81d97b124713b69e7ec869d`,
 2 definition, copies the rows with `CAST(ROUND(<column> * 100) AS INTEGER)`, drops the old table, renames the new one, and
 re-creates its indexes (`app:data/local/db/Migrations.kt:12-70`). Tables are rebuilt because `ALTER TABLE … DROP COLUMN`
 needs SQLite 3.35 or later. Room runs migrations before it turns foreign keys on, so the parent tables can be swapped
-(`:17-18`). A phone that hasn't opened the app since version 1 may still hold a version 1 database.
+(`:17-18`). Dropping each old table also deletes its `sqlite_sequence` row, so afterward each table's counter is the highest
+ID copied, or 0 for a table with no rows, and an ID deleted before the migration can be handed out again (SQLite behavior;
+`rust/crates/store/src/migration.rs` tests it). A phone that hasn't opened the app since version 1 may still hold a version 1
+database.
 
 ## 7. Backup files (CS-28)
 

@@ -130,20 +130,37 @@ fn reports_a_copy_cut_off_after_its_first_page_as_malformed() {
     }
 }
 
-/// SQLite reads an empty file, and a 1-byte one too, as an empty database, which is what `open`
-/// reports. M2.2 must not take the 1-byte file for a new install (the roadmap's note under M2.2).
+/// An absent or 0-byte file is a new install, and gets schema version 2 (ADR-0018).
 #[test]
-fn opens_an_empty_or_one_byte_file_as_an_empty_database_without_writing_to_it() {
-    let dir = scratch_dir("opens_an_empty_or_one_byte_file_as_an_empty_database").unwrap();
+fn gives_an_absent_or_empty_file_schema_version_2() {
+    let dir = scratch_dir("gives_an_absent_or_empty_file_schema_version_2").unwrap();
+    let absent = dir.join("absent.db");
+    let empty = dir.join("empty.db");
+    fs::write(&empty, b"").unwrap();
+    for path in [absent, empty] {
+        let store = Store::open(&path, &fixture_key()).unwrap();
+        assert_eq!(store.user_version().unwrap(), 2, "{path:?}");
+        store.close().unwrap();
+        let bytes = fs::read(&path).unwrap();
+        assert!(!bytes.is_empty(), "{path:?}");
+        assert!(!bytes.starts_with(b"SQLite format 3\0"), "{path:?}");
+    }
+}
+
+/// SQLite reads a 1-byte file as an empty database too, but a file that held a byte isn't a new
+/// install, so it gets no schema and stays as it was (ADR-0018).
+#[test]
+fn refuses_a_one_byte_file_without_writing_to_it() {
+    let dir = scratch_dir("refuses_a_one_byte_file_without_writing_to_it").unwrap();
     let path = dir.join("denarii_dolor.db");
     let fixture = fs::read(FIXTURE).unwrap();
-    for length in [0, 1] {
-        fs::write(&path, &fixture[..length]).unwrap();
-        let store = Store::open(&path, &fixture_key()).unwrap();
-        assert_eq!(store.user_version().unwrap(), 0, "{length} bytes");
-        store.close().unwrap();
-        assert_eq!(fs::read(&path).unwrap(), &fixture[..length]);
-    }
+    fs::write(&path, &fixture[..1]).unwrap();
+    let result = Store::open(&path, &fixture_key());
+    assert!(
+        matches!(result, Err(StoreError::UnrecognizedSchema { version: 0 })),
+        "{result:?}"
+    );
+    assert_eq!(fs::read(&path).unwrap(), &fixture[..1]);
 }
 
 #[test]

@@ -22,6 +22,20 @@ pub enum StoreError {
     /// database (a plaintext SQLite file, a damaged file, or another kind of file). Nothing in the
     /// file was changed.
     KeyRejected,
+    /// The file's schema version is newer than any this build reads: a later build of the app
+    /// wrote it. Nothing in the file was changed.
+    NewerSchema {
+        /// The file's schema version, from `PRAGMA user_version`.
+        version: i32,
+    },
+    /// The file opened with the key, but its schema isn't one this build knows: a negative
+    /// schema version, a version 0 file that held at least one byte before it opened, or a
+    /// version 2 file without version 2's Room identity hash (ADR-0018). Nothing in the file was
+    /// changed.
+    UnrecognizedSchema {
+        /// The file's schema version, from `PRAGMA user_version`.
+        version: i32,
+    },
     /// An earlier call panicked while it held the connection, so the connection's state is
     /// unknown and the store refuses to use it.
     Poisoned,
@@ -44,6 +58,14 @@ impl fmt::Display for StoreError {
                 "the database didn't open with this key: the key is wrong, or the file isn't a \
                  SQLCipher database",
             ),
+            Self::NewerSchema { version } => write!(
+                f,
+                "the database's schema version, {version}, is newer than this build reads"
+            ),
+            Self::UnrecognizedSchema { version } => write!(
+                f,
+                "the database's schema isn't one this build knows (schema version {version})"
+            ),
             Self::Poisoned => {
                 f.write_str("an earlier call panicked while it held the database connection")
             }
@@ -56,7 +78,16 @@ impl std::error::Error for StoreError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Sqlite { source, .. } => Some(source),
-            Self::CipherUnavailable | Self::KeyRejected | Self::Poisoned => None,
+            Self::CipherUnavailable
+            | Self::KeyRejected
+            | Self::NewerSchema { .. }
+            | Self::UnrecognizedSchema { .. }
+            | Self::Poisoned => None,
         }
     }
+}
+
+/// Wraps an error from SQLite with what the store was doing when it happened.
+pub(crate) fn sqlite(operation: &'static str, source: rusqlite::Error) -> StoreError {
+    StoreError::Sqlite { operation, source }
 }

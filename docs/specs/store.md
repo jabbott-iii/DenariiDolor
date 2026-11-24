@@ -2,13 +2,15 @@
 
 `denarii-store` (`rust/crates/store`) owns the SQLCipher database: it opens the file that v1, the
 Kotlin app, left on users' phones, with the key the vault unwraps at sign-in, and runs every query
-and write on it. It guarantees that the file opens only with its key, that opening changes nothing
-in an existing file, and that calls from several threads never interleave on its one connection.
-ADR-0006 (the database stays SQLCipher, opened from Rust with `rusqlite`) and ADR-0017 (SQLCipher
-and OpenSSL compiled from source on every target, and one connection behind a mutex) shaped it, and
-section 5 of `docs/specs/android-v1-formats.md` is the file it must read. Built in M2.1 as
-described here, with opening and closing only; the schema and its migrations land in M2.2, the use
-cases in M2.4 to M2.6. The API reference is `cargo doc -p denarii-store --open`, run from `rust/`.
+and write on it. It guarantees that the file opens only with its key, that opening writes to a
+file only to bring it to schema version 2 and changes nothing when it fails, and that calls from
+several threads never interleave on its one connection. ADR-0006 (the database stays SQLCipher,
+opened from Rust with `rusqlite`), ADR-0017 (SQLCipher and OpenSSL compiled from source on every
+target, and one connection behind a mutex), and ADR-0018 (a new schema only in an absent or empty
+file, and no write to a schema the store doesn't know) shaped it. Sections 5 and 6 of
+`docs/specs/android-v1-formats.md` describe the file it must read. Opening and closing were built
+in M2.1, and the schema and its migration in M2.2, as described here; the use cases land in M2.4
+to M2.6. The API reference is `cargo doc -p denarii-store --open`, run from `rust/`.
 
 ## Why this design
 
@@ -75,8 +77,10 @@ so nothing is left half open, as v1's `DatabaseHolder.open` closed a database th
 
    Setting the level first means that a message being logged at that moment is dropped by the
    level check before the log file is unset.
-2. **Open the file** for reading and writing, creating it if it is absent. Paths are file names,
-   never `file:` URIs, because the open doesn't pass `SQLITE_OPEN_URI`.
+2. **Open the file** for reading and writing, creating it if it is absent. Just before, note
+   whether the file is absent or holds 0 bytes, because opening creates an absent file and the
+   next steps can't tell the two apart. Paths are file names, never `file:` URIs, because the
+   open doesn't pass `SQLITE_OPEN_URI`.
 3. **Require SQLCipher.** `PRAGMA cipher_version` must return a row. Plain SQLite ignores a pragma
    it doesn't know, so without this check a build without the codec would ignore the key and
    write plaintext.
@@ -90,12 +94,13 @@ so nothing is left half open, as v1's `DatabaseHolder.open` closed a database th
 6. **Check the key** with `SELECT count(*) FROM sqlite_master`, which decrypts the first page and
    checks its authentication code. SQLite's `NotADatabase` error here becomes
    `StoreError::KeyRejected`.
-7. **Turn on foreign keys** (`PRAGMA foreign_keys = ON`), as Room did for v1 (invariant 8 of the
+7. **Bring the schema to version 2**: check it, create it, or migrate it, as
+   [Schema version 2](#schema-version-2) describes.
+8. **Turn on foreign keys** (`PRAGMA foreign_keys = ON`), as Room did for v1 (invariant 8 of the
    format spec).
 
-Opening reads nothing else. It doesn't read or change the schema version or the journal mode:
-v1's files are in write-ahead-log mode, which SQLite records in the file and keeps. M2.2 adds the
-schema check and the migrations.
+Opening doesn't change an existing file's journal mode. v1's files are in write-ahead-log mode,
+which SQLite records in the file and keeps.
 
 What opens and what doesn't, measured against the M2.1 fixture:
 
@@ -108,10 +113,100 @@ What opens and what doesn't, measured against the M2.1 fixture:
 | The fixture's first 15 to 4,095 bytes | `KeyRejected` |
 | The fixture's first 4,096 or 8,192 bytes | `Sqlite`, with SQLite's `DatabaseCorrupt` code: the first page opens, but pages of the schema are missing |
 | The fixture with one byte of its first page changed | `KeyRejected` |
-| An absent file, an empty file, or the fixture's first byte alone | Opens as an empty database; `user_version` is 0, and opening writes nothing |
+| An absent or empty file | Opens, with version 2's empty tables in write-ahead-log mode |
+| The fixture's first byte alone | `UnrecognizedSchema`, with version 0; the file is unchanged |
 
-The last row matters for M2.2: SQLite reads a 1-byte file as an empty database, so "`user_version`
-is 0" doesn't prove that the install is new.
+SQLite reads a 1-byte file as an empty database too, so "`user_version` is 0" doesn't prove that
+the install is new. That is why the open looks at the file's size before SQLite does.
+
+## Schema version 2
+
+Built in M2.2 as described here. Every open brings the file to schema version 2, the four tables
+in section 6 of the format spec, as Room 2.8.5 did for v1 (ADR-0018). `src/schema.rs` holds
+Room's statements for version 2, and `src/migration.rs` chooses the step and runs it. The store
+doesn't map rows to Rust types yet; the use cases that read them do, from M2.4.
+
+### Choosing the step
+
+SQLite keeps the schema version in the file's header, where `PRAGMA user_version` reads it.
+Room also keeps a bookkeeping table, `room_master_table`, whose row with ID 42 holds the schema's
+identity hash: a fingerprint of the schema that Room's compiler computes. Version 2's hash is
+`425274f1a5ac9232a36cc07f4f479e7c`, and version 1's was `15f1c4acb81d97b124713b69e7ec869d`.
+
+| `user_version` | And | What `open` does |
+| :- | :- | :- |
+| 2 | Row 42 of `room_master_table` holds version 2's hash | Nothing: the file is only read |
+| 2 | The table or the row is missing, or holds another hash | Returns `UnrecognizedSchema`, and writes nothing |
+| 1 | | Migrates the file to version 2 |
+| 0 | The file was absent or held 0 bytes, and has no tables | Creates version 2's tables |
+| 0 | Anything else, such as a 1-byte file or one with tables | Returns `UnrecognizedSchema`, and writes nothing |
+| Above 2 | | Returns `NewerSchema`, and writes nothing |
+| Below 0 | | Returns `UnrecognizedSchema`, and writes nothing |
+
+This is Room's rule with three cases made stricter (ADR-0018). Room wrote a new schema into any
+version 0 file with no tables, so it would have written over the 1-byte file. For a version 2 file
+without `room_master_table`, Room compared the tables with version 2's, column by column, then
+wrote the hash. And Room also accepted a legacy hash, the workaround for a Room 1.x bug, which no
+v1 file holds: v1 used only Room 2.6.1 and later. No v1 install is known to hold any of these
+files, and a schema the store refuses stays as it was, for a later build to read.
+
+A version 2 file is only read, so opening one that v1 wrote changes no byte of it. Creating and
+migrating run in one `BEGIN IMMEDIATE` transaction, which takes the database's write lock before
+it reads anything. The step is chosen again inside it, so two connections can't both act on what
+one of them read before the other wrote. Any failure rolls the transaction back, which leaves the
+file as it was.
+
+### Creating
+
+A new file gets Room's statements for version 2, copied from v1's exported schema
+(`app/schemas/com.denariidolor.data.local.db.AppDatabase/2.json` at `6d57526`), in the order Room
+ran them: each table, then its indexes. Then come `room_master_table` with version 2's hash, and
+`user_version` 2. SQLite keeps each `CREATE` statement's text in `sqlite_master`, so the new file's
+schema text matches the M2.1 fixture's, row for row. SQLite adds `sqlite_sequence` with the first
+`AUTOINCREMENT` table, as it did for v1.
+
+Once the transaction commits, the file switches to write-ahead logging, as Room put every file it
+opened on most phones; SQLite can't change the journal mode inside a transaction. If SQLite
+reports an error there, the open fails, and the file stays a valid version 2 database in the
+rollback-journal mode, which later opens keep. If SQLite can't use write-ahead logging for the
+file, it keeps the rollback journal without an error, answering with the mode it kept, and the
+open succeeds.
+
+### Migrating from version 1
+
+Version 1 kept money in `REAL` dollars (section 6 of the format spec). The migration runs v1's
+`MIGRATION_1_2` statements unchanged
+(`app/src/main/java/com/denariidolor/data/local/db/Migrations.kt` at `6d57526`): for `accounts`,
+`budgets`, and `transactions` in turn, it creates the table under its version 2 definition, copies
+the rows with `CAST(ROUND(<column> * 100) AS INTEGER)`, drops the old table, renames the new one,
+and creates its indexes again. `categories` is the same in both versions, so the migration leaves
+it alone. Then it writes version 2's hash into `room_master_table` and sets `user_version` to 2, as
+Room did after a migration.
+
+- **Foreign keys are off** while it runs, as Room had them. This build turns them on by default
+  (`-DSQLITE_DEFAULT_FOREIGN_KEYS=1`), and with them on, dropping `accounts` would fail on the
+  `RESTRICT` key from `transactions`. SQLite ignores the pragma inside a transaction, so it is set
+  before the transaction starts. Step 8 of the open turns them back on.
+- **Rounding.** `ROUND` with no digits adds 0.5 to the product, or subtracts it from a negative
+  one, and drops the fraction, so a half rounds away from zero. It works on the product as a
+  binary fraction, so values that look alike can round apart:
+
+  | Stored dollars | `<column> * 100` as SQLite computes it | Cents |
+  | :- | :- | :- |
+  | `0.005` | `0.5` | `1` |
+  | `1.005` | `100.49999999999999` | `100` |
+  | `19.995` | `1999.5` | `2000` |
+  | `-12.345` | `-1234.5` | `-1235` |
+
+  These come from SQLite 3.54.1, the version this build compiles. v1 ran the same statements on
+  SQLCipher 4.19.0's SQLite; fixture F4 (M2.3), which v1 writes, checks that the two agree.
+- **`AUTOINCREMENT` counters.** Dropping a table deletes its row in `sqlite_sequence`, and copying
+  rows into the new table records only the highest ID copied, or 0 when there is none. So after
+  the migration, an ID deleted before it can be handed out again. v1's migration did the same.
+- **No check of the result.** Room compared the migrated tables with version 2's. The store
+  doesn't: the statements are fixed, and they create `accounts`, `budgets`, and `transactions`
+  with version 2's definitions (ADR-0018). A file whose version 1 tables lack a column fails the
+  migration, which rolls back.
 
 ## The key
 
@@ -128,12 +223,14 @@ closes.
 
 ## Errors
 
-`StoreError` has four variants. None carries the key.
+`StoreError` has six variants. None carries the key.
 
 | Variant | When |
 | :- | :- |
 | `CipherUnavailable` | The build's SQLite has no SQLCipher codec: a build error, never a user's |
 | `KeyRejected` | The file doesn't open with the key: the key is wrong, or the file is plaintext, too short to hold a page, or not a database |
+| `NewerSchema { version }` | The schema version is above 2: a later build of the app wrote the file |
+| `UnrecognizedSchema { version }` | The schema isn't one the store knows: a negative version, a version 0 file that held a byte before it opened, or a version 2 file without version 2's identity hash |
 | `Poisoned` | An earlier call panicked while it held the connection, so its state is unknown |
 | `Sqlite { operation, source }` | Any other SQLite error, with what the store was doing and SQLite's error as its source |
 
@@ -165,8 +262,9 @@ environment that Flutter's build hook or a contributor sets up. The register in
 
 1. The database opens only with its key. Another key, a plaintext file, and a file too short to
    hold a page return `KeyRejected`.
-2. Opening and closing, with or without an error, never deletes a file or changes a byte of an
-   existing one.
+2. Opening and closing never delete a file. Opening writes to a file only to create version 2's
+   tables in a file that was absent or held 0 bytes, or to migrate a version 1 file. A failed open
+   leaves an existing file as it was, and opening a version 2 file changes none of its bytes.
 3. A file that v1's `sqlcipher-android` 4.19.1 wrote opens with SQLCipher 4's settings, reads back
    v1's rows, and reports `user_version` 2.
 4. A database the store creates is encrypted: it has no plaintext SQLite header, and its rows'
@@ -175,18 +273,29 @@ environment that Flutter's build hook or a contributor sets up. The register in
    log pragmas run once per process, before the first file connection opens.
 6. The key never appears in `Debug` output or in an error.
 7. `Store` is `Send` and `Sync`, and calls from several threads all succeed.
+8. A database the store creates holds the same schema text as v1's, with version 2's identity
+   hash, and is in write-ahead-log mode.
+9. A version 1 database migrates as v1's `MIGRATION_1_2` did: v1's own test values come out the
+   same, and the migrated tables have the same columns, foreign keys, and indexes as a version 2
+   file v1 wrote.
+10. A file at a schema version above 2, below 0, at version 2 without version 2's identity hash,
+    or at version 0 after holding a byte, is refused, and no byte of it changes.
 
 ## Tests
 
 | Invariant | Checked by |
 | :- | :- |
-| 1, 2 | `tests/open.rs`: another key, noise, the fixture cut off at eight lengths from 0 bytes to two pages, a changed byte, and an unchanged file after each; `src/store.rs`: a plaintext file |
+| 1, 2 | `tests/open.rs`: another key, noise, the fixture cut off at six lengths from 15 bytes to two pages, a changed byte, and an unchanged file after each; `src/store.rs`: a plaintext file; `src/migration.rs`: a failed migration |
 | 3 | `tests/open.rs` (`user_version`, and every byte unchanged after closing) and `src/store.rs` (the two accounts, the table names, and the cipher settings), against `tests/fixtures/v1-sqlcipher-android-4.19.1.db`, which `tests/fixtures/README.md` describes |
 | 4 | `src/store.rs`: a new database, reopened with its key and refused with another |
 | 5 | `src/store.rs`: `foreign_keys` is 1 and `cipher_log_level` is `NONE` after opening the fixture; `tests/concurrent_open.rs` for the setup |
 | 6 | `src/key.rs`: the `Debug` output |
 | 7 | `tests/open.rs`: a compile-time check, and eight threads sharing one `Store`; `tests/concurrent_open.rs`: 64 stores opened at the same moment, the first opens of a process of their own. The races it guards against are rare, so one passing run proves little; the evidence is the loop counts in the roadmap's note on M2.1 |
+| 8 | `src/migration.rs`: an absent and an empty file, compared with the fixture's `sqlite_master`, `room_master_table`, and journal mode; `tests/open.rs`: the same two files through the public API |
+| 9 | `src/migration.rs`: a version 1 file written with Room's version 1 statements and the rows of v1's `MigrationTest`, then its cents, its table shapes against the fixture's, its foreign key check, its rounding, and its `sqlite_sequence` |
+| 10 | `src/migration.rs`: each refused case, with the file's bytes compared before and after; `tests/open.rs`: the 1-byte file |
 | The key pragma's text | `src/key.rs`: v1's raw-key syntax for a known key, and a length equal to the capacity |
 
-Run them with `cargo test --locked -p denarii-store` from `rust/`. Fixture F3 of the format spec,
-with every transaction type, comes in M2.3.
+Run them with `cargo test --locked -p denarii-store` from `rust/`, or only the schema's with
+`cargo test --locked -p denarii-store migration`. Fixtures F3, with every transaction type, and
+F4, a version 1 file written by v1 itself, come in M2.3.

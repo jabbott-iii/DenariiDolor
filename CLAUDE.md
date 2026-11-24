@@ -11,10 +11,10 @@ files with `git show 6d57526:<path>`. The new app must open what v1 left on user
 
 ## Status
 
-As of 2026-11-23, all of M0's tasks, M1.1, M1.2, M1.4, M1.5, M1.6 and M2.1 are done, and M1.3's Flutter jobs are in `ci.yml`
+As of 2026-11-23, all of M0's tasks, M1.1, M1.2, M1.4, M1.5, M1.6, M2.1 and M2.2 are done, and M1.3's Flutter jobs are in `ci.yml`
 but haven't run on a pull request yet. M0's exit criteria are the maintainer's to check, and they
 include deciding ADR-0004 and ADR-0007, which are still Proposed; the maintainer accepted ADR-0005 in M1.2 and ADR-0006
-in M2.1.
+in M2.1, and decided ADR-0018 in M2.2.
 Built: the Doctrina rules, the `ci-gates` and `dependency-upgrade` skills, the planning documents in `docs/`, the spec of
 v1's stored formats, the `denarii-core` crate (money, transactions, balance changes and validation) with its tests, the
 Flutter project (M1.1): the Android and iOS host apps, the app scope, and a root switch between placeholder sign-in and
@@ -24,8 +24,8 @@ v1's strings in seven ARB files (M1.4), with a locale resolver that walks the ph
 v1's colors as Material 3 light and dark themes (M1.5), with its chart colors and system bars, and money and month
 text in Dart (M1.6), with currency symbols generated from Java 25's CLDR data (ADR-0016), and the `denarii-store` crate
 (M2.1), which opens v1's SQLCipher database with SQLCipher and OpenSSL compiled from source (ADR-0017), with tests
-against a database that v1's own code wrote.
-Planned: the rest of storage (M2.2–M2.7), sign-in (M3), the screens (M4), backups (M5), the Android release (M6) and iOS (M7). Nothing from the rewrite has shipped. `docs/roadmap.md` has the
+against a database that v1's own code wrote, and brings its schema to version 2 as v1 did (M2.2, ADR-0018).
+Planned: the rest of storage (M2.3–M2.7), sign-in (M3), the screens (M4), backups (M5), the Android release (M6) and iOS (M7). Nothing from the rewrite has shipped. `docs/roadmap.md` has the
 details.
 
 ## Working agreement
@@ -65,7 +65,8 @@ details.
   `flutter_rust_bridge` 2.13.0 (ADR-0005), with only the `dart-opaque`, `rust-async` and `thread-pool` features, compiled by
   Flutter's native-assets hook in `hook/build.dart` (ADR-0014). `crates/store` (`denarii-store`) is built: it opens the
   SQLCipher database with `rusqlite` 0.43.0, compiling SQLCipher and OpenSSL's `libcrypto` from source on every target, and
-  keeps its one connection behind a mutex (ADR-0006, ADR-0017). The `vault`, `backup` and `report` crates are planned.
+  keeps its one connection behind a mutex (ADR-0006, ADR-0017). Opening brings the schema to version 2, creating it only in
+  an absent or empty file and refusing a schema it doesn't know (ADR-0018). The `vault`, `backup` and `report` crates are planned.
 - **Flutter:** a Dart app at the repository root, created in M1.1: Flutter 3.50.1 pinned in `pubspec.yaml`, iOS 15 and
   later (ADR-0009), `ChangeNotifier` view models with no package (ADR-0010), and Flutter's `Navigator` with no package
   (ADR-0011).
@@ -110,7 +111,7 @@ Kotlin and Swift own only what needs the operating system (ADR-0004, Proposed).
 
 ```
 rust/crates/core      money (Cents, parse_cents), transactions, balance_deltas, validation, defaults    built, std only
-rust/crates/store     SQLCipher database, schema v2 and migrations, use cases                         open built (M2.1), rest M2.2–M2.6
+rust/crates/store     SQLCipher database, schema v2 and migrations, use cases                         open, schema built (M2.1, M2.2), use cases M2.4–M2.6
 rust/crates/vault     profile, key wrapping, PIN and answer, lockout, session                         M3
 rust/crates/backup    backup files, every format version                                              M5.1
 rust/crates/report    monthly report, search, CSV                                                     M2.7

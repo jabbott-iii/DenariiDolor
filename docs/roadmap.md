@@ -441,13 +441,42 @@ rules.
   - Accept:
     - A database made by `sqlcipher-android` 4.19.1 opens and reads.
   - Verify: `cd rust && cargo test --locked -p denarii-store` (expect pass)
-- [ ] **M2.2 — store: schema version 2 and forward migrations**
+- [x] **M2.2 — store: schema version 2 and forward migrations**
   - Note (from M2.1): `user_version` 0 doesn't prove a new install. An absent or empty file opens
     as an empty database, and so does a 1-byte file, which SQLite reads that way
     (`tests/open.rs`). Decide which files may get a new schema before creating one, and never
     write over a file that isn't empty. v1's file has the tables `accounts`, `budgets`,
     `categories`, `room_master_table`, `sqlite_sequence`, and `transactions`, with no
     `android_metadata`, and is in write-ahead-log mode, which `Store::open` leaves as it is.
+  - Note: 2026-11-23: the maintainer chose the recommended answer to three questions, recorded in
+    ADR-0018. `Store::open` writes a new schema only into a file that was absent or held 0 bytes
+    before it opened; any other file at `user_version` 0, the 1-byte file included, is refused
+    and left unchanged. A schema version above 2, a negative one, and a version 2 file whose
+    `room_master_table` is missing or holds another identity hash are refused too, and nothing is
+    written. A file the store creates switches to write-ahead logging, as Room's files did. The
+    alternatives were Room's rule (any version 0 file with no tables gets the schema), a separate
+    `Store::create` for setup, checking a version 2 file without `room_master_table` column by
+    column, as Room did, and leaving the journal mode to M2.4.
+  - Note: 2026-11-23: `Store::open` now brings each file to version 2 before it turns foreign keys
+    on (`docs/specs/store.md`, "Schema version 2"). `src/schema.rs` holds Room's version 2
+    statements and identity hash, copied from v1's exported schema, and `src/migration.rs`
+    chooses the step and runs v1's `MIGRATION_1_2` statements unchanged. `StoreError` gains
+    `NewerSchema` and `UnrecognizedSchema`. "Map the four tables" is read as the schema; Rust
+    types for the rows come with the use cases that read them (M2.4–M2.6). A new file's
+    `sqlite_master` matches the M2.1 fixture's row for row, and a migrated version 1 file has the
+    fixture's columns, foreign keys, and indexes. Until M2.3, the version 1 file in the tests is
+    one that Rust writes with Room's version 1 statements and the rows of v1's `MigrationTest`.
+  - Note: 2026-11-23: three findings. The migration needs foreign keys off, because this build
+    turns them on by default and dropping `accounts` then fails on the `RESTRICT` key from
+    `transactions`. It resets each `AUTOINCREMENT` counter to the highest ID copied, as v1's did,
+    which the format spec now says. And SQLite 3.54.1 turns 19.995 dollars into 2,000 cents,
+    because 19.995 times 100 comes out at exactly 1999.5 in binary floating point, while 1.005
+    dollars becomes 100.
+  - Note: 2026-11-23: `cargo test --locked -p denarii-store migration` passed (12 tests). The
+    crate's 19 unit tests, 12 integration tests in two files, and doc test passed 100 runs in a
+    row. Each of five deliberate breakages failed a test: a non-unique index after the migration,
+    one missing space in the new schema, foreign keys left on, any version 0 file taken for a new
+    one, and no switch to write-ahead logging.
   - Depends: M2.1
   - Do:
     - Map the four tables in section 6 of the format spec, continue from `user_version` 2, and
@@ -460,6 +489,13 @@ rules.
     fixture: a throwaway instrumented test in a scratch copy of v1 at `6d57526`, which builds
     offline with the maintainer's Gradle cache, run on `Denarii_API_36` and copied out with
     `adb exec-out run-as`. F3 can be made the same way, through v1's DAOs and use cases.
+  - Note (from M2.2): give F4 balances of 0.005, 1.005, 19.995, and -12.345 dollars, which Rust's
+    SQLite 3.54.1 migrates to 1, 100, 2,000, and -1,235 cents (`docs/specs/store.md`, "Migrating
+    from version 1"). Keep two copies of the file: one at version 1, and one that v1's own
+    `MIGRATION_1_2` migrated on the emulator. Then a test can check that `Store::open` migrates
+    the first to the same rows as the second, which shows whether v1's SQLite rounded the same
+    way. The tests in `src/migration.rs` write a version 1 file from Room's statements, and show
+    how.
   - ⏳ needs an Android emulator to run the v1 app at `6d57526`
   - Depends: M2.2
   - Do:
@@ -564,6 +600,8 @@ and fingerprint, and sees the same balances.
     SQLCipher and OpenSSL for each ABI through `hook/build.dart`, which takes about a minute per
     ABI from an empty target folder (ADR-0017). Check `flutter build apk` and the CI job's time
     then, and map each `StoreError` variant to a code for the screens.
+  - Note (from M2.2): `Store::open` can also return `NewerSchema` and `UnrecognizedSchema`
+    (ADR-0018). Both leave the file as it was, and neither may lead the app to delete it.
   - Note (from M1.2): the sign-in placeholder now has a route (`SignInPlaceholderRoute`) and a view
     model with M1.2's amount field. Remove the field with the placeholder, and point
     `integration_test/bridge_test.dart`'s screen check at a screen that still calls the bridge.
@@ -714,6 +752,9 @@ rules (CS-28).
 - [ ] **M5.3 — claude: the `schema-migration` skill**
   - Note: 2026-11-23: split from M0.8 by the user's choice, because the store's migrations (M2.2)
     and the backup formats (M5.1) that a schema change must update don't exist yet.
+  - Note (from M2.2): `rust/crates/store/src/migration.rs` chooses the step from `user_version`
+    and runs each migration in one immediate transaction, with foreign keys off. The first schema
+    version after 2 must also decide what `room_master_table` holds from then on (ADR-0018).
   - Depends: M2.2, M5.1
   - Do:
     - Write `.claude/skills/schema-migration/SKILL.md`, starting from v1's `room-migration` skill

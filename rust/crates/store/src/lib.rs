@@ -10,10 +10,11 @@
 //! v1 keeps every record in one SQLCipher 4 database (SQLite with each page encrypted with
 //! AES-256 and authenticated with HMAC-SHA512), under a raw 32-byte key that the vault unwraps
 //! at sign-in. This crate opens that file as it is, with `rusqlite` and the SQLCipher and OpenSSL
-//! builds it compiles in (ADR-0006, ADR-0017). Today it opens and closes the database; the
-//! schema, its migrations, and the use cases land in M2.2 to M2.6. The bridge reaches it only
-//! after the vault has unlocked the key (M3). Its design is in `docs/specs/store.md`, and the
-//! file it reads is in section 5 of `docs/specs/android-v1-formats.md`.
+//! builds it compiles in (ADR-0006, ADR-0017). Today it opens the database, brings its schema to
+//! version 2 as v1 did (ADR-0018), and closes it; the use cases land in M2.4 to M2.6. The bridge
+//! reaches it only after the vault has unlocked the key (M3). Its design is in
+//! `docs/specs/store.md`, and the file it reads is in sections 5 and 6 of
+//! `docs/specs/android-v1-formats.md`.
 //!
 //! # The parts
 //!
@@ -24,7 +25,7 @@
 //!
 //! # Example
 //!
-//! A new database opens with its key, and its schema version starts at 0:
+//! A new database opens with its key and gets schema version 2's empty tables:
 //!
 //! ```
 //! use denarii_store::{DatabaseKey, Store};
@@ -35,7 +36,7 @@
 //! // A test value; the real key comes from the vault.
 //! let key = DatabaseKey::from_bytes([7; DatabaseKey::LEN]);
 //! let store = Store::open(dir.join("denarii_dolor.db"), &key)?;
-//! assert_eq!(store.user_version()?, 0);
+//! assert_eq!(store.user_version()?, 2);
 //! store.close()?;
 //! # std::fs::remove_dir_all(&dir)?;
 //! # Ok(())
@@ -44,12 +45,15 @@
 //!
 //! # What callers must know
 //!
-//! - Opening never deletes or rewrites a file. A wrong key, a plaintext file, and a file cut off
-//!   inside its first page return [`StoreError::KeyRejected`]. A file whose first page opens but
-//!   whose schema is damaged returns [`StoreError::Sqlite`] with SQLite's `DatabaseCorrupt` code.
-//!   Either way the file stays as it was.
-//! - An absent or empty file opens as an empty database, with a schema version of 0. So does a
-//!   1-byte file, because SQLite reads it that way.
+//! - Opening never deletes a file. It writes to one only to bring it to schema version 2: an
+//!   absent or 0-byte file gets version 2's empty tables and write-ahead logging, and a version 1
+//!   file is migrated, each in one transaction. Any failure leaves an existing file as it was.
+//! - A wrong key, a plaintext file, and a file cut off inside its first page return
+//!   [`StoreError::KeyRejected`]. A file whose first page opens but whose schema is damaged
+//!   returns [`StoreError::Sqlite`] with SQLite's `DatabaseCorrupt` code.
+//! - A schema the store doesn't know returns [`StoreError::NewerSchema`] or
+//!   [`StoreError::UnrecognizedSchema`], and is never written over. That includes a 1-byte file,
+//!   which SQLite reads as an empty database.
 //! - [`Store`] is `Send` and `Sync`. Its operations take turns on one connection, so a slow one
 //!   makes the next wait.
 //! - The first [`Store::open`] in a process sets SQLCipher up and turns its log off, once, under a
@@ -60,6 +64,8 @@
 
 mod error;
 mod key;
+mod migration;
+mod schema;
 mod store;
 
 pub use error::StoreError;

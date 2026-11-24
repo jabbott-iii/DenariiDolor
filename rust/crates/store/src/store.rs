@@ -11,8 +11,9 @@ use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use rusqlite::{Connection, ErrorCode, OpenFlags, OptionalExtension};
 
-use crate::error::StoreError;
+use crate::error::{StoreError, sqlite};
 use crate::key::{DatabaseKey, KeyPragma};
+use crate::migration::{self, FileOrigin};
 
 /// The SQLCipher database, opened with its key.
 ///
@@ -28,31 +29,45 @@ pub struct Store {
 }
 
 impl Store {
-    /// Opens the database at `path` with `key`, creating an empty one if no file is there.
+    /// Opens the database at `path` with `key`, and brings it to schema version 2.
     ///
     /// The first open in a process sets SQLCipher up and turns off its own log. Every open then
     /// checks that this build has SQLCipher, hands it the key in v1's raw-key syntax, pins
-    /// SQLCipher 4's settings (`PRAGMA cipher_compatibility = 4`), reads the schema to check the
-    /// key, and turns on foreign keys, as section 5 of `docs/specs/android-v1-formats.md`
-    /// describes. It doesn't read or change the schema version; that is M2.2's migrations.
+    /// SQLCipher 4's settings (`PRAGMA cipher_compatibility = 4`), and reads the schema to check
+    /// the key, as section 5 of `docs/specs/android-v1-formats.md` describes. Then it brings the
+    /// schema to version 2, as v1's Room did (ADR-0018), and turns on foreign keys:
     ///
-    /// A failed open closes the connection again and changes nothing in an existing file.
+    /// - A file at version 2 is checked and left as it is.
+    /// - A file at version 1 is migrated with v1's own statements, which turn its `REAL` dollars
+    ///   into whole cents.
+    /// - A file that was absent, or held 0 bytes, gets version 2's empty tables, then switches to
+    ///   write-ahead logging, as v1's files did.
+    ///
+    /// Creating and migrating each run in one transaction. A failed open closes the connection
+    /// again, and leaves an existing file as it was.
     ///
     /// # Errors
     ///
     /// - [`StoreError::CipherUnavailable`] if this build's SQLite has no SQLCipher codec.
     /// - [`StoreError::KeyRejected`] if the file doesn't open with `key`: the key is wrong, or the
     ///   file is plaintext, too short to hold a page, or not a database at all.
-    /// - [`StoreError::Sqlite`] if SQLite can't open the file or run a setup statement, or, with
-    ///   SQLite's `DatabaseCorrupt` code, if the key opens the first page but the schema is
-    ///   damaged.
+    /// - [`StoreError::NewerSchema`] if the file's schema version is above 2.
+    /// - [`StoreError::UnrecognizedSchema`] if the schema version is negative, if a file that held
+    ///   at least one byte is at version 0, or if a version 2 file lacks version 2's Room identity
+    ///   hash.
+    /// - [`StoreError::Sqlite`] if SQLite can't open the file, run a setup statement, or migrate
+    ///   the schema, or, with SQLite's `DatabaseCorrupt` code, if the key opens the first page
+    ///   but the schema is damaged.
     pub fn open(path: impl AsRef<Path>, key: &DatabaseKey) -> Result<Self, StoreError> {
+        let path = path.as_ref();
         // No SQLITE_OPEN_URI: the path is a file name, never a `file:` URI with options in it.
         let flags = OpenFlags::SQLITE_OPEN_READ_WRITE
             | OpenFlags::SQLITE_OPEN_CREATE
             | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+        // Read before SQLite opens the file, which creates it if it is absent.
+        let origin = FileOrigin::of(path);
         prepare_sqlcipher()?;
-        let connection = Connection::open_with_flags(path, flags)
+        let mut connection = Connection::open_with_flags(path, flags)
             .map_err(|source| sqlite("open the database file", source))?;
         require_sqlcipher(&connection)?;
         apply_key(&connection, key)?;
@@ -60,6 +75,7 @@ impl Store {
             .execute_batch("PRAGMA cipher_compatibility = 4;")
             .map_err(|source| sqlite("pin SQLCipher 4's settings", source))?;
         check_key(&connection)?;
+        migration::bring_to_current(&mut connection, origin)?;
         connection
             .execute_batch("PRAGMA foreign_keys = ON;")
             .map_err(|source| sqlite("turn on foreign keys", source))?;
@@ -68,8 +84,8 @@ impl Store {
         })
     }
 
-    /// The schema version SQLite keeps in the file's header (`PRAGMA user_version`): 2 for every
-    /// database v1 wrote, and 0 for a new, empty one.
+    /// The schema version SQLite keeps in the file's header (`PRAGMA user_version`), which is 2
+    /// once [`open`](Self::open) has succeeded.
     ///
     /// # Errors
     ///
@@ -103,10 +119,6 @@ impl Store {
     }
 }
 
-fn sqlite(operation: &'static str, source: rusqlite::Error) -> StoreError {
-    StoreError::Sqlite { operation, source }
-}
-
 /// Whether this process has set SQLCipher up and turned its log off.
 ///
 /// Two races in SQLCipher's process-wide setup make this lock necessary; each crashed or failed
@@ -129,7 +141,7 @@ static SQLCIPHER_READY: Mutex<bool> = Mutex::new(false);
 /// doesn't log (`CLAUDE.md`, "Security posture"). No store has keyed a connection yet, so nothing
 /// is logging; the level still goes to `NONE` before the log file is unset, so a message logged by
 /// some other connection at that moment is dropped by the level check.
-fn prepare_sqlcipher() -> Result<(), StoreError> {
+pub(crate) fn prepare_sqlcipher() -> Result<(), StoreError> {
     // The flag is set only after every step succeeds, so it stays accurate even if a panic in an
     // earlier attempt poisoned the lock.
     let mut ready = SQLCIPHER_READY
@@ -291,7 +303,7 @@ mod tests {
         let dir = scratch_dir("a_new_database_is_encrypted_and_opens_only_with_its_key");
         let path = dir.join("new.db");
         let store = Store::open(&path, &fixture_key()).unwrap();
-        assert_eq!(store.user_version().unwrap(), 0);
+        assert_eq!(store.user_version().unwrap(), 2);
         store
             .lock()
             .unwrap()

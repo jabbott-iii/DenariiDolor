@@ -646,3 +646,80 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
 - **Revisit when:** a `rusqlite` upgrade moves to SQLCipher 5 or drops the vendored feature; the
   v1 fixture stops opening; M6.3 can't meet the download-size budget; or a user-visible screen
   waits on a database call that another call is holding.
+
+## ADR-0018 — The store writes a new schema only into an absent or empty file, and refuses a schema it doesn't know
+
+- **Status:** Accepted
+- **Date:** 2026-11-23
+- **Context:** M2.2 makes `Store::open` bring each file to schema version 2, as v1's
+  `DatabaseHolder.open` did through Room 2.8.5. Room chose what to do from the file's
+  `PRAGMA user_version`, and from its bookkeeping table `room_master_table`, which holds an
+  identity hash (a fingerprint of the schema that Room's compiler computes) in the row with ID 42.
+  This is Room's behavior, read in Room 2.8.5's source (`RoomOpenHelper` and
+  `RoomConnectionManager`), not code in v1's repository:
+  - At version 0, Room created any missing tables, wrote `room_master_table`, and set the version
+    to 2. If the file already held tables, it then compared them with version 2's, column by
+    column, and failed if they differed.
+  - At version 1, it ran v1's `MIGRATION_1_2`, compared the result with version 2's tables, and
+    wrote version 2's hash.
+  - At version 2, it compared the stored identity hash with version 2's, and failed on a
+    difference. It also accepted a legacy hash, which works around a Room 1.x bug; Room never
+    writes one, and v1 used only Room 2.6.1, 2.8.0, and 2.8.5. If `room_master_table` was
+    missing, it compared the tables column by column, then wrote the hash.
+  - Above version 2, it failed, because v1 has no migration to an older schema.
+
+  M2.1 found that SQLite reads an absent file, a 0-byte file, and a 1-byte file all as an empty
+  database at version 0 (`rust/crates/store/tests/open.rs`), so Room's rule would write a new
+  schema over a damaged 1-byte file. Room writes `room_master_table` in the same transaction that
+  creates or migrates the schema, so every v1 file has one. Version 2's hash,
+  `425274f1a5ac9232a36cc07f4f479e7c`, has stayed the same since version 2 appeared in commit
+  `bfdea7a` (2026-09-20, Room 2.6.1), through Room 2.8.5. Room also put every file it opened in
+  write-ahead-log mode, except on a phone that Android reports as low on memory, where it turned
+  write-ahead logging off and left `sqlcipher-android`'s rollback journal. SQLite records the mode
+  in the file; the M2.1 fixture is in write-ahead-log mode. A file that `rusqlite` creates starts in SQLite's default rollback-journal mode. On
+  2026-11-23 the maintainer was asked which files may get a new schema, what `open` does with a
+  schema it doesn't know, and which journal mode a new file gets.
+- **Decision** (the maintainer chose the recommended option for all three questions on
+  2026-11-23):
+  - `Store::open` writes a new schema only into a file that was absent or held 0 bytes before it
+    opened, and that then reads as version 0 with no tables. It writes Room's version 2 statements
+    and `room_master_table`, as Room did, then switches the file to write-ahead logging. Any
+    other file at version 0 returns `StoreError::UnrecognizedSchema` and isn't written.
+  - A version above 2 returns `StoreError::NewerSchema`. A negative version, or a version 2 file
+    whose `room_master_table` is missing or holds another hash, returns
+    `StoreError::UnrecognizedSchema`. Neither writes to the file.
+  - A version 1 file migrates with v1's `MIGRATION_1_2` statements, unchanged, in one transaction,
+    with foreign keys off as Room had them.
+- **Consequences:**
+  - Good:
+    - A new schema never overwrites a file that holds data, and a schema the store doesn't know
+      stays as it was for a later build to read.
+    - A file the store creates holds the same schema text, and is in the same journal mode, as one
+      v1 creates on most phones, so later code never has to tell them apart.
+  - Bad:
+    - Two kinds of file open differently from v1. A version 0 file that isn't empty, such as a
+      1-byte file, would have been written over by Room. A version 2 file without
+      `room_master_table` would have been checked and accepted. No v1 install is known to hold
+      either, and a user who has one gets an error instead of a database.
+    - Room also compared a migrated version 1 file with version 2's tables. The store doesn't:
+      its statements rebuild `accounts`, `budgets`, and `transactions` with version 2's
+      definitions, and `categories`, which the migration doesn't touch, is the one Room created.
+    - The size check runs just before SQLite opens the file, so a file that another program
+      writes in between would be taken for a new one. Only the app writes to its private folder.
+    - On a low-memory phone, a new file gets write-ahead logging where v1 kept a rollback
+      journal. If switching fails, the open fails and the file stays a valid version 2
+      database in rollback-journal mode, which later opens keep.
+  - Follow-up: M3.5 maps the two new errors to codes and messages. The first schema version
+    after 2 decides what `room_master_table` holds from then on, through the `schema-migration`
+    skill (M5.3).
+- **Alternatives considered:**
+  - Room's rule, which creates the schema in any version 0 file with no tables, a 1-byte file
+    included.
+  - A separate `Store::create` for setup, with `open` refusing a file that has no schema. v1's
+    sign-in made a new database when the file was missing, and the vault (M3) would have to choose
+    which call to make.
+  - Room's handling of a version 2 file without `room_master_table`: compare its tables column by
+    column and write the hash. That is more code, for a file that no v1 install produces.
+  - Leaving a new file in the rollback-journal mode, and deciding in M2.4 with the first writes.
+- **Revisit when:** a user reports that the new app refuses a database that v1 opened, or the
+  first schema version after 2 is planned.
