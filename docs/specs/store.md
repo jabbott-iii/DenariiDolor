@@ -3,14 +3,17 @@
 `denarii-store` (`rust/crates/store`) owns the SQLCipher database: it opens the file that v1, the
 Kotlin app, left on users' phones, with the key the vault unwraps at sign-in, and runs every query
 and write on it. It guarantees that the file opens only with its key, that opening writes to a
-file only to bring it to schema version 2 and changes nothing when it fails, and that calls from
-several threads never interleave on its one connection. ADR-0006 (the database stays SQLCipher,
-opened from Rust with `rusqlite`), ADR-0017 (SQLCipher and OpenSSL compiled from source on every
-target, and one connection behind a mutex), and ADR-0018 (a new schema only in an absent or empty
-file, and no write to a schema the store doesn't know) shaped it. Sections 5 and 6 of
-`docs/specs/android-v1-formats.md` describe the file it must read. Opening and closing were built
-in M2.1, and the schema and its migration in M2.2, as described here; the use cases land in M2.4
-to M2.6. The API reference is `cargo doc -p denarii-store --open`, run from `rust/`.
+file only to bring it to schema version 2 and changes nothing when it fails, that a transaction
+write changes the stored balances in the same database transaction as its row and changes
+nothing when it fails, and that calls from several threads never interleave on its one
+connection. ADR-0006 (the database stays SQLCipher, opened from Rust with `rusqlite`), ADR-0017
+(SQLCipher and OpenSSL compiled from source on every target, and one connection behind a mutex),
+ADR-0018 (a new schema only in an absent or empty file, and no write to a schema the store
+doesn't know), and ADR-0019 (Dart passes each month's bounds, and Rust reads no time zone) shaped
+it. Sections 5 and 6 of `docs/specs/android-v1-formats.md` describe the file it must read.
+Opening and closing were built in M2.1, the schema and its migration in M2.2, and the
+transaction writes in M2.4, as described here; the category, account, and budget use cases land
+in M2.5 and M2.6. The API reference is `cargo doc -p denarii-store --open`, run from `rust/`.
 
 ## Why this design
 
@@ -123,8 +126,9 @@ the install is new. That is why the open looks at the file's size before SQLite 
 
 Built in M2.2 as described here. Every open brings the file to schema version 2, the four tables
 in section 6 of the format spec, as Room 2.8.5 did for v1 (ADR-0018). `src/schema.rs` holds
-Room's statements for version 2, and `src/migration.rs` chooses the step and runs it. The store
-doesn't map rows to Rust types yet; the use cases that read them do, from M2.4.
+Room's statements for version 2, and `src/migration.rs` chooses the step and runs it. The use
+cases map the rows they read to Rust types themselves: the transaction writes map `transactions`
+rows (see [Transaction writes](#transaction-writes)).
 
 ### Choosing the step
 
@@ -210,6 +214,94 @@ Room did after a migration.
   with version 2's definitions (ADR-0018). A file whose version 1 tables lack a column fails the
   migration, which rolls back.
 
+## Transaction writes
+
+Built in M2.4 as described here, in `src/transactions.rs`. Three operations port v1's
+`AddTransactionUseCase`, `UpdateTransactionUseCase`, and `DeleteTransactionUseCase`, the checks of
+`ValidateTransactionUseCase` that need stored rows, and the writes of `TransactionRepositoryImpl`
+(all at `6d57526`):
+
+```rust
+pub enum OverBudget { Refuse, Allow }
+
+impl Store {
+    pub fn add_transaction(&self, draft: &TransactionDraft, month: MonthBounds,
+                           created_at: EpochMillis, over_budget: OverBudget)
+        -> Result<TransactionId, StoreError>;
+    pub fn update_transaction(&self, draft: &TransactionDraft, month: MonthBounds,
+                              over_budget: OverBudget) -> Result<(), StoreError>;
+    pub fn delete_transaction(&self, id: TransactionId) -> Result<(), StoreError>;
+}
+```
+
+### What the caller passes
+
+- **The draft**, `core::TransactionDraft`: the form's fields. `add_transaction` ignores its ID, as
+  v1 did, and SQLite picks one. `update_transaction` needs the ID of the row it replaces.
+- **The month**, `core::MonthBounds`: the first moment of the date's calendar month in the
+  user's time zone, and the first moment of the next month (ADR-0019). Rust reads no time zone,
+  so Dart works them out and passes them with every add and edit, whatever its type; only the
+  budget check of an expense reads them. `MonthBounds::new` refuses a span outside 27 to 32
+  days, and the write refuses a date the bounds don't hold, with `DateOutsideMonth`.
+  `docs/specs/core.md` describes the type.
+- **The creation time**, for an add: the time now, which the row keeps as
+  `createdAtEpochMillis` through every edit. v1's entity took `System.currentTimeMillis()`.
+- **`OverBudget`**: `Refuse` for the first save, so an expense past its budget fails with
+  `BUDGET_EXCEEDED`; `Allow` once the user has confirmed it. v1 passed a `Boolean`,
+  `allowOverBudget`.
+
+### The checks, in v1's order
+
+Each write reports the first rule the request breaks:
+
+1. For an edit or a delete, `IdRequired` unless the ID is more than zero.
+2. For an add or an edit, the field rules of `core::validate_transaction`, in its order, which
+   also trims the description (BUG-08). Then the month bounds must hold the date.
+3. For an add or an edit, `CategoryNotFound`, `AccountNotFound`, or
+   `TransferDestinationNotFound` when that row is missing, checked in this order.
+4. For an add or an edit of an expense with `OverBudget::Refuse`, the budget. If the category has
+   one, its expenses dated in the month, leaving out the row being edited and adding the new
+   amount, must stay within the monthly limit. Otherwise the write fails with `BudgetExceeded`,
+   which carries the category's name, how far past the limit the expense goes, and the limit.
+   `Transaction::budgeted_amount` says which transactions count: only expenses, as in v1.
+5. For an edit or a delete, `TransactionNotFound` when no row has the ID.
+
+The budget sums the rows dated from the month's start, inclusive, to the next month's start,
+exclusive. v1 summed from the start to one millisecond before the next month's start, both
+inclusive, which selects the same rows. An expense that reaches the limit exactly passes.
+
+### The write
+
+Steps 3–5 and the write run in one `BEGIN IMMEDIATE` transaction, under the store's lock:
+
+1. The row is inserted, replaced, or deleted. An edit sets every column but `id` and
+   `createdAtEpochMillis`. An expense or income stores no destination, whatever the draft held.
+2. `core::balance_deltas(previous, current)` gives each account's change. A stored transfer with
+   no destination has no impact (BUG-06), so deleting one changes no balance, and editing one
+   applies only the new version's impact.
+3. Each balance is read, added to with checked arithmetic, and written back.
+
+Any failure drops the transaction, which rolls back the row, the balances, and the
+`AUTOINCREMENT` counter in `sqlite_sequence`, so the file is as it was. v1 ran its checks before
+it opened the transaction; here they run inside it, so no other call can change what they read
+before the row is written.
+
+A stored row's `type` must be exactly `EXPENSE`, `INCOME`, or `TRANSFER`, as Room's generated
+code read it for v1. Any other text fails the edit or delete with `Sqlite`, and nothing changes.
+
+### Differences from v1
+
+The first three differences affect only a request that v1's screens never sent, or a file that
+v1's checks never left. The last two change where the work happens, and not what a user sees.
+
+| Case | v1 | `store` |
+| :- | :- | :- |
+| Deleting the ID 0 or below | `IllegalArgumentException`, shown as the generic error | `IdRequired`, as an edit gets |
+| A balance change past the range of 64 bits | SQLite turned the balance into a floating-point number | `Overflow`, and nothing changes |
+| A balance change for an account with no row, such as a transfer's deleted destination | `IllegalStateException`, and the transaction rolled back | `MissingAccount`, and nothing changes |
+| When the checks ran | Before the database transaction | Inside it, under the store's lock |
+| Where the budget's month comes from | The injected clock's time zone, read in Kotlin | The bounds the caller passes (ADR-0019) |
+
 ## The key
 
 `DatabaseKey` holds the 32 bytes. Its `Debug` output is `DatabaseKey(..)`, and dropping it
@@ -225,7 +317,8 @@ closes.
 
 ## Errors
 
-`StoreError` has six variants. None carries the key.
+`StoreError` has 11 variants. None carries the key. A write that fails with any of them leaves
+the file as it was.
 
 | Variant | When |
 | :- | :- |
@@ -234,6 +327,11 @@ closes.
 | `NewerSchema { version }` | The schema version is above 2: a later build of the app wrote the file |
 | `UnrecognizedSchema { version }` | The schema isn't one the store knows: a negative version, a version 0 file that held a byte before it opened, or a version 2 file without version 2's identity hash |
 | `Poisoned` | An earlier call panicked while it held the connection, so its state is unknown |
+| `Domain(DomainError)` | The request breaks a business rule, such as `BUDGET_EXCEEDED`; the user sees the message `DomainError::code` names |
+| `TransactionNotFound { id }` | The transaction to edit or delete has no row; v1 showed its "item not found" message |
+| `DateOutsideMonth { date, month }` | The caller's month bounds don't hold the transaction's date: a bug in the caller (ADR-0019) |
+| `Overflow` | A balance, or a month's expenses in a category, would go past the range of a 64-bit number of cents: only a damaged file causes it |
+| `MissingAccount { id }` | A balance change names an account with no row: only a damaged file causes it |
 | `Sqlite { operation, source }` | Any other SQLite error, with what the store was doing and SQLite's error as its source |
 
 The bridge will map each variant to a stable code for the user interface once sign-in opens the
@@ -244,7 +342,8 @@ database (M3.5).
 A `Store` owns one `rusqlite::Connection` inside a `std::sync::Mutex` (ADR-0017). `rusqlite`'s
 connection can move between threads but can't be used from two at once, and the bridge's worker
 pool can run two calls at the same time. Each operation takes the lock for the whole of its
-database work, so a write's row and its balance changes (M2.4) can't interleave with another call.
+database work, so a write's checks, its row, and its balance changes can't interleave with
+another call.
 `Store` is `Send` and `Sync`, and the bridge can share one through an `Arc`. `store` starts no
 thread.
 
@@ -285,6 +384,19 @@ environment that Flutter's build hook or a contributor sets up. The register in
 11. In a file that v1's use cases wrote, each account's stored balance is its opening balance plus
     the account impacts that `core` computes for every transaction still stored. A transfer with
     no destination has no impact (BUG-06).
+12. A transaction write that fails, for any reason, leaves every table as it was: no row, no
+    balance, and no `AUTOINCREMENT` counter changes.
+13. Every add, edit, and delete changes each stored balance by exactly
+    `core::balance_deltas(previous, current)`, with a stored transfer that has no destination
+    taken as no transaction. In fixture F3, invariant 11 still holds after the writes, and
+    deleting every transaction brings each account back to its opening balance.
+14. A write reports the first rule the request breaks, in v1's order. An expense with
+    `OverBudget::Refuse` fails with `BUDGET_EXCEEDED` exactly when its category has a budget and
+    the category's expenses in the caller's month, without the row being edited, plus the
+    expense's amount, exceed the limit.
+15. The budget counts an expense dated at the month's first moment and not one dated at the next
+    month's first moment, and a write whose date isn't in the caller's month is refused.
+16. Writes from several threads at once lose no row and no balance change.
 
 ## Tests
 
@@ -300,10 +412,14 @@ environment that Flutter's build hook or a contributor sets up. The register in
 | 9 | `src/migration.rs`: a version 1 file written with Room's version 1 statements and the rows of v1's `MigrationTest`, then its cents, its table shapes against the fixture's, its foreign key check, its rounding, and its `sqlite_sequence`; and fixture F4, whose version 1 file the store migrates to the same rows, counters, schema text, and table shapes as v1's own migration of it, and whose cents from v1 are checked one by one |
 | 10 | `src/migration.rs`: each refused case, with the file's bytes compared before and after; `tests/open.rs`: the 1-byte file |
 | 11 | `src/store.rs`: fixture F3, whose rows are mapped with `TransactionKind::from_stored` and added up with `Transaction::account_impacts` from each account's opening balance in `tests/fixtures/README.md` |
+| 12 | `src/transactions.rs`: a snapshot of every table, compared before and after each refused write, a transfer whose balance change overflows after its row is written, a delete whose balance change names a deleted account, and a stored type that isn't one of v1's names |
+| 13 | `src/transactions.rs`: the cases of v1's `TransactionRepositoryImplTest` and `TransactionCrudUseCaseTest`; and fixture F3, recomputed after an over-budget expense, an October expense, an edit of row 5, an edit and a delete of the malformed row 12, and the delete of every row |
+| 14 | `src/transactions.rs`: the cases of v1's `ValidateTransactionUseCaseTest`, and F3's groceries budget in November (42,345 of 40,000 cents spent) and October (35,000) |
+| 15 | `src/transactions.rs`: expenses one millisecond before November, at its first moment, and at December's first moment; Los Angeles's September against October in UTC, as v1's `budgetMonthFollowsTheClockZone`; and a date outside the bounds for each type |
+| 16 | `src/transactions.rs`: eight threads adding 400 transactions to one `Store` |
 | The key pragma's text | `src/key.rs`: v1's raw-key syntax for a known key, and a length equal to the capacity |
 
 Run them with `cargo test --locked -p denarii-store` from `rust/`, only the schema's with
-`cargo test --locked -p denarii-store migration`, or those whose names mention a fixture, every
-test of F3 and F4 among them, with `cargo test --locked -p denarii-store fixture`. The F3 tests
-use `denarii-core`, a
-dev-dependency of the store until its use cases need it (M2.4).
+`cargo test --locked -p denarii-store migration`, only the transaction writes' with
+`cargo test --locked -p denarii-store transactions`, or those whose names mention a fixture,
+every test of F3 and F4 among them, with `cargo test --locked -p denarii-store fixture`.

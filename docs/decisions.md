@@ -723,3 +723,69 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
   - Leaving a new file in the rollback-journal mode, and deciding in M2.4 with the first writes.
 - **Revisit when:** a user reports that the new app refuses a database that v1 opened, or the
   first schema version after 2 is planned.
+
+## ADR-0019 — Dart passes each month's bounds to Rust, which reads no time zone
+
+- **Status:** Accepted
+- **Date:** 2026-11-24
+- **Context:** v1's budget check (`ValidateTransactionUseCase` at `6d57526`) adds up a category's
+  expenses in the calendar month of the transaction's date, in the phone's time zone. It reads
+  the zone from its injected clock on every call, so a zone change applies at once (BUG-09). It
+  takes the month from the first moment of its first day to one millisecond before the first
+  moment of the next month's first day, with kotlinx-datetime's `atStartOfDayIn`. The first
+  moment isn't always midnight: in `America/Asuncion`, clocks went from midnight to 01:00 on
+  2023-10-01. Rust reads no clock and no time zone (`docs/01-architecture.md`, rule 5), so M2.4
+  had to decide how the month reaches the store. Monthly reports and the dashboard (M2.7, M4.1)
+  need the same boundaries. Two facts were checked on 2026-11-24 on the maintainer's Linux
+  machine:
+  - Dart's `DateTime(2023, 10, 1)`, run with `TZ=America/Asuncion` under the Dart of Flutter
+    3.50.1, is 01:00 local time, 2023-10-01T04:00:00Z. That is the day's first moment, which
+    `atStartOfDayIn` also gives. In `Europe/Berlin` and `America/Sao_Paulo` it is midnight.
+  - Across the 599 zones of the time-zone database (tzdata 2026e) and every month from 1970 to
+    2100, the shortest span from one month's first moment to the next month's is 27.96 days
+    (`America/Adak`, February 1975), and the longest is 31.29 days (`Antarctica/Vostok`, January
+    1994).
+
+  Dart's core libraries give no zone's IANA name, the `Europe/Berlin` kind of name that a
+  time-zone library needs: `DateTime.timeZoneName` gives an abbreviation such as `CET`.
+- **Decision** (the maintainer chose the recommended option on 2026-11-24):
+  - Dart turns every calendar date into moments, in the phone's current time zone, and passes
+    the moments to Rust. Rust gets no time-zone crate.
+  - A transaction write takes the start of its date's month and the start of the next month, as
+    `EpochMillis`, in a `core::MonthBounds`. Dart computes them with `DateTime(year, month, 1)`
+    and `DateTime(year, month + 1, 1)`. Every add and edit passes them, whatever its type, though
+    only an expense in a category with a budget uses them.
+  - `MonthBounds::new` refuses bounds whose start isn't before the next month's start, or which
+    span less than 27 days or more than 32. The store refuses a write whose date lies outside
+    its bounds, with `StoreError::DateOutsideMonth`.
+  - The budget check adds up the expenses dated from the start, inclusive, to the next month's
+    start, exclusive. Those are the rows v1's inclusive range up to one millisecond before the
+    next month's start selected.
+- **Consequences:**
+  - Good:
+    - No new dependency, and no time-zone database inside the app to update.
+    - Dart reads the zone from the operating system when it converts each date, so a zone change
+      applies to the next write, as BUG-09 requires.
+    - Rust's tests choose any bounds they like, with no zone set up.
+  - Bad:
+    - Rust can't tell whether the bounds are the right month in the right zone. Bounds from the
+      wrong zone, or of another month that happens to contain the date, give a wrong budget
+      check. The span and containment checks catch a day's bounds, a year's, or another month's
+      that doesn't contain the date, but nothing finer.
+    - Every Dart caller computes the bounds, so a mistake in that code can recur in each one.
+      One helper must compute them for every caller.
+  - Follow-up:
+    - M4.2 (the transaction form) writes that Dart helper and passes its bounds to the store, with
+      a test that runs under `TZ=America/Asuncion` and expects 2023-10-01T04:00:00Z for October
+      2023.
+    - M2.7 and M4.1 take `MonthBounds` for a report's or the dashboard's month.
+- **Alternatives considered:**
+  - A Rust time-zone crate, such as `jiff`, with the time-zone database. It needs a dependency to
+    approve and to list in the notices, a database bundled into the library (larger, and stale
+    between releases) or read from the operating system (Android and iOS keep it in different
+    formats), and the zone's IANA name, which Dart can't supply without Kotlin and Swift code or
+    a plugin.
+  - Dart passes the zone's offset from UTC. One offset can't describe a month that crosses a
+    daylight-saving change.
+- **Revisit when:** a user reports a budget check or a monthly total that disagrees with the
+  phone's calendar, or Rust needs calendar rules with no Dart caller, such as a scheduled task.

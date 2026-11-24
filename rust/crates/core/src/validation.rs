@@ -10,7 +10,7 @@
 //! sends, into a [`Transaction`], so code after it never checks the fields again. It applies v1's
 //! field rules (`ValidateTransactionUseCase` and `Validators` in v1) in v1's order, so the user
 //! sees the same error first. The checks that need stored data (that the category and accounts
-//! exist, and the monthly budget) belong to the storage layer, which lands in M2.4;
+//! exist, and the monthly budget) run in the storage layer, `denarii-store`, after these;
 //! [`budget_overage`] is the arithmetic part of the budget check.
 //!
 //! Lengths are UTF-16 code units and whitespace is Kotlin's, as `crate::text` explains, so text

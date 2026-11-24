@@ -8,8 +8,9 @@
 //!
 //! v1 modeled the three kinds as subclasses of an abstract `Transaction`, each overriding
 //! `balanceImpact()` and `accountImpacts()`, so that no total or balance branched on the type.
-//! Here [`TransactionKind`] is an enum, and [`Transaction::balance_impact`] and
-//! [`Transaction::account_impacts`] are the only places that match on it. Only a transfer carries
+//! Here [`TransactionKind`] is an enum, and [`Transaction::balance_impact`],
+//! [`Transaction::account_impacts`], and [`Transaction::budgeted_amount`] are the only places
+//! that match on it to compute money. Only a transfer carries
 //! a destination account, so a transfer without one, or an expense with one, can't be built.
 
 use std::collections::BTreeMap;
@@ -173,6 +174,17 @@ impl Transaction {
             TransactionKind::Expense => self.amount.checked_neg(),
             TransactionKind::Income => Ok(self.amount),
             TransactionKind::Transfer { .. } => Ok(Cents::ZERO),
+        }
+    }
+
+    /// The amount the transaction counts against its category's monthly budget: an expense's
+    /// amount, or `None` for income and transfers, which no budget limits. v1's budget check
+    /// looked only at expenses.
+    #[must_use]
+    pub const fn budgeted_amount(&self) -> Option<Cents> {
+        match self.kind {
+            TransactionKind::Expense => Some(self.amount),
+            TransactionKind::Income | TransactionKind::Transfer { .. } => None,
         }
     }
 

@@ -24,6 +24,8 @@
 //!   percentages, and search ranges.
 //! - Reference data: [`Account`], [`Category`], [`Budget`], and the seeded rows in [`defaults`].
 //! - IDs: [`AccountId`], [`CategoryId`], [`TransactionId`], [`BudgetId`], and [`EpochMillis`].
+//! - Months: [`MonthBounds`], the moments a calendar month in the user's time zone starts and
+//!   the next one starts, which the caller works out (ADR-0019).
 //! - Errors: [`DomainError`] names a broken business rule, [`MoneyParseError`] a rejected amount,
 //!   and [`ArithmeticOverflow`] a sum out of range.
 //!
@@ -66,13 +68,15 @@
 //!   `i64` return [`ArithmeticOverflow`].
 //! - Text lengths are counted in UTF-16 code units and whitespace is Kotlin's, as v1 counted them,
 //!   so a limit such as [`MAX_DESCRIPTION_UNITS`] means what it meant in v1.
-//! - Nothing here reads a clock or a time zone. Callers pass dates as [`EpochMillis`].
+//! - Nothing here reads a clock or a time zone. Callers pass dates as [`EpochMillis`], and
+//!   months as [`MonthBounds`].
 //! - Every type is plain data (`Send` and `Sync`), and every function is synchronous.
 
 mod error;
 mod ids;
 mod ledger;
 mod money;
+mod month;
 mod reference;
 mod search;
 mod text;
@@ -87,6 +91,7 @@ pub use ledger::balance_deltas;
 pub use money::{
     Cents, MAX_WHOLE_DIGITS, MoneyParseError, NumberSymbols, normalize_digits, parse_cents,
 };
+pub use month::{InvalidMonthBounds, MonthBounds};
 pub use reference::{Account, Budget, Category};
 pub use search::SearchFilters;
 pub use transaction::{Transaction, TransactionKind, TransactionType, UnknownTransactionType};

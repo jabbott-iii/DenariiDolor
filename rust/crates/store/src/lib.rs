@@ -11,8 +11,9 @@
 //! AES-256 and authenticated with HMAC-SHA512), under a raw 32-byte key that the vault unwraps
 //! at sign-in. This crate opens that file as it is, with `rusqlite` and the SQLCipher and OpenSSL
 //! builds it compiles in (ADR-0006, ADR-0017). Today it opens the database, brings its schema to
-//! version 2 as v1 did (ADR-0018), and closes it; the use cases land in M2.4 to M2.6. The bridge
-//! reaches it only after the vault has unlocked the key (M3). Its design is in
+//! version 2 as v1 did (ADR-0018), adds, edits, and deletes transactions with v1's checks and
+//! balance changes, and closes the database; the category, account, and budget use cases land in
+//! M2.5 and M2.6. The bridge reaches it only after the vault has unlocked the key (M3). Its design is in
 //! `docs/specs/store.md`, and the file it reads is in sections 5 and 6 of
 //! `docs/specs/android-v1-formats.md`.
 //!
@@ -20,6 +21,9 @@
 //!
 //! - [`Store`]: the open database, with [`Store::open`], [`Store::user_version`], and
 //!   [`Store::close`].
+//! - Transaction writes: [`Store::add_transaction`], [`Store::update_transaction`], and
+//!   [`Store::delete_transaction`], with [`OverBudget`] for an expense the user has confirmed.
+//!   The caller passes each month as a [`MonthBounds`](denarii_core::MonthBounds) (ADR-0019).
 //! - [`DatabaseKey`]: the key, which no `Debug` output shows and which is wiped when dropped.
 //! - [`StoreError`]: why an operation failed, such as [`StoreError::KeyRejected`].
 //!
@@ -54,6 +58,9 @@
 //! - A schema the store doesn't know returns [`StoreError::NewerSchema`] or
 //!   [`StoreError::UnrecognizedSchema`], and is never written over. That includes a 1-byte file,
 //!   which SQLite reads as an empty database.
+//! - A transaction write checks the request in v1's order, then writes the row and its balance
+//!   changes in one database transaction. A write that fails, for any reason, leaves the file as
+//!   it was.
 //! - [`Store`] is `Send` and `Sync`. Its operations take turns on one connection, so a slow one
 //!   makes the next wait.
 //! - The first [`Store::open`] in a process sets SQLCipher up and turns its log off, once, under a
@@ -67,7 +74,9 @@ mod key;
 mod migration;
 mod schema;
 mod store;
+mod transactions;
 
 pub use error::StoreError;
 pub use key::DatabaseKey;
 pub use store::Store;
+pub use transactions::OverBudget;

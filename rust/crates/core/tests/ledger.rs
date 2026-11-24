@@ -61,6 +61,15 @@ fn each_kind_reports_its_impact_on_each_account() {
     );
 }
 
+/// Only expenses count against a budget, as in v1's `ValidateTransactionUseCase`.
+#[test]
+fn only_an_expense_counts_against_its_categorys_budget() {
+    let income = transaction(TransactionKind::Income, 125_000, 1);
+    assert_eq!(expense().budgeted_amount(), Some(Cents(4_500)));
+    assert_eq!(income.budgeted_amount(), None);
+    assert_eq!(transfer().budgeted_amount(), None);
+}
+
 #[test]
 fn each_kind_reports_its_type() {
     let income = transaction(TransactionKind::Income, 1, 1);

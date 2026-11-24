@@ -527,13 +527,44 @@ rules.
   - Accept:
     - Rust reproduces every stored balance from the fixture's transactions.
   - Verify: `cd rust && cargo test --locked -p denarii-store fixture` (expect pass)
-- [ ] **M2.4 — store: transaction writes**
+- [x] **M2.4 — store: transaction writes**
   - Note (from M2.3): fixture F3 (`rust/crates/store/tests/fixtures/v1-f3-ledger.db`) is a ready
     budget case. Category 4 has a 40,000-cent budget, and November 2026 already holds 42,345 cents
     of its expenses in UTC, so any further expense there fails with `BUDGET_EXCEEDED` unless the
     caller allows it. October's 35,000 cents fall outside that month. The F3 tests in
     `src/store.rs` map rows to `core::Transaction` with `TransactionKind::from_stored`; the use
     cases' row mapping can replace that helper.
+  - Note: 2026-11-24: the maintainer chose the recommended answer, recorded in ADR-0019: Dart
+    passes each month's first moment and the next month's, and Rust gets no time-zone crate. The
+    alternative was a crate such as `jiff` with a time-zone database, which also needs the
+    zone's IANA name, which Dart's core libraries don't give.
+  - Note: 2026-11-24: `denarii-store` has `Store::add_transaction`, `Store::update_transaction`,
+    `Store::delete_transaction`, and `OverBudget` in `src/transactions.rs`
+    (`docs/specs/store.md`, "Transaction writes"). `denarii-core` gains `MonthBounds`, which
+    accepts a span of 27 to 32 days, and `Transaction::budgeted_amount`. `StoreError` gains
+    `Domain`, `TransactionNotFound`, `DateOutsideMonth`, `Overflow`, and `MissingAccount`.
+    `denarii-core` moves from the store's dev-dependencies to its dependencies, and `Cargo.lock`
+    doesn't change. v1's checks now run inside the write's `BEGIN IMMEDIATE` transaction rather
+    than before it, and each balance is added to in Rust with checked arithmetic rather than in
+    SQL. The spec lists five differences from v1: three affect only a request v1's screens never
+    sent or a file v1's checks never left, and two change only where the work happens. The F3 helper in `src/store.rs` is unchanged; the new tests
+    read rows with the use cases' own mapping.
+  - Note: 2026-11-24: the month limits come from tzdata 2026e, through Python's `zoneinfo`: over
+    599 zones and every month from 1970 to 2100, the shortest month lasts 27.96 days
+    (`America/Adak`, February 1975) and the longest 31.29 days (`Antarctica/Vostok`, January
+    1994). Dart's `DateTime(2023, 10, 1)` under `TZ=America/Asuncion` is 2023-10-01T04:00:00Z,
+    the first moment of a day whose midnight was skipped, as v1's `atStartOfDayIn` gives.
+  - Note: 2026-11-24: `cargo test --locked -p denarii-store` passed: 57 unit tests, 33 of them new
+    in `src/transactions.rs`, 13 integration tests in two files, and 1 doc test. The new tests port
+    every case of v1's `TransactionCrudUseCaseTest` and `TransactionRepositoryImplTest`, and every
+    case of `ValidateTransactionUseCaseTest` but `repositoryErrorBecomesFailureInsteadOfCrash`,
+    whose throwing fake repository has no Rust counterpart. They add F3's budget in November and
+    October, edits and deletes of F3's rows with its balances recomputed after each, rollback
+    after the row is written, and eight threads writing at once. Each of eight deliberate
+    breakages failed a test: no budget check, the next month's first moment counted, an edit
+    counting its own amount, no balance change, a commit between the row and its balance change,
+    a malformed transfer read as a transfer to account 1, type names read without regard to
+    case, and no check that the month holds the date.
   - Depends: M2.2
   - Decide first: whether Dart passes each month's start and end, or Rust gets a time-zone crate.
   - Do:
@@ -564,6 +595,12 @@ rules.
     - A new database holds accounts 1–2 and categories 1–3 with v1's icons.
   - Verify: `cd rust && cargo test --locked -p denarii-store seed` (expect pass)
 - [ ] **M2.7 — report: monthly report, search, and CSV**
+  - Note (from M2.4): take a report's month as `core::MonthBounds`, which Dart computes
+    (ADR-0019), and select its rows from `start` inclusive to `next_start` exclusive, as the
+    budget check in `rust/crates/store/src/transactions.rs` does. v1's search turned a typed
+    `YYYY-MM-DD` into the first moment of that day, and its end date into one millisecond before
+    the next day's first moment, in the phone's time zone (`DateUtils.parseIsoDateToStartOfDayEpochMillis`
+    and `parseIsoDateToEndOfDayEpochMillis`), so those moments come from Dart too.
   - Depends: M2.4
   - Do:
     - Port `GenerateReportUseCase`, `SearchTransactionUseCase`, `SearchFilterParser`, and
@@ -712,6 +749,15 @@ over it keeps the data, and the same PIN, answer, and fingerprint sign in.
   - Note: keeps one write at a time (`isSaving`) and the over-budget confirmation.
   - Note (from M1.6): fill the edit field with v1's plain input text (`Cents::to_input`), not
     `formatMoney`: the core doesn't read back Indian grouping of a lakh or more.
+  - Note (from M2.4): every add and edit passes the date's month as `core::MonthBounds`
+    (ADR-0019). Write one Dart helper that takes the date's local year and month and returns
+    `DateTime(year, month, 1)` and `DateTime(year, month + 1, 1)` as epoch milliseconds, and test
+    it under `TZ=America/Asuncion`, where October 2023 must start at 2023-10-01T04:00:00Z. Pass
+    the time now as an add's `created_at`, and as the date of a transaction whose date field was
+    left empty, as v1 did. Map the store's errors as v1's `UiMessage.fromError` did:
+    `StoreError::Domain` by its `DomainError::code`, `TransactionNotFound` to
+    `errorItemNotFound`, and the rest to `genericError`. Save with `OverBudget::Refuse` first, and
+    with `OverBudget::Allow` once the user confirms.
 - [ ] **M4.9 — claude: the `new-feature` skill**
   - Note: 2026-11-23: split from M0.8 by the user's choice, because the layers the skill walks
     through (a `store` use case, the bridge, a view model, a screen, and ARB strings) don't all

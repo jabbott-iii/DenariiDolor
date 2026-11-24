@@ -5,7 +5,8 @@ three kinds of transaction, the change each write makes to stored account balanc
 field checks every write passes. It guarantees that text v1 accepted as an amount gives the same
 cents, that every balance change is exact or an error, and that no input makes it panic. It is the
 bottom layer of ADR-0004 (Proposed: Rust owns the rules and the data) and uses only `std`. Built in
-M0.4–M0.7 as described here; the API reference is `cargo doc -p denarii-core --open`.
+M0.4–M0.7 as described here, with months and `Transaction::budgeted_amount` added in M2.4; the
+API reference is `cargo doc -p denarii-core --open`.
 
 ## Why this design
 
@@ -65,11 +66,14 @@ pub fn balance_deltas(previous: Option<&Transaction>, current: Option<&Transacti
     -> Result<BTreeMap<AccountId, Cents>, ArithmeticOverflow>;
 ```
 
-- `Transaction::balance_impact` and `Transaction::account_impacts` are the only code that matches
-  on the kind; totals and balances call them, as v1's invariant required.
+- `Transaction::balance_impact`, `Transaction::account_impacts`, and
+  `Transaction::budgeted_amount` are the only code that matches on the kind to compute money;
+  totals, balances, and the budget check call them, as v1's invariant required.
+  `budgeted_amount` is an expense's amount, and `None` for income and transfers, which no budget
+  limits.
 - `balance_deltas` subtracts the previous version's impacts, adds the current one's, and drops the
   accounts whose change is zero. The storage layer applies the result in the same database
-  transaction as the row (M2.4).
+  transaction as the row (`docs/specs/store.md`, "Transaction writes").
 - `TransactionKind::from_stored` maps a row's `type` and `transfer_account_id`; a transfer with no
   destination gives `None`, which the reader treats as having no balance impact (BUG-06).
 - `TransactionType::stored_name` gives `EXPENSE`, `INCOME`, and `TRANSFER`, the values in the
@@ -86,13 +90,43 @@ pub fn budget_overage(category_name: &str, spent_this_month: Cents, amount: Cent
 
 - `validate_transaction` checks v1's field rules in v1's order and returns the transaction with
   its description trimmed, which is what v1 stored (BUG-08).
-- The checks that need stored rows (category and accounts exist, and the monthly budget) belong to
-  the storage layer (M2.4). `budget_overage` is their arithmetic: what was spent this month, plus
-  the amount, minus the limit.
+- The checks that need stored rows (category and accounts exist, and the monthly budget) run in
+  the storage layer (`docs/specs/store.md`, "Transaction writes"). `budget_overage` is the
+  budget's arithmetic: what was spent this month, plus the amount, minus the limit.
 - `DomainError` has v1's 23 variants, and `DomainError::code` returns v1's names, such as
   `BUDGET_EXCEEDED`, which name the localized messages.
 - `defaults` holds the seeded account IDs 1–2 and category IDs 1–3, which can't be deleted, and
   the categories' icon keys.
+
+## Months
+
+Built in M2.4 as described here.
+
+```rust
+pub struct MonthBounds { /* start, next_start */ }
+impl MonthBounds {
+    pub const MIN_SPAN_MILLIS: i64; // 27 days
+    pub const MAX_SPAN_MILLIS: i64; // 32 days
+    pub fn new(start: EpochMillis, next_start: EpochMillis) -> Result<MonthBounds, InvalidMonthBounds>;
+    pub const fn start(self) -> EpochMillis;
+    pub const fn next_start(self) -> EpochMillis;
+    pub const fn contains(self, date: EpochMillis) -> bool;
+}
+```
+
+- A calendar month in the user's time zone, as two moments: the first moment of its first day,
+  which belongs to it, and the first moment of the next month's first day, which doesn't. Rust
+  reads no time zone, so Dart works the moments out with `DateTime(year, month, 1)` and passes
+  them in (ADR-0019: Dart passes each month's bounds, and Rust reads no time zone).
+- The first moment of a day isn't always midnight. In `America/Asuncion`, clocks went from
+  midnight to 01:00 on 2023-10-01, so October 2023 started at 01:00 there. v1 took the same
+  moments with kotlinx-datetime's `atStartOfDayIn`, and Dart's `DateTime` gave the same moment
+  for that day when ADR-0019 checked it.
+- `new` accepts a span of 27 to 32 days, inclusive. Over the 599 zones of tzdata 2026e and every
+  month from 1970 to 2100, months last from 27.96 days (February 1975 in `America/Adak`) to 31.29
+  days (January 1994 in `Antarctica/Vostok`). So the limits refuse swapped bounds and a day's or a
+  year's, never a real month. Which month the bounds describe, and in which zone, only the caller
+  can check.
 
 ## Differences from v1
 
@@ -122,6 +156,8 @@ detail no user sees.
    code units and Kotlin's whitespace.
 7. `DomainError::code` returns v1's name for every variant.
 8. `denarii-core` depends on no crate outside `std`.
+9. `MonthBounds::new` accepts exactly the spans from `MIN_SPAN_MILLIS` to `MAX_SPAN_MILLIS`, and
+   `contains` holds the start and not the next month's start.
 
 ## Tests
 
@@ -132,5 +168,7 @@ detail no user sees.
 | 6, 7 | `tests/validation.rs`, which ports v1's `ValidatorsTest.kt` and checks the order of errors |
 | Kotlin text rules | Unit tests in `src/text.rs` |
 | 1, 8 | `rust/crates/core/Cargo.toml` has no `[dependencies]`; review checks for floating point |
+| 9 | `tests/month.rs`: the limits, one millisecond past each, swapped and empty bounds, a day's and a year's, spans that overflow an `i64`, and months before 1970 |
+| `budgeted_amount` | `tests/ledger.rs`: each kind |
 
 Run them with `cargo test --workspace --locked` from `rust/`.

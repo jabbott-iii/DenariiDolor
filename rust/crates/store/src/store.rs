@@ -114,7 +114,8 @@ impl Store {
             .map_err(|(_, source)| sqlite("close the database", source))
     }
 
-    fn lock(&self) -> Result<MutexGuard<'_, Connection>, StoreError> {
+    /// Takes the connection for one operation's whole database work.
+    pub(crate) fn lock(&self) -> Result<MutexGuard<'_, Connection>, StoreError> {
         self.connection.lock().map_err(|_| StoreError::Poisoned)
     }
 }

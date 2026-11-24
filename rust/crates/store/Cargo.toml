@@ -7,11 +7,9 @@ rust-version.workspace = true
 publish.workspace = true
 
 [dependencies]
-rusqlite.workspace = true
-
-[dev-dependencies]
-# The fixture tests check stored balances against `core`'s rules for each transaction.
+# The use cases validate each write and compute its balance changes with `core`'s rules.
 denarii-core.workspace = true
+rusqlite.workspace = true
 
 [lints]
 workspace = true

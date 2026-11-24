@@ -8,10 +8,13 @@
 
 use std::fmt;
 
+use denarii_core::{AccountId, DomainError, EpochMillis, MonthBounds, TransactionId};
+
 /// Why the store couldn't open the database or run an operation on it.
 ///
 /// No variant carries the key. The `Display` text is for tests and debugging; the bridge will
-/// turn each variant into a stable code for the user interface.
+/// turn each variant into a stable code for the user interface. A write that fails with any
+/// variant leaves the database as it was.
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum StoreError {
@@ -39,6 +42,32 @@ pub enum StoreError {
     /// An earlier call panicked while it held the connection, so the connection's state is
     /// unknown and the store refuses to use it.
     Poisoned,
+    /// The request breaks a business rule, such as an expense past its category's budget that
+    /// the user hasn't confirmed. The user interface shows the message that
+    /// [`DomainError::code`] names.
+    Domain(DomainError),
+    /// The transaction to edit or delete has no row. v1 showed its "item not found" message.
+    TransactionNotFound {
+        /// The ID the request named.
+        id: TransactionId,
+    },
+    /// The transaction's date isn't in the month the caller passed, so the caller worked out the
+    /// bounds of another month (ADR-0019). This is the caller's bug, never the user's.
+    DateOutsideMonth {
+        /// The transaction's date.
+        date: EpochMillis,
+        /// The bounds the caller passed.
+        month: MonthBounds,
+    },
+    /// A balance, or a month's expenses in a category, would go past the range of a 64-bit
+    /// number of cents. Only stored data that no validated write could leave causes it.
+    Overflow,
+    /// A balance change names an account that has no row. v1's checks never leave such data: it
+    /// takes a damaged file, such as one holding a transfer whose destination was deleted.
+    MissingAccount {
+        /// The account the balance change names.
+        id: AccountId,
+    },
     /// SQLite or SQLCipher reported an error.
     Sqlite {
         /// What the store was doing, such as `"open the database file"`.
@@ -69,6 +98,21 @@ impl fmt::Display for StoreError {
             Self::Poisoned => {
                 f.write_str("an earlier call panicked while it held the database connection")
             }
+            Self::Domain(error) => {
+                write!(f, "the request breaks a business rule ({})", error.code())
+            }
+            Self::TransactionNotFound { id } => write!(f, "no transaction has the ID {}", id.0),
+            Self::DateOutsideMonth { .. } => {
+                f.write_str("the transaction's date isn't in the month the caller passed")
+            }
+            Self::Overflow => f.write_str(
+                "a balance or a month's expenses went past the range of a 64-bit number of cents",
+            ),
+            Self::MissingAccount { id } => write!(
+                f,
+                "a balance change names account {}, which has no row",
+                id.0
+            ),
             Self::Sqlite { operation, .. } => write!(f, "failed to {operation}"),
         }
     }
@@ -78,11 +122,16 @@ impl std::error::Error for StoreError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Sqlite { source, .. } => Some(source),
+            Self::Domain(error) => Some(error),
             Self::CipherUnavailable
             | Self::KeyRejected
             | Self::NewerSchema { .. }
             | Self::UnrecognizedSchema { .. }
-            | Self::Poisoned => None,
+            | Self::Poisoned
+            | Self::TransactionNotFound { .. }
+            | Self::DateOutsideMonth { .. }
+            | Self::Overflow
+            | Self::MissingAccount { .. } => None,
         }
     }
 }

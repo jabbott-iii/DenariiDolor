@@ -38,7 +38,7 @@ flowchart TB
     end
     subgraph Rust["Rust workspace (rust/)"]
         BR["bridge: the API Dart calls"]
-        ST["store: the SQLCipher database and its schema<br/>(use cases: M2.4–M2.6)"]
+        ST["store: the SQLCipher database, its schema, and transaction writes<br/>(other use cases: M2.5–M2.6)"]
         VA["vault — M3"]
         BK["backup — M5.1"]
         RP["report — M2.7"]
@@ -85,8 +85,9 @@ Dependency rules, each carried over from v1's `CLAUDE.md` in the new terms:
    as the row.
 4. The database exists only after sign-in. The bridge offers no storage call until the vault has
    unlocked the database key, and locking closes the database and wipes the key.
-5. Anything that depends on "now" takes the time from its caller. Rust reads no clock: Dart passes
-   the time, and the time zone's month boundaries, in each call that needs them (decided in M2.4).
+5. Anything that depends on "now" takes the time from its caller. Rust reads no clock and no time
+   zone: Dart passes the time, and each month's bounds as a `core::MonthBounds`, in each call that
+   needs them (ADR-0019: Dart passes each month's bounds, and Rust reads no time zone).
 6. Text shown to users comes from the ARB files in `lib/l10n/`. Rust returns a `DomainError` code
    such as `BUDGET_EXCEEDED`, never a sentence for users.
 
@@ -116,7 +117,7 @@ to the vault.
 | `rust/Cargo.toml` | The workspace, shared package fields, and lints | M0.4 |
 | `rust/crates/core` | `denarii-core`; its design is in `docs/specs/core.md` | M0.4–M0.7 |
 | `rust/crates/bridge` | `denarii-bridge`, the API Dart calls, with its generated glue; its design is in `docs/specs/bridge.md` | M1.2 |
-| `rust/crates/store` | `denarii-store`, which opens the SQLCipher database and brings its schema to version 2; its design is in `docs/specs/store.md`, and its fixtures written by v1 are in `tests/fixtures/` | M2.1–M2.3; the use cases in M2.4–M2.6 |
+| `rust/crates/store` | `denarii-store`, which opens the SQLCipher database, brings its schema to version 2, and adds, edits, and deletes transactions; its design is in `docs/specs/store.md`, and its fixtures written by v1 are in `tests/fixtures/` | M2.1–M2.4; the other use cases in M2.5–M2.6 |
 | `rust/crates/{vault,backup,report}` | The planned crates in the table above | M2.7–M5.1 |
 | `pubspec.yaml`, `lib/`, `test/`, `integration_test/` | The Flutter app and its tests; the bridge's generated Dart bindings are in `lib/platform/rust/` | M1.1; `integration_test/` and `lib/platform/` in M1.2 |
 | `l10n.yaml`, `lib/l10n/` | The seven language packs as ARB files, the localizations `flutter gen-l10n` generates from them, and `resolveAppLocale`, which picks a pack from the phone's language list (ADR-0015: the whole list, matched by script as Android does) | M1.4 |
