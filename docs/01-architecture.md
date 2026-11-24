@@ -118,6 +118,7 @@ to the vault.
 | `rust/crates/bridge` | `denarii-bridge`, the API Dart calls, with its generated glue; its design is in `docs/specs/bridge.md` | M1.2 |
 | `rust/crates/{store,vault,backup,report}` | The planned crates in the table above | M2.1–M5.1 |
 | `pubspec.yaml`, `lib/`, `test/`, `integration_test/` | The Flutter app and its tests; the bridge's generated Dart bindings are in `lib/platform/rust/` | M1.1; `integration_test/` and `lib/platform/` in M1.2 |
+| `l10n.yaml`, `lib/l10n/` | The seven language packs as ARB files, the localizations `flutter gen-l10n` generates from them, and `resolveAppLocale`, which picks a pack from the phone's language list (ADR-0015: the whole list, matched by script as Android does) | M1.4 |
 | `hook/build.dart`, `flutter_rust_bridge.yaml` | The native-assets build hook that compiles the bridge in every Flutter build, and the codegen's settings (ADR-0014: the bridge's pinned version, its Cargo features, and this build) | M1.2 |
 | `android/` | Flutter's Android host app and the Kotlin platform code | M1.1, M3.2 |
 | `ios/` | Flutter's iOS host app and the Swift platform code | M1.1, M7.1 |

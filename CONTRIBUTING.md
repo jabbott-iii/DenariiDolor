@@ -52,7 +52,7 @@ cargo test --workspace --locked                                 # unit, integrat
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
 ```
 
-Also run these from the repository root, with Flutter 3.50.1. CI runs the first three, then builds a debug app bundle. A separate CI job reruns the bridge's codegen and fails if the committed bindings differ from its output (ADR-0012: generated code is committed, and CI checks that it is current). The integration tests need an emulator, so CI doesn't run them.
+Also run these from the repository root, with Flutter 3.50.1. CI runs the first three, then builds a debug app bundle. A separate CI job reruns the bridge's codegen and `flutter gen-l10n`, and fails if the committed bindings or localizations differ from their output (ADR-0012: generated code is committed, and CI checks that it is current). After editing an ARB file in `lib/l10n/`, run `flutter gen-l10n` and commit what it writes. The integration tests need an emulator, so CI doesn't run them.
 
 ```bash
 dart format --output=none --set-exit-if-changed .

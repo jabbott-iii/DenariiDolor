@@ -68,7 +68,11 @@ so they can fill them in.
   Flutter 3.50 deprecated `package:flutter/material.dart`
 - **Localization:** seven languages: English (the default), Simplified Chinese (`zh-CN`), Hindi
   (`hi`), Spanish (`es`), Arabic (`ar`, right to left), French (`fr`), and Portuguese (`pt`). ARB
-  files go in `lib/l10n/`, ported from v1's `app/src/main/res/values*/strings.xml` in M1.4. The
+  files are in `lib/l10n/`, ported from v1's `app/src/main/res/values*/strings.xml` in M1.4, with
+  lowerCamelCase keys; the Simplified Chinese pack is `app_zh.arb`. `resolveAppLocale` in
+  `lib/l10n/locale_resolution.dart` picks the pack (ADR-0015: the phone's whole language list,
+  matched by script as Android does). The app takes Material's delegates from `material_ui`
+  (`GlobalMaterialLocalizations.delegates`), not from `AppLocalizations.localizationsDelegates`. The
   packs were machine-drafted, so a native speaker reviews every string you translate
 - **Platform channels:** the Rust core through `flutter_rust_bridge` (ADR-0005), whose bindings
   live in `lib/platform/rust/` and which view models reach through hand-written interfaces in

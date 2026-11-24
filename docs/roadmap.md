@@ -241,7 +241,7 @@ and displays an amount that Rust parsed and Dart formatted.
   - Accept:
     - A pull request runs the Rust and Flutter jobs and blocks on either.
   - Verify: a pull request's checks (expect green)
-- [ ] **M1.4 — i18n: port v1's strings to ARB files**
+- [x] **M1.4 — i18n: port v1's strings to ARB files**
   - Note (from M1.1): the placeholder sign-out button's tooltip is v1's English `sign_out` string,
     hard-coded in `lib/features/session/ui/signed_in_placeholder_screen.dart`; move it to the ARB
     files.
@@ -252,6 +252,35 @@ and displays an amount that Rust parsed and Dart formatted.
   - Note (from M1.3): add `flutter gen-l10n` to the `generated` job in `.github/workflows/ci.yml`,
     before its "Compare with the committed files" step, so CI fails when the committed
     localizations differ from the ARB files (ADR-0012).
+  - Note: 2026-11-23: the maintainer approved `flutter_localizations` and `intl` 0.20.3 as direct
+    dependencies (both already came with `material_ui`), chose lowerCamelCase keys (v1's
+    `sign_out` is `signOut`), and chose ADR-0015: the app walks the phone's whole language list
+    and matches each language by script, as Android does, so zh-TW shows English and a phone set
+    to German then Spanish shows Spanish (v1 showed English there).
+  - Note: 2026-11-23: a one-off script converted v1's 325 strings, three of them plurals, into
+    `lib/l10n/app_{en,zh,hi,es,ar,fr,pt}.arb` in v1's order, and checked every pack against
+    English. It undid Android's escapes (`\'`, `\"`, `\n`, `&amp;`, `%%`), named each `%1$s` or
+    `%d` placeholder (`%d` is an `int`; amounts and dates stay preformatted `String`s), and wrote
+    each plural with the forms its pack had (Arabic has all six). The English file holds a
+    description for every message. `appName`, `wipeDataConfirmationWord` (`WIPE`, CS-16), and
+    `backupRestoreConfirmationWord` (`RESTORE`) aren't translated and are the same in every pack.
+    The Simplified Chinese pack is `app_zh.arb`, because gen-l10n needs a language-only pack.
+  - Note: 2026-11-23: the placeholders' text moved to the ARB files: the amount label reuses
+    `transactionAmountHint`, the sign-out tooltip is `signOut`, and `lib/app/app_name.dart` gave
+    way to `appName`. The result line got two new strings, `placeholderAmountInCents` and
+    `placeholderAmountRejected`, with drafted translations. The app uses `material_ui`'s
+    `GlobalMaterialLocalizations.delegates`, not the SDK's in
+    `AppLocalizations.localizationsDelegates`, because Material's widgets now look up
+    `material_ui`'s types. `ios/Runner/Info.plist` lists the seven languages in
+    `CFBundleLocalizations`, unbuilt until M7.
+  - Note: 2026-11-23: `flutter gen-l10n` reported no untranslated message, and reported one when a
+    French message was removed for the test. `test/l10n/` (40 tests) checks each pack's messages,
+    placeholders, and plural forms, the untranslated words, the language choice, and Arabic's
+    right-to-left layout. On `Denarii_API_36`, with the app's languages set by
+    `adb shell cmd locale set-app-locales`, ar-EG laid out right to left in Arabic, de-DE then
+    es-ES showed Spanish, zh-Hant-TW showed English, and zh-Hans-SG showed Chinese.
+    `flutter test integration_test` passed (3 tests) on `Denarii_API_26` and `Denarii_API_36`. The
+    translations are still machine drafts for a native speaker to review before M6.
   - Depends: M1.1
   - Do:
     - Convert `app/src/main/res/values*/strings.xml` at `6d57526` into `lib/l10n/app_*.arb` for
@@ -272,6 +301,11 @@ and displays an amount that Rust parsed and Dart formatted.
   - Note (from M1.2): `SignInPlaceholderViewModel.placeholderSymbols` sends `.` and no currency
     marks to the bridge's `parse_cents`; build the `NumberSymbols` from the user's locale with
     `package:intl`, as `docs/specs/core.md` ("Money") describes.
+  - Note (from M1.4): the ARB files' `int` placeholders have no number format, so Dart writes
+    their digits as ASCII in every language (Arabic shows `123456 سنت`). v1 filled `%d` with
+    Android's `String.format` and the app's locale, and Java's `Formatter` writes the locale's own
+    digits. Check Arabic and Hindi against v1, and give those placeholders a `format` where they
+    differ. Amounts and dates reach the ARB messages as preformatted `String`s.
   - Depends: M1.1
   - Do:
     - Format amounts and month names with `package:intl` so they match the snapshot tables in v1's
@@ -342,6 +376,10 @@ rules.
   - Depends: M2.5
   - Do:
     - Port `DefaultDataInitializer`, taking the default names in the user's language from Dart.
+  - Note (from M1.4): the names are `defaultAccountCash`, `defaultAccountSavings`, and the three
+    `defaultCategory…` messages. Outside a widget, get them with
+    `lookupAppLocalizations(resolveAppLocale(PlatformDispatcher.instance.locales, AppLocalizations.supportedLocales))`,
+    which is synchronous.
   - Accept:
     - A new database holds accounts 1–2 and categories 1–3 with v1's icons.
   - Verify: `cd rust && cargo test --locked -p denarii-store seed` (expect pass)
@@ -376,6 +414,11 @@ and fingerprint, and sees the same balances.
   - Verify: the maintainer's decision (no command)
 - [ ] **M3.2 — android: Keystore and biometric code**
   - ⏳ needs an Android phone with v1 installed
+  - Note (from M1.4): once the APK carries translated Android resources (`androidx.biometric` has
+    some), Android moves the first phone language that they or English match to the front before
+    Flutter sees the list (ADR-0015). Check with `aapt2 dump configurations` that each of the six
+    pack languages has Android resources too; otherwise a phone set to Hindi then English opens in
+    English.
   - Depends: M3.1
   - Do:
     - Use the aliases and parameters in section 2 of the format spec, never re-creating a key while
@@ -405,6 +448,8 @@ and fingerprint, and sees the same balances.
   - Note (from M1.2): the sign-in placeholder now has a route (`SignInPlaceholderRoute`) and a view
     model with M1.2's amount field. Remove the field with the placeholder, and point
     `integration_test/bridge_test.dart`'s screen check at a screen that still calls the bridge.
+  - Note (from M1.4): remove `placeholderAmountInCents` and `placeholderAmountRejected` from the
+    seven ARB files with the placeholder, and regenerate the localizations.
   - Note (from M1.1): replace `LockedSessionLock` in `lib/main.dart` with a `SessionLock` over the
     vault; wrap `SignedInTree` in the session scope (ADR-0010); and push the sign-in screens on a
     `Navigator` inside the sign-in flow, not the app's root `Navigator`, so unlocking removes them.

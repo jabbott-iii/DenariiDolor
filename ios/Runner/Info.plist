@@ -6,6 +6,17 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<!-- The app's seven language packs, in lib/l10n/ (M1.4). -->
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>zh-Hans</string>
+		<string>hi</string>
+		<string>es</string>
+		<string>ar</string>
+		<string>fr</string>
+		<string>pt</string>
+	</array>
 	<key>CFBundleDisplayName</key>
 	<string>Denarii Dolor</string>
 	<key>CFBundleExecutable</key>

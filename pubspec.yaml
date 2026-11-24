@@ -20,6 +20,11 @@ dependencies:
   # the codegen (ADR-0014).
   flutter_rust_bridge: 2.13.0
   flutter_rust_bridge_hooks: 2.13.0
+  # The localizations that `flutter gen-l10n` writes from lib/l10n/ import these two. Both already
+  # came with material_ui (M1.4).
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.3
 
 dev_dependencies:
   flutter_test:
@@ -31,3 +36,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Runs `flutter gen-l10n` with l10n.yaml on `flutter pub get` and in every build.
+  generate: true

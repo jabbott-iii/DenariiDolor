@@ -1,0 +1,16 @@
+# `flutter gen-l10n` reads this file, and `flutter pub get` and every build run it because
+# pubspec.yaml sets `generate: true`. The ARB files in lib/l10n/ are the source. The
+# app_localizations*.dart files it writes next to them are committed and never edited by hand
+# (ADR-0012).
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+# AppLocalizations.of(context) is never null, so callers need no `!`.
+nullable-getter: false
+# Every message in the template needs a description for translators.
+required-resource-attributes: true
+# English first: the locale resolver falls back to the first supported locale.
+preferred-supported-locales: [en]
+# The output passes `dart format --set-exit-if-changed`.
+format: true

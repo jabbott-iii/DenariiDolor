@@ -4,9 +4,10 @@
  * written permission is prohibited.
  */
 
-import 'package:denarii_dolor/app/app_name.dart';
 import 'package:denarii_dolor/app/app_scope.dart';
 import 'package:denarii_dolor/app/root_switch.dart';
+import 'package:denarii_dolor/l10n/app_localizations.dart';
+import 'package:denarii_dolor/l10n/locale_resolution.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The app: the app scope above a [MaterialApp] whose home is the [RootSwitch].
@@ -20,7 +21,16 @@ class DenariiDolorApp extends StatelessWidget {
     return AppScope(
       services: services,
       child: MaterialApp(
-        title: appName,
+        onGenerateTitle: (context) => AppLocalizations.of(context).appName,
+        // material_ui's own delegates, not the SDK's in AppLocalizations.localizationsDelegates:
+        // Flutter 3.50 moved Material and Cupertino out of the SDK, and their widgets look up the
+        // localizations of material_ui and cupertino_ui.
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          ...GlobalMaterialLocalizations.delegates,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        localeListResolutionCallback: resolveAppLocale,
         // Material 3's defaults, following the device's theme, until M1.5 ports v1's colors.
         theme: ThemeData(),
         darkTheme: ThemeData(brightness: Brightness.dark),

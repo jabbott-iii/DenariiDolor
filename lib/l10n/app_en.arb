@@ -1,0 +1,1665 @@
+{
+  "@@locale": "en",
+  "appName": "Denarii Dolor",
+  "@appName": {
+    "description": "The app's name, shown in screen titles. Don't translate it."
+  },
+  "dashboard": "Dashboard",
+  "@dashboard": {
+    "description": "Title of the Dashboard screen and its navigation item."
+  },
+  "signIn": "Sign In",
+  "@signIn": {
+    "description": "Button on the sign-in screen that signs in with the typed PIN."
+  },
+  "signInWithBiometrics": "Sign In with Biometrics",
+  "@signInWithBiometrics": {
+    "description": "Button on the sign-in screen that opens the fingerprint or face prompt."
+  },
+  "biometricSignInAccessibilityLabel": "Sign in with biometrics",
+  "@biometricSignInAccessibilityLabel": {
+    "description": "Screen reader label of the biometric sign-in button."
+  },
+  "biometricSignInTitle": "Unlock Denarii Dolor",
+  "@biometricSignInTitle": {
+    "description": "Title of the system fingerprint or face prompt at sign-in."
+  },
+  "biometricSignInSubtitle": "Use your enrolled biometrics to continue",
+  "@biometricSignInSubtitle": {
+    "description": "Subtitle of the system fingerprint or face prompt at sign-in."
+  },
+  "biometricSignInFailed": "Biometric authentication failed. Try again or use your PIN.",
+  "@biometricSignInFailed": {
+    "description": "Message after the fingerprint or face check fails at sign-in."
+  },
+  "biometricSignInError": "Biometric sign-in is currently unavailable. Use your PIN instead.",
+  "@biometricSignInError": {
+    "description": "Message when biometric sign-in can't be used on the device right now."
+  },
+  "usePinInstead": "Use PIN instead",
+  "@usePinInstead": {
+    "description": "Button in the system biometric prompt that closes it so the user can type their PIN."
+  },
+  "biometricSignInInvalidated": "Biometric sign-in was turned off because the biometrics on this device changed. Sign in with your PIN, then turn it on again in Settings.",
+  "@biometricSignInInvalidated": {
+    "description": "Message at sign-in after a change to the device's enrolled fingerprints or faces turned biometric sign-in off."
+  },
+  "biometricEnrollTitle": "Turn on biometric sign-in",
+  "@biometricEnrollTitle": {
+    "description": "Title of the system biometric prompt shown when turning on biometric sign-in in Settings."
+  },
+  "biometricEnrollSubtitle": "Confirm with your fingerprint or face",
+  "@biometricEnrollSubtitle": {
+    "description": "Subtitle of the system biometric prompt shown when turning on biometric sign-in in Settings."
+  },
+  "biometricEnabled": "Biometric sign-in is on.",
+  "@biometricEnabled": {
+    "description": "Confirmation after biometric sign-in is turned on in Settings."
+  },
+  "biometricEnableFailed": "Couldn't turn on biometric sign-in.",
+  "@biometricEnableFailed": {
+    "description": "Error when biometric sign-in couldn't be turned on in Settings."
+  },
+  "pinHint": "PIN",
+  "@pinHint": {
+    "description": "Label of the PIN field on the sign-in screen."
+  },
+  "showPin": "Show",
+  "@showPin": {
+    "description": "Button that shows the typed PIN or answer in plain text."
+  },
+  "hidePin": "Hide",
+  "@hidePin": {
+    "description": "Button that hides the typed PIN or answer again."
+  },
+  "newPinHint": "New PIN",
+  "@newPinHint": {
+    "description": "Label of the field for a new PIN, at setup and when resetting the PIN."
+  },
+  "confirmPinHint": "Confirm PIN",
+  "@confirmPinHint": {
+    "description": "Label of the field where the new PIN is typed a second time."
+  },
+  "securityQuestionHint": "Security question",
+  "@securityQuestionHint": {
+    "description": "Label of the field for the security question the user writes at setup."
+  },
+  "securityAnswerHint": "Security answer",
+  "@securityAnswerHint": {
+    "description": "Label of the field for the security answer at setup."
+  },
+  "securityAnswerVerifyHint": "Security answer",
+  "@securityAnswerVerifyHint": {
+    "description": "Label of the field where the user answers their security question to reset a forgotten PIN."
+  },
+  "forgotPin": "Forgot PIN?",
+  "@forgotPin": {
+    "description": "Button on the sign-in screen that starts resetting a forgotten PIN. The Help screen quotes it."
+  },
+  "backToSignIn": "Back to Sign In",
+  "@backToSignIn": {
+    "description": "Button that leaves PIN recovery and returns to the sign-in screen."
+  },
+  "createSecurityProfile": "Create Security Profile",
+  "@createSecurityProfile": {
+    "description": "Button that finishes the first setup: the PIN, the security question, and its answer."
+  },
+  "wipeAllData": "Wipe All App Data",
+  "@wipeAllData": {
+    "description": "Button on the sign-in screen that starts erasing everything in the app. The Help screen quotes it."
+  },
+  "wipeAllDataDestructiveLabel": "Destructive action: wipe all app data",
+  "@wipeAllDataDestructiveLabel": {
+    "description": "Screen reader label of the wipe button, warning that it is destructive."
+  },
+  "wipeDataTitle": "Delete all app data?",
+  "@wipeDataTitle": {
+    "description": "Title of the dialog that confirms erasing all app data."
+  },
+  "wipeDataWarning": "This permanently deletes all app data, financial records, PIN, and recovery settings. This cannot be undone.",
+  "@wipeDataWarning": {
+    "description": "Warning in the dialog that confirms erasing all app data."
+  },
+  "wipeDataConfirm": "Delete Everything",
+  "@wipeDataConfirm": {
+    "description": "Button that erases all app data, once the countdown ends."
+  },
+  "wipeDataConfirmCountdown": "Delete Everything ({seconds})",
+  "@wipeDataConfirmCountdown": {
+    "description": "The erase button while its countdown runs; the number is the seconds left.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "10"
+      }
+    }
+  },
+  "wipeDataConfirmationWord": "WIPE",
+  "@wipeDataConfirmationWord": {
+    "description": "The word the user types to confirm wiping all app data (security control CS-16). Don't translate it: the check compares the typed text with this exact word."
+  },
+  "wipeDataTypeToConfirm": "Type {word} to confirm",
+  "@wipeDataTypeToConfirm": {
+    "description": "Instruction above the field where the user types the confirmation word to wipe or restore. The word isn't translated.",
+    "placeholders": {
+      "word": {
+        "type": "String",
+        "example": "WIPE"
+      }
+    }
+  },
+  "wipeDataConfirmDestructiveLabel": "Destructive confirmation: delete all app data permanently",
+  "@wipeDataConfirmDestructiveLabel": {
+    "description": "Screen reader label of the final erase button."
+  },
+  "wipeDataCancel": "Cancel",
+  "@wipeDataCancel": {
+    "description": "Button that closes the wipe dialog without erasing anything."
+  },
+  "pinFormatError": "PIN must be 6 to 12 digits.",
+  "@pinFormatError": {
+    "description": "Error when a PIN isn't 6 to 12 digits."
+  },
+  "pinConfirmationMismatch": "PIN and confirmation must match.",
+  "@pinConfirmationMismatch": {
+    "description": "Error when the two typed PINs differ."
+  },
+  "securityQuestionRequired": "Security question is required.",
+  "@securityQuestionRequired": {
+    "description": "Error when the security question is left empty."
+  },
+  "securityAnswerRequired": "Security answer is required.",
+  "@securityAnswerRequired": {
+    "description": "Error when the security answer is left empty."
+  },
+  "securityQuestionTooLong": "Keep the security question to {maxLength} characters or fewer.",
+  "@securityQuestionTooLong": {
+    "description": "Error when the security question is longer than the limit, in characters.",
+    "placeholders": {
+      "maxLength": {
+        "type": "int",
+        "example": "120"
+      }
+    }
+  },
+  "securityAnswerTooShort": "The security answer needs at least {minLength} characters. Capital letters and extra spaces don't count.",
+  "@securityAnswerTooShort": {
+    "description": "Error when the security answer is shorter than the minimum, in characters.",
+    "placeholders": {
+      "minLength": {
+        "type": "int",
+        "example": "6"
+      }
+    }
+  },
+  "securityAnswerTooLong": "Keep the security answer to {maxLength} characters or fewer.",
+  "@securityAnswerTooLong": {
+    "description": "Error when the security answer is longer than the limit, in characters.",
+    "placeholders": {
+      "maxLength": {
+        "type": "int",
+        "example": "64"
+      }
+    }
+  },
+  "securityAnswerInQuestion": "The answer can't appear in the question.",
+  "@securityAnswerInQuestion": {
+    "description": "Error when the security answer appears in the question."
+  },
+  "securityAnswerMatchesPin": "The answer can't be the same as your PIN.",
+  "@securityAnswerMatchesPin": {
+    "description": "Error when the security answer is the same as the PIN."
+  },
+  "securityAnswerRules": "At least {minLength} characters. Capital letters and extra spaces are ignored. Choose an answer others can't guess or look up.",
+  "@securityAnswerRules": {
+    "description": "Help text under the security answer field at setup; the number is the minimum length in characters.",
+    "placeholders": {
+      "minLength": {
+        "type": "int",
+        "example": "6"
+      }
+    }
+  },
+  "upgradeRecoveryIntro": "Denarii Dolor now protects your data with your PIN and a stronger recovery answer. Set a security question and answer to finish signing in.",
+  "@upgradeRecoveryIntro": {
+    "description": "Explanation shown once to users upgrading from an older version, who must set a new security question and answer."
+  },
+  "saveAndContinue": "Save and Continue",
+  "@saveAndContinue": {
+    "description": "Button that saves the new security question and answer during an upgrade, then signs in."
+  },
+  "storageErrorMessage": "Secure storage on this device can't be read, so your data can't be unlocked. Try again, or wipe all app data to start over.",
+  "@storageErrorMessage": {
+    "description": "Error when the device's secure storage can't be read, so the data can't be unlocked."
+  },
+  "tryAgain": "Try Again",
+  "@tryAgain": {
+    "description": "Button that retries after a storage error on the sign-in screen."
+  },
+  "profileSetupSuccess": "Security profile created. Sign in with your PIN.",
+  "@profileSetupSuccess": {
+    "description": "Confirmation after the first setup is saved."
+  },
+  "profileAlreadyConfigured": "Security profile is already configured.",
+  "@profileAlreadyConfigured": {
+    "description": "Error when setup runs although a security profile already exists."
+  },
+  "profileNotConfigured": "Set up a security profile before recovering a PIN.",
+  "@profileNotConfigured": {
+    "description": "Error when PIN recovery starts before any security profile exists."
+  },
+  "invalidSecurityAnswer": "Security answer is incorrect.",
+  "@invalidSecurityAnswer": {
+    "description": "Error when the answer to the security question is wrong."
+  },
+  "pinRecoverySuccess": "PIN reset successful. Sign in with your new PIN.",
+  "@pinRecoverySuccess": {
+    "description": "Confirmation after a forgotten PIN is replaced."
+  },
+  "wipeDataSuccess": "All app data was deleted. Set up a new security profile.",
+  "@wipeDataSuccess": {
+    "description": "Confirmation after all app data is erased."
+  },
+  "wipeDataError": "Unable to wipe app data. Please try again.",
+  "@wipeDataError": {
+    "description": "Error when erasing the app data fails."
+  },
+  "securityQuestionUnavailable": "Security question unavailable.",
+  "@securityQuestionUnavailable": {
+    "description": "Shown in place of the security question when it can't be read."
+  },
+  "addTransaction": "Add Transaction",
+  "@addTransaction": {
+    "description": "Title of the screen for a new transaction, and the label of the + button."
+  },
+  "transactionDescriptionHint": "Description",
+  "@transactionDescriptionHint": {
+    "description": "Label of the description field in the transaction form."
+  },
+  "transactionTypeLabel": "Transaction type",
+  "@transactionTypeLabel": {
+    "description": "Label of the control that picks expense, income, or transfer."
+  },
+  "transactionAmountHint": "Amount",
+  "@transactionAmountHint": {
+    "description": "Label of the amount field in the transaction form."
+  },
+  "transactionReferenceRequiredMessage": "Review the account and category IDs before saving this transaction.",
+  "@transactionReferenceRequiredMessage": {
+    "description": "Error when a transaction refers to an account or category that can't be found."
+  },
+  "dateHint": "Date (YYYY-MM-DD)",
+  "@dateHint": {
+    "description": "Label of the date field in the transaction form; keep the YYYY-MM-DD format as it is."
+  },
+  "saveTransaction": "Save Transaction",
+  "@saveTransaction": {
+    "description": "Button that saves a new transaction."
+  },
+  "transactionTypeExpense": "Expense",
+  "@transactionTypeExpense": {
+    "description": "The expense transaction type."
+  },
+  "transactionTypeIncome": "Income",
+  "@transactionTypeIncome": {
+    "description": "The income transaction type."
+  },
+  "transactionTypeTransfer": "Transfer",
+  "@transactionTypeTransfer": {
+    "description": "The transfer transaction type, which moves money between two accounts."
+  },
+  "search": "Search",
+  "@search": {
+    "description": "Title of the Search screen and its navigation item."
+  },
+  "searchDescriptionHint": "Description",
+  "@searchDescriptionHint": {
+    "description": "Label of the search field that matches transaction descriptions."
+  },
+  "searchMinAmountHint": "Min amount",
+  "@searchMinAmountHint": {
+    "description": "Label of the search filter for the smallest amount."
+  },
+  "searchMaxAmountHint": "Max amount",
+  "@searchMaxAmountHint": {
+    "description": "Label of the search filter for the largest amount."
+  },
+  "searchStartDateHint": "Start date (YYYY-MM-DD)",
+  "@searchStartDateHint": {
+    "description": "Label of the search filter for the first date; keep the YYYY-MM-DD format as it is."
+  },
+  "searchEndDateHint": "End date (YYYY-MM-DD)",
+  "@searchEndDateHint": {
+    "description": "Label of the search filter for the last date; keep the YYYY-MM-DD format as it is."
+  },
+  "invalidDateMessage": "Use the YYYY-MM-DD date format.",
+  "@invalidDateMessage": {
+    "description": "Error when a typed date isn't in the YYYY-MM-DD format."
+  },
+  "invalidSearchFiltersMessage": "Check your search dates and numeric filters, then try again.",
+  "@invalidSearchFiltersMessage": {
+    "description": "Error when the search filters can't be read."
+  },
+  "invalidSearchRangeMessage": "Enter a valid amount and date range.",
+  "@invalidSearchRangeMessage": {
+    "description": "Error when a search's amount or date range is invalid."
+  },
+  "reports": "Reports",
+  "@reports": {
+    "description": "Title of the Reports screen and its navigation item. The Help screen quotes it."
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Title of the Settings screen and its navigation item."
+  },
+  "settingsSessionTimeout": "Session timeout: {minutes} minutes of inactivity",
+  "@settingsSessionTimeout": {
+    "description": "Settings line that says when the app signs the user out; the number is minutes.",
+    "placeholders": {
+      "minutes": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "settingsPinConfigured": "PIN is configured for quick sign-in.",
+  "@settingsPinConfigured": {
+    "description": "Settings line shown when a PIN is set up."
+  },
+  "settingsPinNotConfigured": "No PIN is configured yet.",
+  "@settingsPinNotConfigured": {
+    "description": "Settings line shown when no PIN is set up."
+  },
+  "signOut": "Sign Out",
+  "@signOut": {
+    "description": "Button that signs out and locks the app's data."
+  },
+  "resetPin": "Reset PIN",
+  "@resetPin": {
+    "description": "Button that saves a new PIN during PIN recovery."
+  },
+  "settingsDarkMode": "Dark mode",
+  "@settingsDarkMode": {
+    "description": "Settings switch for the dark theme."
+  },
+  "settingsBiometricSignIn": "Biometric sign-in",
+  "@settingsBiometricSignIn": {
+    "description": "Settings switch for signing in with a fingerprint or face. The Help screen quotes it."
+  },
+  "settingsCurrency": "Currency",
+  "@settingsCurrency": {
+    "description": "Settings item that opens the currency choice. The Help screen quotes it."
+  },
+  "settingsCurrencyValue": "{currencyName} ({symbol})",
+  "@settingsCurrencyValue": {
+    "description": "The chosen currency under the Currency setting: its name, then its symbol in parentheses.",
+    "placeholders": {
+      "currencyName": {
+        "type": "String",
+        "example": "US Dollar"
+      },
+      "symbol": {
+        "type": "String",
+        "example": "$"
+      }
+    }
+  },
+  "settingsCurrencyTitle": "Choose a currency",
+  "@settingsCurrencyTitle": {
+    "description": "Title of the dialog that lists the currencies."
+  },
+  "settingsCurrencyNote": "Only the symbol changes. Amounts you've already entered aren't converted.",
+  "@settingsCurrencyNote": {
+    "description": "Note in the currency dialog: changing the currency doesn't convert amounts."
+  },
+  "settingsBackupRestore": "Backup and restore",
+  "@settingsBackupRestore": {
+    "description": "Settings item and screen title for backups. The Help screen quotes it."
+  },
+  "settingsPrivacyPolicy": "Privacy policy",
+  "@settingsPrivacyPolicy": {
+    "description": "Settings item and screen title for the privacy policy."
+  },
+  "settingsLicenses": "Open-source licenses",
+  "@settingsLicenses": {
+    "description": "Settings item and screen title for the open-source licenses."
+  },
+  "backupExplanation": "A backup file holds your accounts, categories, budgets, transactions and currency setting, encrypted with a passphrase you choose. It doesn't hold your PIN, security question or biometric sign-in: on a new phone, set up the app first, then restore the backup here.",
+  "@backupExplanation": {
+    "description": "Explanation at the top of the backup screen of what a backup holds."
+  },
+  "backupPassphraseWarning": "Keep the passphrase safe. Without it the backup can't be opened, and nobody can recover it.",
+  "@backupPassphraseWarning": {
+    "description": "Warning on the backup screen that a lost passphrase can't be recovered."
+  },
+  "backupCreate": "Create backup",
+  "@backupCreate": {
+    "description": "Button that starts creating a backup file."
+  },
+  "backupRestore": "Restore from backup",
+  "@backupRestore": {
+    "description": "Button that starts restoring from a backup file."
+  },
+  "backupCreateTitle": "Choose a passphrase",
+  "@backupCreateTitle": {
+    "description": "Title of the dialog where the user chooses a passphrase for a new backup."
+  },
+  "backupRestoreTitle": "Backup passphrase",
+  "@backupRestoreTitle": {
+    "description": "Title of the dialog where the user types a backup's passphrase to restore it."
+  },
+  "backupPassphrase": "Passphrase",
+  "@backupPassphrase": {
+    "description": "Label of the backup passphrase field."
+  },
+  "backupPassphraseConfirm": "Confirm passphrase",
+  "@backupPassphraseConfirm": {
+    "description": "Label of the field where the backup passphrase is typed a second time."
+  },
+  "backupPassphraseRules": "At least {minLength} characters. A few unrelated words work well.",
+  "@backupPassphraseRules": {
+    "description": "Help text under the backup passphrase field; the number is the minimum length in characters.",
+    "placeholders": {
+      "minLength": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "backupContinue": "Continue",
+  "@backupContinue": {
+    "description": "Button that continues after the passphrase is typed."
+  },
+  "backupWorking": "Working…",
+  "@backupWorking": {
+    "description": "Shown while a backup is created or restored."
+  },
+  "backupSaved": "Backup saved.",
+  "@backupSaved": {
+    "description": "Confirmation after a backup file is saved."
+  },
+  "backupSaveFailed": "Couldn't save the backup.",
+  "@backupSaveFailed": {
+    "description": "Error when the backup file couldn't be saved."
+  },
+  "backupRestoreConfirmTitle": "Replace all data?",
+  "@backupRestoreConfirmTitle": {
+    "description": "Title of the dialog that confirms replacing all data with a backup."
+  },
+  "backupRestoreContents": "Created: {created}\nAccounts: {accounts}\nCategories: {categories}\nBudgets: {budgets}\nTransactions: {transactions}",
+  "@backupRestoreContents": {
+    "description": "What the chosen backup holds, one item per line: when it was created, then the number of accounts, categories, budgets, and transactions. Keep the line breaks.",
+    "placeholders": {
+      "created": {
+        "type": "String",
+        "example": "November 23, 2026, 9:41 AM"
+      },
+      "accounts": {
+        "type": "int",
+        "example": "3"
+      },
+      "categories": {
+        "type": "int",
+        "example": "12"
+      },
+      "budgets": {
+        "type": "int",
+        "example": "4"
+      },
+      "transactions": {
+        "type": "int",
+        "example": "250"
+      }
+    }
+  },
+  "backupRestoreWarning": "Restoring erases everything now on this phone and replaces it with the backup. This can't be undone.",
+  "@backupRestoreWarning": {
+    "description": "Warning in the restore dialog that the data on the phone will be replaced."
+  },
+  "backupRestoreConfirmationWord": "RESTORE",
+  "@backupRestoreConfirmationWord": {
+    "description": "The word the user types to confirm restoring a backup over all data. Don't translate it: the check compares the typed text with this exact word."
+  },
+  "backupRestoreAction": "Replace data",
+  "@backupRestoreAction": {
+    "description": "Button that replaces all data with the backup."
+  },
+  "backupRestored": "Backup restored.",
+  "@backupRestored": {
+    "description": "Confirmation after a backup is restored."
+  },
+  "backupRestoreFailed": "Couldn't restore the backup. Your data hasn't changed.",
+  "@backupRestoreFailed": {
+    "description": "Error when a restore fails; the data on the phone is unchanged."
+  },
+  "backupErrorPassphraseLength": "The passphrase must be {minLength} to {maxLength} characters.",
+  "@backupErrorPassphraseLength": {
+    "description": "Error when the backup passphrase is too short or too long, in characters.",
+    "placeholders": {
+      "minLength": {
+        "type": "int",
+        "example": "12"
+      },
+      "maxLength": {
+        "type": "int",
+        "example": "256"
+      }
+    }
+  },
+  "backupErrorPassphraseMismatch": "The passphrases don't match.",
+  "@backupErrorPassphraseMismatch": {
+    "description": "Error when the two typed backup passphrases differ."
+  },
+  "backupErrorNotBackup": "This file isn't a Denarii Dolor backup.",
+  "@backupErrorNotBackup": {
+    "description": "Error when the chosen file isn't a backup made by this app."
+  },
+  "backupErrorNewerVersion": "This backup was made by a newer version of Denarii Dolor. Update the app, then try again.",
+  "@backupErrorNewerVersion": {
+    "description": "Error when the backup was made by a newer version of the app."
+  },
+  "backupErrorWrongPassphrase": "Wrong passphrase, or the file is damaged.",
+  "@backupErrorWrongPassphrase": {
+    "description": "Error when the backup can't be opened with the typed passphrase."
+  },
+  "backupErrorDamaged": "The backup is damaged and can't be restored.",
+  "@backupErrorDamaged": {
+    "description": "Error when the backup file is damaged."
+  },
+  "backupErrorRead": "Couldn't read the file.",
+  "@backupErrorRead": {
+    "description": "Error when the chosen file can't be read."
+  },
+  "legalLoadFailed": "Couldn't open this document.",
+  "@legalLoadFailed": {
+    "description": "Error when the privacy policy or the licenses can't be opened."
+  },
+  "legalEnglishOnly": "This document is available in English only.",
+  "@legalEnglishOnly": {
+    "description": "Note above a legal document that exists only in English."
+  },
+  "transactionCategoryLabel": "Category",
+  "@transactionCategoryLabel": {
+    "description": "Label of the category picker in the transaction form and in search."
+  },
+  "transactionAccountLabel": "Account",
+  "@transactionAccountLabel": {
+    "description": "Label of the account picker in the transaction form."
+  },
+  "transactionTransferAccountLabel": "Transfer to account",
+  "@transactionTransferAccountLabel": {
+    "description": "Label of the picker for the account a transfer moves money to."
+  },
+  "editTransaction": "Edit Transaction",
+  "@editTransaction": {
+    "description": "Title of the screen that edits an existing transaction."
+  },
+  "updateTransaction": "Update Transaction",
+  "@updateTransaction": {
+    "description": "Button that saves changes to an existing transaction."
+  },
+  "transactionSaved": "Transaction saved.",
+  "@transactionSaved": {
+    "description": "Confirmation after a transaction is saved."
+  },
+  "transactionDeleted": "Transaction deleted.",
+  "@transactionDeleted": {
+    "description": "Confirmation after a transaction is deleted."
+  },
+  "transactionNotFound": "Transaction not found.",
+  "@transactionNotFound": {
+    "description": "Error when the transaction being edited no longer exists."
+  },
+  "recentTransactions": "Recent transactions",
+  "@recentTransactions": {
+    "description": "Heading of the list of recent transactions on the Dashboard."
+  },
+  "noTransactions": "No transactions yet. Tap + to add one.",
+  "@noTransactions": {
+    "description": "Shown on the Dashboard before any transaction exists; + is the add button."
+  },
+  "accountBalances": "Account balances",
+  "@accountBalances": {
+    "description": "Heading of the account balances on the Dashboard."
+  },
+  "deleteTransactionTitle": "Delete transaction?",
+  "@deleteTransactionTitle": {
+    "description": "Title of the dialog that confirms deleting a transaction."
+  },
+  "deleteTransactionMessage": "Delete \"{description}\"? Account balances will be adjusted.",
+  "@deleteTransactionMessage": {
+    "description": "Message in the dialog that confirms deleting a transaction; the text in quotes is the transaction's description.",
+    "placeholders": {
+      "description": {
+        "type": "String",
+        "example": "Groceries"
+      }
+    }
+  },
+  "deleteItemTitle": "Delete {name}?",
+  "@deleteItemTitle": {
+    "description": "Title of the dialog that confirms deleting an account, a category, or a budget; the name is the item's.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Savings"
+      }
+    }
+  },
+  "deleteItemMessage": "This cannot be undone.",
+  "@deleteItemMessage": {
+    "description": "Message in the dialog that confirms deleting an account, a category, or a budget."
+  },
+  "pickerPlaceholder": "Select…",
+  "@pickerPlaceholder": {
+    "description": "Shown in a picker before anything is chosen."
+  },
+  "edit": "Edit",
+  "@edit": {
+    "description": "Button that opens an item for editing."
+  },
+  "delete": "Delete",
+  "@delete": {
+    "description": "Button that deletes an item."
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Button that closes a dialog without changing anything."
+  },
+  "save": "Save",
+  "@save": {
+    "description": "Button that saves a form."
+  },
+  "back": "Back",
+  "@back": {
+    "description": "Button that goes back to the previous screen."
+  },
+  "genericError": "Something went wrong. Please try again.",
+  "@genericError": {
+    "description": "Error shown when something unexpected fails."
+  },
+  "manageCategories": "Manage Categories",
+  "@manageCategories": {
+    "description": "Settings item and screen title for adding, editing, and deleting categories."
+  },
+  "manageAccounts": "Manage Accounts",
+  "@manageAccounts": {
+    "description": "Settings item and screen title for adding, renaming, and deleting accounts."
+  },
+  "manageBudgets": "Manage Budgets",
+  "@manageBudgets": {
+    "description": "Settings item and screen title for budgets. The Help screen quotes it."
+  },
+  "addCategory": "Add Category",
+  "@addCategory": {
+    "description": "Button and dialog title for a new category."
+  },
+  "categoryName": "Category name",
+  "@categoryName": {
+    "description": "Label of the category name field."
+  },
+  "categorySaved": "Category saved.",
+  "@categorySaved": {
+    "description": "Confirmation after a category is saved."
+  },
+  "categoryDeleted": "Category deleted.",
+  "@categoryDeleted": {
+    "description": "Confirmation after a category is deleted."
+  },
+  "addAccount": "Add Account",
+  "@addAccount": {
+    "description": "Button and dialog title for a new account."
+  },
+  "renameAccount": "Rename Account",
+  "@renameAccount": {
+    "description": "Dialog title for renaming an account."
+  },
+  "accountName": "Account name",
+  "@accountName": {
+    "description": "Label of the account name field."
+  },
+  "openingBalance": "Opening balance",
+  "@openingBalance": {
+    "description": "Label of the field for a new account's starting balance."
+  },
+  "accountBalance": "Balance: {balance}",
+  "@accountBalance": {
+    "description": "An account's balance in the account list; the value is a formatted amount.",
+    "placeholders": {
+      "balance": {
+        "type": "String",
+        "example": "$1,234.50"
+      }
+    }
+  },
+  "accountSaved": "Account saved.",
+  "@accountSaved": {
+    "description": "Confirmation after an account is saved."
+  },
+  "accountDeleted": "Account deleted.",
+  "@accountDeleted": {
+    "description": "Confirmation after an account is deleted."
+  },
+  "invalidOpeningBalance": "Enter a valid opening balance (at most 2 decimals).",
+  "@invalidOpeningBalance": {
+    "description": "Error when the opening balance isn't a valid amount."
+  },
+  "setBudget": "Set Budget",
+  "@setBudget": {
+    "description": "Button and dialog title for setting a category's monthly budget."
+  },
+  "budgetForCategory": "Budget: {category}",
+  "@budgetForCategory": {
+    "description": "Title of a category's budget; the name is the category's.",
+    "placeholders": {
+      "category": {
+        "type": "String",
+        "example": "Dining"
+      }
+    }
+  },
+  "budgetLimit": "Monthly limit",
+  "@budgetLimit": {
+    "description": "Label of the field for a budget's monthly limit."
+  },
+  "budgetWarningPercent": "Warning threshold (percent of limit)",
+  "@budgetWarningPercent": {
+    "description": "Label of the field for the percentage of the limit at which the budget warns."
+  },
+  "budgetSummary": "Limit {limit} · warn at {percent}%",
+  "@budgetSummary": {
+    "description": "A budget in the budget list: its monthly limit, then the percentage at which it warns.",
+    "placeholders": {
+      "limit": {
+        "type": "String",
+        "example": "$200.00"
+      },
+      "percent": {
+        "type": "int",
+        "example": "80"
+      }
+    }
+  },
+  "noBudget": "No budget set",
+  "@noBudget": {
+    "description": "Shown for a category that has no budget."
+  },
+  "remove": "Remove",
+  "@remove": {
+    "description": "Button that removes a category's budget."
+  },
+  "budgetSaved": "Budget saved.",
+  "@budgetSaved": {
+    "description": "Confirmation after a budget is saved."
+  },
+  "budgetDeleted": "Budget removed.",
+  "@budgetDeleted": {
+    "description": "Confirmation after a budget is removed."
+  },
+  "invalidBudgetInput": "Enter a limit with at most 2 decimals and a warning percentage from 1 to 100.",
+  "@invalidBudgetInput": {
+    "description": "Error when the budget limit or warning percentage is invalid."
+  },
+  "invalidPinAttemptsLeft": "Invalid PIN. {attempts} attempt(s) left before a temporary lockout.",
+  "@invalidPinAttemptsLeft": {
+    "description": "Error after a wrong PIN; the number is how many attempts remain before a temporary lockout.",
+    "placeholders": {
+      "attempts": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "pinLockedOut": "Too many failed attempts. Try again in {seconds} seconds.",
+  "@pinLockedOut": {
+    "description": "Error during a lockout after too many wrong attempts; the number is the seconds left.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "searchAllCategories": "All categories",
+  "@searchAllCategories": {
+    "description": "Search filter choice that includes every category."
+  },
+  "searchClear": "Clear",
+  "@searchClear": {
+    "description": "Button that clears the search filters."
+  },
+  "searchResultCount": "{count} result(s)",
+  "@searchResultCount": {
+    "description": "How many transactions a search found.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "searchNoResults": "No matching transactions.",
+  "@searchNoResults": {
+    "description": "Shown when a search finds nothing."
+  },
+  "previousMonth": "‹ Prev",
+  "@previousMonth": {
+    "description": "Button that shows the previous month's report. Keep the ‹ character as it is; right-to-left text mirrors it."
+  },
+  "nextMonth": "Next ›",
+  "@nextMonth": {
+    "description": "Button that shows the next month's report. Keep the › character as it is; right-to-left text mirrors it."
+  },
+  "reportTitle": "Monthly Spending Report",
+  "@reportTitle": {
+    "description": "Title of the monthly report, on screen and in the PDF."
+  },
+  "reportGenerated": "Generated {generated}",
+  "@reportGenerated": {
+    "description": "When the report was made, on screen and in the PDF; the value is a formatted date and time.",
+    "placeholders": {
+      "generated": {
+        "type": "String",
+        "example": "November 23, 2026, 9:41 AM"
+      }
+    }
+  },
+  "reportPage": "Page {page}",
+  "@reportPage": {
+    "description": "Page number in the PDF report's footer.",
+    "placeholders": {
+      "page": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "reportTotals": "Income {income} · Expense {expense} · Net {net}",
+  "@reportTotals": {
+    "description": "The month's totals, on screen and in the PDF: income, expenses, and net, each a formatted amount.",
+    "placeholders": {
+      "income": {
+        "type": "String",
+        "example": "$3,000.00"
+      },
+      "expense": {
+        "type": "String",
+        "example": "$1,250.00"
+      },
+      "net": {
+        "type": "String",
+        "example": "$1,750.00"
+      }
+    }
+  },
+  "reportColDate": "Date",
+  "@reportColDate": {
+    "description": "Column heading in the report and the PDF."
+  },
+  "reportColType": "Type",
+  "@reportColType": {
+    "description": "Column heading in the report and the PDF: expense, income, or transfer."
+  },
+  "reportColCategory": "Category",
+  "@reportColCategory": {
+    "description": "Column heading in the report and the PDF."
+  },
+  "reportColDescription": "Description",
+  "@reportColDescription": {
+    "description": "Column heading in the report and the PDF."
+  },
+  "reportColAmount": "Amount",
+  "@reportColAmount": {
+    "description": "Column heading in the report and the PDF."
+  },
+  "reportColPayment": "Payment Method",
+  "@reportColPayment": {
+    "description": "Column heading in the report and the PDF: the account the money came from."
+  },
+  "reportEmpty": "No transactions in this month.",
+  "@reportEmpty": {
+    "description": "Shown in the report, and in the PDF, when the month has no transactions."
+  },
+  "reportLoadFailed": "Couldn't generate the report. Try again.",
+  "@reportLoadFailed": {
+    "description": "Error when the report can't be made."
+  },
+  "saveCsv": "Save CSV",
+  "@saveCsv": {
+    "description": "Button that saves the report as a CSV file."
+  },
+  "savePdf": "Save PDF",
+  "@savePdf": {
+    "description": "Button that saves the report as a PDF file."
+  },
+  "shareCsv": "Share CSV",
+  "@shareCsv": {
+    "description": "Button that shares the report as a CSV file."
+  },
+  "sharePdf": "Share PDF",
+  "@sharePdf": {
+    "description": "Button that shares the report as a PDF file."
+  },
+  "shareReport": "Share report",
+  "@shareReport": {
+    "description": "Title of the system share sheet for a report."
+  },
+  "reportSaved": "Report saved.",
+  "@reportSaved": {
+    "description": "Confirmation after a report file is saved."
+  },
+  "reportExportFailed": "Couldn't export the report.",
+  "@reportExportFailed": {
+    "description": "Error when the report file can't be saved or shared."
+  },
+  "netThisMonth": "Net this month",
+  "@netThisMonth": {
+    "description": "Dashboard heading: income minus expenses for the current month."
+  },
+  "incomeThisMonth": "Income",
+  "@incomeThisMonth": {
+    "description": "Dashboard label of the current month's income."
+  },
+  "expenseThisMonth": "Expenses",
+  "@expenseThisMonth": {
+    "description": "Dashboard label of the current month's expenses."
+  },
+  "spendingByCategory": "Spending by category",
+  "@spendingByCategory": {
+    "description": "Heading of the Dashboard chart of spending by category."
+  },
+  "spendingNone": "No expenses this month.",
+  "@spendingNone": {
+    "description": "Shown in place of the spending chart when the month has no expenses."
+  },
+  "spendingOther": "Other",
+  "@spendingOther": {
+    "description": "Chart slice that groups the smallest categories."
+  },
+  "budgetsThisMonth": "Budgets this month",
+  "@budgetsThisMonth": {
+    "description": "Heading of the budget progress on the Dashboard."
+  },
+  "budgetSpentOfLimit": "{spent} of {limit}",
+  "@budgetSpentOfLimit": {
+    "description": "A budget's progress: the amount spent, then the monthly limit, each a formatted amount.",
+    "placeholders": {
+      "spent": {
+        "type": "String",
+        "example": "$150.00"
+      },
+      "limit": {
+        "type": "String",
+        "example": "$200.00"
+      }
+    }
+  },
+  "budgetStatusLine": "{status} · {percent}% used",
+  "@budgetStatusLine": {
+    "description": "A budget's status word, then the percentage of the limit used.",
+    "placeholders": {
+      "status": {
+        "type": "String",
+        "example": "Near limit"
+      },
+      "percent": {
+        "type": "int",
+        "example": "85"
+      }
+    }
+  },
+  "budgetStatusOk": "On track",
+  "@budgetStatusOk": {
+    "description": "Budget status: under the warning threshold."
+  },
+  "budgetStatusWarning": "Near limit",
+  "@budgetStatusWarning": {
+    "description": "Budget status: at or above the warning threshold."
+  },
+  "budgetStatusOver": "Over budget",
+  "@budgetStatusOver": {
+    "description": "Budget status: over the limit."
+  },
+  "budgetAlerts": "{count, plural, one{{count} budget is near or over its limit.} other{{count} budgets are near or over their limits.}}",
+  "@budgetAlerts": {
+    "description": "Dashboard alert: how many budgets are near or over their limit.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "editCategory": "Edit Category",
+  "@editCategory": {
+    "description": "Dialog title for editing a category."
+  },
+  "categoryIconLabel": "Icon: {icon}",
+  "@categoryIconLabel": {
+    "description": "Heading of the icon grid in the category dialog, naming the chosen icon.",
+    "placeholders": {
+      "icon": {
+        "type": "String",
+        "example": "Groceries"
+      }
+    }
+  },
+  "categoryIconGeneral": "General",
+  "@categoryIconGeneral": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconIncome": "Income",
+  "@categoryIconIncome": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconTransfer": "Transfer",
+  "@categoryIconTransfer": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconGroceries": "Groceries",
+  "@categoryIconGroceries": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconDining": "Dining",
+  "@categoryIconDining": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconCoffee": "Coffee",
+  "@categoryIconCoffee": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconHousing": "Housing",
+  "@categoryIconHousing": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconUtilities": "Utilities",
+  "@categoryIconUtilities": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconInternet": "Internet",
+  "@categoryIconInternet": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconPhone": "Phone",
+  "@categoryIconPhone": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconCar": "Car",
+  "@categoryIconCar": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconFuel": "Fuel",
+  "@categoryIconFuel": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconTransit": "Transit",
+  "@categoryIconTransit": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconTravel": "Travel",
+  "@categoryIconTravel": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconHealth": "Health",
+  "@categoryIconHealth": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconFitness": "Fitness",
+  "@categoryIconFitness": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconShopping": "Shopping",
+  "@categoryIconShopping": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconClothing": "Clothing",
+  "@categoryIconClothing": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconEntertainment": "Entertainment",
+  "@categoryIconEntertainment": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconEducation": "Education",
+  "@categoryIconEducation": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconPets": "Pets",
+  "@categoryIconPets": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconGifts": "Gifts",
+  "@categoryIconGifts": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconSavings": "Savings",
+  "@categoryIconSavings": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "categoryIconBank": "Bank & fees",
+  "@categoryIconBank": {
+    "description": "Name of a category icon, read by screen readers and shown in the category dialog."
+  },
+  "invalidAmountMessage": "Enter an amount greater than 0 with at most 2 decimals.",
+  "@invalidAmountMessage": {
+    "description": "Error when the amount isn't a positive number with at most 2 decimals."
+  },
+  "errorIdRequired": "This item could not be found. Go back and try again.",
+  "@errorIdRequired": {
+    "description": "Error when a screen opens without the item it should show."
+  },
+  "errorItemNotFound": "This item no longer exists.",
+  "@errorItemNotFound": {
+    "description": "Error when the item no longer exists."
+  },
+  "errorBlankDescription": "Enter a description.",
+  "@errorBlankDescription": {
+    "description": "Error when the transaction description is empty."
+  },
+  "errorDescriptionTooLong": "Description must be at most {maxLength} characters.",
+  "@errorDescriptionTooLong": {
+    "description": "Error when the description is longer than the limit, in characters.",
+    "placeholders": {
+      "maxLength": {
+        "type": "int",
+        "example": "200"
+      }
+    }
+  },
+  "errorInvalidDate": "Choose a valid date.",
+  "@errorInvalidDate": {
+    "description": "Error when the transaction date is invalid."
+  },
+  "errorTransferDestinationRequired": "Choose the account to transfer to.",
+  "@errorTransferDestinationRequired": {
+    "description": "Error when a transfer has no account to move money to."
+  },
+  "errorTransferDestinationSame": "Choose a different account to transfer to.",
+  "@errorTransferDestinationSame": {
+    "description": "Error when a transfer's two accounts are the same."
+  },
+  "errorCategoryNotFound": "That category no longer exists. Choose another.",
+  "@errorCategoryNotFound": {
+    "description": "Error when the chosen category was deleted."
+  },
+  "errorAccountNotFound": "That account no longer exists. Choose another.",
+  "@errorAccountNotFound": {
+    "description": "Error when the chosen account was deleted."
+  },
+  "errorBudgetExceeded": "This expense would put the category over its monthly budget.",
+  "@errorBudgetExceeded": {
+    "description": "Error when an expense would go over its category's monthly budget (code BUDGET_EXCEEDED)."
+  },
+  "overBudgetTitle": "Over budget",
+  "@overBudgetTitle": {
+    "description": "Title of the dialog that asks before saving an expense that goes over its budget."
+  },
+  "overBudgetMessage": "This expense puts {category} {overBy} over its monthly budget of {limit}.",
+  "@overBudgetMessage": {
+    "description": "Message in the over-budget dialog: the category, the amount it goes over by, and the monthly limit. The amounts are formatted.",
+    "placeholders": {
+      "category": {
+        "type": "String",
+        "example": "Dining"
+      },
+      "overBy": {
+        "type": "String",
+        "example": "$12.00"
+      },
+      "limit": {
+        "type": "String",
+        "example": "$200.00"
+      }
+    }
+  },
+  "overBudgetConfirm": "Save anyway",
+  "@overBudgetConfirm": {
+    "description": "Button in the over-budget dialog that saves the expense anyway."
+  },
+  "errorInvalidName": "Name must be 1 to {maxLength} characters.",
+  "@errorInvalidName": {
+    "description": "Error when a name is empty or longer than the limit, in characters.",
+    "placeholders": {
+      "maxLength": {
+        "type": "int",
+        "example": "50"
+      }
+    }
+  },
+  "errorDuplicateCategoryName": "A category named \"{name}\" already exists.",
+  "@errorDuplicateCategoryName": {
+    "description": "Error when another category already has the name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Dining"
+      }
+    }
+  },
+  "errorDuplicateAccountName": "An account named \"{name}\" already exists.",
+  "@errorDuplicateAccountName": {
+    "description": "Error when another account already has the name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Savings"
+      }
+    }
+  },
+  "errorDefaultCategory": "Default categories can't be deleted.",
+  "@errorDefaultCategory": {
+    "description": "Error when the user tries to delete a default category."
+  },
+  "errorDefaultAccount": "Default accounts can't be deleted.",
+  "@errorDefaultAccount": {
+    "description": "Error when the user tries to delete a default account."
+  },
+  "errorCategoryInUse": "{count, plural, one{This category is used by {count} transaction.} other{This category is used by {count} transactions.}}",
+  "@errorCategoryInUse": {
+    "description": "Error when the user tries to delete a category that transactions still use.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "errorAccountInUse": "{count, plural, one{This account is used by {count} transaction.} other{This account is used by {count} transactions.}}",
+  "@errorAccountInUse": {
+    "description": "Error when the user tries to delete an account that transactions still use.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "errorInvalidWarningPercent": "Warning threshold must be from 1 to 100 percent.",
+  "@errorInvalidWarningPercent": {
+    "description": "Error when the warning percentage isn't from 1 to 100."
+  },
+  "defaultAccountCash": "Cash",
+  "@defaultAccountCash": {
+    "description": "Name of a default account, saved in the user's language when the app is set up."
+  },
+  "defaultAccountSavings": "Savings",
+  "@defaultAccountSavings": {
+    "description": "Name of a default account, saved in the user's language when the app is set up."
+  },
+  "defaultCategoryExpense": "General Expense",
+  "@defaultCategoryExpense": {
+    "description": "Name of the default expense category, saved in the user's language when the app is set up."
+  },
+  "defaultCategoryIncome": "General Income",
+  "@defaultCategoryIncome": {
+    "description": "Name of the default income category, saved in the user's language when the app is set up."
+  },
+  "defaultCategoryTransfer": "Transfer",
+  "@defaultCategoryTransfer": {
+    "description": "Name of the default transfer category, saved in the user's language when the app is set up."
+  },
+  "dashboardLoadFailed": "Your transactions couldn't be loaded. Leave the app and come back to try again.",
+  "@dashboardLoadFailed": {
+    "description": "Error when the Dashboard can't load the transactions."
+  },
+  "tourPrivateTitle": "Your money, kept private",
+  "@tourPrivateTitle": {
+    "description": "Welcome tour, page 1 title."
+  },
+  "tourPrivateBody": "Track expenses, income and transfers between your accounts. Everything stays on this phone, encrypted and locked with your PIN. No account, no ads, no internet.",
+  "@tourPrivateBody": {
+    "description": "Welcome tour, page 1 text."
+  },
+  "tourAddTitle": "Add in seconds",
+  "@tourAddTitle": {
+    "description": "Welcome tour, page 2 title."
+  },
+  "tourAddBody": "Tap + to record an expense, income or transfer. Pick an account and a category, and your balances update on their own.",
+  "@tourAddBody": {
+    "description": "Welcome tour, page 2 text; + is the add button."
+  },
+  "tourBudgetTitle": "Stay on budget",
+  "@tourBudgetTitle": {
+    "description": "Welcome tour, page 3 title."
+  },
+  "tourBudgetBody": "Give a category a monthly limit. The Dashboard shows how much is left and warns you before you go over.",
+  "@tourBudgetBody": {
+    "description": "Welcome tour, page 3 text."
+  },
+  "tourReportsTitle": "Reports and backups",
+  "@tourReportsTitle": {
+    "description": "Welcome tour, page 4 title."
+  },
+  "tourReportsBody": "Save or share a monthly report as a PDF or CSV file, and keep an encrypted backup so you never lose your records.",
+  "@tourReportsBody": {
+    "description": "Welcome tour, page 4 text."
+  },
+  "tourSkip": "Skip",
+  "@tourSkip": {
+    "description": "Button that closes the welcome tour."
+  },
+  "tourNext": "Next",
+  "@tourNext": {
+    "description": "Button that shows the next page of the welcome tour."
+  },
+  "tourGetStarted": "Get started",
+  "@tourGetStarted": {
+    "description": "Button on the last page of the welcome tour that closes it."
+  },
+  "tourPageIndicator": "Page {page} of {pageCount}",
+  "@tourPageIndicator": {
+    "description": "Screen reader text of the welcome tour's page dots.",
+    "placeholders": {
+      "page": {
+        "type": "int",
+        "example": "1"
+      },
+      "pageCount": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "gettingStartedTitle": "Get started",
+  "@gettingStartedTitle": {
+    "description": "Heading of the getting-started checklist on the Dashboard."
+  },
+  "gettingStartedProgress": "{done} of {total} done",
+  "@gettingStartedProgress": {
+    "description": "How many checklist steps are done, out of the total.",
+    "placeholders": {
+      "done": {
+        "type": "int",
+        "example": "1"
+      },
+      "total": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "gettingStartedAddAccount": "Add your bank or card account",
+  "@gettingStartedAddAccount": {
+    "description": "Checklist step."
+  },
+  "gettingStartedAddTransaction": "Record your first transaction",
+  "@gettingStartedAddTransaction": {
+    "description": "Checklist step."
+  },
+  "gettingStartedSetBudget": "Set a monthly budget",
+  "@gettingStartedSetBudget": {
+    "description": "Checklist step."
+  },
+  "gettingStartedStepDone": "Done",
+  "@gettingStartedStepDone": {
+    "description": "Screen reader state of a finished checklist step."
+  },
+  "gettingStartedStepTodo": "Not done yet",
+  "@gettingStartedStepTodo": {
+    "description": "Screen reader state of an unfinished checklist step."
+  },
+  "gettingStartedHide": "Hide the getting-started checklist",
+  "@gettingStartedHide": {
+    "description": "Screen reader label of the button that hides the checklist."
+  },
+  "settingsHelpSection": "Help and support",
+  "@settingsHelpSection": {
+    "description": "Heading of the help and support section in Settings."
+  },
+  "settingsHelpFaq": "Help & FAQ",
+  "@settingsHelpFaq": {
+    "description": "Settings item that opens the Help screen."
+  },
+  "settingsShowTour": "Show the welcome tour",
+  "@settingsShowTour": {
+    "description": "Settings item that shows the welcome tour again."
+  },
+  "settingsSendFeedback": "Send feedback",
+  "@settingsSendFeedback": {
+    "description": "Settings item that writes an email to support. The Help screen quotes it."
+  },
+  "settingsRateApp": "Rate this app",
+  "@settingsRateApp": {
+    "description": "Settings item that opens the app's Google Play page."
+  },
+  "settingsShareApp": "Share this app",
+  "@settingsShareApp": {
+    "description": "Settings item that shares a link to the app."
+  },
+  "helpTitle": "Help & FAQ",
+  "@helpTitle": {
+    "description": "Title of the Help screen."
+  },
+  "helpExpanded": "Expanded",
+  "@helpExpanded": {
+    "description": "Screen reader state of an open question on the Help screen."
+  },
+  "helpCollapsed": "Collapsed",
+  "@helpCollapsed": {
+    "description": "Screen reader state of a closed question on the Help screen."
+  },
+  "helpContactTitle": "Still need help?",
+  "@helpContactTitle": {
+    "description": "Heading of the contact card at the end of the Help screen."
+  },
+  "helpContactBody": "Send a question, a problem or an idea. Please don't include your PIN, a backup passphrase or your financial records.",
+  "@helpContactBody": {
+    "description": "Text of the contact card at the end of the Help screen."
+  },
+  "faqDataQ": "Where is my data stored?",
+  "@faqDataQ": {
+    "description": "Help screen question."
+  },
+  "faqDataA": "Only on this phone. Denarii Dolor has no account or server and can't connect to the internet. Your records are kept in an encrypted database that only your PIN, your security answer or, if you turn it on, your fingerprint or face can unlock. Android's cloud backup is turned off for the app.",
+  "@faqDataA": {
+    "description": "Help screen answer."
+  },
+  "faqForgotPinQ": "I forgot my PIN. What can I do?",
+  "@faqForgotPinQ": {
+    "description": "Help screen question."
+  },
+  "faqForgotPinA": "On the sign-in screen, tap “{forgotPin}” and answer your security question to choose a new PIN. If you can't answer it either, your data can't be unlocked, because nobody else has the key. The only way forward then is “{wipeAllData}” on the sign-in screen, which erases everything so you can start over.",
+  "@faqForgotPinA": {
+    "description": "Help screen answer. The quoted names are the sign-in screen's Forgot PIN and Wipe All App Data buttons, each filled in from its own translated string.",
+    "placeholders": {
+      "forgotPin": {
+        "type": "String",
+        "example": "Forgot PIN?"
+      },
+      "wipeAllData": {
+        "type": "String",
+        "example": "Wipe All App Data"
+      }
+    }
+  },
+  "faqSignedOutQ": "Why was I signed out?",
+  "@faqSignedOutQ": {
+    "description": "Help screen question."
+  },
+  "faqSignedOutA": "To protect your data, the app signs you out after {minutes} minutes without use. Sign in again with your PIN, or turn on “{biometricSetting}” in Settings to sign in with your fingerprint or face.",
+  "@faqSignedOutA": {
+    "description": "Help screen answer: the number of minutes before the app signs out, and the name of the biometric setting, filled in from its own translated string.",
+    "placeholders": {
+      "minutes": {
+        "type": "int",
+        "example": "5"
+      },
+      "biometricSetting": {
+        "type": "String",
+        "example": "Biometric sign-in"
+      }
+    }
+  },
+  "faqBackupQ": "How do I back up my data or move it to a new phone?",
+  "@faqBackupQ": {
+    "description": "Help screen question."
+  },
+  "faqBackupA": "In Settings, open “{backupSetting}” and create a backup protected by a passphrase. Save the file somewhere safe, such as a cloud drive. On the new phone, install Denarii Dolor, set it up, then restore the file with the same passphrase. Nobody can recover a forgotten passphrase.",
+  "@faqBackupA": {
+    "description": "Help screen answer. The quoted name is the Backup and restore setting, filled in from its own translated string.",
+    "placeholders": {
+      "backupSetting": {
+        "type": "String",
+        "example": "Backup and restore"
+      }
+    }
+  },
+  "faqBudgetsQ": "How do budgets work?",
+  "@faqBudgetsQ": {
+    "description": "Help screen question."
+  },
+  "faqBudgetsA": "In Settings, open “{budgetsScreen}” to give a category a monthly limit and a warning threshold. The Dashboard shows how much of each budget you've used this month. If an expense would go over its budget, the app asks before saving it.",
+  "@faqBudgetsA": {
+    "description": "Help screen answer. The quoted name is the Manage Budgets screen, filled in from its own translated string.",
+    "placeholders": {
+      "budgetsScreen": {
+        "type": "String",
+        "example": "Manage Budgets"
+      }
+    }
+  },
+  "faqTransferQ": "What is a transfer?",
+  "@faqTransferQ": {
+    "description": "Help screen question."
+  },
+  "faqTransferA": "A transfer moves money between two of your accounts, for example from Savings to Cash. It changes both balances but doesn't count as income or as an expense.",
+  "@faqTransferA": {
+    "description": "Help screen answer."
+  },
+  "faqDeleteQ": "Why can't I delete a category or an account?",
+  "@faqDeleteQ": {
+    "description": "Help screen question."
+  },
+  "faqDeleteA": "The default categories and accounts can't be deleted, and neither can one that transactions still use. Change or delete those transactions first, then try again.",
+  "@faqDeleteA": {
+    "description": "Help screen answer."
+  },
+  "faqCurrencyQ": "How do I change the currency?",
+  "@faqCurrencyQ": {
+    "description": "Help screen question."
+  },
+  "faqCurrencyA": "In Settings, tap “{currencySetting}” and pick one. Only the symbol changes: amounts you already entered aren't converted.",
+  "@faqCurrencyA": {
+    "description": "Help screen answer. The quoted name is the Currency setting, filled in from its own translated string.",
+    "placeholders": {
+      "currencySetting": {
+        "type": "String",
+        "example": "Currency"
+      }
+    }
+  },
+  "faqReportsQ": "How do I export a report?",
+  "@faqReportsQ": {
+    "description": "Help screen question."
+  },
+  "faqReportsA": "Open “{reportsScreen}”, choose a month, then save or share it as a PDF or CSV file. Exported files aren't encrypted, so keep them somewhere private.",
+  "@faqReportsA": {
+    "description": "Help screen answer. The quoted name is the Reports screen, filled in from its own translated string.",
+    "placeholders": {
+      "reportsScreen": {
+        "type": "String",
+        "example": "Reports"
+      }
+    }
+  },
+  "faqBiometricQ": "Why did fingerprint or face sign-in turn off?",
+  "@faqBiometricQ": {
+    "description": "Help screen question."
+  },
+  "faqBiometricA": "It turns off when the fingerprints or faces enrolled on the phone change, so that a newly added one can't open your data. Your PIN still works, and you can turn biometric sign-in back on in Settings.",
+  "@faqBiometricA": {
+    "description": "Help screen answer."
+  },
+  "ratePromptTitle": "Enjoying Denarii Dolor?",
+  "@ratePromptTitle": {
+    "description": "Title of the dialog that asks the user to rate the app."
+  },
+  "ratePromptMessage": "A quick rating on Google Play helps other people find the app. It only takes a moment.",
+  "@ratePromptMessage": {
+    "description": "Message of the dialog that asks the user to rate the app."
+  },
+  "ratePromptRate": "Rate now",
+  "@ratePromptRate": {
+    "description": "Button that opens the app's Google Play page to rate it."
+  },
+  "ratePromptLater": "Not now",
+  "@ratePromptLater": {
+    "description": "Button that closes the rating dialog for now."
+  },
+  "ratePromptNever": "Don't ask again",
+  "@ratePromptNever": {
+    "description": "Button that closes the rating dialog for good."
+  },
+  "rateUnavailable": "Google Play couldn't be opened on this device.",
+  "@rateUnavailable": {
+    "description": "Error when Google Play can't be opened."
+  },
+  "shareAppChooser": "Share Denarii Dolor",
+  "@shareAppChooser": {
+    "description": "Title of the system share sheet for sharing the app."
+  },
+  "shareAppMessage": "I track my spending and budgets with Denarii Dolor. Everything stays private on the phone. Get it on Google Play: {storeLink}",
+  "@shareAppMessage": {
+    "description": "Text the user shares to recommend the app, ending with its Google Play link.",
+    "placeholders": {
+      "storeLink": {
+        "type": "String",
+        "example": "https://play.google.com/store/apps/details?id=com.denariidolor"
+      }
+    }
+  },
+  "feedbackEmailSubject": "Denarii Dolor feedback (version {appVersion})",
+  "@feedbackEmailSubject": {
+    "description": "Subject of the feedback email; the value is the app's version.",
+    "placeholders": {
+      "appVersion": {
+        "type": "String",
+        "example": "1.4.0"
+      }
+    }
+  },
+  "feedbackEmailBody": "\n\n———\nApp version: {appVersion}\nAndroid version: {androidVersion}",
+  "@feedbackEmailBody": {
+    "description": "Body of the feedback email: two blank lines for the user's message, then a separator, the app's version, and the Android version. Keep the line breaks and the separator.",
+    "placeholders": {
+      "appVersion": {
+        "type": "String",
+        "example": "1.4.0"
+      },
+      "androidVersion": {
+        "type": "String",
+        "example": "15"
+      }
+    }
+  },
+  "feedbackNoEmailApp": "No email app was found. You can write to {emailAddress}.",
+  "@feedbackNoEmailApp": {
+    "description": "Error when the phone has no email app; the value is the support email address.",
+    "placeholders": {
+      "emailAddress": {
+        "type": "String",
+        "example": "support@example.com"
+      }
+    }
+  },
+  "placeholderAmountInCents": "{cents} cents",
+  "@placeholderAmountInCents": {
+    "description": "Sign-in placeholder only, until M3.5: the whole number of cents the Rust core read from the typed amount.",
+    "placeholders": {
+      "cents": {
+        "type": "int",
+        "example": "123456"
+      }
+    }
+  },
+  "placeholderAmountRejected": "Rejected: {code}",
+  "@placeholderAmountRejected": {
+    "description": "Sign-in placeholder only, until M3.5: the Rust core rejected the typed amount; the value is the error's code name, which isn't translated.",
+    "placeholders": {
+      "code": {
+        "type": "String",
+        "example": "tooManyDecimals"
+      }
+    }
+  }
+}

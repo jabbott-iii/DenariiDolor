@@ -410,3 +410,62 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
   load.
 - **Revisit when:** `flutter_rust_bridge` drops its native-assets support, `native_toolchain_rust`
   stops supporting the pinned Flutter release, or a Flutter release adds or drops an Android ABI.
+
+## ADR-0015 — Pick the app's language from the whole phone language list, matching script as Android does
+
+- **Status:** Accepted
+- **Date:** 2026-11-23
+- **Context:** M1.4 ports v1's strings to seven ARB files, the language packs: English, Simplified
+  Chinese, Hindi, Spanish, Arabic, French, and Portuguese. A phone holds an ordered list of
+  languages, and the app must pick one pack from it.
+  - **What v1 did.** Android's resource lookup treats two locales as the same language only when
+    their scripts match, written in the tag or likely for it (`LocaleList.matchesLanguageAndScript`
+    in the Android 37 sources). So zh-Hans-SG read v1's `values-zh-rCN` pack, and zh-TW and
+    zh-Hant-HK, which write Traditional characters, read English. Android also picks one locale
+    before it looks up any string: the first phone language that any of the app's resources
+    match, with English always counted. v1's release bundle carries translations from its Compose
+    and AndroidX libraries in about 80 locales (German, Japanese, zh-TW, and others), so on a phone
+    set to German then Spanish, Android stopped at German, and v1, which has no German strings,
+    showed English.
+  - **What Flutter does.** The new app's APK has no translated Android resources
+    (`aapt2 dump configurations` lists none), so Android passes the phone's list to Flutter in
+    order. Flutter's default, `basicLocaleListResolution`, ignores scripts (zh-TW gets the
+    Simplified pack) and falls back to a pack from the phone's country (Uyghur in China, ug-CN,
+    gets the Simplified pack too).
+  - **gen-l10n.** `flutter gen-l10n` refuses a `zh_CN` pack without a language-only `zh` pack to
+    fall back to, and its lookup picks a pack by language code alone.
+  - On 2026-11-23 the maintainer was asked twice: first whether to match v1 or keep Flutter's
+    default, then, once v1's German-then-Spanish behavior came to light, whether to walk the
+    whole list or copy v1 exactly.
+- **Decision** (the maintainer chose the recommended option both times on 2026-11-23):
+  - `resolveAppLocale` in `lib/l10n/locale_resolution.dart` walks the phone's whole list in
+    order and returns the first phone language that matches a pack by language and script. A
+    phone language without a script subtag gets its likely script from Unicode CLDR's likely
+    subtags: Chinese is Traditional in 15 regions (among them TW, HK, MO, and US) and Simplified
+    everywhere else; the other six languages have one script each.
+  - It returns the phone's own locale, such as es-MX, so Material's widgets keep its region. When
+    nothing matches, it returns English.
+  - It never falls back to a pack from the phone's country.
+  - The Simplified Chinese pack is `app_zh.arb`, which only Simplified Chinese readers reach.
+- **Consequences:**
+  - Good: a phone set to German then Spanish shows Spanish, the language its owner listed, as
+    Android's documentation describes. Traditional Chinese readers still see English, as in v1,
+    rather than Simplified characters. The rule is one tested function, with no list of library
+    locales to keep.
+  - Bad: the app differs from v1 for anyone whose first phone language is one that v1's
+    libraries translated but no pack covers, followed by a pack language: v1 showed English,
+    and the app shows the later language. When nothing matches, the app's locale is English, so
+    Material's widgets write dates the English way. v1 formatted money and months with the
+    device's own locale data (`PlatformFormat.kt`), and M1.6 decides how Dart matches that.
+  - Follow-up: M3.2. Android moves the first phone language that matches any of the APK's own
+    resources, or English, to the front before Flutter sees the list. Once the APK carries
+    translated Android resources (`androidx.biometric` has some), a pack language without them
+    could lose to a later English, so check that every pack language has Android resources too.
+- **Alternatives considered:** Flutter's default, which gives Traditional Chinese readers and
+  ug-CN the Simplified pack; copying v1 exactly, with the ~80 locales its libraries translated
+  embedded in the app, which would freeze an accident of v1's dependency list; checking only the
+  first phone language, which shows English to a German-then-Spanish phone for no reason the
+  user can see.
+- **Revisit when:** a Traditional Chinese pack is added, the app offers its own language setting
+  or declares its languages to Android (a `LocaleConfig`, which changes how Android hands over the
+  list), or a user reports the app in a language they didn't list.

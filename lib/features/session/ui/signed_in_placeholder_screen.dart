@@ -4,8 +4,8 @@
  * written permission is prohibited.
  */
 
-import 'package:denarii_dolor/app/app_name.dart';
 import 'package:denarii_dolor/features/session/state/signed_in_placeholder_view_model.dart';
+import 'package:denarii_dolor/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Stands in for the signed-in screens until M4: the app's name and a sign-out button.
@@ -21,13 +21,13 @@ class SignedInPlaceholderScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text(appName),
+        title: Text(l10n.appName),
         actions: [
           IconButton(
-            // v1's English `sign_out` string, until M1.4 moves it to the ARB files.
-            tooltip: 'Sign Out',
+            tooltip: l10n.signOut,
             icon: const Icon(Icons.logout),
             onPressed: state.isLocking ? null : onSignOut,
           ),

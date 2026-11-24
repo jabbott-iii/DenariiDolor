@@ -11,15 +11,16 @@ files with `git show 6d57526:<path>`. The new app must open what v1 left on user
 
 ## Status
 
-As of 2026-11-23, all of M0's tasks, M1.1 and M1.2 are done, and M1.3's Flutter jobs are in `ci.yml` but haven't run
-on a pull request yet. M0's exit criteria are the maintainer's to check, and they
+As of 2026-11-23, all of M0's tasks, M1.1, M1.2 and M1.4 are done, and M1.3's Flutter jobs are in `ci.yml` but haven't
+run on a pull request yet. M0's exit criteria are the maintainer's to check, and they
 include deciding ADR-0004, ADR-0006 and ADR-0007, which are still Proposed; the maintainer accepted ADR-0005 in M1.2.
 Built: the Doctrina rules, the `ci-gates` and `dependency-upgrade` skills, the planning documents in `docs/`, the spec of
 v1's stored formats, the `denarii-core` crate (money, transactions, balance changes and validation) with its tests, the
 Flutter project (M1.1): the Android and iOS host apps, the app scope, and a root switch between placeholder sign-in and
 signed-in screens, with its tests, and the `denarii-bridge` crate (M1.2), which Dart calls through `flutter_rust_bridge`,
-built by a native-assets hook, with an integration test that the sign-in placeholder shows the cents Rust parsed.
-Planned: the rest of M1 (strings, theme and formatting), storage (M2), sign-in (M3), the screens (M4),
+built by a native-assets hook, with an integration test that the sign-in placeholder shows the cents Rust parsed, and
+v1's strings in seven ARB files (M1.4), with a locale resolver that walks the phone's language list (ADR-0015).
+Planned: the rest of M1 (theme and formatting), storage (M2), sign-in (M3), the screens (M4),
 backups (M5), the Android release (M6) and iOS (M7). Nothing from the rewrite has shipped. `docs/roadmap.md` has the
 details.
 
@@ -90,6 +91,8 @@ RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
 - Run the integration tests on an emulator or device: `flutter test integration_test -d <device>`.
 - After changing the bridge's `api` module, regenerate its bindings from the repository root and commit them:
   `flutter_rust_bridge_codegen generate`. Install the codegen and `cargo-expand` as `CONTRIBUTING.md` says.
+- After changing an ARB file in `lib/l10n/`, regenerate the localizations and commit them: `flutter gen-l10n`
+  (`flutter pub get` and every build also run it, because `pubspec.yaml` sets `generate: true`).
 - `adb` may not be on `PATH`. The SDK location is `sdk.dir` in `local.properties`.
 - Use the `ci-gates` skill to run the full set and report the results.
 

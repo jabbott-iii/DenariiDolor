@@ -4,8 +4,8 @@
  * written permission is prohibited.
  */
 
-import 'package:denarii_dolor/app/app_name.dart';
 import 'package:denarii_dolor/features/auth/state/sign_in_placeholder_view_model.dart';
+import 'package:denarii_dolor/l10n/app_localizations.dart';
 import 'package:denarii_dolor/platform/money_parser.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -27,6 +27,7 @@ class SignInPlaceholderScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = TextTheme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -37,12 +38,13 @@ class SignInPlaceholderScreen extends StatelessWidget {
               children: [
                 Semantics(
                   header: true,
-                  child: Text(appName, style: textTheme.headlineMedium),
+                  child: Text(l10n.appName, style: textTheme.headlineMedium),
                 ),
                 const SizedBox(height: 16),
                 TextField(
-                  // English until M1.4 moves the placeholder's text to the ARB files.
-                  decoration: const InputDecoration(labelText: 'Amount'),
+                  decoration: InputDecoration(
+                    labelText: l10n.transactionAmountHint,
+                  ),
                   keyboardType: const TextInputType.numberWithOptions(
                     signed: true,
                     decimal: true,
@@ -53,7 +55,7 @@ class SignInPlaceholderScreen extends StatelessWidget {
                 Semantics(
                   liveRegion: true,
                   child: Text(
-                    _resultText(state.parsed),
+                    _resultText(l10n, state.parsed),
                     style: textTheme.bodyLarge,
                   ),
                 ),
@@ -65,10 +67,13 @@ class SignInPlaceholderScreen extends StatelessWidget {
     );
   }
 
-  /// The cents Rust returned, or the name of its error; English until M1.4.
-  static String _resultText(ParsedAmount? parsed) => switch (parsed) {
-    null => '',
-    AmountInCents(:final cents) => '$cents cents',
-    RejectedAmount(:final error) => 'Rejected: ${error.name}',
-  };
+  /// The cents Rust returned, or the code name of its error.
+  static String _resultText(AppLocalizations l10n, ParsedAmount? parsed) =>
+      switch (parsed) {
+        null => '',
+        AmountInCents(:final cents) => l10n.placeholderAmountInCents(cents),
+        RejectedAmount(:final error) => l10n.placeholderAmountRejected(
+          error.name,
+        ),
+      };
 }

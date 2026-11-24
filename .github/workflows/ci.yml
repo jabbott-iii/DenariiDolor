@@ -189,6 +189,11 @@ jobs:
       - name: Regenerate the bridge bindings
         run: flutter_rust_bridge_codegen generate
 
+      # The localizations from the ARB files in lib/l10n/ (M1.4). `flutter pub get` already runs this,
+      # because pubspec.yaml sets `generate: true`; this step keeps the check if that setting goes.
+      - name: Regenerate the localizations
+        run: flutter gen-l10n
+
       - name: Compare with the committed files
         run: |
           if [ -n "$(git status --porcelain --untracked-files=all)" ]; then
