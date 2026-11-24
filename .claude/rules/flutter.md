@@ -62,10 +62,13 @@ so they can fill them in.
   signed-in screen exists while the vault is locked (CS-02). Screens are pushed as widget classes
   that take IDs as constructor arguments. v1's destinations are listed in
   `app/src/main/java/com/denariidolor/presentation/ui/AppScreens.kt` at 6d57526
-- **Design system:** Material 3 with v1's colors (`ThemedContent.kt` and `VizColors.kt` at
-  6d57526) and its light, dark, and system theme setting, built in M1.5. How far iOS adapts its
-  controls is decided in M7. Import Material from `package:material_ui/material_ui.dart`, because
-  Flutter 3.50 deprecated `package:flutter/material.dart`
+- **Design system:** Material 3 with v1's colors (`Composables.kt`, `ThemedContent.kt`, and
+  `VizColors.kt` at 6d57526): `lightTheme`, `darkTheme`, and `systemBarsStyle` in
+  `lib/app/theme.dart`, with the chart colors in the `VizColors` theme extension (M1.5).
+  `DenariiDolorApp.themeMode` picks light, dark, or the device's choice, and M4.6 passes it the
+  user's setting. How far iOS adapts its controls is decided in M7. Import Material from
+  `package:material_ui/material_ui.dart`, because Flutter 3.50 deprecated
+  `package:flutter/material.dart`
 - **Localization:** seven languages: English (the default), Simplified Chinese (`zh-CN`), Hindi
   (`hi`), Spanish (`es`), Arabic (`ar`, right to left), French (`fr`), and Portuguese (`pt`). ARB
   files are in `lib/l10n/`, ported from v1's `app/src/main/res/values*/strings.xml` in M1.4, with

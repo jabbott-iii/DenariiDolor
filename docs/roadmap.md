@@ -289,7 +289,37 @@ and displays an amount that Rust parsed and Dart formatted.
     - Every v1 string and plural has an ARB entry in each language, and Arabic lays out right to
       left.
   - Verify: `flutter gen-l10n` (expect no missing translations)
-- [ ] **M1.5 — ui: theme with v1's colors**
+- [x] **M1.5 — ui: theme with v1's colors**
+  - Note: 2026-11-23: v1's palette is in `DenariiDolorTheme` in `Composables.kt`, besides the two
+    files the `Do` line names. v1 set nine color roles for each theme, and Compose Material3 1.4.0
+    (the version v1's Compose BOM 2026.09.00 picked, read from its AAR in the Gradle cache) filled
+    the rest from Material 3's baseline tokens. `lib/app/theme.dart` writes out all 45 of Flutter's
+    color roles for each theme, because Flutter's `ColorScheme` would derive the missing ones from
+    the roles that are set. Compose's `surfaceVariant` isn't ported, because Flutter deprecated it:
+    it falls back to `surfaceContainerHighest`, which differs slightly and which no widget in
+    `material_ui` 1.11.1 reads.
+  - Note: 2026-11-23: the chart colors are `VizColors`, a `ThemeExtension` in
+    `lib/app/viz_colors.dart`. `DenariiDolorApp.themeMode` picks the light theme, the dark theme,
+    or the device's choice, which is the default until M4.6 passes the user's setting.
+  - Note: 2026-11-23: `ThemedContent.kt`'s colors style the system bars: a transparent status bar,
+    and a navigation bar behind a scrim of `0xE6FFFFFF` (light) or `0x801B1B1B` (dark), each with
+    contrasting icons and without Android's contrast scrim. `main` turns on Flutter's edge-to-edge
+    mode, as v1's `enableEdgeToEdge()` did, and `systemBarsStyle` styles the bars over every
+    screen and behind every app bar. Flutter 3.50.1 draws behind the bars only from Android 10,
+    so on Android 8 and 9 the scrim is painted already blended over the surface
+    (`withOpaqueNavigationBar`). Without that, the dark theme's navigation bar on API 26 showed
+    `#0E0E0E` at a cold start and `#8D8D8D` after the device switched from light, where v1 showed
+    about `#1A1A1A`.
+  - Note: 2026-11-23: `test/app/theme_test.dart` (12 tests) checks every color role and chart
+    color against v1's values, both placeholders in each theme while the device asks for the
+    other, the system mode as the device changes, and the bar styles Flutter sends with and
+    without the app behind the navigation bar. On `Denarii_API_26` (three-button navigation) and
+    `Denarii_API_36` (gesture navigation), screenshots of the sign-in placeholder in each theme, at
+    a cold start and after the device switched themes, showed `#FCFCFB` or `#1A1A19` behind the
+    content and under both bars, except API 26's navigation bar, which showed `#FFFFFF` or
+    `#1B1B1A`: v1's scrims over its surface. Icons were dark in the light theme and light in the
+    dark theme. Arabic at 200% text on API 36 laid out right to left in the dark theme. The colors
+    were checked against v1's source, not against a v1 build side by side.
   - Depends: M1.1
   - Do:
     - Port the palette in v1's `ThemedContent.kt` and `VizColors.kt` to a Material 3 theme with
@@ -501,6 +531,16 @@ over it keeps the data, and the same PIN, answer, and fingerprint sign in.
 **Goal:** Each flow in the README's user guide works in the new app as it does in v1.
 
 - [ ] **M4.1 — dashboard: balances and the spending chart**
+  - Note (from M1.5): take the chart's and the budgets' colors from
+    `Theme.of(context).extension<VizColors>()` as v1's dashboard did: `series1` for the chart's
+    columns and a budget within its limit, `statusWarning` for one near it, `statusCritical` for
+    one over it, and `meterTrack` for the progress bar's track.
+  - Note (from M1.5): two edge-to-edge details of v1's AndroidX 1.13.0 aren't ported. From Android
+    15, Android ignores the navigation bar's color, so AndroidX painted v1's scrim as a view behind
+    the bar; the Flutter app paints none, so content that scrolls behind the bar shows through
+    without a scrim. On Android 9–14, v1 also let content reach into a display cutout, which
+    Flutter's default keeps clear in landscape. Match them, or record the difference, on the first
+    screen that scrolls behind the navigation bar.
   - Depends: M3.5
   - Decide first: the chart package.
 - [ ] **M4.2 — transaction: the add and edit form**
@@ -526,6 +566,10 @@ over it keeps the data, and the same PIN, answer, and fingerprint sign in.
   - Depends: M2.7, M3.5
   - Decide first: how PDFs are rendered.
 - [ ] **M4.6 — settings: currency, theme, and biometric sign-in**
+  - Note (from M1.5): pass the theme setting to `DenariiDolorApp.themeMode`. v1's `dark_mode` in
+    `ui_prefs` means the dark theme when true, the light theme when false, and the device's choice
+    when missing. v1 switched themes at once, while `MaterialApp` animates the change over 200 ms
+    (`themeAnimationDuration`).
   - Depends: M3.6
 - [ ] **M4.7 — legal: help, legal documents, welcome tour, and rating prompt**
   - Depends: M3.5

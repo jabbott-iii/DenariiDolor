@@ -136,6 +136,7 @@ it with `git show 6d57526:<path>`. Where v1's code now goes:
 | `shared/.../domain/report`, `GenerateReportUseCase.kt`, `SearchTransactionUseCase.kt` | `report` | M2.7 |
 | `app/.../presentation/ui/**` | `lib/features/**` | M3.5–M4.7 |
 | `app/src/main/res/values*/strings.xml` | `lib/l10n/*.arb` | M1.4 |
+| `app/.../presentation/ui/common/ThemedContent.kt`, `VizColors.kt`, and the theme in `Composables.kt` | `lib/app/theme.dart`, `lib/app/viz_colors.dart` | M1.5 |
 | `util/PlatformFormat.kt` (money and month text) | Dart, with `package:intl` | M1.6 |
 
 ## Main control flow
