@@ -14,7 +14,7 @@ files with `git show 6d57526:<path>`. The new app must open what v1 left on user
 As of 2026-11-24, all of M0's tasks, M1.1, M1.2, M1.4, M1.5, M1.6, M2.1, M2.2, M2.3 and M2.4 are done, and M1.3's Flutter jobs are in `ci.yml`
 but haven't run on a pull request yet. M0's exit criteria are the maintainer's to check, and they
 include deciding ADR-0004 and ADR-0007, which are still Proposed; the maintainer accepted ADR-0005 in M1.2 and ADR-0006
-in M2.1, and decided ADR-0018 in M2.2 and ADR-0019 in M2.4.
+in M2.1, and decided ADR-0018 in M2.2, ADR-0019 in M2.4 and ADR-0020, the coverage floors, on 2026-11-24.
 Built: the Doctrina rules, the `ci-gates` and `dependency-upgrade` skills, the planning documents in `docs/`, the spec of
 v1's stored formats, the `denarii-core` crate (money, transactions, balance changes and validation) with its tests, the
 Flutter project (M1.1): the Android and iOS host apps, the app scope, and a root switch between placeholder sign-in and
@@ -99,6 +99,9 @@ RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
   flutter analyze
   flutter test
   ```
+- Measure coverage from the repository root with `tool/coverage.sh`, or `tool/coverage.sh rust` or `tool/coverage.sh dart`
+  for one language. It fails below the floors at the top of the script, which only go up (ADR-0020), and CI runs it. The
+  Rust part needs `rustup component add llvm-tools`, run once in `rust/`, and builds into `rust/target/coverage/`.
 - Run the integration tests on an emulator or device: `flutter test integration_test -d <device>`.
 - After changing the bridge's `api` module, regenerate its bindings from the repository root and commit them:
   `flutter_rust_bridge_codegen generate`. Install the codegen and `cargo-expand` as `CONTRIBUTING.md` says.

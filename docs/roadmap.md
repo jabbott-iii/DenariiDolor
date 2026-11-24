@@ -28,6 +28,8 @@ domain rules to Rust with their tests.
     `3afa240` with its "Project details" filled in. No coverage, mutation-testing, or fuzzing tool
     exists here yet, so those values read "none yet"; choosing each tool is the maintainer's
     decision.
+  - Note: 2026-11-24: the coverage values in `testing.md` now name `tool/coverage.sh` and its
+    floors (ADR-0020). Mutation testing and fuzzing still have no tool.
   - Do:
     - Add `commits.md`, `flutter.md`, `roadmap-and-docs.md`, `rust.md`, and `writing.md` to
       `.claude/rules/`, and point `security.md` and `legal-docs.md` at the new layout.
@@ -243,6 +245,11 @@ and displays an amount that Rust parsed and Dart formatted.
     `ubuntu-24.04` release notes list as Temurin 25). Locally, Ubuntu's OpenJDK 25.0.5 writes the
     committed table; whether Temurin's build writes the same bytes is first checked by this pull
     request.
+  - Note: 2026-11-24: at the maintainer's request, "Rust checks" also installs `llvm-tools` and
+    runs `tool/coverage.sh rust`, and "Flutter checks" runs its tests through
+    `tool/coverage.sh dart`, which fails below the coverage floors (ADR-0020). Locally, the
+    script passed, and it failed when a floor sat above today's figure and when a test failed.
+    This pull request is its first run on GitHub's runners.
   - ⏳ needs GitHub: open a pull request with this change, and expect "Rust checks", "Flutter
     checks", and "Generated code is current" to pass. Then make the three jobs required status
     checks for `main`: on 2026-11-23 the repository's branch ruleset requires none, so a failing

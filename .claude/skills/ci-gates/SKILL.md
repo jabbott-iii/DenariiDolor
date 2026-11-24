@@ -1,13 +1,13 @@
 ---
 name: ci-gates
-description: Run Denarii Dolor's blocking checks locally (Rust formatting, Clippy, tests and docs; the Flutter formatter, analyzer and tests; and, when Android files or packages change, the release build and its permissions), fix or report the failures, and summarize each result. Use before calling a change done, before a pull request, or when asked to verify, check or validate the build.
+description: Run Denarii Dolor's blocking checks locally (Rust formatting, Clippy, tests, coverage and docs; the Flutter formatter, analyzer, tests and coverage; and, when Android files or packages change, the release build and its permissions), fix or report the failures, and summarize each result. Use before calling a change done, before a pull request, or when asked to verify, check or validate the build.
 ---
 
 # Run the CI gates
 
 Run every check below, in this order, and report each result. CI (`.github/workflows/ci.yml`) runs the Rust checks and
-the Flutter checks, builds a debug app bundle, and reruns the bridge's codegen to check that the committed bindings are
-current. The release build, its permissions and the integration tests run only here.
+the Flutter checks with their coverage, builds a debug app bundle, and reruns the bridge's codegen to check that the
+committed bindings are current. The release build, its permissions and the integration tests run only here.
 
 ## 1. Look at what changed
 
@@ -27,8 +27,13 @@ cd rust
 cargo fmt --all --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo test --workspace --locked
+../tool/coverage.sh rust
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
 ```
+
+`../tool/coverage.sh rust` runs the tests again, instrumented, in `target/coverage/`, and fails below the floors at the
+top of the script (ADR-0020). It needs the `llvm-tools` component: `rustup component add llvm-tools` in `rust/` installs
+it.
 
 How to fix each kind of failure:
 
@@ -40,6 +45,9 @@ How to fix each kind of failure:
   meant to alter dependencies, which needs the maintainer's approval (`docs/02-dependency-policy.md`).
 - **Tests:** fix the cause. Never `#[ignore]` a test or weaken an assertion. For one test file, run
   `cargo test --locked -p denarii-core --test money`.
+- **Coverage:** a figure below its floor means code without tests. Add tests for the files the report shows, until the
+  figure is back. Never lower a floor or exclude code to reach one (`.claude/rules/testing.md`). When the script says a
+  figure is above its floor, raise that floor in `tool/coverage.sh` in the same change.
 - **Docs:** a broken intra-doc link or a link to a private item. Fix the link, or the item's visibility.
 
 ## 3. Flutter checks
@@ -54,8 +62,12 @@ the `export` in the same command as the checks:
 export PATH="$HOME/flutter/bin:$PATH"
 dart format --output=none --set-exit-if-changed .
 flutter analyze
-flutter test
+tool/coverage.sh dart
 ```
+
+`tool/coverage.sh dart` is how CI runs the tests: `flutter test --branch-coverage`, plus a test it writes that imports
+every library in `lib/`, so a file no test loads counts as uncovered. It fails like `flutter test` when a test fails,
+and also below the Dart floors at the top of the script.
 
 How to fix each kind of failure:
 
@@ -70,6 +82,8 @@ How to fix each kind of failure:
   maintainer's approval (`docs/02-dependency-policy.md`). Otherwise, restore it with `git restore pubspec.lock`.
 - **Tests:** fix the cause. Never skip a test (`skip:`) or loosen an expectation. For one test file, run
   `flutter test test/app/root_switch_test.dart`. Advance time with `tester.pump`, never by waiting for real time.
+- **Coverage:** as for Rust above. The files the script lists before the totals are the ones with lines or branches no
+  test reaches.
 
 Generated Dart files, the bridge bindings from M1.2 and the localizations from M1.4, are never formatted or fixed by
 hand. Change their source and rerun the generator in the same change (ADR-0012: generated code is committed, and CI
@@ -125,10 +139,11 @@ End with a table, and don't call a check passed unless you ran it in this sessio
 | `cargo fmt` | ✅ / ❌ / not run | |
 | `cargo clippy` | | |
 | `cargo test` | | X passed, Y failed |
+| Rust coverage | | lines and regions, each with its floor |
 | `cargo doc` | | |
 | `dart format` | | |
 | `flutter analyze` | | |
-| `flutter test` | | X passed, Y failed |
+| `flutter test`, through `tool/coverage.sh dart` | | X passed, Y failed; lines and branches, each with its floor |
 | `flutter build apk --release` | | or why the change didn't need it |
 | Release permissions | | the permissions `aapt2` listed |
 | Integration tests | | X passed on API 26, Y passed on API 36 |

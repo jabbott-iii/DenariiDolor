@@ -55,6 +55,14 @@ jobs:
       - name: Tests
         run: cargo test --workspace --locked
 
+      # The tests again, instrumented by rustc and read by llvm-cov from the llvm-tools component of the pinned release,
+      # so no third-party tool is downloaded. Fails below the floors in tool/coverage.sh (ADR-0020).
+      - name: Install llvm-tools
+        run: rustup component add llvm-tools
+
+      - name: Coverage
+        run: ../tool/coverage.sh rust
+
       - name: Docs
         env:
           RUSTDOCFLAGS: -D warnings
@@ -107,8 +115,9 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
-      - name: Tests
-        run: flutter test
+      # `flutter test --branch-coverage`, which fails below the floors in tool/coverage.sh (ADR-0020).
+      - name: Tests and coverage
+        run: tool/coverage.sh dart
 
       # Flutter gives the build hook the NDK that ANDROID_NDK_HOME names, and the runner image points that variable at
       # another version, so point it at the one Gradle uses.

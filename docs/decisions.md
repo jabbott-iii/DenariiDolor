@@ -789,3 +789,65 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
     daylight-saving change.
 - **Revisit when:** a user reports a budget check or a monthly total that disagrees with the
   phone's calendar, or Rust needs calendar rules with no Dart caller, such as a scheduled task.
+
+## ADR-0020 — Measure coverage with the toolchains' own tools, and fail below today's figures
+
+- **Status:** Accepted
+- **Date:** 2026-11-24
+- **Context:** `.claude/rules/testing.md`, adopted on 2026-11-24, asks for a coverage command that
+  fails below a floor, for branch coverage as well as line coverage, and for coverage to leave
+  out only code that can't run under test. Until then, nothing measured coverage. Facts checked
+  that day on the maintainer's Linux machine, at commit `0d3df07`:
+  - Rust 1.100.0 adds counters to the code it compiles with `-C instrument-coverage`, and its
+    `llvm-tools` rustup component ships `llvm-profdata` and `llvm-cov`, which read the counts,
+    from the same release.
+    `llvm-cov` reported no branches: branch instrumentation needs a nightly compiler, so a stable
+    one measures lines, functions, and regions. A region is a stretch of code that runs or
+    doesn't, such as each side of `&&` or each `match` arm.
+  - Flutter 3.50.1's `flutter test --branch-coverage` writes an lcov file (a plain-text coverage
+    format) with each line's count and each branch's (`BRDA` records), but no branch totals. It leaves out every library that no
+    test loads, as if the library weren't there.
+  - With the generated code below left out, Rust (`core`, `store`, and `bridge`) covered 92.90%
+    of lines (2,370 of 2,551) and 90.15% of regions (2,857 of 3,169). Dart's code in `lib/`
+    covered 91.33% of lines (295 of 323) and 88.89% of branches (120 of 135), counting
+    `lib/main.dart`, which only the integration test loads.
+  - The first run, from an empty target folder, took 109 s for both languages, 80 s of it
+    compiling the instrumented Rust build with SQLCipher and OpenSSL.
+- **Decision** (the maintainer chose the recommended option on 2026-11-24):
+  - `tool/coverage.sh` measures Rust with `-C instrument-coverage` and `llvm-cov` from
+    `llvm-tools`, and Dart with `flutter test --branch-coverage`. It fails below a floor for each
+    of Rust lines and regions and Dart lines and branches. No third-party tool is added.
+  - The floors start at the figures above, rounded down to whole percent: 92 and 90 for Rust,
+    91 and 88 for Dart. They only go up, and the script says when a figure has passed its floor.
+  - Coverage leaves out only generated code: `rust/crates/bridge/src/frb_generated.rs`,
+    `lib/platform/rust/`, and `lib/l10n/app_localizations*.dart`. It also leaves out each
+    crate's `tests/` folder. The `#[cfg(test)]` modules inside `src/` count, because a stable
+    compiler can't leave them out.
+  - The script writes a test that imports every library in `lib/`, so a library no test loads
+    counts as uncovered.
+  - In CI, "Rust checks" installs `llvm-tools` and runs `tool/coverage.sh rust`, and "Flutter
+    checks" runs its tests through `tool/coverage.sh dart`.
+- **Consequences:**
+  - Good:
+    - No new dependency: each tool moves with the pinned Rust or Flutter release.
+    - The same command runs locally and in CI, and a drop in coverage fails the build.
+  - Bad:
+    - Rust has no branch coverage on a stable compiler. Regions are a coarser stand-in.
+    - The test modules inside `src/` count as covered code, so the Rust figures run a little
+      high.
+    - "Rust checks" builds the workspace a second time, instrumented, in `target/coverage/`.
+    - The script reads the text of `llvm-cov`'s report, whose columns a later LLVM could change.
+      It fails with a message when the TOTAL row isn't in the columns it expects.
+  - Follow-up:
+    - Raise each floor in the change that passes it.
+    - M6.5's `04-quality.md` describes the check with the other test layers.
+- **Alternatives considered:**
+  - `cargo-llvm-cov`, which wraps the same instrumentation and has `--fail-under-*` flags. It is
+    a third-party tool that CI would have to download and pin, so it would need the dependency
+    policy's approval, and it adds no branch coverage on a stable compiler either.
+  - A floor of 100% from the start. It fails until every gap has tests, among them the `Display`
+    code of the two error enums, `core/src/reference.rs`, the bridge's money API, `lib/main.dart`,
+    and `RustMoneyParser`, the Dart class that calls Rust, which only the integration test
+    reaches.
+- **Revisit when:** a stable Rust release can measure branches, or a Rust or Flutter upgrade
+  changes the report the script reads.

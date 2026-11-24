@@ -27,12 +27,20 @@ branches".
   `cargo test --workspace --locked` from `rust/`, and `flutter test` from the repository root with
   Flutter 3.50.1. The integration tests in `integration_test/` need an emulator or a device, as
   the **Test layout** in `flutter.md` says: `flutter test integration_test -d <device>`
-- **Coverage command:** none yet. No coverage tool has been chosen, so nothing measures coverage,
-  locally or in CI. Choosing one is the maintainer's decision, under `docs/02-dependency-policy.md`
-- **Coverage floor:** none measured yet, because there is no **Coverage command**. Until there is
-  one, every line and branch that a change adds or changes needs a test that runs it and checks
-  its result, and the report says which test covers each one
-- **Coverage exclusions:** none
+- **Coverage command:** `tool/coverage.sh` from the repository root, or `tool/coverage.sh rust` or
+  `tool/coverage.sh dart` for one language (ADR-0020). Rust uses rustc's `-C instrument-coverage`
+  and `llvm-cov` from the `llvm-tools` rustup component, which `rustup component add llvm-tools`
+  in `rust/` installs; Dart uses `flutter test --branch-coverage`
+- **Coverage floor:** the four floors at the top of `tool/coverage.sh`, in whole percent: Rust
+  lines and regions, and Dart lines and branches. Each started at the coverage measured on
+  2026-11-24, rounded down, and only ever goes up. A stable Rust compiler can't measure branches,
+  so regions stand in for them: a region is a stretch of code that runs or doesn't, such as each
+  side of `&&` or each `match` arm
+- **Coverage exclusions:** generated code, because a generator writes it and CI checks that it
+  matches the committed files (ADR-0012): `rust/crates/bridge/src/frb_generated.rs`,
+  `lib/platform/rust/`, and `lib/l10n/app_localizations*.dart`. Coverage also leaves out each
+  crate's `tests/` folder, but it counts the `#[cfg(test)]` modules inside `src/`, which a stable
+  compiler can't leave out
 - **Mutation command:** none yet. No mutation-testing tool has been chosen; choosing one is the
   maintainer's decision, under `docs/02-dependency-policy.md`
 - **Performance budgets:** the "Budgets" table in `docs/00-overview.md`, which names each limit and
@@ -47,7 +55,8 @@ branches".
   Backup files get theirs with the `backup` crate (M5.1)
 - **CI:** `.github/workflows/ci.yml` runs on every push and pull request to `main`, with the jobs
   "Rust checks", "Flutter checks" (which ends by building a debug app bundle), and "Generated code
-  is current", next to the **Security checks**. Every job must pass before a merge (`CLAUDE.md`,
+  is current", next to the **Security checks**. "Rust checks" and "Flutter checks" each run their
+  half of the **Coverage command**. Every job must pass before a merge (`CLAUDE.md`,
   "Commands"); making each one a required check is a repository setting only the maintainer can
   change. The integration tests don't run in CI, because they need an emulator
 

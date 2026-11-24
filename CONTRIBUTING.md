@@ -13,7 +13,7 @@ The app is being rewritten as a Flutter app over a Rust core ([ADR-0001](docs/de
 **Prerequisites**
 
 - Git.
-- `rustup`. The Rust version is pinned in `rust/rust-toolchain.toml`, and `rustup toolchain install` in `rust/` installs it with Clippy and rustfmt.
+- `rustup`. The Rust version is pinned in `rust/rust-toolchain.toml`, and `rustup toolchain install` in `rust/` installs it with Clippy and rustfmt. To measure coverage, also run `rustup component add llvm-tools` in `rust/`.
 - From milestone M1.1: Flutter 3.50.1, the exact version `pubspec.yaml` pins (`flutter pub get` fails on any other), the Android SDK with platform 37, and an emulator or device running API 26 or newer. CI will run API 26 and 36, as it did for v1.
 - From milestone M2.1: `perl`, `make`, and a C compiler, because the Rust build compiles SQLCipher and OpenSSL's `libcrypto` from source on every target (ADR-0017). The first build from an empty target folder takes a minute or more longer because of it.
 - From milestone M1.2: the Android targets of the pinned Rust toolchain, because every Flutter build and `flutter test` run compiles the Rust bridge through `hook/build.dart`. Install them from `rust/` with `rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android`.
@@ -61,6 +61,12 @@ dart format --output=none --set-exit-if-changed .
 flutter analyze
 flutter test
 flutter test integration_test -d <device>   # on an emulator or device, from milestone M1.2
+```
+
+Then measure coverage from the repository root. CI runs the same script: in the Rust job, and as the Flutter job's tests. It fails when coverage drops below one of the floors at the top of `tool/coverage.sh` (ADR-0020). Add tests to bring it back up; never lower a floor. When the script says a figure is above its floor, raise that floor in the same pull request.
+
+```bash
+tool/coverage.sh        # both languages; tool/coverage.sh rust or tool/coverage.sh dart for one
 ```
 
 The security workflow also runs CodeQL, gitleaks and, on pull requests, dependency review, which fails on high-severity vulnerabilities.
