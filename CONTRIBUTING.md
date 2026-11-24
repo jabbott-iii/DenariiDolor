@@ -15,6 +15,7 @@ The app is being rewritten as a Flutter app over a Rust core ([ADR-0001](docs/de
 - Git.
 - `rustup`. The Rust version is pinned in `rust/rust-toolchain.toml`, and `rustup toolchain install` in `rust/` installs it with Clippy and rustfmt.
 - From milestone M1.1: Flutter 3.50.1, the exact version `pubspec.yaml` pins (`flutter pub get` fails on any other), the Android SDK with platform 37, and an emulator or device running API 26 or newer. CI will run API 26 and 36, as it did for v1.
+- From milestone M2.1: `perl`, `make`, and a C compiler, because the Rust build compiles SQLCipher and OpenSSL's `libcrypto` from source on every target (ADR-0017). The first build from an empty target folder takes a minute or more longer because of it.
 - From milestone M1.2: the Android targets of the pinned Rust toolchain, because every Flutter build and `flutter test` run compiles the Rust bridge through `hook/build.dart`. Install them from `rust/` with `rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android`.
 - To change the bridge's API: the codegen and `cargo-expand`, both pinned. Install `cargo-expand` first, because the codegen installs an unpinned one by itself when it finds none:
 

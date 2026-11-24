@@ -290,13 +290,16 @@ Locking before step 5 discards the pending upgrade, and the v1 files stay until 
 ## 5. SQLCipher
 
 - **Library:** `net.zetetic:sqlcipher-android` 4.19.1 under Room 2.8.5 (`gradle/libs.versions.toml:21`, `:23`, `:78`).
+  It holds SQLCipher 4.19.0: `PRAGMA cipher_version` returns `4.19.0 community` (an API 36 emulator, 2026-11-23).
 - **Key syntax:** the ASCII bytes of `x'<64 lowercase hex digits of the database key>'`. This "raw key" form makes SQLCipher
   use the 32 bytes as the encryption key directly, with no PBKDF2 step (`app:data/local/db/security/DatabaseKeys.kt:29`,
   `:35-36`). The byte array goes to `SupportOpenHelperFactory` (`app:data/local/db/DatabaseHolder.kt:53-56`).
 - **Cipher settings:** the code runs no `PRAGMA` and sets no `cipher_*` option, so SQLCipher 4's defaults apply. SQLCipher's
   documentation gives them as a 4,096-byte page, HMAC-SHA512 page authentication, PBKDF2-HMAC-SHA512 as the key derivation
   (unused for the encryption key under a raw key), no plaintext header, and a random 16-byte salt at the start of the file.
-  These defaults come from SQLCipher, not from this repository; fixture F3 must confirm them.
+  These defaults come from SQLCipher, not from this repository; fixture F3 must confirm them. A smaller file that v1's
+  code wrote on an API 36 emulator in M2.1 (`rust/crates/store/tests/fixtures/`) already shows the page size, both
+  algorithms, and no plaintext header, and that file was in write-ahead-log mode.
 - **Open:** one worker thread opens, closes, and deletes, so those steps never overlap. Opening forces the writable database,
   which creates or migrates it, and closes it again if that fails (`app:data/local/db/DatabaseHolder.kt:33-34`, `:52-68`).
 - **Close:** closing zeroes the passphrase array, which SQLCipher holds by reference, so a stray query fails instead of
@@ -633,7 +636,8 @@ reads real data.
 5. **Keeping the v1.0.x path.** Reading `secure_prefs` and `db_key_prefs` needs `androidx.security:security-crypto` in the
    Kotlin layer. Whether any v1.0.x install remains un-upgraded is unknown; that is a decision for the maintainer.
 6. **SQLCipher defaults.** The code relies on SQLCipher 4's defaults without naming them. The Rust build must link a
-   SQLCipher 4 that keeps those defaults, or set them explicitly; fixture F3 checks either way.
+   SQLCipher 4 that keeps those defaults, or set them explicitly; fixture F3 checks either way. `denarii-store` sets them
+   explicitly with `PRAGMA cipher_compatibility = 4` (`docs/specs/store.md`).
 7. **Profile corruption reads as "no profile".** An out-of-range iteration count or a blank wrap makes the vault offer setup,
    and setup deletes the database (`app:data/local/preferences/SecurityProfileService.kt:111-117`;
    `app:data/local/vault/Vault.kt:83-84`). That is today's behavior; the rewrite must not delete data in more cases than this.

@@ -2,7 +2,7 @@
 
 [workspace]
 resolver = "3"
-members = ["crates/bridge", "crates/core"]
+members = ["crates/bridge", "crates/core", "crates/store"]
 
 [workspace.package]
 version = "0.1.0"
@@ -17,6 +17,10 @@ denarii-core = { path = "crates/core" }
 # default features would bring logging crates. `thread-pool` runs each call off Flutter's UI thread,
 # and the generated code doesn't compile without `dart-opaque` and `rust-async`.
 flutter_rust_bridge = { version = "=2.13.0", default-features = false, features = ["dart-opaque", "rust-async", "thread-pool"] }
+# Pinned exactly, because an upgrade changes the SQLCipher build that opens users' files (ADR-0017). The one feature
+# compiles SQLCipher and OpenSSL's libcrypto from source on every target; the default features would add a statement
+# cache and a WebAssembly backend that nothing uses.
+rusqlite = { version = "=0.43.0", default-features = false, features = ["bundled-sqlcipher-vendored-openssl"] }
 
 # crates/bridge/Cargo.toml repeats these lints, with `unsafe_code` at `deny` (ADR-0014). Change both.
 [workspace.lints.rust]

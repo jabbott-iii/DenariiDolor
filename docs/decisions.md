@@ -128,7 +128,8 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
 
 ## ADR-0006 — The database stays SQLCipher, opened from Rust with `rusqlite`
 
-- **Status:** Proposed
+- **Status:** Accepted by the maintainer on 2026-11-23, in M2.1. ADR-0017 adds the crates'
+  versions, the OpenSSL build, and how `store` holds the connection.
 - **Date:** 2026-11-23
 - **Context:** v1's records are in a SQLCipher 4 database (`net.zetetic:sqlcipher-android`
   4.19.1) with a raw 256-bit key and default settings, in Room's schema version 2
@@ -551,3 +552,97 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
 - **Revisit when:** `intl` ships symbols per locale or data for more Arabic regions; GitHub's
   `ubuntu-24.04` image drops Java 25; the app gets its own language setting; or a user reports a
   symbol or digits that differ from the rest of their phone.
+
+## ADR-0017 — Build SQLCipher with OpenSSL compiled from source on every target, and keep the one connection behind a mutex
+
+- **Status:** Accepted
+- **Date:** 2026-11-23
+- **Context:** M2.1 adds the `store` crate under ADR-0006 (the database stays SQLCipher, opened
+  from Rust with `rusqlite`). On 2026-11-23 the maintainer was asked how to build it, how to get a
+  database that v1's library wrote, and how `store` serializes calls.
+  - **The crates.** `rusqlite` 0.43.0 (MIT) wraps `libsqlite3-sys` 0.40.0 (MIT). Its
+    `bundled-sqlcipher` feature compiles the SQLCipher amalgamation (all of SQLCipher's C code in
+    one file) from the `sqlcipher-src` crate, 420.0.0: SQLCipher 4.20.0 over SQLite 3.54.1, under
+    MIT for the crate, BSD-3-Clause for SQLCipher, and SQLite's public-domain dedication. One
+    person publishes `sqlcipher-src`. The crate also holds libtomcrypt (public domain or WTFPL),
+    which `libsqlite3-sys` doesn't compile.
+  - **The crypto library.** SQLCipher needs a crypto provider. Off Apple platforms,
+    `libsqlite3-sys` links OpenSSL's `libcrypto`: the machine's, or, with the
+    `bundled-sqlcipher-vendored-openssl` feature, one that `openssl-src` 300.6.1 compiles from
+    OpenSSL 3.6.3 (Apache-2.0). Android offers apps no `libcrypto`, so Android builds need the
+    compiled one. v1's `sqlcipher-android` 4.19.1 ships its own, with SQLCipher 4.19.0 inside: its
+    `libsqlcipher.so` is 2.1 MB for `arm64-v8a`.
+  - **What ships.** Seven crates are new to the Android library: `rusqlite`, `libsqlite3-sys`,
+    `openssl-sys` (MIT), and `bitflags`, `fallible-iterator`, `fallible-streaming-iterator`, and
+    `smallvec` (MIT or Apache-2.0). `libc` already ships with the bridge. Four more run only
+    during the build: `sqlcipher-src`, `openssl-src`, `pkg-config`, and `vcpkg` (MIT or
+    Apache-2.0). `Cargo.lock` also lists `sqlite-wasm-rs`, `rsqlite-vfs`, `thiserror`, and
+    `thiserror-impl`, because Cargo records a crate that a feature names weakly
+    (`sqlite-wasm-rs?/sqlcipher` in `rusqlite`) even when nothing turns it on. They are for
+    WebAssembly, and `cargo tree --target all` shows that no build of the workspace compiles them.
+  - **Measured.** On the maintainer's Linux machine, a scratch crate holding only `rusqlite` with
+    the vendored feature built in release mode from an empty target folder in 50 s for
+    `aarch64-linux-android` (NDK 28.2.13676358) and 84 s for the host. Its stripped `arm64-v8a`
+    library is 6.2 MB, and it needs only Android's `libc`, `libm`, `libdl`, and `liblog`.
+  - **Threading.** The bridge's worker pool can run two calls at once (ADR-0014), and
+    `rusqlite`'s `Connection` can move between threads but can't be used from two at once.
+- **Decision** (the maintainer chose the recommended option for each question on 2026-11-23):
+  - `store` depends on `rusqlite` 0.43.0, pinned exactly, with its default features off and only
+    `bundled-sqlcipher-vendored-openssl` on. An upgrade changes the SQLCipher build that opens
+    users' files, so it goes through the `dependency-upgrade` skill and must keep the v1 fixture
+    test passing.
+  - OpenSSL is compiled from source on every target, the host included, so `cargo test` runs the
+    same SQLCipher and crypto library that phones run.
+  - `Store` keeps its one connection behind a `std::sync::Mutex`. Each operation holds the lock for
+    the whole of its database work, so two calls never interleave. `Store` is `Send` and `Sync`,
+    and the bridge can share it through an `Arc`. A lock poisoned by a panic in another call
+    becomes an error, not a second panic. `store` starts no thread.
+  - M2.1's fixture is a database that v1's own code wrote with `sqlcipher-android` 4.19.1 on an
+    emulator, from an instrumented test in a scratch copy of v1 at `6d57526`. The test's source is
+    kept beside the fixture; nothing is added to v1's tree or to the app.
+- **Consequences:**
+  - Good:
+    - One SQLCipher and one crypto library on every target, and the host tests run them.
+    - Host builds need no system OpenSSL.
+    - Calls can't interleave inside a database transaction, and no thread needs an owner.
+  - Bad:
+    - Every build from an empty target folder compiles OpenSSL and SQLCipher, which takes more than
+      a minute on the maintainer's machine. CI caches nothing (M1.3), so every CI run pays it.
+      `cargo test --workspace` from an empty target folder took 86.8 s, against 17.0 s before
+      M2.1, over the 60 s budget in `docs/00-overview.md` if that budget counts such a build; with
+      nothing to rebuild it took 0.8 s.
+    - Builds need `perl` and `make`, which GitHub's `ubuntu-24.04` image has.
+    - The Android library grows by about 6 MB per ABI, three times v1's `libsqlcipher.so`, against
+      the download-size budget in `docs/00-overview.md`.
+    - Users' files were written by SQLCipher 4.19.0, the version `sqlcipher-android` 4.19.1
+      reports, and are opened by 4.20.0. `store` pins SQLCipher 4's settings
+      (`PRAGMA cipher_compatibility = 4`), and the fixture test checks that they match the file.
+    - SQLCipher logs warnings to logcat, the Apple system log, or stderr once it starts, as v1's
+      library did. Shipped code doesn't log, so `store` turns that log off.
+    - SQLCipher 4.20.0's process-wide setup has two races, found by tests that opened stores on
+      several threads at once: SQLite runs SQLCipher's initialization after it has marked itself
+      initialized, so a `PRAGMA key` on another thread can fail with "sqlcipher not
+      initialized", and two `PRAGMA cipher_log` statements at once can crash the process with
+      `fclose(NULL)`. `store` sets SQLCipher up and turns its log off once per process, under a
+      lock of its own, before it opens any file (`docs/specs/store.md`). Code outside `store`
+      that opens a SQLite connection could still meet the first race.
+    - `sqlcipher-src` has one maintainer, and its amalgamation is generated code that nobody here
+      has compared with SQLCipher's signed release.
+    - A slow database call, such as a long report, makes the next one wait.
+  - Follow-up:
+    - M6.2 lists SQLCipher, SQLite, OpenSSL, and the crates in `THIRD_PARTY_NOTICES.md`, and
+      compares `sqlcipher-src`'s amalgamation with one built from SQLCipher's signed v4.20.0 tag.
+    - M6.3 measures the library's size against the budget, and tries smaller builds.
+    - M7.1 checks the iOS build, which also links the compiled OpenSSL under this feature.
+- **Alternatives considered:**
+  - For the crypto library, the machine's OpenSSL on the host and the compiled one only on
+    Android, which builds faster but tests a different `libcrypto` from the phones' and needs
+    `libssl-dev` on every contributor's machine.
+  - For the fixture, leaving a file made by v1 to M2.3, which would leave M2.1's acceptance
+    unchecked; or a generator project under `tool/`, which adds a Gradle build to the repository.
+  - For threading, letting the caller wrap `Store` in a mutex, which every caller would have to
+    remember; or one worker thread with a bounded queue, as v1's `DatabaseHolder` had, which breaks
+    the Rust rule that no crate starts a thread.
+- **Revisit when:** a `rusqlite` upgrade moves to SQLCipher 5 or drops the vendored feature; the
+  v1 fixture stops opening; M6.3 can't meet the download-size budget; or a user-visible screen
+  waits on a database call that another call is holding.

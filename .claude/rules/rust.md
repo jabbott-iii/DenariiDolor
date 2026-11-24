@@ -30,8 +30,9 @@ so they can fill them in.
 - **Crates:** the workspace in `rust/`. `crates/core` (`denarii-core`) holds the domain rules:
   money in cents, transactions, balance changes, and validation. `crates/bridge`
   (`denarii-bridge`) is the API Dart calls through `flutter_rust_bridge` (ADR-0005), with its
-  generated glue in `src/frb_generated.rs`. The planned crates (`store`, `vault`, `backup`, and
-  `report`) and the tasks that build them are in `docs/01-architecture.md`
+  generated glue in `src/frb_generated.rs`. `crates/store` (`denarii-store`) opens the SQLCipher
+  database with `rusqlite` (ADR-0006, ADR-0017). The planned crates (`vault`, `backup`, and
+  `report`), the rest of `store`, and the tasks that build them are in `docs/01-architecture.md`
 - **Toolchain:** edition 2024, Rust 1.100.0 pinned in `rust/rust-toolchain.toml`, and
   `rust-version = "1.100"` in `[workspace.package]`
 - **Check commands:** run from `rust/`: `cargo fmt --all --check`, `cargo clippy --workspace
@@ -59,15 +60,17 @@ so they can fill them in.
 - **Concurrency:** none in the hand-written code: every API is synchronous, and no crate starts a
   thread itself. `flutter_rust_bridge`'s generated handler runs each bridge call on a pool of
   worker threads, so two calls can run at once, and its `rust-async` feature starts an idle
-  `tokio` runtime (ADR-0014, `docs/specs/bridge.md`)
+  `tokio` runtime (ADR-0014, `docs/specs/bridge.md`). `denarii-store`'s `Store` keeps its one
+  connection behind a `std::sync::Mutex`, so those calls take turns on the database (ADR-0017)
 - **Public API:** none published. The `bridge` crate's API is what Dart calls, so a change to it
   regenerates the Dart bindings in the same change
 - **Published crates:** none
-- **Design docs:** `docs/specs/<crate>.md`: `docs/specs/core.md` and `docs/specs/bridge.md`
+- **Design docs:** `docs/specs/<crate>.md`: `docs/specs/core.md`, `docs/specs/bridge.md`, and
+  `docs/specs/store.md`
 - **Test layout:** unit tests in a `#[cfg(test)] mod tests` beside the code; integration tests
   that use only the public API in each crate's `tests/`; compatibility fixtures, such as a v1
   database and one backup per `FORMAT_VERSION`, in `tests/fixtures/` of the crate that reads them
-  (M2.3 and M5.1)
+  (from M2.1 and M5.1)
 
 ## Working as a pair
 

@@ -395,9 +395,44 @@ and shows an amount parsed by Rust.
 **Goal:** Rust reads and writes a database that v1 created, with the same balances and the same
 rules.
 
-- [ ] **M2.1 — store: open SQLCipher from Rust**
+- [x] **M2.1 — store: open SQLCipher from Rust**
   - Note (from M1.2): the bridge runs each call on a pool of worker threads, so two calls can reach
     `store` at the same time; decide how `store` serializes them on its one connection.
+  - Note: 2026-11-23: the maintainer accepted ADR-0006 and chose the recommended answer to three
+    questions, recorded in ADR-0017: `rusqlite` 0.43.0 pinned exactly, with OpenSSL compiled from
+    source on every target (`bundled-sqlcipher-vendored-openssl`), the host included; a fixture
+    written by v1's own code with `sqlcipher-android` 4.19.1, from a throwaway instrumented test in
+    a scratch copy of v1; and one connection behind a `Mutex` inside `Store`, which answers the
+    note from M1.2.
+  - Note: 2026-11-23: `denarii-store` has `Store::open`, `Store::user_version`, `Store::close`,
+    `DatabaseKey`, and `StoreError` (`docs/specs/store.md`). `rusqlite` 0.43.0 compiles SQLCipher
+    4.20.0 over SQLite 3.54.1 and OpenSSL 3.6.3. Opening pins SQLCipher 4's settings with
+    `PRAGMA cipher_compatibility = 4`, checks the key against the first page, and turns on foreign
+    keys. `rust/clippy.toml` now lists `SQLCipher` in `doc-valid-idents`, so doc comments write
+    the name as prose (`.claude/rules/writing.md`) and not as code.
+  - Note: 2026-11-23: the fixture is `rust/crates/store/tests/fixtures/v1-sqlcipher-android-4.19.1.db`,
+    written on `Denarii_API_36` by a throwaway instrumented test in a scratch copy of v1, whose
+    steps and source are in the fixtures folder's `README.md`. `sqlcipher-android` 4.19.1 reports
+    SQLCipher 4.19.0; the file is in write-ahead-log mode, at `user_version` 2, with two accounts,
+    and has no `android_metadata` table. Installing v1's debug build replaced the Flutter debug
+    app on that emulator, and both were uninstalled afterward.
+  - Note: 2026-11-23: two findings changed the code. SQLCipher logs warnings and errors to logcat,
+    the Apple system log, or stderr once it starts, so `store` turns its log off. And SQLCipher
+    4.20.0's process-wide setup has two races, a "sqlcipher not initialized" error and an
+    `fclose(NULL)` crash, so `store` sets SQLCipher up once per process under a lock, before it
+    opens any file (`docs/specs/store.md`, "Opening"; ADR-0017). Before the lock, the unit tests
+    crashed in 10 of 300 runs; with only the log pragmas guarded, `tests/concurrent_open.rs` (64
+    stores opened at once) failed in 4 of 877. With the lock, that file passed 3,000 runs in a
+    row, and the unit tests and `tests/open.rs` 1,000 each. Neither race is reported upstream yet;
+    that is the maintainer's call.
+  - Note: 2026-11-23: `cargo test --locked -p denarii-store` passed (7 unit tests, 11 integration
+    tests in two files, and 1 doc test). `cargo build --locked --release -p denarii-store` passed
+    for `aarch64-linux-android`, `armv7-linux-androideabi`, and `x86_64-linux-android` with NDK
+    28.2.13676358, in 54–60 s each from an empty target folder. On the maintainer's machine
+    (16 cores), `cargo test --workspace --locked` from an empty target folder took 86.8 s, against
+    17.0 s at `d63e806`, and 0.8 s with nothing to rebuild. The 60 s budget in
+    `docs/00-overview.md` doesn't say which of these it means; it is unchanged, for the maintainer
+    to settle.
   - Depends: M0.7
   - Decide first: accept or change ADR-0006 (`rusqlite` with bundled SQLCipher).
   - Do:
@@ -407,6 +442,12 @@ rules.
     - A database made by `sqlcipher-android` 4.19.1 opens and reads.
   - Verify: `cd rust && cargo test --locked -p denarii-store` (expect pass)
 - [ ] **M2.2 — store: schema version 2 and forward migrations**
+  - Note (from M2.1): `user_version` 0 doesn't prove a new install. An absent or empty file opens
+    as an empty database, and so does a 1-byte file, which SQLite reads that way
+    (`tests/open.rs`). Decide which files may get a new schema before creating one, and never
+    write over a file that isn't empty. v1's file has the tables `accounts`, `budgets`,
+    `categories`, `room_master_table`, `sqlite_sequence`, and `transactions`, with no
+    `android_metadata`, and is in write-ahead-log mode, which `Store::open` leaves as it is.
   - Depends: M2.1
   - Do:
     - Map the four tables in section 6 of the format spec, continue from `user_version` 2, and
@@ -415,6 +456,10 @@ rules.
     - A version 2 database opens with no row changed; a version 1 database migrates as v1 did.
   - Verify: `cd rust && cargo test --locked -p denarii-store migration` (expect pass)
 - [ ] **M2.3 — store: a database fixture written by v1**
+  - Note (from M2.1): `rust/crates/store/tests/fixtures/README.md` has the steps that wrote M2.1's
+    fixture: a throwaway instrumented test in a scratch copy of v1 at `6d57526`, which builds
+    offline with the maintainer's Gradle cache, run on `Denarii_API_36` and copied out with
+    `adb exec-out run-as`. F3 can be made the same way, through v1's DAOs and use cases.
   - ⏳ needs an Android emulator to run the v1 app at `6d57526`
   - Depends: M2.2
   - Do:
@@ -515,6 +560,10 @@ and fingerprint, and sees the same balances.
     - Fixture F9 upgrades and signs in.
   - Verify: an instrumented test on an emulator
 - [ ] **M3.5 — auth: setup, sign-in, and recovery screens**
+  - Note (from M2.1): once the bridge depends on `denarii-store`, every Flutter build compiles
+    SQLCipher and OpenSSL for each ABI through `hook/build.dart`, which takes about a minute per
+    ABI from an empty target folder (ADR-0017). Check `flutter build apk` and the CI job's time
+    then, and map each `StoreError` variant to a code for the screens.
   - Note (from M1.2): the sign-in placeholder now has a route (`SignInPlaceholderRoute`) and a view
     model with M1.2's amount field. Remove the field with the placeholder, and point
     `integration_test/bridge_test.dart`'s screen check at a screen that still calls the bridge.
@@ -690,6 +739,10 @@ restores in the new app on another phone.
     - Rebuild v1's tag-driven pipeline for Flutter, split into `ci-gate`, `build`, and `publish`
       jobs (CS-19), with a build number above v1's highest `versionCode`.
 - [ ] **M6.2 — legal: notices, privacy policy, and Data safety**
+  - Note (from M2.1): the store ships SQLCipher 4.20.0 (BSD-3-Clause), SQLite 3.54.1 (public
+    domain), and OpenSSL 3.6.3's `libcrypto` (Apache-2.0), with the seven crates in the register in
+    `docs/02-dependency-policy.md`. Compare `sqlcipher-src`'s amalgamation with one built from
+    SQLCipher's signed v4.20.0 tag (ADR-0017).
   - Note (from M1.1): the app ships `material_ui`, `cupertino_ui`, `intl`, `clock` (Apache-2.0),
     and `path`, besides Flutter's own packages; see the register in `docs/02-dependency-policy.md`.
   - Note (from M1.2): `libdenarii_bridge.so` ships 30 third-party crates, listed with their
@@ -706,6 +759,8 @@ restores in the new app on another phone.
     - Rewrite `THIRD_PARTY_NOTICES.md` and `licenses/` for the new dependencies; review
       `PRIVACY.md`; tell the maintainer what the Play Data safety form needs.
 - [ ] **M6.3 — build: obfuscation and size**
+  - Note (from M2.1): a scratch library holding only `rusqlite` with SQLCipher and OpenSSL was
+    6.2 MB stripped for `arm64-v8a`, against 2.1 MB for v1's `libsqlcipher.so` (ADR-0017).
   - Note (from M1.2): `libdenarii_bridge.so` is 661 KB (`arm64-v8a`), 444 KB (`armeabi-v7a`), and
     695 KB (`x86_64`) in M1.2's release APK. It includes backtrace symbolization (`backtrace`,
     `gimli`, `object`, `addr2line`), which `flutter_rust_bridge` turns on in `allo-isolate`.
@@ -733,6 +788,8 @@ maintainer approves a staged rollout to production.
 **Goal:** The app ships on the App Store with the same features and protections.
 
 - [ ] **M7.1 — ios: Keychain and Secure Enclave design, and the Swift code**
+  - Note (from M2.1): `bundled-sqlcipher-vendored-openssl` compiles OpenSSL for Apple targets too,
+    instead of using CommonCrypto; check the iOS build of `denarii-store` (ADR-0017).
   - Note (from M1.2): add the iOS targets to `rust/rust-toolchain.toml`, add `staticlib` to the
     bridge's `crate-type` if the iOS build links it statically, and check `hook/build.dart` on iOS.
   - Depends: M6.4

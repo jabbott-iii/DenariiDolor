@@ -38,7 +38,7 @@ flowchart TB
     end
     subgraph Rust["Rust workspace (rust/)"]
         BR["bridge: the API Dart calls"]
-        ST["store — M2"]
+        ST["store: the SQLCipher database<br/>(schema and use cases: M2.2–M2.6)"]
         VA["vault — M3"]
         BK["backup — M5.1"]
         RP["report — M2.7"]
@@ -59,8 +59,8 @@ flowchart TB
 
     classDef built stroke-width:2px
     classDef planned stroke-dasharray: 5 5
-    class CO,UI,BR built
-    class KT,SW,ST,VA,BK,RP planned
+    class CO,UI,BR,ST built
+    class KT,SW,VA,BK,RP planned
 ```
 
 Solid boxes are built; dashed boxes are planned, labeled with the task that builds them.
@@ -116,7 +116,8 @@ to the vault.
 | `rust/Cargo.toml` | The workspace, shared package fields, and lints | M0.4 |
 | `rust/crates/core` | `denarii-core`; its design is in `docs/specs/core.md` | M0.4–M0.7 |
 | `rust/crates/bridge` | `denarii-bridge`, the API Dart calls, with its generated glue; its design is in `docs/specs/bridge.md` | M1.2 |
-| `rust/crates/{store,vault,backup,report}` | The planned crates in the table above | M2.1–M5.1 |
+| `rust/crates/store` | `denarii-store`, which opens the SQLCipher database; its design is in `docs/specs/store.md`, and its fixture written by v1 is in `tests/fixtures/` | M2.1; the schema and use cases in M2.2–M2.6 |
+| `rust/crates/{vault,backup,report}` | The planned crates in the table above | M2.7–M5.1 |
 | `pubspec.yaml`, `lib/`, `test/`, `integration_test/` | The Flutter app and its tests; the bridge's generated Dart bindings are in `lib/platform/rust/` | M1.1; `integration_test/` and `lib/platform/` in M1.2 |
 | `l10n.yaml`, `lib/l10n/` | The seven language packs as ARB files, the localizations `flutter gen-l10n` generates from them, and `resolveAppLocale`, which picks a pack from the phone's language list (ADR-0015: the whole list, matched by script as Android does) | M1.4 |
 | `lib/l10n/money_format.dart`, `lib/l10n/currency_symbols.dart`, `tool/CurrencySymbols.java` | Money and month text written with `intl`, and the currency symbols that the Java tool generates from Unicode CLDR (ADR-0016: CLDR's symbols, the locale `resolveAppLocale` picked, and fixes for Arabic regions) | M1.6 |
@@ -167,7 +168,10 @@ because the generated code needs the crate's `rust-async` feature (ADR-0014).
 `docs/specs/bridge.md` describes how a call crosses.
 
 The database is one connection that one caller uses at a time. The bridge's worker threads can run
-two calls at once, so `store` decides how it serializes them (M2.1).
+two calls at once, so `Store` keeps the connection behind a `std::sync::Mutex`, and each operation
+holds the lock for the whole of its database work (ADR-0017: SQLCipher and OpenSSL compiled from
+source, and one connection behind a mutex). Calls wait their turn instead of interleaving, and
+`store` still starts no thread. `docs/specs/store.md` describes it.
 
 ## Configuration
 
