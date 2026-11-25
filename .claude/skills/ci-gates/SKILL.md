@@ -67,9 +67,10 @@ flutter analyze
 tool/coverage.sh dart
 ```
 
-`tool/coverage.sh dart` is how CI runs the tests: `flutter test --branch-coverage`, plus a test it writes that imports
-every library in `lib/`, so a file no test loads counts as uncovered. It fails like `flutter test` when a test fails,
-and also below the Dart floors at the top of the script.
+`tool/coverage.sh dart` is how CI runs the tests: `flutter test --branch-coverage`, one test file at a time in sorted
+order so that the figures don't change from run to run, plus a test it writes that imports every library in `lib/`, so a
+file no test loads counts as uncovered. It fails like `flutter test` when a test fails, and also below the Dart floors at
+the top of the script.
 
 How to fix each kind of failure:
 

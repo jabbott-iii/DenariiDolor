@@ -255,6 +255,15 @@ and displays an amount that Rust parsed and Dart formatted.
     `tool/coverage.sh dart`, which fails below the coverage floors (ADR-0020). Locally, the
     script passed, and it failed when a floor sat above today's figure and when a test failed.
     This pull request is its first run on GitHub's runners.
+  - Note: 2026-11-25: `tool/coverage.sh dart` now runs the test files one at a time, in sorted
+    order (`--concurrency=1`), because the Dart figures changed between runs of the same code:
+    `lib/platform/money_parser.dart` had 4 or 6 of its 16 lines covered, and one run fell below
+    both floors. Flutter shares one cache of coverable lines among a run's test files, and only
+    the first file to report a library counts a `const` constructor that no test calls at run
+    time, when that file evaluated it as a constant. Run in reverse order, the same files gave
+    different lines. Five runs in a row then wrote identical coverage records, at 91.33% of lines
+    and 88.89% of branches, in 29 s to 62 s on the maintainer's Linux machine; the job's time on
+    GitHub's runners is first measured with this pull request.
   - ⏳ needs GitHub: open a pull request with this change, and expect "Rust checks", "Flutter
     checks", and "Generated code is current" to pass. Then make the three jobs required status
     checks for `main`: on 2026-11-23 the repository's branch ruleset requires none, so a failing
@@ -906,6 +915,9 @@ and fingerprint, and sees the same balances.
     took, and Rust coverage is 97.54% of lines and 95.60% of regions. Two runs of
     `tool/coverage.sh dart` on unchanged Dart code gave 4 and 6 of the 16 lines of
     `lib/platform/money_parser.dart`, so the first fell below both Dart floors.
+  - Note: 2026-11-25: that Dart coverage difference came from the order in which Flutter collected
+    each test file's coverage, not from this task's code, and `tool/coverage.sh` now runs one test
+    file at a time (M1.3's note of the same date).
   - Depends: M3.2
   - Decide first: the cryptography crates (`docs/02-dependency-policy.md`).
   - Do:

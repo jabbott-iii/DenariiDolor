@@ -12,7 +12,8 @@
 # Rust uses rustc's own instrumentation (`-C instrument-coverage`) and llvm-cov from the llvm-tools component of the
 # pinned release: run `rustup component add llvm-tools` in rust/ once. A stable compiler can't measure branches, so
 # regions stand in for them; a region is a stretch of code that runs or doesn't, such as each side of `&&` or each
-# `match` arm. Dart uses `flutter test --branch-coverage`, so `flutter` must be Flutter 3.50.1 on PATH.
+# `match` arm. Dart uses `flutter test --branch-coverage`, running one test file at a time, and `flutter` must be
+# Flutter 3.50.1 on PATH.
 
 set -euo pipefail
 
@@ -136,7 +137,17 @@ dart_coverage() {
     echo "void main() {}"
   } > "$every"
 
-  flutter test --branch-coverage --coverage-path "$lcov" test "$every"
+  # One test file at a time, in sorted order, so that every run and every machine give the same figures. Flutter shares
+  # one cache of coverable lines among a run's test files, and only the first file to report a library compiles the
+  # parts of it that never ran. A const constructor that no test calls at run time counts as covered only when that
+  # first file evaluated it as a constant. With files running at once, which file reported first changed from run to
+  # run, and so did the figures: lib/platform/money_parser.dart had 4 or 6 of its 16 lines covered with no change. A
+  # directory isn't listed in a fixed order, so the files are named here.
+  local tests=() test
+  while IFS= read -r test; do
+    tests+=("$test")
+  done < <(find test -name '*_test.dart' | LC_ALL=C sort)
+  flutter test --concurrency=1 --branch-coverage --coverage-path "$lcov" "${tests[@]}" "$every"
 
   # Flutter writes no branch totals (BRF and BRH), so count the BRDA records: line, block, branch, and the times it
   # was taken, or "-" when its block never ran.

@@ -30,7 +30,8 @@ branches".
 - **Coverage command:** `tool/coverage.sh` from the repository root, or `tool/coverage.sh rust` or
   `tool/coverage.sh dart` for one language (ADR-0020). Rust uses rustc's `-C instrument-coverage`
   and `llvm-cov` from the `llvm-tools` rustup component, which `rustup component add llvm-tools`
-  in `rust/` installs; Dart uses `flutter test --branch-coverage`
+  in `rust/` installs; Dart uses `flutter test --branch-coverage`, one test file at a time in
+  sorted order, because a run of several at once gave different figures for the same code
 - **Coverage floor:** the four floors at the top of `tool/coverage.sh`, in whole percent: Rust
   lines and regions, and Dart lines and branches. Each started at the coverage measured on
   2026-11-24, rounded down, and only ever goes up. A stable Rust compiler can't measure branches,
