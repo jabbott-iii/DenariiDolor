@@ -46,7 +46,8 @@ branches".
 - **Performance budgets:** the "Budgets" table in `docs/00-overview.md`, which names each limit and
   the hardware it is measured on. No test or benchmark enforces any of them yet
 - **Security checks:** `.github/workflows/security.yml` runs CodeQL's `security-extended` queries
-  over the Rust code (CodeQL can't read Dart), gitleaks over the whole Git history, and, on pull
+  over the Rust code and the GitHub Actions workflows (CodeQL can't read Dart), gitleaks over the
+  whole Git history, and, on pull
   requests, GitHub's dependency review, which fails on a high-severity vulnerability. No fuzz
   targets exist yet. The tests with hostile input follow the **Test layout** in `rust.md`, one set
   for each kind of input its **Untrusted input** lists: money text in

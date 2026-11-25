@@ -17,16 +17,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Static analysis of the Rust source. CodeQL reads Rust without a build. CodeQL has no Dart extractor, so the Dart
-  # code isn't scanned here; the Kotlin in android/ joins when M3.2 adds it (docs/roadmap.md). GitHub reads
-  # rust/Cargo.lock for the dependency graph itself, so the Gradle dependency-submission job left with the Kotlin app.
+  # Static analysis of the Rust source and of these workflows. CodeQL reads both without a build. CodeQL has no Dart
+  # extractor, so the Dart code isn't scanned here; the Kotlin in android/ joins when M3.2 adds it (docs/roadmap.md).
+  # GitHub reads rust/Cargo.lock for the dependency graph itself, so the Gradle dependency-submission job left with the
+  # Kotlin app.
   codeql:
-    name: CodeQL (rust)
+    name: CodeQL (${{ matrix.language }})
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
       contents: read
       security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ rust, actions ]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -34,13 +39,13 @@ jobs:
 
       - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
-          languages: rust
+          languages: ${{ matrix.language }}
           build-mode: none
           queries: security-extended
 
       - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
-          category: /language:rust
+          category: /language:${{ matrix.language }}
 
   # Blocks pull requests that introduce dependencies with known vulnerabilities.
   dependency-review:
