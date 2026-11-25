@@ -32,27 +32,31 @@ flowchart TB
     subgraph Dart["Flutter app (lib/) — M1.1"]
         UI["Screens and view models<br/>(placeholders until M3.5 and M4)"]
     end
-    subgraph Native["Platform code — M3.2, M7.1"]
-        KT["Kotlin in android/:<br/>Keystore, BiometricPrompt"]
+    subgraph Native["Platform code — M3.2, M3.6, M7.1"]
+        KT["Kotlin in android/:<br/>VaultKeystore: the device and storage keys"]
+        BP["Kotlin in android/:<br/>the biometric key, BiometricPrompt — M3.6"]
         SW["Swift in ios/:<br/>Keychain, Face ID"]
     end
     subgraph Rust["Rust workspace (rust/)"]
         BR["bridge: the API Dart calls"]
         ST["store: the SQLCipher database, its schema, the seeded defaults,<br/>writes of transactions, categories, accounts, and budgets,<br/>and the reads a report and a search take"]
         VA["vault — M3"]
+        KS["keystore: JNI calls to the Keystore code"]
         BK["backup — M5.1"]
         RP["report: the monthly report, its CSV,<br/>and the search filters"]
         CO["core: money, transactions,<br/>balance changes, totals, validation"]
     end
     UI --> BR
-    UI --> KT
+    UI -.-> BP
     UI --> SW
     BR --> ST
     BR --> VA
     BR --> BK
     BR --> RP
     BR --> CO
-    VA -.->|"JNI — M3.2"| KT
+    BR --> KS
+    VA -.-> KS
+    KS -->|"JNI"| KT
     ST --> CO
     VA --> CO
     BK --> CO
@@ -60,8 +64,8 @@ flowchart TB
 
     classDef built stroke-width:2px
     classDef planned stroke-dasharray: 5 5
-    class CO,UI,BR,ST,RP built
-    class KT,SW,VA,BK planned
+    class CO,UI,BR,ST,RP,KS,KT built
+    class BP,SW,VA,BK planned
 ```
 
 Solid boxes are built; dashed boxes are planned, labeled with the task that builds them.
@@ -70,9 +74,10 @@ Solid boxes are built; dashed boxes are planned, labeled with the task that buil
 | :- | :- | :- | :- |
 | Screens and view models | `lib/` | Layout, navigation, input, locale formatting, one write at a time | `bridge`, the platform channels |
 | Platform code | `android/`, `ios/` | Hardware-backed keys, the biometric prompt, file pickers, the share sheet | The operating system only |
-| `bridge` | `rust/crates/bridge` | The API Dart calls; turning errors into stable codes | `store`, `vault`, `backup`, `report`, `core` |
+| `bridge` | `rust/crates/bridge` | The API Dart calls; turning errors into stable codes | `store`, `vault`, `backup`, `report`, `keystore`, `core` |
 | `store` | `rust/crates/store` | The SQLCipher database, schema and migrations, queries, and the transaction, category, account, and budget use cases | `core`, approved crates |
-| `vault` | `rust/crates/vault` | The profile, key wrapping, PIN and answer rules, the lockout, and the session | `core`, approved crates, and the Keystore code in `android/` through JNI (ADR-0007) |
+| `vault` | `rust/crates/vault` | The profile, key wrapping, PIN and answer rules, the lockout, and the session | `core`, `keystore`, approved crates |
+| `keystore` | `rust/crates/keystore` | The JNI calls to the Keystore code in `android/`, behind a safe API (ADR-0007, ADR-0022: `jni-sys` in a crate of its own) | The Kotlin `VaultKeystore` through JNI, and `jni-sys` on Android only |
 | `backup` | `rust/crates/backup` | Writing and reading backup files of every format version | `core`, approved crates |
 | `report` | `rust/crates/report` | Monthly totals, search, and CSV text | `core` |
 | `core` | `rust/crates/core` | Money, transactions, balance changes, validation, the seeded defaults | `std` only |
@@ -119,13 +124,14 @@ to the vault.
 | `rust/crates/core` | `denarii-core`; its design is in `docs/specs/core.md` | M0.4–M0.7 |
 | `rust/crates/bridge` | `denarii-bridge`, the API Dart calls, with its generated glue; its design is in `docs/specs/bridge.md` | M1.2 |
 | `rust/crates/store` | `denarii-store`, which opens the SQLCipher database, brings its schema to version 2, seeds the default accounts and categories, adds, edits, and deletes transactions, categories, accounts, and budgets, and reads a month's transactions, a search, and every category and account; its design is in `docs/specs/store.md`, and its fixtures written by v1 are in `tests/fixtures/` | M2.1–M2.7 |
+| `rust/crates/keystore` | `denarii-keystore`, which calls the Kotlin Keystore code through JNI with v1's aliases, and exports the library's `JNI_OnLoad`; its design is in `docs/specs/keystore.md` | M3.2 |
 | `rust/crates/report` | `denarii-report`, which builds the monthly report, its CSV text, and the search filters from rows the caller reads, with the first moment of each day from Dart (ADR-0021: the store runs a report's reads, and Dart passes each day's first moment); its design is in `docs/specs/report.md`, and fixture F8, which v1 wrote, is in `tests/fixtures/` | M2.7 |
 | `rust/crates/{vault,backup}` | The planned crates in the table above | M3.3, M5.1 |
 | `pubspec.yaml`, `lib/`, `test/`, `integration_test/` | The Flutter app and its tests; the bridge's generated Dart bindings are in `lib/platform/rust/` | M1.1; `integration_test/` and `lib/platform/` in M1.2 |
 | `l10n.yaml`, `lib/l10n/` | The seven language packs as ARB files, the localizations `flutter gen-l10n` generates from them, and `resolveAppLocale`, which picks a pack from the phone's language list (ADR-0015: the whole list, matched by script as Android does) | M1.4 |
 | `lib/l10n/money_format.dart`, `lib/l10n/currency_symbols.dart`, `tool/CurrencySymbols.java` | Money and month text written with `intl`, and the currency symbols that the Java tool generates from Unicode CLDR (ADR-0016: CLDR's symbols, the locale `resolveAppLocale` picked, and fixes for Arabic regions) | M1.6 |
 | `hook/build.dart`, `flutter_rust_bridge.yaml` | The native-assets build hook that compiles the bridge in every Flutter build, and the codegen's settings (ADR-0014: the bridge's pinned version, its Cargo features, and this build) | M1.2 |
-| `android/` | Flutter's Android host app and the Kotlin platform code | M1.1, M3.2 |
+| `android/` | Flutter's Android host app and the Kotlin platform code: `VaultKeystore` for the device and storage keys, and the R8 rules that keep it | M1.1, M3.2, M3.6 |
 | `ios/` | Flutter's iOS host app and the Swift platform code | M1.1, M7.1 |
 | `docs/` | These documents, the decision log, the roadmap, and the specs | M0.3 |
 
@@ -136,7 +142,7 @@ it with `git show 6d57526:<path>`. Where v1's code now goes:
 | :- | :- | :- |
 | `shared/.../domain/model`, `util/Money.kt`, `util/Validators.kt`, `ValidateTransactionUseCase.kt` (field rules) | `core` | M0.5–M0.7 |
 | `app/.../data/local/db`, `data/repository`, `domain/usecase` | `store` | M2.2–M2.6 |
-| `app/.../data/local/vault`, `data/local/preferences/SecurityProfileService.kt` | `vault`, plus Kotlin for the Keystore | M3.2–M3.4 |
+| `app/.../data/local/vault`, `data/local/preferences/SecurityProfileService.kt` | `vault`, plus `keystore` and `VaultKeystore.kt` for the Keystore (`KeystoreSecrets.kt` and `KeystoreProfileStore.kt`) | M3.2–M3.4, M3.6 |
 | `app/.../data/backup`, `shared/.../data/backup` | `backup` | M5.1 |
 | `shared/.../domain/report`, `GenerateReportUseCase.kt`, `SearchTransactionUseCase.kt`, `SearchFilterParser.kt` | `report`, with their queries in `store` | M2.7 |
 | `app/.../presentation/ui/**` | `lib/features/**` | M3.5–M4.7 |
@@ -162,7 +168,7 @@ it with `git show 6d57526:<path>`. Where v1's code now goes:
 
 ## Threading
 
-`core` and the domain crates (`store`, `vault`, `backup`, and `report`) expose synchronous functions
+`core` and the domain crates (`store`, `vault`, `backup`, `report`, and `keystore`) expose synchronous functions
 and start no threads. The bridge runs each call off Flutter's UI thread, so a slow call (PBKDF2
 takes hundreds of milliseconds) never freezes the screen: Dart awaits a `Future`, and
 `flutter_rust_bridge`'s generated handler runs the function on a pool of worker threads, one per
@@ -175,6 +181,11 @@ two calls at once, so `Store` keeps the connection behind a `std::sync::Mutex`, 
 holds the lock for the whole of its database work (ADR-0017: SQLCipher and OpenSSL compiled from
 source, and one connection behind a mutex). Calls wait their turn instead of interleaving, and
 `store` still starts no thread. `docs/specs/store.md` describes it.
+
+A Keystore call runs on the bridge worker thread that called it. `keystore` attaches that thread
+to the app's Java runtime for the length of the call and detaches it after, and the Kotlin code
+blocks it while the Keystore works, never Android's main thread. Kotlin creates keys, saves the
+profile, and deletes one caller at a time (ADR-0022, `docs/specs/keystore.md`).
 
 ## Configuration
 

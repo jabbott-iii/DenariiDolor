@@ -958,3 +958,84 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
   - A time-zone crate in Rust, which ADR-0019 turned down.
 - **Revisit when:** a user reports a date in a CSV export that disagrees with the phone's
   calendar, or a report needs dates from more than one month, such as a yearly report.
+
+## ADR-0022 — Rust reaches the Keystore code through `jni-sys`, in a crate of its own
+
+- **Status:** Accepted
+- **Date:** 2026-11-25
+- **Context:** ADR-0007 (accepted in M3.1: Rust calls the Kotlin Keystore code directly through
+  the Java Native Interface, JNI) left M3.2 two choices for the maintainer: adding `jni-sys`
+  0.4.1, which M3.1 approved for its throwaway spike only, and a second exemption in the "Unsafe
+  policy" of `.claude/rules/rust.md`. The spike's JNI module had about 40 `unsafe` blocks in 515
+  lines, in the `bridge` crate. Four constraints shaped the choice:
+  - No crate may depend on `bridge` (`CLAUDE.md`, dependency rule 1), so the vault (M3.3) can't
+    call code that lives there.
+  - `CLAUDE.md` allows no logging crate, and `jni` 0.22.4, the safe wrapper from the same
+    project, depends on `log`, which can't be turned off.
+  - The Java runtime calls a library's `JNI_OnLoad` only when Java code loads it with
+    `System.loadLibrary`, and the app has one Rust library, `libdenarii_bridge.so`.
+  - Android refuses to create a key that needs a biometric for every use unless the device has a
+    secure lock screen and an enrolled biometric, so none of v1's biometric key code can run on
+    the emulators without that setup. And no test may touch v1's real `denarii_vault_` aliases or
+    profile (`.claude/rules/security.md`), while a Dart integration test reaches Rust only through
+    the bridge.
+- **Decision** (the maintainer chose the recommended answer to each of three questions on
+  2026-11-25):
+  - A new crate, `denarii-keystore` in `rust/crates/keystore`, holds the JNI calls, with
+    `jni-sys` 0.4.1 pinned exactly and compiled for Android only. Its `jni` module is the second
+    exemption from the "Unsafe policy", and it exports `JNI_OnLoad`, which the bridge's library
+    carries because the bridge depends on the crate. Its safe API, `Keystore`, is what the vault
+    calls in M3.3, so the layers run vault → keystore → Kotlin, as the layer table in
+    `docs/01-architecture.md` draws them. On any other platform every call returns
+    `KeystoreError::Unavailable`.
+  - The Kotlin side, `VaultKeystore` in `android/app/src/main/kotlin/com/denariidolor/`, offers
+    the device-key HMAC, creating the device key, reading and saving the `profile` entry of a
+    preferences file under the storage key, deleting that file, and deleting the three vault
+    keys, with v1's aliases and parameters (`docs/specs/android-v1-formats.md`, sections 2 and 3).
+    Every Keystore failure crosses to Rust as a `KeystoreException` that carries a code.
+  - The biometric key, its ciphers, `BiometricPrompt`, `androidx.biometric`, and
+    `FlutterFragmentActivity` move to M3.6, which needs a phone with an enrolled fingerprint
+    anyway. M3.2 keeps deleting the biometric alias, because wipe deletes all three keys (CS-17).
+  - One Dart integration test, `integration_test/keystore_test.dart`, checks the whole path on an
+    emulator: Dart → bridge → Rust → JNI → Kotlin → Keystore. It calls `keystore_self_check` in
+    the bridge, which refuses any alias prefix that doesn't start with `denarii_test_`, runs a
+    fixed list of checks under that prefix, and returns one line for each, never key bytes. No
+    Kotlin test library is added.
+- **Consequences:**
+  - Good:
+    - The vault depends on a crate with a safe API, and a fake of it can stand in for the Keystore
+      in the vault's tests on the host.
+    - All the hand-written `unsafe` code sits in one module of one crate, which Clippy lints with
+      two more checks: every `unsafe` block holds one operation and has a `// SAFETY:` comment.
+    - `jni-sys` holds only declarations and constants, so it adds no code of its own to the
+      library, and no logging crate.
+  - Bad:
+    - The `jni` module is 742 lines with 49 `unsafe` blocks, more than the spike's 515 lines and
+      about 40 blocks, because each block holds one operation and every reference is wrapped in a
+      type that releases it.
+    - The `jni` module compiles only for Android, so `cargo test` and the coverage figures on the
+      host don't see it. CI lints it with Clippy for an Android target, and only the integration
+      test runs it.
+    - The app ships `keystore_self_check`, a function that only the test calls.
+    - The test can't reach Kotlin's branches for a damaged entry (Base64 that doesn't decode, or
+      a blob shorter than an IV and a tag), because nothing in the API writes one.
+    - Until M3.6, nothing in the new app can create the biometric key.
+  - Follow-up:
+    - M3.3: the vault calls `Keystore::vault()` and wipes what `device_hmac` and `read_profile`
+      return, with the crate it chooses for wiping memory.
+    - M3.6: the biometric key, its ciphers, and the prompt, in `VaultKeystore` and the
+      `keystore` crate.
+    - M3.2's remaining check: opening a profile that v1 wrote, with v1's storage key, on a phone.
+- **Alternatives considered:**
+  - `jni-sys` in the `bridge` crate, as in the spike. `JNI_OnLoad` would sit in the library the
+    runtime loads, but the vault would need a trait that the bridge implements, and until M3.3
+    nothing but a test function would call the module.
+  - `jni` 0.22.4, with far less `unsafe` code of the project's own, which brings `log`.
+  - The biometric code in M3.2 as well, with `androidx.biometric` 1.1.0 (v1's version) and
+    `FlutterFragmentActivity` added now, and its tests left for the fingerprint phone.
+  - Kotlin instrumented tests in `android/app/src/androidTest/` with v1's JUnit 4.13.2 and
+    `androidx.test.ext:junit` 1.3.0, alone or beside the Dart test. Alone, they leave the Rust
+    side untested on a device until M3.5; beside it, they add test libraries.
+- **Revisit when:** a JNI call fails on an arm64 phone or a vendor's Keystore where it passed on
+  the emulators, or M3.6 needs Kotlin to call back into Rust, which `jni-sys` can declare but
+  this crate doesn't yet do.

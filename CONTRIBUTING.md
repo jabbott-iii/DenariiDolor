@@ -116,8 +116,8 @@ Refs: <the roadmap task, decision records, and CS-NN or BUG-NN IDs>
 
 - **Type:** `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `style`, `build`, `ci`, `chore`, or
   `revert`, as the table in `commits.md` defines them.
-- **Scope:** the area changed: a crate (`core`, `store`, `bridge`, and later `vault`, `backup`, and
-  `report`), an area of the app (`auth`, `session`, `dashboard`, `search`, `transaction`, `budget`,
+- **Scope:** the area changed: a crate (`core`, `store`, `report`, `bridge`, `keystore`, and later
+  `vault` and `backup`), an area of the app (`auth`, `session`, `dashboard`, `search`, `transaction`, `budget`,
   `category`, `account`, `settings`, `legal`, `i18n`, `ui`), a native folder (`android`, `ios`), or
   `deps`, `build`, `ci`, `docs`, or `claude`. Leave it out when a change spans several areas.
 - **Summary:** imperative and lowercase, with no period, 72 characters at most, and the roadmap

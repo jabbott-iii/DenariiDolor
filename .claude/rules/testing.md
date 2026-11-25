@@ -52,13 +52,16 @@ branches".
   targets exist yet. The tests with hostile input follow the **Test layout** in `rust.md`, one set
   for each kind of input its **Untrusted input** lists: money text in
   `rust/crates/core/tests/money.rs`, the same text as it crosses the bridge from Dart in
-  `rust/crates/bridge/tests/money.rs`, and v1's database file in `rust/crates/store/tests/`.
+  `rust/crates/bridge/tests/money.rs`, v1's database file in `rust/crates/store/tests/`, and the
+  Keystore names that reach Kotlin in `rust/crates/keystore/tests/keystore.rs`.
   Backup files get theirs with the `backup` crate (M5.1). The CSV formula guard (CS-20) is
   checked against 2,121 cells that v1 escaped on Android, and every character of the Basic
   Multilingual Plane, in `rust/crates/report/tests/f8.rs`
 - **CI:** `.github/workflows/ci.yml` runs on every push and pull request to `main`, with the jobs
   "Rust checks", "Flutter checks" (which ends by building a debug app bundle), and "Generated code
-  is current", next to the **Security checks**. "Rust checks" and "Flutter checks" each run their
+  is current", next to the **Security checks**. "Rust checks" also runs Clippy on
+  `denarii-keystore` for an Android target, because its JNI module compiles only there
+  (ADR-0022). "Rust checks" and "Flutter checks" each run their
   half of the **Coverage command**. Every job must pass before a merge (`CLAUDE.md`,
   "Commands"); making each one a required check is a repository setting only the maintainer can
   change. The integration tests don't run in CI, because they need an emulator

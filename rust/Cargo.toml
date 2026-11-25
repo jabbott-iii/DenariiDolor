@@ -2,7 +2,7 @@
 
 [workspace]
 resolver = "3"
-members = ["crates/bridge", "crates/core", "crates/report", "crates/store"]
+members = ["crates/bridge", "crates/core", "crates/keystore", "crates/report", "crates/store"]
 
 [workspace.package]
 version = "0.1.0"
@@ -13,6 +13,7 @@ publish = false
 # Each third-party crate is approved in the register in docs/02-dependency-policy.md.
 [workspace.dependencies]
 denarii-core = { path = "crates/core" }
+denarii-keystore = { path = "crates/keystore" }
 # Pinned exactly, with its Dart package, its codegen, and flutter_rust_bridge_hooks (ADR-0014). The
 # default features would bring logging crates. `thread-pool` runs each call off Flutter's UI thread,
 # and the generated code doesn't compile without `dart-opaque` and `rust-async`.
@@ -20,9 +21,13 @@ flutter_rust_bridge = { version = "=2.13.0", default-features = false, features 
 # Pinned exactly, because an upgrade changes the SQLCipher build that opens users' files (ADR-0017). The one feature
 # compiles SQLCipher and OpenSSL's libcrypto from source on every target; the default features would add a statement
 # cache and a WebAssembly backend that nothing uses.
+# Pinned exactly, because the keystore crate's `unsafe` code relies on these declarations of `jni.h` (ADR-0022); an
+# upgrade is reviewed with the dependency-upgrade skill. Used on Android only.
+jni-sys = "=0.4.1"
 rusqlite = { version = "=0.43.0", default-features = false, features = ["bundled-sqlcipher-vendored-openssl"] }
 
-# crates/bridge/Cargo.toml repeats these lints, with `unsafe_code` at `deny` (ADR-0014). Change both.
+# crates/bridge/Cargo.toml and crates/keystore/Cargo.toml repeat these lints, with `unsafe_code` at `deny` (ADR-0014,
+# ADR-0022). Change all three.
 [workspace.lints.rust]
 unsafe_code = "forbid"
 missing_docs = "warn"

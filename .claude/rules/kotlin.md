@@ -28,11 +28,11 @@ yet. Work out that value from the repository itself, and tell the user which val
 so they can fill them in.
 
 - **Modules:** one Gradle module, `:app` in `android/app/`, Flutter's Android host app. Its
-  Kotlin is in `android/app/src/main/kotlin/com/denariidolor/`: `MainActivity` today, and the
-  Keystore and `BiometricPrompt` code from M3.2. Flutter writes
-  `android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java`, which is never
-  edited by hand. The rules and the data live in Rust (ADR-0004, Proposed: Rust owns the rules
-  and the data)
+  Kotlin is in `android/app/src/main/kotlin/com/denariidolor/`: `MainActivity`, `VaultKeystore`
+  (M3.2), which Rust calls for the Keystore, and the `BiometricPrompt` code from M3.6. Flutter
+  writes `android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java`, which is
+  never edited by hand. The rules and the data live in Rust (ADR-0004, Proposed: Rust owns the
+  rules and the data)
 - **Platform:** Android only, from API 26 (the **Platforms** in `flutter.md`). Kotlin holds only
   what needs the Android runtime: the Android Keystore and `BiometricPrompt` (ADR-0007,
   accepted in M3.1: hardware-key operations stay in platform code, and Rust calls them directly
@@ -55,11 +55,11 @@ so they can fill them in.
 - **Dependency policy:** ask first, and record each decision in `docs/02-dependency-policy.md`. The
   app's Gradle build has no library of its own yet; the Flutter Gradle plugin adds the
   embedding's. No mocking library: tests use hand-written fakes, as in `flutter.md`
-- **Errors:** not settled yet: M3.2 settles it for the calls that come from Rust (ADR-0007). v1
-  caught every Keystore failure where it was thrown and rethrew it as `SecureStorageException`
-  (`KeystoreSecrets.kt` at 6d57526), and users saw only a localized message for its code. Until
-  then, catch Keystore exceptions in Kotlin and hand the caller a value or a code, and show no
-  exception text to users
+- **Errors:** for the calls that come from Rust, catch the Keystore's and storage's exceptions
+  where they are thrown, as v1's `keystoreCall` did (`KeystoreSecrets.kt` at 6d57526), and throw
+  a `KeystoreException` carrying a `KeystoreFailure` code, which Rust reads through JNI and maps
+  to `KeystoreError` (M3.2, ADR-0022, `docs/specs/keystore.md`). Anything else Kotlin throws
+  reaches Rust as `Unexpected`. Show no exception text to users
 - **Concurrency:** none: no coroutines, and no thread of Kotlin's own. Each call runs on its
   caller's thread, never Android's main thread, because Keystore operations block. Code that
   creates a Keystore key is `@Synchronized`, as v1's `SecurityProfileService` was, so two
@@ -80,11 +80,12 @@ so they can fill them in.
 - **Published modules:** none
 - **Design docs:** `docs/01-architecture.md` and ADR-0007 in `docs/decisions.md`; what v1 left
   on phones is in `docs/specs/android-v1-formats.md`
-- **Test layout:** no Kotlin tests yet. M3.2 adds instrumented tests in
-  `android/app/src/androidTest/` with test-only Keystore aliases, and choosing their test
-  libraries is the maintainer's decision. Flows that go through Dart run in `integration_test/`
-  on an emulator (the **Test layout** in `flutter.md`). A test never touches the app's real
-  `denarii_vault_` aliases, profile, or database (`security.md`)
+- **Test layout:** no Kotlin tests and no Kotlin test library: the maintainer chose on
+  2026-11-25 to test the Keystore code through Dart instead (ADR-0022).
+  `integration_test/keystore_test.dart` runs Dart → bridge → Rust → JNI → Kotlin on an
+  emulator, with test-only aliases that start with `denarii_test_` (the **Test layout** in
+  `flutter.md`). A test never touches the app's real `denarii_vault_` aliases, profile, or database
+  (`security.md`)
 
 ## Decisions that are the user's
 

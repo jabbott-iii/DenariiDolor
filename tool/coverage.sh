@@ -19,7 +19,7 @@ set -euo pipefail
 # The floors, in whole percent. Each is the coverage measured on 2026-11-24, rounded down. Raise one whenever coverage
 # passes it; never lower one, or exclude code to reach one (.claude/rules/testing.md).
 RUST_LINE_FLOOR=97
-RUST_REGION_FLOOR=94
+RUST_REGION_FLOOR=95
 DART_LINE_FLOOR=91
 DART_BRANCH_FLOOR=88
 

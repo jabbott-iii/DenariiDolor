@@ -30,15 +30,18 @@ so they can fill them in.
   the same as v1 (`docs/specs/android-v1-formats.md`, section 1)
 - **Architecture:** no Android UI: Flutter draws every screen inside one `FlutterActivity`,
   `MainActivity`, and the screens follow `flutter.md`. Kotlin holds only Keystore keys and the
-  biometric prompt, which Rust calls through JNI (ADR-0007, accepted in M3.1). No dependency injection library. This rule's Compose
-  sections apply only if a task adds an Android screen, which needs a decision record
+  biometric prompt, which Rust calls through JNI (ADR-0007, accepted in M3.1; ADR-0022: the
+  `keystore` crate calls `VaultKeystore`, and R8 keeps it by name in `proguard-rules.pro`). No
+  dependency injection library. This rule's Compose sections apply only if a task adds an Android
+  screen, which needs a decision record
 - **Navigation:** none in Kotlin: Flutter's `Navigator` (ADR-0011)
 - **Design system:** none in Kotlin: Flutter's Material 3 theme (the **Design system** in
   `flutter.md`). `LaunchTheme` and `NormalTheme` in `res/values*/styles.xml` come from Flutter's
   template and show only while Flutter starts
 - **Platform boundary:** Android APIs are called only from Kotlin in
-  `android/app/src/main/kotlin/com/denariidolor/`: `MainActivity`, and from M3.2 the Keystore
-  and biometric code. Dart reaches them only through the **Platform channels** in `flutter.md`
+  `android/app/src/main/kotlin/com/denariidolor/`: `MainActivity`, `VaultKeystore` (M3.2), and
+  from M3.6 the biometric code. Dart reaches them only through the **Platform channels** in
+  `flutter.md`
 - **Languages:** the app's seven languages live in the ARB files (the **Localization** in
   `flutter.md`), not in Android resources. `res/values/strings.xml` holds only the launcher
   label, `app_name`, which isn't translated
@@ -62,12 +65,12 @@ so they can fill them in.
   risks (no `FLAG_SECURE`, CS-A4), and `docs/specs/android-v1-formats.md` for the keys and
   formats on phones today
 - **Check commands:** the **Check commands** in `flutter.md`, then `flutter build appbundle --debug`
-  from the repository root, which CI runs (M1.3). No Gradle lint or test task runs yet; M3.2
-  adds instrumented tests, run on an emulator
-- **Test layout:** no Android tests yet. M3.2 adds instrumented tests in
-  `android/app/src/androidTest/` with test-only Keystore aliases, run on the `Denarii_API_26` and
-  `Denarii_API_36` emulators; Flutter's `integration_test/` runs on the same two. Biometric flows
-  need a manual check on a phone with an enrolled fingerprint
+  from the repository root, which CI runs (M1.3). No Gradle lint or test task runs: the Keystore
+  code is tested through `integration_test/keystore_test.dart` on an emulator (ADR-0022)
+- **Test layout:** no Android tests of their own (ADR-0022). Flutter's `integration_test/` runs
+  on the `Denarii_API_26` and `Denarii_API_36` emulators, and `keystore_test.dart` there checks
+  the Keystore code with test-only aliases. Biometric flows need a manual check on a phone with an
+  enrolled fingerprint
 - **Release:** none yet. M6.1 builds a signed `flutter build appbundle` in CD, as the **Release**
   in `flutter.md` says; until then the release build type signs with the debug keys
   (`android/app/build.gradle.kts`)

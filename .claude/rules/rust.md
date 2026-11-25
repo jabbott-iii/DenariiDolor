@@ -32,23 +32,31 @@ so they can fill them in.
   generated glue in `src/frb_generated.rs`. `crates/store` (`denarii-store`) opens the SQLCipher
   database with `rusqlite` (ADR-0006, ADR-0017), and runs its writes and reads. `crates/report`
   (`denarii-report`) builds the monthly report, its CSV text, and the search filters from rows the
-  store reads (ADR-0021). The planned crates (`vault` and `backup`) and the tasks that build them
-  are in `docs/01-architecture.md`
+  store reads (ADR-0021). `crates/keystore` (`denarii-keystore`) calls the Kotlin Keystore code in
+  the app's Java runtime through JNI, and exports the library's `JNI_OnLoad` (ADR-0022). The
+  planned crates (`vault` and `backup`) and the tasks that build them are in
+  `docs/01-architecture.md`
 - **Toolchain:** edition 2024, Rust 1.100.0 pinned in `rust/rust-toolchain.toml`, and
   `rust-version = "1.100"` in `[workspace.package]`
 - **Check commands:** run from `rust/`: `cargo fmt --all --check`, `cargo clippy --workspace
   --all-targets --locked -- -D warnings`, `cargo test --workspace --locked`, and `RUSTDOCFLAGS="-D
   warnings" cargo doc --workspace --no-deps --locked`
 - **Lint configuration:** `[workspace.lints]` in `rust/Cargo.toml`, plus `rust/clippy.toml`.
-  `crates/bridge/Cargo.toml` repeats those lints in a `[lints]` table of its own, with
-  `unsafe_code` at `deny`, because Cargo can't relax one inherited lint (ADR-0014); change both
-  tables together
+  `crates/bridge/Cargo.toml` and `crates/keystore/Cargo.toml` repeat those lints in `[lints]`
+  tables of their own, with `unsafe_code` at `deny`, because Cargo can't relax one inherited lint
+  (ADR-0014, ADR-0022); change the three tables together. The keystore's also denies
+  `unsafe_op_in_unsafe_fn` and warns on Clippy's `multiple_unsafe_ops_per_block` and
+  `undocumented_unsafe_blocks`
 - **Dependency policy:** ask first, and record each decision in `docs/02-dependency-policy.md`.
   `denarii-core` uses `std` only
-- **Unsafe policy:** forbidden in every crate (`unsafe_code = "forbid"`). The one exception is
-  the bridge's generated foreign function interface code, `crates/bridge/src/frb_generated.rs`,
-  which `src/lib.rs` exempts with `#[expect(…, reason = "…")]` on its `mod` line (ADR-0005,
-  ADR-0014). Hand-written code in `bridge` has `unsafe_code` at `deny`, and no `unsafe`
+- **Unsafe policy:** forbidden in every crate (`unsafe_code = "forbid"`). There are two
+  exceptions, each exempted with `#[expect(…, reason = "…")]` on its `mod` line in its crate's
+  `src/lib.rs`: the bridge's generated foreign function interface code,
+  `crates/bridge/src/frb_generated.rs` (ADR-0005, ADR-0014), and the keystore's JNI calls,
+  `crates/keystore/src/jni.rs`, compiled for Android only (ADR-0022, approved by the maintainer
+  on 2026-11-25). Every other module in `bridge` and `keystore` has `unsafe_code` at `deny`, and
+  no `unsafe`. The JNI module isn't compiled on the host, so lint it with `cargo clippy -p
+  denarii-keystore --target aarch64-linux-android --all-targets --locked -- -D warnings`
 - **Untrusted input:** money text a user types (`core::money`, limited by `Cents::MAX_PARSED`);
   later, backup files (`backup`, M5.1), the v1 database and profile read during the upgrade
   (`store` and `vault`, M2 and M3), and every value that crosses the bridge from Dart. Format
@@ -62,12 +70,14 @@ so they can fill them in.
   thread itself. `flutter_rust_bridge`'s generated handler runs each bridge call on a pool of
   worker threads, so two calls can run at once, and its `rust-async` feature starts an idle
   `tokio` runtime (ADR-0014, `docs/specs/bridge.md`). `denarii-store`'s `Store` keeps its one
-  connection behind a `std::sync::Mutex`, so those calls take turns on the database (ADR-0017)
+  connection behind a `std::sync::Mutex`, so those calls take turns on the database (ADR-0017).
+  `denarii-keystore` attaches the calling thread to the Java runtime for each call, and detaches
+  it after (`docs/specs/keystore.md`)
 - **Public API:** none published. The `bridge` crate's API is what Dart calls, so a change to it
   regenerates the Dart bindings in the same change
 - **Published crates:** none
 - **Design docs:** `docs/specs/<crate>.md`: `docs/specs/core.md`, `docs/specs/bridge.md`,
-  `docs/specs/store.md`, and `docs/specs/report.md`
+  `docs/specs/store.md`, `docs/specs/report.md`, and `docs/specs/keystore.md`
 - **Test layout:** unit tests in a `#[cfg(test)] mod tests` beside the code; integration tests
   that use only the public API in each crate's `tests/`; compatibility fixtures, such as a v1
   database and one backup per `FORMAT_VERSION`, in `tests/fixtures/` of the crate that reads them

@@ -52,6 +52,12 @@ jobs:
       - name: Clippy
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
 
+      # The keystore crate's JNI module, the only hand-written unsafe code, compiles only for Android (ADR-0022), so the
+      # step above never sees it. The toolchain step installed the target; checking it needs no NDK, because neither
+      # the crate nor jni-sys has C code.
+      - name: Clippy for Android
+        run: cargo clippy -p denarii-keystore --target aarch64-linux-android --all-targets --locked -- -D warnings
+
       - name: Tests
         run: cargo test --workspace --locked
 

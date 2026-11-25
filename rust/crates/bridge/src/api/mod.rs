@@ -8,4 +8,5 @@
 //! public item here, so a change to this module regenerates the bindings in the same change
 //! (ADR-0012).
 
+pub mod keystore_check;
 pub mod money;

@@ -15,6 +15,8 @@ crate-type = ["cdylib", "lib"]
 
 [dependencies]
 denarii-core.workspace = true
+# Its `JNI_OnLoad` is exported from this library, which `MainActivity` loads (ADR-0022).
+denarii-keystore.workspace = true
 flutter_rust_bridge.workspace = true
 
 # The workspace's lints from rust/Cargo.toml, repeated because Cargo can't relax one inherited lint.

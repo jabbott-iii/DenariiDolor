@@ -25,7 +25,8 @@ so they can fill them in. Until **Git access** is filled in, treat it as "read-o
   nothing else. The tag-driven release pipeline (`cd.yml`) left with the Kotlin app under
   ADR-0003 (replace the Kotlin app now). Until M6.1 brings a new one, a `v*` tag builds and
   publishes nothing
-- **Scopes:** the Rust crates (`core`, and later `store`, `vault`, `backup`, `report`, `bridge`);
+- **Scopes:** the Rust crates (`core`, `store`, `report`, `bridge`, `keystore`, and later `vault` and
+  `backup`);
   the app's areas (`auth`, `session`, `dashboard`, `search`, `transaction`, `budget`, `category`,
   `account`, `settings`, `legal`, `i18n`, `ui`); the native folders (`android`, `ios`); and
   `deps`, `build`, `ci`, `docs`, and `claude` for `.claude/` and `CLAUDE.md`

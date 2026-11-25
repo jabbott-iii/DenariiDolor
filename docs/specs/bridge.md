@@ -6,8 +6,8 @@ can match on, so no business rule lives in Dart and no Rust error text reaches a
 (Dart calls Rust through `flutter_rust_bridge`) and ADR-0014 (the bridge's version, features, and
 native-assets build) shaped it, and ADR-0012 (generated code is committed) governs its generated
 files. It sits on top of ADR-0004 (Proposed: Rust owns the rules and the data). Built in M1.2 as
-described here, with one function so far; the API reference is
-`cargo doc -p denarii-bridge --open`, run from `rust/`.
+described here, with the money function, and a Keystore check for the integration test from M3.2
+(ADR-0022); the API reference is `cargo doc -p denarii-bridge --open`, run from `rust/`.
 
 ## Why this design
 
@@ -70,10 +70,14 @@ malformed message would be a bug in the generator, and step 2 turns any such pan
   `crate-type` is `cdylib` for that library and `lib` for its own tests. In M1.2's release APK the
   library is 661 KB for `arm64-v8a`, 444 KB for `armeabi-v7a`, and 695 KB for `x86_64`. The two
   64-bit builds have 16 KB-aligned segments, which Google Play requires for 64-bit ABIs; the 32-bit
-  build keeps 4 KB pages.
-- **Loading:** `main` awaits `RustLib.init()` before `runApp`. On Android it opens
-  `libdenarii_bridge.so` by name and checks that the library's content hash matches the bindings,
-  so a stale library fails at startup rather than on a call.
+  build keeps 4 KB pages. With M3.2's JNI code (`denarii-keystore`), the release library is
+  692,120 bytes for `arm64-v8a`, 464,364 for `armeabi-v7a`, and 730,800 for `x86_64`, and each
+  exports `JNI_OnLoad`.
+- **Loading:** `MainActivity` loads `libdenarii_bridge.so` with `System.loadLibrary` first, so the
+  Java runtime runs the `JNI_OnLoad` that `denarii-keystore` exports (`docs/specs/keystore.md`).
+  `main` then awaits `RustLib.init()` before `runApp`. On Android it opens the same library by
+  name and checks that the library's content hash matches the bindings, so a stale library fails
+  at startup rather than on a call.
 
 ## Regenerating the bindings
 
@@ -118,6 +122,25 @@ pub fn parse_cents(text: String, symbols: NumberSymbols) -> Result<i64, AmountEr
 - The generated `NumberSymbols` compares `currencyMarks` by identity, so two equal lists built
   apart aren't `==`; tests compare its fields.
 
+Built in M3.2 as described here, for `integration_test/keystore_test.dart` only (ADR-0022).
+
+```rust
+// rust/crates/bridge/src/api/keystore_check.rs
+pub enum KeystoreCheckError { NotATestPrefix, InvalidPrefix }
+pub fn keystore_self_check(alias_prefix: String) -> Result<Vec<String>, KeystoreCheckError>;
+```
+
+- `keystore_self_check` refuses any prefix that doesn't start with `denarii_test_` with
+  `NotATestPrefix`, before it calls anything, so it can't reach a user's keys or profile. A
+  prefix that the keystore rejects, such as one with a capital letter or one longer than
+  51 bytes, is `InvalidPrefix`.
+- It uses two sets of test keys, the prefix and the prefix followed by `other_`, with the files
+  `<prefix>profile` and `<prefix>other_profile`, and deletes both sets at its start and its end.
+  It runs 35 checks of `denarii_keystore::Keystore` in a fixed order and returns one
+  `name: outcome` line for each, such as `read_with_other_storage_key: Unreadable`. A line names
+  an outcome, an error variant, or whether two results were the same, never key or profile bytes.
+- Off Android each check is `Unavailable`. The app itself never calls it.
+
 Rules for each function added to `api`:
 
 - Take owned types (`String`, `Vec<T>`), because the generated code passes each argument by value.
@@ -142,6 +165,7 @@ the list is updated. The hand-written modules keep every lint.
 ## Invariants
 
 1. No crate depends on `denarii-bridge`, and Dart reaches Rust only through its `api` module.
+   The Java runtime reaches it only through `JNI_OnLoad` (ADR-0022).
 2. No function in `api` panics on any value Dart can send.
 3. `parse_cents` with a one-character separator gives `core::parse_cents`'s cents, and its error
    variant of the same name, for every text.
@@ -150,6 +174,7 @@ the list is updated. The hand-written modules keep every lint.
 5. The shipped library contains no logging crate: `log`, `android_logger`, and `oslog` are absent
    from `cargo tree -p denarii-bridge -e normal --target aarch64-linux-android`.
 6. The generated files are exactly what codegen 2.13.0 writes from `api`.
+7. `keystore_self_check` runs nothing unless the alias prefix starts with `denarii_test_`.
 
 ## Tests
 
@@ -157,6 +182,7 @@ the list is updated. The hand-written modules keep every lint.
 | :- | :- |
 | 2, 3, 4 | `tests/money.rs`, which covers each error variant, the locale symbols, separators of zero, two, and supplementary-plane characters, and 100,000-character text; the doc tests in `src/lib.rs` and `src/api/money.rs` |
 | 1, 5 | Review of `rust/Cargo.toml` and `cargo tree`; no automated check yet |
+| 7 | `tests/keystore_check.rs`, which also lists the 35 checks and their outcome off Android; `integration_test/keystore_test.dart` checks their outcomes on the emulators |
 | 6 | The `generated` job in `.github/workflows/ci.yml`, which installs codegen 2.13.0, runs it again, and fails if any file differs from the committed one (ADR-0012). The same job fails when the crate's version in `rust/Cargo.lock`, the two Dart packages' versions in `pubspec.lock`, and the codegen's version differ |
 | Dart reaches the packaged library on a device | `integration_test/bridge_test.dart`: `flutter test integration_test` on an emulator, which calls the real library, checks the placeholder screen, and reads back the amounts `formatMoney` writes (M1.6) |
 | The view model and screen | `test/features/auth/state/sign_in_placeholder_view_model_test.dart` and `test/features/auth/ui/sign_in_placeholder_route_test.dart`, with a fake `MoneyParser` |

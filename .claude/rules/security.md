@@ -7,6 +7,7 @@ paths:
   - "rust/crates/vault/**"
   - "rust/crates/backup/**"
   - "rust/crates/report/**"
+  - "rust/crates/keystore/**"
   - "rust/crates/bridge/**"
   - "lib/features/auth/**"
   - "lib/features/backup/**"

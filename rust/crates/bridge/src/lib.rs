@@ -11,14 +11,18 @@
 //! `lib/platform/rust/` and this crate's glue code in `src/frb_generated.rs`. Flutter's
 //! native-assets build hook (`hook/build.dart`) then compiles the crate into
 //! `libdenarii_bridge.so` for each Android ABI (ADR-0005 and ADR-0014: Dart calls Rust through
-//! `flutter_rust_bridge`, built by that hook). The crate depends on [`denarii_core`], and no crate
-//! depends on it. Its design is in `docs/specs/bridge.md`.
+//! `flutter_rust_bridge`, built by that hook). The crate depends on [`denarii_core`] and
+//! [`denarii_keystore`], whose `JNI_OnLoad` the library carries for the Java runtime to call
+//! (ADR-0022), and no crate depends on it. Its design is in `docs/specs/bridge.md`.
 //!
 //! # The parts
 //!
 //! - Money: [`api::money::parse_cents`] reads an amount the user typed, with the locale's
 //!   [`api::money::NumberSymbols`], and names a rejected amount with an
 //!   [`api::money::AmountError`].
+//! - A check of the Keystore path for the integration test only:
+//!   [`api::keystore_check::keystore_self_check`], which refuses any alias prefix that isn't a
+//!   test's with an [`api::keystore_check::KeystoreCheckError`]. The app never calls it.
 //!
 //! # Example
 //!

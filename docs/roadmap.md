@@ -781,7 +781,12 @@ and fingerprint, and sees the same balances.
     - ADR-0007 is `Accepted` or superseded.
   - Verify: the maintainer's decision (no command)
 - [ ] **M3.2 — android: Keystore and biometric code**
-  - ⏳ needs an Android phone with v1 installed
+  - ⏳ needs an Android phone with v1 installed: install v1's debug build from `6d57526`, set up a
+    profile and add data, then install this build over it, signed with the same debug key, and
+    check that `Keystore::vault().read_profile()` opens v1's `vault_profile` with
+    `denarii_vault_storage`, and that `device_hmac` with v1's PIN opens the PIN slot. Nothing in
+    the app calls the vault's names before M3.3 and M3.5, and the test refuses them, so this check
+    needs that code, or a way to reach it that the maintainer approves.
   - Note (from M3.1): ADR-0007 is accepted, so Rust calls this code through JNI. Two choices are
     the maintainer's first: adding `jni-sys` 0.4.1 to the app (its register entry is open; M3.1
     approved it for the spike only), and a second exemption in the "Unsafe policy" of `rust.md`
@@ -795,18 +800,49 @@ and fingerprint, and sees the same balances.
     with zeros. Code that creates a key is `@Synchronized`. R8 removes a class that only native
     code calls, so it needs a narrow keep rule. The spike didn't call Rust from Kotlin, or
     exercise the biometric key.
-  - Note (from M3.1), not checked by the spike: `androidx.biometric`'s `BiometricPrompt` takes a
-    `FragmentActivity` or a `Fragment`, and `FlutterActivity` is neither, so `MainActivity` would
-    have to extend `FlutterFragmentActivity` to show it.
-  - Note (from M1.4): once the APK carries translated Android resources (`androidx.biometric` has
-    some), Android moves the first phone language that they or English match to the front before
-    Flutter sees the list (ADR-0015). Check with `aapt2 dump configurations` that each of the six
-    pack languages has Android resources too; otherwise a phone set to Hindi then English opens in
-    English.
-  - Note (from M3.8): v1's release bundle also asks for `USE_BIOMETRIC` and `USE_FINGERPRINT`,
-    which `PRIVACY.md` lists and the release manifest doesn't have yet. Once this task adds the
-    biometric code, check that the merged release manifest asks for both, and add them to the
-    permissions the `ci-gates` skill expects.
+  - Note: 2026-11-25: the maintainer chose the recommended answer to three questions, which
+    ADR-0022 records:
+    - `jni-sys` 0.4.1 goes in a new crate, `denarii-keystore` (`rust/crates/keystore`), whose
+      `jni` module is the second exemption from the "Unsafe policy", behind a safe API that the
+      vault calls in M3.3. The alternatives were `jni-sys` in the `bridge` crate, as in the spike,
+      and `jni` 0.22.4, which depends on `log`.
+    - The biometric work moves to M3.6, the user's choice: the biometric key and its ciphers,
+      `BiometricPrompt`, `androidx.biometric`, `FlutterFragmentActivity`, and the three notes
+      about them, which now sit on M3.6. This task keeps the storage and device keys, the
+      profile entry, and deleting all three vault keys. The alternatives were all of it here, or
+      the key and its ciphers here without the prompt.
+    - One Dart integration test checks Dart → bridge → Rust → JNI → Kotlin → Keystore, through a
+      bridge function that refuses any alias prefix not starting with `denarii_test_` and returns
+      only one line per check. No Kotlin test library is added. The alternatives were Kotlin
+      instrumented tests with v1's JUnit 4.13.2 and `androidx.test.ext:junit` 1.3.0, beside the
+      Dart test or instead of it.
+  - Note: 2026-11-25: built. `denarii-keystore` (`rust/crates/keystore`) has the safe
+    `Keystore`, with `Keystore::vault()` for v1's names and `Keystore::new`, which refuses
+    `denarii_vault_` and v1's four preferences files, and its `jni` module calls `VaultKeystore`
+    in `android/app/src/main/kotlin/com/denariidolor/VaultKeystore.kt`: 742 lines with 49 `unsafe`
+    blocks, each holding one operation, with a `// SAFETY:` comment. `MainActivity` loads the
+    library in its class initializer and hands `VaultKeystore` the application context in
+    `onCreate`. `android/app/proguard-rules.pro` keeps the two classes, the six methods, and the
+    `code` field; `dexdump` of the release APK lists each under its own name, and every ABI's
+    `libdenarii_bridge.so` exports `JNI_OnLoad`. The release library is 692,120 bytes for
+    `arm64-v8a`, 464,364 for `armeabi-v7a`, and 730,800 for `x86_64`. The release APK still asks
+    for only `HIDE_OVERLAY_WINDOWS` and AndroidX's `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`, and
+    starts on `Denarii_API_26`.
+  - Note: 2026-11-25: `integration_test/keystore_test.dart` passed its 3 tests on
+    `Denarii_API_26` and `Denarii_API_36`, both run with `-read-only`, with the runtime's JNI
+    checks on (`Late-enabling -Xcheck:jni` in logcat) and no JNI error: 35 checks once, the same
+    35 on eight worker threads at once, and the refusal of `denarii_vault_`. All 7 integration
+    tests passed on API 26. The test can't write a damaged entry, so Kotlin's branches for Base64
+    that doesn't decode and a blob shorter than an IV and a tag run on no device yet.
+  - Note: 2026-11-25: three differences from v1, all on paths where something already failed:
+    `deleteKeys` tries all three keys even when one fails (v1 stopped at the first);
+    `readProfile` reports a blob shorter than 28 bytes as `UNREADABLE` (v1's `GCMParameterSpec`
+    threw an `IllegalArgumentException` that nothing caught); and `writeProfile` fails if the
+    Keystore chooses an IV that isn't 12 bytes, which would make the blob unreadable.
+  - Note: 2026-11-25: `ci.yml`'s "Rust checks" job runs Clippy on `denarii-keystore` for
+    `aarch64-linux-android`, because its `jni` module compiles only for Android; it passed here on
+    all three Android targets, and first runs on GitHub with M1.3's pull request. Rust region
+    coverage reached 95.18%, so `tool/coverage.sh` raises `RUST_REGION_FLOOR` from 94 to 95.
   - Depends: M3.1
   - Do:
     - Use the aliases and parameters in section 2 of the format spec, never re-creating a key while
@@ -815,6 +851,14 @@ and fingerprint, and sees the same balances.
     - On a phone with v1 data, the new build opens the profile with v1's storage key.
   - Verify: an instrumented test with test-only aliases; a manual check on the phone
 - [ ] **M3.3 — vault: profile, key wrapping, and lockout**
+  - Note (from M3.2): the vault reaches the Keystore through `denarii_keystore::Keystore::vault()`
+    (`docs/specs/keystore.md`): `ensure_device_key` before a new profile, `device_hmac` for each
+    slot's key-encryption key, and `read_profile`, `write_profile`, `delete_profile`, and
+    `delete_keys` for the sealed JSON. Every call returns `Unavailable` on the host, so the
+    golden tests need a fake device key behind a trait of the vault's, as v1's tests used a fake
+    `KeystoreDeviceKeyMixer`. Wipe what `device_hmac` and `read_profile` return with the crate
+    this task chooses; the keystore crate's own `wipe` is a stand-in. `KeystoreError` has seven
+    variants where v1 had one `SecureStorageException`, so decide which the user tells apart.
   - Depends: M3.2
   - Decide first: the cryptography crates (`docs/02-dependency-policy.md`).
   - Do:
@@ -872,6 +916,24 @@ and fingerprint, and sees the same balances.
   - Verify: `flutter test`; `flutter test integration_test` on an emulator
 - [ ] **M3.6 — auth: biometric sign-in through a `CryptoObject`**
   - ⏳ needs an Android phone with an enrolled fingerprint
+  - Note (from M3.2): 2026-11-25: the biometric half of M3.2 moved here, the user's choice
+    (ADR-0022): the `denarii_vault_biometric` key with v1's parameters (section 2 of the format
+    spec), its encrypt and decrypt ciphers, `BiometricPrompt`, `androidx.biometric` (v1 shipped
+    1.1.0), and `FlutterFragmentActivity`. M3.2's `VaultKeystore.deleteKeys` already deletes the
+    biometric alias. Android refuses to create the key unless the device has a secure lock screen
+    and an enrolled biometric. The three notes below moved here from M3.2 with it.
+  - Note (from M3.1), not checked by the spike: `androidx.biometric`'s `BiometricPrompt` takes a
+    `FragmentActivity` or a `Fragment`, and `FlutterActivity` is neither, so `MainActivity` would
+    have to extend `FlutterFragmentActivity` to show it.
+  - Note (from M1.4): once the APK carries translated Android resources (`androidx.biometric` has
+    some), Android moves the first phone language that they or English match to the front before
+    Flutter sees the list (ADR-0015). Check with `aapt2 dump configurations` that each of the six
+    pack languages has Android resources too; otherwise a phone set to Hindi then English opens in
+    English.
+  - Note (from M3.8): v1's release bundle also asks for `USE_BIOMETRIC` and `USE_FINGERPRINT`,
+    which `PRIVACY.md` lists and the release manifest doesn't have yet. Once this task adds the
+    biometric code, check that the merged release manifest asks for both, and add them to the
+    permissions the `ci-gates` skill expects.
   - Depends: M3.5
   - Do:
     - Keep CS-07: enrolling a new fingerprint invalidates the wrap, and the PIN still works.

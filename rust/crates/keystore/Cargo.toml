@@ -1,0 +1,45 @@
+[package]
+name = "denarii-keystore"
+description = "Calls from Rust to the Android Keystore code of Denarii Dolor, through the Java Native Interface."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+# Only Android has the Java runtime that holds the Keystore keys; on any other platform every call returns
+# `KeystoreError::Unavailable`, and nothing third-party is compiled.
+[target.'cfg(target_os = "android")'.dependencies]
+jni-sys.workspace = true
+
+# The workspace's lints from rust/Cargo.toml, repeated because Cargo can't relax one inherited lint. The differences:
+# `unsafe_code` is `deny`, not `forbid`, so that `src/lib.rs` can exempt the `jni` module, the only hand-written unsafe
+# code allowed (ADR-0022); and three more lints hold that module to the "Unsafe policy" of .claude/rules/rust.md. Keep
+# the rest the same as the workspace's.
+[lints.rust]
+unsafe_code = "deny"
+unsafe_op_in_unsafe_fn = "deny"
+missing_docs = "warn"
+unreachable_pub = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+arithmetic_side_effects = "warn"
+as_conversions = "warn"
+indexing_slicing = "warn"
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+print_stdout = "warn"
+print_stderr = "warn"
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
+# One unsafe operation in each `unsafe` block, each with a `// SAFETY:` comment that says why it is sound.
+multiple_unsafe_ops_per_block = "warn"
+undocumented_unsafe_blocks = "warn"
+
+[lints.rustdoc]
+broken_intra_doc_links = "warn"
+private_intra_doc_links = "warn"

@@ -26,12 +26,14 @@ in that folder installs it.
 cd rust
 cargo fmt --all --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo clippy -p denarii-keystore --target aarch64-linux-android --all-targets --locked -- -D warnings
 cargo test --workspace --locked
 ../tool/coverage.sh rust
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
 ```
 
-`../tool/coverage.sh rust` runs the tests again, instrumented, in `target/coverage/`, and fails below the floors at the
+The second Clippy run lints the keystore crate's JNI module, which compiles only for Android (ADR-0022); it needs the
+target from `rust/rust-toolchain.toml` and no NDK. `../tool/coverage.sh rust` runs the tests again, instrumented, in `target/coverage/`, and fails below the floors at the
 top of the script (ADR-0020). It needs the `llvm-tools` component: `rustup component add llvm-tools` in `rust/` installs
 it.
 
@@ -128,8 +130,9 @@ flutter test integration_test -d <the emulator's ID from flutter devices>
 "$(sed -n 's/^sdk.dir=//p' local.properties)/platform-tools/adb" emu kill
 ```
 
-`integration_test/bridge_test.dart` calls the real Rust library that the build hook packaged. If no emulator can run,
-say so in the report's row.
+`integration_test/bridge_test.dart` calls the real Rust library that the build hook packaged, and
+`integration_test/keystore_test.dart` reaches the Android Keystore through it, with test-only aliases. If no emulator
+can run, say so in the report's row.
 
 ## 6. Report
 
@@ -139,6 +142,7 @@ End with a table, and don't call a check passed unless you ran it in this sessio
 |---|---|---|
 | `cargo fmt` | ✅ / ❌ / not run | |
 | `cargo clippy` | | |
+| `cargo clippy` for Android | | `denarii-keystore` on `aarch64-linux-android` |
 | `cargo test` | | X passed, Y failed |
 | Rust coverage | | lines and regions, each with its floor |
 | `cargo doc` | | |
