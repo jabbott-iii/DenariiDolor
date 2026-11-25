@@ -639,12 +639,15 @@ reads real data.
    spaces become U+0020 under NFKC first, but U+2028, U+2029, U+1680, and U+000B need checking. Fixture F7 settles it.
    M2.7 found that `\s` in the regular expression of v1's CSV formula guard matched Unicode's `White_Space` on API 26 and
    API 36, U+000B and U+0085 included (`rust/crates/report/tests/fixtures/README.md`), which suggests that answer
-   normalization's `\s` did the same. `denarii-vault` collapses `White_Space` on that evidence (M3.3,
-   `docs/specs/vault.md`); F7 doesn't exist yet.
+   normalization's `\s` did the same. Settled by F7 (M3.3): `\s` matched `White_Space` on both levels. F7 also showed
+   that `trim()` removed U+180E, which Android's `Character.isWhitespace` still counts, and that `lowercase()` made `Σ`
+   final by Android's own simpler rule (`rust/crates/vault/tests/fixtures/README.md`).
 3. **Unicode versions.** NFKC and lowercase mapping came from each phone's ICU version (API 26 is the oldest). A Rust
    normalization library may implement a newer Unicode version. Answers that contain characters whose mapping changed
    between versions could stop matching. Fixture F7 covers the oldest and newest API levels. `denarii-vault` uses
-   Unicode 18.0 for NFKC and Unicode 17.0 for lowercase (ADR-0023).
+   Unicode 18.0 for NFKC and Unicode 17.0 for lowercase (ADR-0023). Settled by F7 (M3.3): every character that API 26
+   (ICU 58, Unicode 9.0) or API 36 (ICU 76, Unicode 16.0) assigns normalizes there as in the port. Characters a level
+   doesn't assign came out unchanged, and the port changes 443 of them for API 26 and 117 for API 36.
 4. **Unpaired surrogates.** Kotlin strings, SQLite text written by Android, and modified UTF-8 can all hold a lone UTF-16
    surrogate. A Rust `String` can't. The port needs a stated policy (keep the raw bytes, or replace with U+FFFD and report
    it), with a fixture.
@@ -715,6 +718,6 @@ appears in this document.
 | F4 | A version 1 database with `REAL` amounts, including values that round, such as 0.005 and 19.995 | Room's migration test helper, as `app/src/androidTest/java/com/denariidolor/data/MigrationTest.kt:27` does. Made in M2.3, with a copy that v1 migrated: `rust/crates/store/tests/fixtures/v1-f4-version-1.db` and `v1-f4-migrated-by-v1.db` | Invariant 9 |
 | F5 | An in-place upgrade on a device: install the `6d57526` build, set up a profile, add data, turn on biometric sign-in, fail the PIN a few times, then install the new build over it with the same signing key and sign in with the PIN, the answer, and a fingerprint | A manual or UiAutomator run on API 26 and API 36 emulators | Invariants 2–4, 6, 7 |
 | F6 | A `ui_prefs.xml` with every key set, and one with none | Copy from the F5 device | Invariant 18 |
-| F7 | Answer normalization vectors computed on the device: NBSP, U+3000, U+2028, U+2029, U+1680, U+000B, tabs, Turkish dotted and dotless I, a word-final Greek sigma, fullwidth letters, and combining accents | An instrumented test at `6d57526` on API 26 and API 36 that records `normalizeAnswer` output | Invariant 5 and open questions 2–3 |
+| F7 | Answer normalization vectors computed on the device: NBSP, U+3000, U+2028, U+2029, U+1680, U+000B, tabs, Turkish dotted and dotless I, a word-final Greek sigma, fullwidth letters, and combining accents | An instrumented test at `6d57526` on API 26 and API 36 that records `normalizeAnswer` output. Made in M3.3, for every code point and 2,080 strings: `rust/crates/vault/tests/fixtures/` | Invariant 5 and open questions 2–3 |
 | F8 | A CSV export with a transfer, a formula-like description, and a right-to-left locale | Extend `shared/src/commonTest/kotlin/com/denariidolor/domain/report/ReportFormattingTest.kt:56` to write golden output. Made in M2.7 through v1's `GenerateReportUseCase` and `ReportCsvFormatter`, with the formatter's cells also escaped on API 26 and API 36: `rust/crates/report/tests/fixtures/` | Invariant 15 |
 | F9 | A v1.0.x install with `secure_prefs` and `db_key_prefs` | A build of commit `9f967c6^` on an emulator, then the F5 steps | Section 4, if the v1.0.x path is kept |

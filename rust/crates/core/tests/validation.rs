@@ -96,8 +96,10 @@ fn lengths_count_utf16_code_units_as_v1_did() {
 
 #[test]
 fn whitespace_is_kotlins() {
-    // U+001F counts as whitespace in Kotlin but not in Rust; U+0085 the other way around.
+    // U+001F counts as whitespace in Kotlin but not in Rust; U+0085 the other way around. Android
+    // also counts U+180E, which v1 trimmed on API 26 and API 36 (fixture F7).
     assert!(!is_valid_description("\u{1F}\u{1F}"));
+    assert!(!is_valid_description("\u{180E}"));
     assert!(is_valid_description("\u{85}"));
 }
 
@@ -392,8 +394,8 @@ fn blank_text_is_kotlins() {
 #[test]
 fn whitespace_characters_are_kotlins() {
     for c in [
-        ' ', '\t', '\n', '\u{B}', '\u{C}', '\r', '\u{1C}', '\u{1F}', '\u{A0}', '\u{2007}',
-        '\u{3000}',
+        ' ', '\t', '\n', '\u{B}', '\u{C}', '\r', '\u{1C}', '\u{1F}', '\u{A0}', '\u{180E}',
+        '\u{2007}', '\u{3000}',
     ] {
         assert!(is_whitespace(c), "{c:?}");
     }

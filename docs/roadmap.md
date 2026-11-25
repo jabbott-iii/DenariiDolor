@@ -892,6 +892,20 @@ and fingerprint, and sees the same balances.
     phone that the sign-in budget in `docs/00-overview.md` is measured on, because this session
     had none. Fixture F7, which checks answer normalization on API 26 and API 36, doesn't exist
     yet, and no task makes it.
+  - Note: 2026-11-25: after the task was ticked and committed, the maintainer asked for fixture
+    F7, which the note above says doesn't exist. It records v1's `normalizeAnswer` on
+    `Denarii_API_26` (ICU 58, Unicode 9.0) and `Denarii_API_36` (ICU 76, Unicode 16.0), run
+    read-only, for every code point and 2,080 chosen and random strings
+    (`rust/crates/vault/tests/fixtures/README.md`). It found two differences, both now fixed:
+    Android's `trim()` removed U+180E, so `core::is_whitespace` counts it for every trim in the
+    port; and Android's `lowercase()` made `Σ` final by a simpler rule than Unicode's, which
+    `normalize_answer` now follows. Every character each level knows, and every recorded string,
+    now normalizes as v1 normalized it. The port changes 443 characters that API 26 didn't know
+    and 117 that API 36 didn't, which v1 left unchanged there. The vault now has 95 tests; in two
+    runs with nothing to rebuild, they took 9.5 s of the 15.3 s that `cargo test --workspace`
+    took, and Rust coverage is 97.54% of lines and 95.60% of regions. Two runs of
+    `tool/coverage.sh dart` on unchanged Dart code gave 4 and 6 of the 16 lines of
+    `lib/platform/money_parser.dart`, so the first fell below both Dart floors.
   - Depends: M3.2
   - Decide first: the cryptography crates (`docs/02-dependency-policy.md`).
   - Do:

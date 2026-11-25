@@ -1043,7 +1043,9 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
 
 ## ADR-0023 — The vault's cryptography comes from the RustCrypto crates, with `unicode-normalization` and `serde_json`
 
-- **Status:** Accepted
+- **Status:** Accepted. Fixture F7, made after this record (M3.3), showed that v1 lowercased answers
+  with Android's own rule for the Greek final sigma, which differs from `str::to_lowercase`'s, and
+  `normalize_answer` follows it (`docs/specs/vault.md`, "The rules")
 - **Date:** 2026-11-25
 - **Context:** M3.3 ports v1's `SecurityProfileService` to the `vault` crate. It needs
   PBKDF2-HMAC-SHA256, AES-256-GCM, secure random bytes, and a way to wipe secrets from memory,

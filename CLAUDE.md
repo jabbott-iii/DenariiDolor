@@ -39,8 +39,9 @@ v1's own code wrote, byte for byte, and the Android manifest's controls (M3.8): 
 any app data, v1's permission to hide overlays, and one exported activity, and the `denarii-keystore` crate (M3.2,
 ADR-0022), which calls the Kotlin `VaultKeystore` through JNI for v1's device-key HMAC and its sealed profile, with an
 integration test that reaches it from Dart under test-only aliases, and the `denarii-vault` crate (M3.3, ADR-0023),
-which sets up, opens, and recovers v1's security profile with v1's PIN and answer rules and its shared lockout, and
-passes v1's known answers and golden profile unchanged.
+which sets up, opens, and recovers v1's security profile with v1's PIN and answer rules and its shared lockout,
+passes v1's known answers and golden profile unchanged, and normalizes answers as v1 did on API 26 and API 36 (fixture
+F7).
 Planned: sign-in (M3), the screens (M4), backups (M5), the Android release (M6) and iOS (M7). Nothing from the rewrite has shipped. `docs/roadmap.md` has the
 details.
 

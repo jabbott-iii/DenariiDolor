@@ -40,9 +40,11 @@ What it trades away:
 - **Two crypto libraries.** SQLCipher uses OpenSSL's `libcrypto` (ADR-0017), and the vault uses
   RustCrypto (ADR-0023), so each needs its own upgrades and reviews.
 - **A newer Unicode.** Answers normalize with Unicode 18.0's NFKC and Unicode 17.0's lowercase,
-  where each phone used its own Android release's ICU. Unicode never changes how a character it
-  has assigned normalizes, but a case mapping, or a character an older phone didn't know, could
-  differ. Fixture F7 checks this on devices; it doesn't exist yet.
+  where each phone used its own Android release's ICU. Fixture F7 shows that every character a
+  phone's Unicode data assigns normalizes as it did there, on API 26 (Unicode 9.0) and API 36
+  (Unicode 16.0). Characters a phone didn't know came out unchanged there, and the port changes
+  443 of them on API 26 and 117 on API 36, so an answer v1 stored with one of them doesn't open;
+  only a keyboard that knew more of Unicode than the phone could have typed one.
 - **Best-effort wiping.** Every secret this crate holds is wiped when dropped, but copies that the
   compiler makes when a value moves, and buffers that grow while text is built, aren't.
 
@@ -145,11 +147,20 @@ The plaintext is v1's JSON object, with the keys in section 3 of the format spec
 ## The rules
 
 - **PIN.** 6 to 12 ASCII digits, v1's `^[0-9]{6,12}$`, for setup, recovery, and sign-in (CS-10).
-- **Answer.** `normalize_answer` applies v1's four steps: NFKC; Kotlin's `trim()`, with
-  `denarii_core::is_whitespace`; each run of Unicode `White_Space` becomes one space, which is
-  what Android's `\s` matched in M2.7's tests; and Rust's `str::to_lowercase`. Kotlin's trim and
-  `White_Space` differ on U+001C to U+001F and U+0085, so those keep v1's quirks: the first four
-  are trimmed but never collapsed, and U+0085 is collapsed but never trimmed.
+- **Answer.** `normalize_answer` applies v1's four steps as they ran on Android, which fixture F7
+  recorded on API 26 and API 36:
+  1. NFKC.
+  2. Kotlin's `trim()`, with `denarii_core::is_whitespace`, which on Android also counts U+180E.
+  3. Each run of Unicode `White_Space` becomes one space, which is what Android's `\s` matched.
+  4. Android's `String.toLowerCase(Locale.ROOT)`. A string with an `İ` or a character outside the
+     Basic Multilingual Plane takes Unicode's full mapping, as Rust's `str::to_lowercase` does.
+     Any other string is lowercased one character at a time, with `Σ` final only when the
+     character just before it is in the general categories Lu, Ll, or Lt and the one just after
+     isn't, so `Α'Σ` becomes `α'σ`, where Unicode's rule, which skips the apostrophe, gives `α'ς`.
+
+  Kotlin's trim and `White_Space` differ on U+001C to U+001F, U+180E, and U+0085, so those keep
+  v1's quirks: the first five are trimmed but never collapsed, and U+0085 is collapsed but never
+  trimmed.
 - **Setup.** `validate_setup` checks v1's nine rules in v1's order, and returns the first
   `SetupProblem` broken. The answer's minimum counts code points, and its maximum and the
   question's count UTF-16 code units, as v1 did. Each `SetupProblem::code` is v1's
@@ -212,7 +223,8 @@ are ciphertext, and the salts and the question aren't secret.
 8. A PIN of the wrong form is refused at sign-in without being checked or counted.
 9. No call panics on any input or stored value, and every call after a panic inside one returns
    `Poisoned`.
-10. Answers normalize as "The rules" describes.
+10. Answers normalize as "The rules" describes: each character that API 26 or API 36 knows, and
+    each string F7 recorded, as v1 normalized it there.
 11. Keys the vault doesn't know survive every edit except setup.
 
 ## Tests
@@ -224,12 +236,12 @@ are ciphertext, and the salts and the question aren't secret.
 | 4, 5, 7, 11 | `tests/profile/damaged.rs`, which seals a slot with `pbkdf2`, `hmac`, and `aes-gcm` directly, and covers incomplete and damaged profiles and failing stores |
 | 6, 8 | `tests/profile/service.rs`, v1's `SecurityProfileServiceTest`, and the unit tests in `src/lockout.rs` |
 | 9 | `tests/poisoned.rs`, and the extreme stored values in `src/lockout.rs` and `src/stored.rs` |
-| 10 | `tests/rules.rs`, with v1's normalization cases and the whitespace and case-mapping edges |
+| 10 | `tests/f7.rs`, against fixture F7: every code point on API 26 and API 36, and 2,080 chosen and random strings (`tests/fixtures/README.md`); and `tests/rules.rs` and the unit tests in `src/rules.rs`, with v1's normalization cases and the whitespace and final-sigma edges |
 
 The Base64 codec has unit tests in `src/base64.rs`, with RFC 4648's vectors and the inputs Java's
 decoder refuses.
 
-Not covered: fixture F7, the answers that v1 normalized on API 26 and API 36, which doesn't exist
-yet; and the `Keystore` implementations of the two traits on a device, which M3.5 checks when
-sign-in opens a profile v1 wrote. Off Android, the unit test in `src/storage.rs` shows that both
+Not covered: API levels between 26 and 36, whose ICU versions F7 didn't record; and the
+`Keystore` implementations of the two traits on a device, which M3.5 checks when sign-in opens a
+profile v1 wrote. Off Android, the unit test in `src/storage.rs` shows that both
 reach the keystore crate, which returns `Unavailable`.

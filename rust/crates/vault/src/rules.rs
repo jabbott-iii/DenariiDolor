@@ -40,11 +40,13 @@ pub fn is_valid_pin(pin: &str) -> bool {
 ///
 /// 1. Unicode Normalization Form KC (NFKC), which folds fullwidth letters, ligatures, and
 ///    compatibility forms into the characters people mean.
-/// 2. Kotlin's `trim()`, with Kotlin's whitespace ([`denarii_core::is_whitespace`]).
+/// 2. Kotlin's `trim()`, with Kotlin's whitespace on Android ([`denarii_core::is_whitespace`]).
 /// 3. Each run of whitespace, by Unicode's `White_Space` property, becomes one space. v1 ran the
-///    regular expression `\s+` on Android, whose `\s` is `White_Space` (M2.7 found that on API 26
-///    and API 36).
-/// 4. Lowercase, by Unicode's rules in every locale.
+///    regular expression `\s+` on Android, whose `\s` is `White_Space`.
+/// 4. Lowercase, as Android's `String.toLowerCase(Locale.ROOT)` does: Unicode's mapping in every
+///    locale, but with a simpler rule for the Greek final sigma (`ς`) in most strings.
+///
+/// Fixture F7 checks every step against what v1 made of answers on API 26 and API 36.
 ///
 /// The result is secret, so it is wiped when dropped, as is each step's text. The wipe is best
 /// effort: a string that grows while it is built leaves its old buffer behind.
@@ -76,7 +78,106 @@ pub fn normalize_answer(answer: &str) -> Zeroizing<String> {
             in_run = false;
         }
     }
-    Zeroizing::new(spaced.to_lowercase())
+    lowercase_as_android(&spaced)
+}
+
+/// `text` lowercased as Android's `String.toLowerCase(Locale.ROOT)` lowercases it, which v1's
+/// `lowercase()` called (libcore's `CaseMapper`).
+///
+/// A string with an `İ` (U+0130) or a character outside the Basic Multilingual Plane goes to ICU,
+/// whose mapping is Unicode's, as [`str::to_lowercase`]'s is. Android lowercases any other string
+/// one character at a time, and makes a `Σ` final only when the character just before it is a
+/// cased letter and the one just after isn't. Unicode's rule skips apostrophes, soft hyphens,
+/// combining marks, and other case-ignorable characters between them, so `Α'Σ` ends in `ς` there
+/// and in `σ` on Android.
+fn lowercase_as_android(text: &str) -> Zeroizing<String> {
+    if text
+        .chars()
+        .any(|c| c == '\u{130}' || u32::from(c) > 0xFFFF)
+    {
+        return Zeroizing::new(text.to_lowercase());
+    }
+    // Lowercasing a BMP character other than U+0130 at most turns two UTF-8 bytes into three.
+    let mut lower = Zeroizing::new(String::with_capacity(
+        text.len().saturating_add(text.len() / 2),
+    ));
+    let mut previous = None;
+    let mut rest = text.chars().peekable();
+    while let Some(c) = rest.next() {
+        if c == 'Σ' {
+            let is_final = previous.is_some_and(is_cased_on_android)
+                && !rest.peek().copied().is_some_and(is_cased_on_android);
+            lower.push(if is_final { 'ς' } else { 'σ' });
+        } else {
+            lower.extend(c.to_lowercase());
+        }
+        previous = Some(c);
+    }
+    lower
+}
+
+/// Whether Android's `Character.isLowerCase`, `isUpperCase`, or `isTitleCase` is true for `c`,
+/// for a character of text that NFKC has normalized. Android asks ICU for the general categories
+/// Ll, Lu, and Lt, where Rust's [`char::is_lowercase`] and [`char::is_uppercase`] also count
+/// Unicode's `Other_Lowercase` and `Other_Uppercase`. NFKC leaves six such characters in the Basic
+/// Multilingual Plane, and 27 Greek titlecase letters, which this lists.
+fn is_cased_on_android(c: char) -> bool {
+    match c {
+        '\u{2C0}' | '\u{2C1}' | '\u{345}' | '\u{1D2F}' | '\u{1D3B}' | '\u{1D4E}' => false,
+        '\u{1F88}'..='\u{1F8F}'
+        | '\u{1F98}'..='\u{1F9F}'
+        | '\u{1FA8}'..='\u{1FAF}'
+        | '\u{1FBC}'
+        | '\u{1FCC}'
+        | '\u{1FFC}' => true,
+        _ => c.is_lowercase() || c.is_uppercase(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{is_cased_on_android, lowercase_as_android};
+
+    #[test]
+    fn sigma_is_final_only_after_a_cased_letter_and_before_none() {
+        for (text, lower) in [
+            ("Σ", "σ"),
+            ("ΑΣ", "ας"),
+            ("ΑΣ.", "ας."),
+            ("ΑΣΑ", "ασα"),
+            ("ΑΣ1", "ας1"),
+            ("1Σ", "1σ"),
+            ("Α'Σ", "α'σ"),
+            ("Α\u{AD}Σ", "α\u{AD}σ"),
+            ("ΑΣ\u{345}", "ας\u{345}"),
+            ("\u{345}Σ", "\u{345}σ"),
+            ("\u{1F88}Σ", "\u{1F80}ς"),
+            ("ΑΣ\u{1F88}", "ασ\u{1F80}"),
+        ] {
+            assert_eq!(*lowercase_as_android(text), lower, "{text}");
+        }
+    }
+
+    /// With an `İ` or a character outside the BMP, the whole string takes Unicode's rule.
+    #[test]
+    fn an_i_with_a_dot_or_a_supplementary_character_takes_unicodes_rule() {
+        assert_eq!(*lowercase_as_android("Α'Σ \u{10400}"), "α'ς \u{10428}");
+        assert_eq!(*lowercase_as_android("Α'Σ \u{130}"), "α'ς i\u{307}");
+        assert_eq!(*lowercase_as_android("İSTANBUL"), "i\u{307}stanbul");
+    }
+
+    #[test]
+    fn cased_means_androids_categories() {
+        for c in ['a', 'A', 'σ', 'ß', '\u{1F88}', '\u{1FFC}'] {
+            assert!(is_cased_on_android(c), "{c:?}");
+        }
+        for c in [
+            '1', '\'', '\u{AD}', '\u{2C0}', '\u{2C1}', '\u{345}', '\u{1D2F}', '\u{1D3B}',
+            '\u{1D4E}',
+        ] {
+            assert!(!is_cased_on_android(c), "{c:?}");
+        }
+    }
 }
 
 /// Checks a new profile's PIN, question, and answer against v1's setup rules, in v1's order.

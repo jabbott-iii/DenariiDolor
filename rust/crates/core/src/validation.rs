@@ -225,11 +225,13 @@ pub fn is_blank(text: &str) -> bool {
     text::is_blank(text)
 }
 
-/// Whether `c` is whitespace as Kotlin's `Char.isWhitespace()` decides, which is what v1's
-/// `trim()`, `trimStart()`, and `isBlank()` looked for.
+/// Whether `c` is whitespace as Kotlin's `Char.isWhitespace()` decides on Android, which is what
+/// v1's `trim()`, `trimStart()`, and `isBlank()` looked for.
 ///
 /// That is Rust's [`char::is_whitespace`] without U+0085 (next line), plus U+001C to U+001F (the
-/// information separators). `text.trim_matches(is_whitespace)` trims as Kotlin's `trim()` did.
+/// information separators) and U+180E (the Mongolian vowel separator), which Android's
+/// `Character.isWhitespace` still counts. `text.trim_matches(is_whitespace)` trims as Kotlin's
+/// `trim()` did.
 #[must_use]
 pub fn is_whitespace(c: char) -> bool {
     text::is_whitespace(c)

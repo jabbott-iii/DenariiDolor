@@ -117,9 +117,11 @@ pub fn is_whitespace(c: char) -> bool;
   `InvalidName` when it isn't 1 to `MAX_NAME_UNITS` (50) UTF-16 code units long; the storage
   layer stores the trimmed name, as v1 did. `is_blank` is Kotlin's `isBlank()`, which decides
   whether a category's icon was given (`docs/specs/store.md`, "Categories, accounts, and
-  budgets"). `is_whitespace` is Kotlin's `Char.isWhitespace()`, which `trim()`, `trimStart()`,
-  and `isBlank()` used; `denarii-report` trims with it as v1's search screen and CSV formatter
-  trimmed (M2.7).
+  budgets"). `is_whitespace` is Kotlin's `Char.isWhitespace()` as it ran on Android, which
+  `trim()`, `trimStart()`, and `isBlank()` used; `denarii-report` trims with it as v1's search
+  screen and CSV formatter trimmed (M2.7). Android's `Character.isWhitespace` also counts U+180E,
+  which desktop Java dropped with Unicode 6.3; fixture F7 showed v1 trimming it on API 26 and
+  API 36, so `is_whitespace` counts it too.
 - `DomainError` has v1's 23 variants, and `DomainError::code` returns v1's names, such as
   `BUDGET_EXCEEDED`, which name the localized messages. v1 passed a value with some of them,
   which the message shows, and the variants carry the same value: `DescriptionTooLong` and

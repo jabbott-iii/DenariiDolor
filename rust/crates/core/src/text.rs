@@ -9,9 +9,10 @@
 //!
 //! Three things differ from Rust's defaults:
 //!
-//! - **Whitespace.** Kotlin's `trim()` and `isBlank()` treat the characters Rust's
+//! - **Whitespace.** Kotlin's `trim()` and `isBlank()` on Android treat the characters Rust's
 //!   [`char::is_whitespace`] does as whitespace, except U+0085 (next line), plus U+001C to U+001F
-//!   (the information separators). [`is_whitespace`] is Kotlin's set.
+//!   (the information separators) and U+180E (the Mongolian vowel separator). [`is_whitespace`]
+//!   is that set.
 //! - **Length.** Kotlin's `String.length` counts UTF-16 code units, so an emoji outside the Basic
 //!   Multilingual Plane counts as two. [`utf16_len`] counts the same way.
 //! - **Digits and currency signs.** Kotlin looked at one UTF-16 code unit at a time, so it
@@ -22,10 +23,12 @@ mod unicode_tables;
 
 use unicode_tables::{CURRENCY_SYMBOLS, DECIMAL_ZEROS};
 
-/// Whether Kotlin's `Char.isWhitespace()` is true for `c`.
+/// Whether Kotlin's `Char.isWhitespace()` is true for `c` on Android.
 pub(crate) fn is_whitespace(c: char) -> bool {
-    // Kotlin/JVM's rule is Java's `Character.isWhitespace(c) || Character.isSpaceChar(c)`.
-    matches!(c, '\u{1C}'..='\u{1F}') || (c.is_whitespace() && c != '\u{85}')
+    // Kotlin/JVM's rule is Java's `Character.isWhitespace(c) || Character.isSpaceChar(c)`. Android's
+    // `Character.isWhitespace` still counts U+180E, which Unicode 6.3 stopped calling a space; v1
+    // trimmed it on API 26 and API 36 (fixture F7, in rust/crates/vault/tests/fixtures).
+    matches!(c, '\u{1C}'..='\u{1F}' | '\u{180E}') || (c.is_whitespace() && c != '\u{85}')
 }
 
 /// `text` without leading and trailing whitespace, as Kotlin's `trim()` removes it.
@@ -72,6 +75,7 @@ mod tests {
         assert!(is_whitespace('\u{A0}'));
         assert!(is_whitespace('\u{202F}'));
         assert!(is_whitespace('\u{1C}'));
+        assert!(is_whitespace('\u{180E}'));
         assert!(!is_whitespace('\u{85}'));
         assert!(!is_whitespace('\u{200B}'));
     }

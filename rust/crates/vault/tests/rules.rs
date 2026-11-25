@@ -194,13 +194,15 @@ fn answers_are_compared_in_compatibility_form() {
     }
 }
 
-/// Kotlin's `trim()` and Android's `\s` disagree about four characters, and normalization keeps
-/// v1's quirks: U+001C to U+001F are trimmed but not collapsed, and U+0085 is collapsed but not
-/// trimmed. NFKC turns most other spaces into U+0020 first.
+/// Kotlin's `trim()` on Android and Android's `\s` disagree about six characters, and
+/// normalization keeps v1's quirks: U+001C to U+001F and U+180E are trimmed but not collapsed, and
+/// U+0085 is collapsed but not trimmed. NFKC turns most other spaces into U+0020 first.
 #[test]
 fn whitespace_follows_kotlin_to_trim_and_white_space_to_collapse() {
     assert_eq!(*normalize_answer("\u{1F}rex\u{1C}"), "rex");
     assert_eq!(*normalize_answer("rex\u{1E}dog"), "rex\u{1E}dog");
+    assert_eq!(*normalize_answer("\u{180E}rex\u{180E}"), "rex");
+    assert_eq!(*normalize_answer("rex\u{180E}dog"), "rex\u{180E}dog");
     assert_eq!(*normalize_answer("\u{85}rex\u{85}"), " rex ");
     assert_eq!(*normalize_answer("rex\u{85}\u{2028}\t\u{B}dog"), "rex dog");
     assert_eq!(
@@ -210,10 +212,10 @@ fn whitespace_follows_kotlin_to_trim_and_white_space_to_collapse() {
     assert_eq!(*normalize_answer("rex\u{200B}dog"), "rex\u{200B}dog");
 }
 
-/// Rust's lowercase is Unicode's full mapping in every locale, with the Greek final sigma.
-/// Fixture F7 checks these against phones (`docs/specs/android-v1-formats.md`, open question 3).
+/// Lowercase is Android's: Unicode's mapping in every locale, with a final sigma after a cased
+/// letter. Fixture F7 (`tests/f7.rs`) checks every case against phones.
 #[test]
-fn lowercase_is_unicodes_full_mapping() {
+fn lowercase_is_androids() {
     assert_eq!(*normalize_answer("İSTANBUL"), "i\u{307}stanbul");
     assert_eq!(*normalize_answer("ISPARTA"), "isparta");
     assert_eq!(
