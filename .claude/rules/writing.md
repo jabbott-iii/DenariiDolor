@@ -17,9 +17,9 @@ each value by its bold name. If a value still reads `[FILL IN: …]`, the rule i
 yet. Work out that value from the repository itself, and tell the user which values are missing
 so they can fill them in.
 
-- **Where text lives:** `docs/`, `README.md`, `CONTRIBUTING.md`, `PRIVACY.md`, `CLAUDE.md`,
-  `.claude/`, doc comments and error messages in `rust/`, and, from M1, comments in `lib/` and the
-  ARB files in `lib/l10n/`
+- **Where text lives:** `docs/`, `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `PRIVACY.md`,
+  `CLAUDE.md`, `.claude/`, the issue forms and pull request template in `.github/`, doc comments
+  and error messages in `rust/`, and, from M1, comments in `lib/` and the ARB files in `lib/l10n/`
 - **Project name:** Denarii Dolor
 - **Names to spell exactly:** Flutter, Dart, SQLCipher, SQLite, Google Play, Play Console, Android
   Keystore, Keychain, Secure Enclave, Pigeon, `flutter_rust_bridge`, Material 3, TalkBack,

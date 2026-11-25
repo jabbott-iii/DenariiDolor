@@ -1,0 +1,27 @@
+name: "Feature request"
+description: "Suggest a change or a new feature for Denarii Dolor."
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: "Check the [roadmap](https://github.com/jabbott-iii/DenariiDolor/blob/main/docs/roadmap.md)
+        first: it lists what's planned. The app stays offline, with no sync, analytics, crash
+        reporting, or ads, so a feature that needs a network connection is out of scope."
+  - type: textarea
+    id: problem
+    attributes:
+      label: "The problem"
+      description: "What you're trying to do, and what stops you today."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "What you'd like"
+      description: "How the app could solve it. Name the screen it would change, if you know."
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "What you've tried instead"

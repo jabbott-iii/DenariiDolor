@@ -1,0 +1,48 @@
+name: "Bug report"
+description: "Report something in Denarii Dolor that doesn't work as it should."
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "To report a security vulnerability, don't use this form: follow the
+        [security policy](https://github.com/jabbott-iii/DenariiDolor/security/policy) instead.
+        Issues are public, so leave out your PIN, your security answer, backup passphrases, and
+        your own amounts, accounts, and categories. Made-up values work as well."
+  - type: input
+    id: version
+    attributes:
+      label: "App version"
+      description: "The version from the app's page in Google Play, or the commit on `main` you built."
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: "Where you run it"
+      options:
+        - "Android, from Google Play"
+        - "Android, built from main"
+        - "iOS, built from main"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: "Phone and system version"
+      description: "For example, Pixel 8 with Android 16."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Steps to reproduce"
+      description: "Number each step, starting from the screen you begin on."
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: "What you expected, and what happened instead"
+      description: "Quote any error message exactly as the app showed it. Screenshots help, once you have hidden your own figures."
+    validations:
+      required: true
