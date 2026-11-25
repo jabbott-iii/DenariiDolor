@@ -288,8 +288,8 @@ fn hmac_bytes(mut bytes: Vec<u8>) -> Result<[u8; 32], KeystoreError> {
 }
 
 /// Overwrites `bytes` with zeros. `black_box` keeps the compiler from removing the writes as
-/// stores to memory that is about to be freed. M3.3 chooses the crate the vault wipes secrets with
-/// (`docs/02-dependency-policy.md`), which may replace this.
+/// stores to memory that is about to be freed. The vault wipes what it receives with `zeroize`
+/// (ADR-0023); this crate keeps its own wipe.
 fn wipe(bytes: &mut [u8]) {
     bytes.fill(0);
     std::hint::black_box(bytes);

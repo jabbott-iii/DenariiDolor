@@ -52,8 +52,10 @@ branches".
   targets exist yet. The tests with hostile input follow the **Test layout** in `rust.md`, one set
   for each kind of input its **Untrusted input** lists: money text in
   `rust/crates/core/tests/money.rs`, the same text as it crosses the bridge from Dart in
-  `rust/crates/bridge/tests/money.rs`, v1's database file in `rust/crates/store/tests/`, and the
-  Keystore names that reach Kotlin in `rust/crates/keystore/tests/keystore.rs`.
+  `rust/crates/bridge/tests/money.rs`, v1's database file in `rust/crates/store/tests/`, the
+  Keystore names that reach Kotlin in `rust/crates/keystore/tests/keystore.rs`, and the stored
+  security profile, damaged, incomplete, or left mid-lockout, in
+  `rust/crates/vault/tests/profile/damaged.rs`.
   Backup files get theirs with the `backup` crate (M5.1). The CSV formula guard (CS-20) is
   checked against 2,121 cells that v1 escaped on Android, and every character of the Basic
   Multilingual Plane, in `rust/crates/report/tests/f8.rs`

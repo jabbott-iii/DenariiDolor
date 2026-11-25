@@ -4,4 +4,4 @@ allow-expect-in-tests = true
 allow-indexing-slicing-in-tests = true
 allow-panic-in-tests = true
 # Product names that doc comments write as prose, not code (.claude/rules/writing.md). ".." keeps Clippy's own list.
-doc-valid-idents = ["SQLCipher", ".."]
+doc-valid-idents = ["SQLCipher", "RustCrypto", ".."]

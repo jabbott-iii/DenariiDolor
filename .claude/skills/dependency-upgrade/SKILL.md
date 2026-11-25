@@ -35,6 +35,7 @@ Today's pins:
 | Gradle 9.5.0 | `android/gradle/wrapper/gradle-wrapper.properties` | The same check |
 | Java 17 | `compileOptions` and `kotlin.compilerOptions` in `android/app/build.gradle.kts` | The same check |
 | Each GitHub Action | its full commit SHA in `.github/workflows/`, with a `# vX.Y.Z` comment | CS-08 |
+| The vault's crates: `aes-gcm` 0.11.1, `pbkdf2` 0.13.0, `hmac` 0.13.0, `sha2` 0.11.1, `zeroize` 1.9.2, `getrandom` 0.4.3, `unicode-normalization` 0.1.26, and `serde_json` 1.0.154 | `=` versions in `[workspace.dependencies]` of `rust/Cargo.toml` | ADR-0023: an upgrade could change the bytes that open users' profiles, or how an answer normalizes. v1's known answers and golden profile in `rust/crates/vault` must pass unchanged |
 
 Change these together, and nothing else in the same commit:
 

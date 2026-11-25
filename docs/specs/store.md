@@ -517,9 +517,8 @@ with zeros once SQLCipher has read it. `rusqlite` hands that text to SQLite with
 
 The wiping is best effort, as v1's `fill(0)` was: the writes go through `std::hint::black_box` so
 the compiler keeps them, but copies made when a key moves, the caller's own array, and SQLite's
-parse buffers aren't wiped. M3.3 chooses the crates for wiping secrets
-(`docs/02-dependency-policy.md`). SQLCipher wipes its own copy of the key when the connection
-closes.
+parse buffers aren't wiped. The vault wipes its own copies with `zeroize` (ADR-0023), and this
+crate keeps its own wipe. SQLCipher wipes its own copy of the key when the connection closes.
 
 ## Errors
 

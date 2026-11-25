@@ -83,7 +83,8 @@ so they can fill them in.
   callers can't both create it
 - **Time:** Kotlin reads no wall clock. The lockout and the session timeout run on
   `SystemClock.elapsedRealtime()`, the lockout also on `Settings.Global.BOOT_COUNT` (CS-01,
-  CS-13); M3.3 and M3.7 decide which layer reads them
+  CS-13). The vault takes both from its caller (M3.3, `docs/specs/vault.md`); M3.5 and M3.7
+  decide which layer reads them
 - **Logging:** none. Shipped code has no `Log`, no `println`, and no logging library (`CLAUDE.md`,
   "Security posture")
 - **Languages:** Kotlin shows no text except the `BiometricPrompt` dialog (M3.6). Users see the
@@ -93,7 +94,8 @@ so they can fill them in.
   native speaker reviews every string you translate
 - **Persistence:** none in Kotlin besides the Keystore. Rust opens v1's SQLCipher database
   (ADR-0006), and the vault keeps reading `shared_prefs/vault_profile.xml` and the `ui_prefs`
-  file as `docs/specs/android-v1-formats.md` describes them (M3.3, M4.6). No Room and no
+  file as `docs/specs/android-v1-formats.md` describes them (M3.3, which reads the profile through
+  `VaultKeystore`, and M4.6). No Room and no
   DataStore
 - **Background work:** none: no services, WorkManager, alarms, or broadcast receivers of the
   app's own

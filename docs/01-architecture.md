@@ -40,7 +40,7 @@ flowchart TB
     subgraph Rust["Rust workspace (rust/)"]
         BR["bridge: the API Dart calls"]
         ST["store: the SQLCipher database, its schema, the seeded defaults,<br/>writes of transactions, categories, accounts, and budgets,<br/>and the reads a report and a search take"]
-        VA["vault — M3"]
+        VA["vault: the security profile, the PIN and answer rules,<br/>and the lockout (the session in M3.7)"]
         KS["keystore: JNI calls to the Keystore code"]
         BK["backup — M5.1"]
         RP["report: the monthly report, its CSV,<br/>and the search filters"]
@@ -50,12 +50,12 @@ flowchart TB
     UI -.-> BP
     UI --> SW
     BR --> ST
-    BR --> VA
+    BR -.-> VA
     BR --> BK
     BR --> RP
     BR --> CO
     BR --> KS
-    VA -.-> KS
+    VA --> KS
     KS -->|"JNI"| KT
     ST --> CO
     VA --> CO
@@ -64,11 +64,12 @@ flowchart TB
 
     classDef built stroke-width:2px
     classDef planned stroke-dasharray: 5 5
-    class CO,UI,BR,ST,RP,KS,KT built
-    class BP,SW,VA,BK planned
+    class CO,UI,BR,ST,RP,KS,KT,VA built
+    class BP,SW,BK planned
 ```
 
-Solid boxes are built; dashed boxes are planned, labeled with the task that builds them.
+Solid boxes are built; dashed boxes are planned, labeled with the task that builds them. The bridge
+calls the vault from M3.5, so that arrow is dashed.
 
 | Layer | Lives in | Owns | May call |
 | :- | :- | :- | :- |
@@ -126,7 +127,8 @@ to the vault.
 | `rust/crates/store` | `denarii-store`, which opens the SQLCipher database, brings its schema to version 2, seeds the default accounts and categories, adds, edits, and deletes transactions, categories, accounts, and budgets, and reads a month's transactions, a search, and every category and account; its design is in `docs/specs/store.md`, and its fixtures written by v1 are in `tests/fixtures/` | M2.1–M2.7 |
 | `rust/crates/keystore` | `denarii-keystore`, which calls the Kotlin Keystore code through JNI with v1's aliases, and exports the library's `JNI_OnLoad`; its design is in `docs/specs/keystore.md` | M3.2 |
 | `rust/crates/report` | `denarii-report`, which builds the monthly report, its CSV text, and the search filters from rows the caller reads, with the first moment of each day from Dart (ADR-0021: the store runs a report's reads, and Dart passes each day's first moment); its design is in `docs/specs/report.md`, and fixture F8, which v1 wrote, is in `tests/fixtures/` | M2.7 |
-| `rust/crates/{vault,backup}` | The planned crates in the table above | M3.3, M5.1 |
+| `rust/crates/vault` | `denarii-vault`, which sets up, opens, and recovers v1's security profile, with its PIN and answer rules and the shared lockout, over the keystore crate's keys and with PBKDF2 and AES-GCM from the RustCrypto crates (ADR-0023: RustCrypto, `unicode-normalization`, and `serde_json`); its design is in `docs/specs/vault.md` | M3.3 |
+| `rust/crates/backup` | The planned crate in the table above | M5.1 |
 | `pubspec.yaml`, `lib/`, `test/`, `integration_test/` | The Flutter app and its tests; the bridge's generated Dart bindings are in `lib/platform/rust/` | M1.1; `integration_test/` and `lib/platform/` in M1.2 |
 | `l10n.yaml`, `lib/l10n/` | The seven language packs as ARB files, the localizations `flutter gen-l10n` generates from them, and `resolveAppLocale`, which picks a pack from the phone's language list (ADR-0015: the whole list, matched by script as Android does) | M1.4 |
 | `lib/l10n/money_format.dart`, `lib/l10n/currency_symbols.dart`, `tool/CurrencySymbols.java` | Money and month text written with `intl`, and the currency symbols that the Java tool generates from Unicode CLDR (ADR-0016: CLDR's symbols, the locale `resolveAppLocale` picked, and fixes for Arabic regions) | M1.6 |
@@ -175,6 +177,10 @@ takes hundreds of milliseconds) never freezes the screen: Dart awaits a `Future`
 CPU core, started at the first call. The bridge also starts an idle `tokio` runtime at that call,
 because the generated code needs the crate's `rust-async` feature (ADR-0014).
 `docs/specs/bridge.md` describes how a call crosses.
+
+The vault's `SecurityProfile` holds a `std::sync::Mutex` for the whole of each call, PBKDF2
+included, as v1's `@Synchronized` methods did, so two sign-in attempts never run at once to get
+around the lockout (CS-13); a second call waits for the first. `docs/specs/vault.md` describes it.
 
 The database is one connection that one caller uses at a time. The bridge's worker threads can run
 two calls at once, so `Store` keeps the connection behind a `std::sync::Mutex`, and each operation

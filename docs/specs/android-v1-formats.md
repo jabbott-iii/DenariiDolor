@@ -639,10 +639,12 @@ reads real data.
    spaces become U+0020 under NFKC first, but U+2028, U+2029, U+1680, and U+000B need checking. Fixture F7 settles it.
    M2.7 found that `\s` in the regular expression of v1's CSV formula guard matched Unicode's `White_Space` on API 26 and
    API 36, U+000B and U+0085 included (`rust/crates/report/tests/fixtures/README.md`), which suggests that answer
-   normalization's `\s` did the same.
+   normalization's `\s` did the same. `denarii-vault` collapses `White_Space` on that evidence (M3.3,
+   `docs/specs/vault.md`); F7 doesn't exist yet.
 3. **Unicode versions.** NFKC and lowercase mapping came from each phone's ICU version (API 26 is the oldest). A Rust
    normalization library may implement a newer Unicode version. Answers that contain characters whose mapping changed
-   between versions could stop matching. Fixture F7 covers the oldest and newest API levels.
+   between versions could stop matching. Fixture F7 covers the oldest and newest API levels. `denarii-vault` uses
+   Unicode 18.0 for NFKC and Unicode 17.0 for lowercase (ADR-0023).
 4. **Unpaired surrogates.** Kotlin strings, SQLite text written by Android, and modified UTF-8 can all hold a lone UTF-16
    surrogate. A Rust `String` can't. The port needs a stated policy (keep the raw bytes, or replace with U+FFFD and report
    it), with a fixture.

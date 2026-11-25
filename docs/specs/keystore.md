@@ -87,7 +87,7 @@ pub enum KeystoreError {
   one even when one fails (CS-17). A file or key that doesn't exist counts as deleted. Creating
   the biometric key comes in M3.6.
 - **Secrets.** What `device_hmac` and `read_profile` return is secret, and the caller overwrites
-  it with zeros once it is used. M3.3 chooses the crate for that (`docs/02-dependency-policy.md`).
+  it with zeros once it is used. The vault wraps both in `zeroize::Zeroizing` (ADR-0023).
 - **Off Android** every call returns `Unavailable`, so the crate builds and its name checks run
   on the host.
 
@@ -104,7 +104,8 @@ pub enum KeystoreError {
 | `Unexpected` | A JNI call failed, or Kotlin threw something it doesn't name, such as an `OutOfMemoryError` |
 
 v1 reported all of the Keystore and storage failures as one `SecureStorageException`. The vault
-(M3.3) decides what each variant means to the user.
+passes each variant on in `VaultError::Keystore`, and, as in v1, every one is a storage failure
+to the user, which the sign-in screens show (M3.5, `docs/specs/vault.md`).
 
 ## The Kotlin side
 

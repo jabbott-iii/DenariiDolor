@@ -855,7 +855,7 @@ and fingerprint, and sees the same balances.
   - Accept:
     - On a phone with v1 data, the new build opens the profile with v1's storage key.
   - Verify: an instrumented test with test-only aliases; a manual check on the phone
-- [ ] **M3.3 — vault: profile, key wrapping, and lockout**
+- [x] **M3.3 — vault: profile, key wrapping, and lockout**
   - Note (from M3.2): the vault reaches the Keystore through `denarii_keystore::Keystore::vault()`
     (`docs/specs/keystore.md`): `ensure_device_key` before a new profile, `device_hmac` for each
     slot's key-encryption key, and `read_profile`, `write_profile`, `delete_profile`, and
@@ -864,6 +864,34 @@ and fingerprint, and sees the same balances.
     `KeystoreDeviceKeyMixer`. Wipe what `device_hmac` and `read_profile` return with the crate
     this task chooses; the keystore crate's own `wipe` is a stand-in. `KeystoreError` has seven
     variants where v1 had one `SecureStorageException`, so decide which the user tells apart.
+  - Note: 2026-11-25: the maintainer chose the recommended answer to three questions, which
+    ADR-0023 records: the RustCrypto crates (`aes-gcm` 0.11.1, `pbkdf2` 0.13.0, `hmac` 0.13.0,
+    `sha2` 0.11.1, and `zeroize` 1.9.2) with `getrandom` 0.4.3, not `ring` 0.17.14 or the
+    `openssl` crate over SQLCipher's `libcrypto`; NFKC from `unicode-normalization` 0.1.26, not
+    tables generated here or Kotlin's `java.text.Normalizer` through JNI; and the profile's JSON
+    through `serde_json` 1.0.154, not a reader written here. Each is pinned exactly.
+  - Note: 2026-11-25: built. `denarii-vault` (`rust/crates/vault`, `docs/specs/vault.md`) has
+    `SecurityProfile`, over the traits `DeviceKey` and `ProfileStore`, which `Keystore`
+    implements, and `RandomSource`. Each call that runs under the lockout takes a `MonotonicTime`
+    from its caller, so the vault reads no clock (dependency rule 5 in `docs/01-architecture.md`).
+    Sign-in refuses a PIN that isn't 6 to 12 digits without counting it, which v1's
+    `LoginViewModel` did before it called the service. Base64 is written here, to read what
+    `java.util.Base64` reads. The vault wraps what `device_hmac` and `read_profile` return in
+    `zeroize::Zeroizing`. `VaultError::Keystore` keeps each `KeystoreError`; as in v1, it,
+    `ProfileUnreadable`, and `SlotDamaged` are all one storage failure to the user, which M3.5
+    maps. `clippy.toml` lists `RustCrypto` as a name that doc comments write as prose.
+  - Note: 2026-11-25: v1's golden profile and fixture F1's PBKDF2 and AES-GCM known answers passed
+    unchanged on the first run, among 88 tests. In a debug build the vault's tests take 14.6 s of
+    the 29.2 s that `cargo test --workspace` takes with nothing to rebuild; in a release build,
+    the three golden tests, about 480,000 PBKDF2 iterations in all, took 0.18 s on the
+    maintainer's Linux machine (Intel Core i7-11800H). Rust coverage rose to 97.52% of lines and
+    95.56% of regions, so the floors stay at 97 and 95.
+  - Note: 2026-11-25: not done here, for later tasks: v1's `migrateProfile` and public `attempt`
+    (M3.4), and `biometricWrap`, `setBiometricWrap`, and `recordSuccessfulAuthentication` (M3.6),
+    whose only callers are those tasks; F1's NFC samples, which only backups use (M5.1); and the
+    phone that the sign-in budget in `docs/00-overview.md` is measured on, because this session
+    had none. Fixture F7, which checks answer normalization on API 26 and API 36, doesn't exist
+    yet, and no task makes it.
   - Depends: M3.2
   - Decide first: the cryptography crates (`docs/02-dependency-policy.md`).
   - Do:
@@ -873,6 +901,10 @@ and fingerprint, and sees the same balances.
     - v1's golden values pass unchanged.
   - Verify: `cd rust && cargo test --locked -p denarii-vault` (expect pass)
 - [ ] **M3.4 — vault: upgrade v1.0.x profiles**
+  - Note (from M3.3): `SecurityProfile` has no `migrate_profile` or public `attempt` yet, because
+    only this upgrade calls v1's `migrateProfile` and `attempt`. If the upgrade is kept, add them
+    to `rust/crates/vault/src/profile.rs`: `attempt` runs its check under the shared lockout, and
+    the check runs while the profile holds its lock, so it must not call the profile.
   - Depends: M3.3
   - Decide first: keep the v1.0.x upgrade (which needs `security-crypto` in Kotlin), or drop it;
     and how to treat 4- and 5-digit PINs from before 2026-09-21 (section 4 of the format spec).
@@ -920,6 +952,18 @@ and fingerprint, and sees the same balances.
     files. Sign in with v1's PIN: the vault opens `vault_profile` with `denarii_vault_storage`
     through `Keystore::vault().read_profile()`, and unwraps the PIN slot with
     `denarii_vault_device` through `device_hmac` (`docs/specs/keystore.md`).
+  - Note (from M3.3): the bridge makes the profile with
+    `SecurityProfile::new(Keystore::vault(), Keystore::vault())` (`docs/specs/vault.md`). Depending
+    on `denarii-vault` brings the 29 crates in its three register rows into the Android library.
+    Each sign-in, recovery, and lockout call takes a `MonotonicTime`:
+    `SystemClock.elapsedRealtime()` and `Settings.Global.BOOT_COUNT`, which only Kotlin can read
+    (CS-13), so decide whether Dart asks Kotlin through a platform channel or the keystore crate
+    reads them through JNI. Map
+    `VaultError::Keystore`, `ProfileUnreadable`, and `SlotDamaged` to v1's storage-error screen
+    (`storageErrorMessage`), each `SetupProblem::code` to v1's messages (`pinFormatError`,
+    `securityAnswerTooShort`, and the rest), and `SignIn` and `Recovery` to v1's sign-in messages.
+    The vault takes `&str`, so the bridge decides what a Dart string with an unpaired surrogate
+    becomes (open question 4 of the format spec).
   - Depends: M3.3, M1.4
   - Do:
     - Port `LoginScreen`, `LoginViewModel`, and the overlay guard (CS-11).
@@ -949,6 +993,10 @@ and fingerprint, and sees the same balances.
     which `PRIVACY.md` lists and the release manifest doesn't have yet. Once this task adds the
     biometric code, check that the merged release manifest asks for both, and add them to the
     permissions the `ci-gates` skill expects.
+  - Note (from M3.3): `SecurityProfile` has no biometric methods yet. Add v1's `biometricWrap`,
+    `setBiometricWrap`, and `recordSuccessfulAuthentication` (CS-A3: a biometric sign-in also
+    clears the lockout) to `rust/crates/vault/src/profile.rs`. Until then, every edit keeps a
+    stored `biometric_wrap` as it is.
   - Depends: M3.5
   - Do:
     - Keep CS-07: enrolling a new fingerprint invalidates the wrap, and the PIN still works.
@@ -1132,6 +1180,10 @@ name at `6d57526`.
 rules (CS-28).
 
 - [ ] **M5.1 — backup: read and write format version 1**
+  - Note (from M3.3): the vault's PBKDF2 and AES-GCM are private to `denarii-vault`
+    (`src/crypto.rs`). Backups use the same crates (ADR-0023), and NFC from
+    `unicode-normalization`; port fixture F1's NFC samples from v1's `CryptoKnownAnswerTest` with
+    them.
   - Depends: M3.3
   - Do:
     - Port `BackupFile`, `BackupCodec`, and `BigEndianData`, with fixture F2 and the error cases
@@ -1192,6 +1244,12 @@ restores in the new app on another phone.
   - Note (from M1.6): `lib/l10n/currency_symbols.dart` holds data from Unicode CLDR 47, which
     `tool/CurrencySymbols.java` reads from Java 25, under the Unicode License V3 (the JDK's
     `legal/java.base/cldr.md` has its text). `intl`'s own number and date data come from CLDR 48.
+  - Note (from M3.3): `denarii-vault` ships 29 crates once the bridge depends on it (M3.5), listed
+    in three rows of the register in `docs/02-dependency-policy.md` (ADR-0023): 23 for the
+    cryptography, RustCrypto's crates with `getrandom` and `typenum`, all MIT OR Apache-2.0;
+    `serde_json`, `serde_core`, and `itoa` (MIT OR Apache-2.0) and `zmij` (MIT); and
+    `unicode-normalization`, whose Unicode data is under the Unicode License V3, with `tinyvec`
+    (Zlib OR Apache-2.0 OR MIT).
   - Depends: M6.1
   - Do:
     - Rewrite `THIRD_PARTY_NOTICES.md` and `licenses/` for the new dependencies; review

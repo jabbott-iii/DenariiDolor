@@ -11,13 +11,13 @@ files with `git show 6d57526:<path>`. The new app must open what v1 left on user
 
 ## Status
 
-As of 2026-11-25, all of M0's tasks, M1.1, M1.2, M1.4, M1.5, M1.6, all of M2's tasks, M3.1, M3.2, and M3.8 are done, and M1.3's Flutter jobs are in
+As of 2026-11-25, all of M0's tasks, M1.1, M1.2, M1.4, M1.5, M1.6, all of M2's tasks, M3.1, M3.2, M3.3, and M3.8 are done, and M1.3's Flutter jobs are in
 `ci.yml` but haven't run on a pull request yet. M3.2's check against the profile v1 wrote on a phone moved to M3.5.
 M0's exit criteria are the maintainer's to check, and they
 include deciding ADR-0004, which is still Proposed; the maintainer accepted ADR-0005 in M1.2, ADR-0006 in M2.1, and
 ADR-0007 in M3.1, after a throwaway spike in which Rust reached the Android Keystore through Kotlin, and decided
-ADR-0018 in M2.2, ADR-0019 in M2.4, ADR-0020, the coverage floors, on 2026-11-24, ADR-0021 in M2.7, and ADR-0022 in
-M3.2.
+ADR-0018 in M2.2, ADR-0019 in M2.4, ADR-0020, the coverage floors, on 2026-11-24, ADR-0021 in M2.7, ADR-0022 in
+M3.2, and ADR-0023 in M3.3.
 Built: the Doctrina rules, the `ci-gates` and `dependency-upgrade` skills, the planning documents in `docs/`, the spec of
 v1's stored formats, the `denarii-core` crate (money, transactions, balance changes and validation) with its tests, the
 Flutter project (M1.1): the Android and iOS host apps, the app scope, and a root switch between placeholder sign-in and
@@ -38,7 +38,9 @@ the search filters from those rows, with each day's first moment from Dart (ADR-
 v1's own code wrote, byte for byte, and the Android manifest's controls (M3.8): no backup or device-to-device transfer of
 any app data, v1's permission to hide overlays, and one exported activity, and the `denarii-keystore` crate (M3.2,
 ADR-0022), which calls the Kotlin `VaultKeystore` through JNI for v1's device-key HMAC and its sealed profile, with an
-integration test that reaches it from Dart under test-only aliases.
+integration test that reaches it from Dart under test-only aliases, and the `denarii-vault` crate (M3.3, ADR-0023),
+which sets up, opens, and recovers v1's security profile with v1's PIN and answer rules and its shared lockout, and
+passes v1's known answers and golden profile unchanged.
 Planned: sign-in (M3), the screens (M4), backups (M5), the Android release (M6) and iOS (M7). Nothing from the rewrite has shipped. `docs/roadmap.md` has the
 details.
 
@@ -63,7 +65,7 @@ details.
 | Before you touch | Read |
 |---|---|
 | Anything | `docs/00-overview.md`, `docs/01-architecture.md`, and the task in `docs/roadmap.md` |
-| `rust/` | `.claude/rules/rust.md`, and the crate's spec in `docs/specs/` (`core.md`, `bridge.md`, `store.md`, `report.md` and `keystore.md` today) |
+| `rust/` | `.claude/rules/rust.md`, and the crate's spec in `docs/specs/` (`core.md`, `bridge.md`, `store.md`, `report.md`, `keystore.md` and `vault.md` today) |
 | `lib/`, `test/`, `pubspec.yaml`, ARB files (from M1.1) | `.claude/rules/flutter.md` |
 | Kotlin, Gradle files, manifests or resources in `android/` | `.claude/rules/android.md` |
 | A test, a test fixture or a CI check | `.claude/rules/testing.md` |
@@ -87,7 +89,10 @@ details.
   (`denarii-report`) is built: it depends on `core` alone, takes the rows `store` reads and each day's first moment
   from Dart as a `MonthDays` (ADR-0021), and writes v1's CSV. `crates/keystore` (`denarii-keystore`) is built: the
   JNI calls to the Kotlin Keystore code, with `jni-sys` 0.4.1 on Android only, behind a safe `Keystore`; its `jni`
-  module is the only hand-written `unsafe` code (ADR-0022). The `vault` and `backup` crates are planned.
+  module is the only hand-written `unsafe` code (ADR-0022). `crates/vault` (`denarii-vault`) is built: v1's security
+  profile over the keystore crate's keys, with PBKDF2, HMAC, AES-GCM, and wiping from the RustCrypto crates, random bytes
+  from `getrandom`, NFKC from `unicode-normalization`, and the profile's JSON through `serde_json`, each pinned exactly
+  (ADR-0023). Its calls take the time since boot as a `MonotonicTime` from the caller. The `backup` crate is planned.
 - **Flutter:** a Dart app at the repository root, created in M1.1: Flutter 3.50.1 pinned in `pubspec.yaml`, iOS 15 and
   later (ADR-0009), `ChangeNotifier` view models with no package (ADR-0010), and Flutter's `Navigator` with no package
   (ADR-0011).
@@ -139,7 +144,7 @@ Kotlin and Swift own only what needs the operating system (ADR-0004, Proposed).
 ```
 rust/crates/core      money (Cents, parse_cents), transactions, balance_deltas, totals, validation    built, std only
 rust/crates/store     SQLCipher database, schema v2 and migrations, use cases, reads                  built (M2.1–M2.7)
-rust/crates/vault     profile, key wrapping, PIN and answer, lockout, session                         M3
+rust/crates/vault     profile, key wrapping, PIN and answer, lockout; the session in M3.7             built (M3.3)
 rust/crates/keystore  JNI calls to the Kotlin Keystore code (jni-sys, ADR-0022), exports JNI_OnLoad    built (M3.2)
 rust/crates/backup    backup files, every format version                                              M5.1
 rust/crates/report    monthly report, search filters, CSV                                             built (M2.7)

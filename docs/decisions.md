@@ -1040,3 +1040,73 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
 - **Revisit when:** a JNI call fails on an arm64 phone or a vendor's Keystore where it passed on
   the emulators, or M3.6 needs Kotlin to call back into Rust, which `jni-sys` can declare but
   this crate doesn't yet do.
+
+## ADR-0023 — The vault's cryptography comes from the RustCrypto crates, with `unicode-normalization` and `serde_json`
+
+- **Status:** Accepted
+- **Date:** 2026-11-25
+- **Context:** M3.3 ports v1's `SecurityProfileService` to the `vault` crate. It needs
+  PBKDF2-HMAC-SHA256, AES-256-GCM, secure random bytes, and a way to wipe secrets from memory,
+  which v1 took from Android's Java Cryptography Architecture (JCA) providers. It also needs
+  Unicode Normalization Form KC (NFKC), which v1 took from `java.text.Normalizer`, and a reader
+  and writer for the profile's JSON object, which v1 wrote with `org.json`
+  (`docs/specs/android-v1-formats.md`, section 3). Rust's standard library has none of these:
+  `std::random` is still unstable in Rust 1.100.0. Backups (M5.1) need the same primitives, and
+  NFC (Normalization Form C) for passphrases. On 2026-11-25 the maintainer was asked three
+  questions, with these facts from crates.io and the RustSec advisory database that day:
+  - **Cryptography.** The RustCrypto crates (`aes-gcm` 0.11.1 of 2026-08-21, `pbkdf2` 0.13.0,
+    `hmac` 0.13.0, `sha2` 0.11.1, and `zeroize` 1.9.2, with `getrandom` 0.4.3) are pure Rust,
+    MIT OR Apache-2.0, all released in 2026, with no RustSec advisory in force, and bring 22
+    crates new to `Cargo.lock`. Their 0.11 generation is young. `ring` 0.17.14 brings 4 crates
+    and BoringSSL's C and assembly under Apache-2.0 AND ISC; its last release was 2025-03-11, and
+    an "unmaintained" advisory (RUSTSEC-2025-0007) was filed in February 2025 and withdrawn. The
+    `openssl` crate 0.10.82 over the `libcrypto` that SQLCipher already ships (ADR-0017) brings 4
+    crates and keeps one crypto library in the app, but its wrapper had 8 memory-safety advisories
+    in 2026 (RUSTSEC-2026-0463 and RUSTSEC-2026-0473 to -0479, fixed by 0.10.80), and its version
+    would move with `rusqlite`'s `openssl-sys`.
+  - **NFKC.** `unicode-normalization` 0.1.26 of 2026-10-16 (Unicode 18.0) brings 2 crates. The
+    alternatives were tables generated from Unicode's data, as `core` does for digits, and v1's
+    own `normalizeAnswer` run in Kotlin through JNI, on each phone's International Components for
+    Unicode (ICU) library.
+  - **JSON.** `serde_json` 1.0.154 without its default features brings 3 crates. The alternative
+    was a reader and writer of the flat object of strings and integers that v1 writes.
+- **Decision** (the maintainer chose the recommended answer to each of the three questions on
+  2026-11-25):
+  - The vault seals and opens with `aes-gcm`, stretches PINs and answers with `pbkdf2` over
+    `hmac` and `sha2`, takes random bytes from the operating system through `getrandom`, and
+    wipes secrets with `zeroize`. Each is pinned exactly in `[workspace.dependencies]`, because a
+    change to any of them could change the bytes that open users' profiles; v1's known answers
+    (fixture F1) and its golden profile (`SecurityProfileGoldenTest`) must pass unchanged after
+    every upgrade.
+  - Security answers are normalized with `unicode-normalization`'s NFKC, then trimmed with
+    Kotlin's whitespace rule from `core`, then each run of Unicode `White_Space` becomes one space,
+    then Rust's `str::to_lowercase` lowers them, in v1's order.
+  - The profile's JSON is read and written with `serde_json`'s `Value`, without `serde`'s derive
+    macros.
+- **Consequences:**
+  - Good:
+    - The same code runs on Android, iOS, and the host, with no C build of its own, and the host
+      tests run what phones run.
+    - The backup crate (M5.1) can use the same crates for its PBKDF2, AES-GCM, and NFC.
+  - Bad:
+    - The app carries two crypto libraries: OpenSSL's `libcrypto` for SQLCipher, and RustCrypto
+      for the vault. An upgrade of either needs its own review.
+    - 22 crates are new to `Cargo.lock`, most of them small parts of RustCrypto, and each upgrade
+      is reviewed with the `dependency-upgrade` skill.
+    - NFKC and lowercasing follow Unicode 18.0 and 17.0, where each phone's ICU follows the
+      Unicode version of its Android release. Unicode never changes the normalization of a
+      character it has assigned, but a case mapping or a character that a phone's ICU didn't know
+      could differ. Fixture F7 checks this on API 26 and API 36 (`docs/roadmap.md`).
+  - Follow-up:
+    - M3.5 maps the vault's errors and results to the sign-in screens.
+    - M6.2 lists every new crate in `THIRD_PARTY_NOTICES.md`, with the Unicode-3.0 license text
+      that `unicode-normalization`'s data needs.
+- **Alternatives considered:**
+  - `ring` 0.17.14 for the primitives, with `zeroize`.
+  - The `openssl` crate, over the `libcrypto` that SQLCipher already ships.
+  - NFKC from tables generated in this repository, or from Kotlin's `java.text.Normalizer`
+    through JNI.
+  - A hand-written JSON reader and writer for the profile.
+- **Revisit when:** a RustSec advisory names one of these crates; one of them changes a known
+  answer in an upgrade; fixture F7 shows an answer that normalizes differently from a phone; or
+  M5.1 needs a primitive that they don't provide.

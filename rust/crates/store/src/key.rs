@@ -14,13 +14,14 @@ use std::hint::black_box;
 
 /// The 32 random bytes that encrypt the database (CS-15).
 ///
-/// The vault unwraps the key at sign-in (M3.3) and passes it to [`Store::open`]. SQLCipher uses
-/// it as the encryption key directly, with no key derivation, because it already holds 256 bits
-/// of randomness (section 5 of `docs/specs/android-v1-formats.md`).
+/// The vault (`denarii-vault`) unwraps the key at sign-in, and the bridge passes it to
+/// [`Store::open`] (M3.5). SQLCipher uses it as the encryption key directly, with no key
+/// derivation, because it already holds 256 bits of randomness (section 5 of
+/// `docs/specs/android-v1-formats.md`).
 ///
 /// `Debug` never shows the bytes, and dropping the key overwrites them with zeros. The wipe is
 /// best effort: copies the compiler makes when a key moves, and the caller's own array, aren't
-/// wiped. M3.3 chooses the crates for wiping secrets (`docs/02-dependency-policy.md`).
+/// wiped. The vault wipes its own copies with `zeroize` (ADR-0023); this crate keeps its own wipe.
 ///
 /// [`Store::open`]: crate::Store::open
 pub struct DatabaseKey([u8; DatabaseKey::LEN]);

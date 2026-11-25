@@ -1,0 +1,27 @@
+[package]
+name = "denarii-vault"
+description = "The security profile of Denarii Dolor: v1's PIN and answer wraps of the database key, their rules, and the lockout."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+# Kotlin's whitespace, which v1's answer and question rules trimmed with.
+denarii-core.workspace = true
+# The device key and the sealed profile, in the Android Keystore (ADR-0022).
+denarii-keystore.workspace = true
+aes-gcm.workspace = true
+getrandom.workspace = true
+pbkdf2.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+unicode-normalization.workspace = true
+zeroize.workspace = true
+
+[dev-dependencies]
+# The tests' stand-in for the Keystore's device key: a software HMAC-SHA256, as v1's tests used.
+hmac.workspace = true
+
+[lints]
+workspace = true

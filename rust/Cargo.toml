@@ -2,7 +2,7 @@
 
 [workspace]
 resolver = "3"
-members = ["crates/bridge", "crates/core", "crates/keystore", "crates/report", "crates/store"]
+members = ["crates/bridge", "crates/core", "crates/keystore", "crates/report", "crates/store", "crates/vault"]
 
 [workspace.package]
 version = "0.1.0"
@@ -25,6 +25,20 @@ flutter_rust_bridge = { version = "=2.13.0", default-features = false, features 
 # upgrade is reviewed with the dependency-upgrade skill. Used on Android only.
 jni-sys = "=0.4.1"
 rusqlite = { version = "=0.43.0", default-features = false, features = ["bundled-sqlcipher-vendored-openssl"] }
+# The vault's cryptography, from RustCrypto and the `rust-random` project (ADR-0023). Each is pinned exactly, because an
+# upgrade could change the bytes that open users' profiles: v1's known answers and golden profile in crates/vault must
+# pass unchanged after every upgrade. `zeroize` also wipes AES-GCM's key schedules and SHA-256's state on drop.
+aes-gcm = { version = "=0.11.1", default-features = false, features = ["aes", "zeroize"] }
+getrandom = { version = "=0.4.3", default-features = false }
+hmac = { version = "=0.13.0", default-features = false }
+pbkdf2 = { version = "=0.13.0", default-features = false, features = ["hmac"] }
+sha2 = { version = "=0.11.1", default-features = false, features = ["zeroize"] }
+zeroize = { version = "=1.9.2", default-features = false, features = ["alloc"] }
+# NFKC for security answers, pinned exactly because a new Unicode version could change how an answer normalizes
+# (ADR-0023).
+unicode-normalization = { version = "=0.1.26", default-features = false }
+# The vault profile's JSON, read and written through `Value`, with no derive macros (ADR-0023).
+serde_json = { version = "=1.0.154", default-features = false, features = ["std"] }
 
 # crates/bridge/Cargo.toml and crates/keystore/Cargo.toml repeat these lints, with `unsafe_code` at `deny` (ADR-0014,
 # ADR-0022). Change all three.

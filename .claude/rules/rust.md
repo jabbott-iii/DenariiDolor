@@ -33,9 +33,10 @@ so they can fill them in.
   database with `rusqlite` (ADR-0006, ADR-0017), and runs its writes and reads. `crates/report`
   (`denarii-report`) builds the monthly report, its CSV text, and the search filters from rows the
   store reads (ADR-0021). `crates/keystore` (`denarii-keystore`) calls the Kotlin Keystore code in
-  the app's Java runtime through JNI, and exports the library's `JNI_OnLoad` (ADR-0022). The
-  planned crates (`vault` and `backup`) and the tasks that build them are in
-  `docs/01-architecture.md`
+  the app's Java runtime through JNI, and exports the library's `JNI_OnLoad` (ADR-0022).
+  `crates/vault` (`denarii-vault`) sets up, opens, and recovers v1's security profile, with its
+  PIN and answer rules and the lockout, over the keystore crate's keys (ADR-0023). The planned
+  crate (`backup`) and the task that builds it are in `docs/01-architecture.md`
 - **Toolchain:** edition 2024, Rust 1.100.0 pinned in `rust/rust-toolchain.toml`, and
   `rust-version = "1.100"` in `[workspace.package]`
 - **Check commands:** run from `rust/`: `cargo fmt --all --check`, `cargo clippy --workspace
@@ -58,8 +59,8 @@ so they can fill them in.
   no `unsafe`. The JNI module isn't compiled on the host, so lint it with `cargo clippy -p
   denarii-keystore --target aarch64-linux-android --all-targets --locked -- -D warnings`
 - **Untrusted input:** money text a user types (`core::money`, limited by `Cents::MAX_PARSED`);
-  later, backup files (`backup`, M5.1), the v1 database and profile read during the upgrade
-  (`store` and `vault`, M2 and M3), and every value that crosses the bridge from Dart. Format
+  the v1 database (`store`) and the stored profile (`vault`), read as v1 left them; later, backup
+  files (`backup`, M5.1); and every value that crosses the bridge from Dart. Format
   limits are in `docs/specs/android-v1-formats.md`
 - **Errors:** one error enum per crate, implementing `Display` and `std::error::Error`.
   `core::DomainError` names each broken business rule, and its `code()` gives the stable name the
@@ -70,14 +71,17 @@ so they can fill them in.
   thread itself. `flutter_rust_bridge`'s generated handler runs each bridge call on a pool of
   worker threads, so two calls can run at once, and its `rust-async` feature starts an idle
   `tokio` runtime (ADR-0014, `docs/specs/bridge.md`). `denarii-store`'s `Store` keeps its one
-  connection behind a `std::sync::Mutex`, so those calls take turns on the database (ADR-0017).
+  connection behind a `std::sync::Mutex`, so those calls take turns on the database (ADR-0017),
+  and `denarii-vault`'s `SecurityProfile` holds one for each whole call, so sign-in attempts take
+  turns under the lockout (CS-13).
   `denarii-keystore` attaches the calling thread to the Java runtime for each call, and detaches
   it after (`docs/specs/keystore.md`)
 - **Public API:** none published. The `bridge` crate's API is what Dart calls, so a change to it
   regenerates the Dart bindings in the same change
 - **Published crates:** none
 - **Design docs:** `docs/specs/<crate>.md`: `docs/specs/core.md`, `docs/specs/bridge.md`,
-  `docs/specs/store.md`, `docs/specs/report.md`, and `docs/specs/keystore.md`
+  `docs/specs/store.md`, `docs/specs/report.md`, `docs/specs/keystore.md`, and
+  `docs/specs/vault.md`
 - **Test layout:** unit tests in a `#[cfg(test)] mod tests` beside the code; integration tests
   that use only the public API in each crate's `tests/`; compatibility fixtures, such as a v1
   database and one backup per `FORMAT_VERSION`, in `tests/fixtures/` of the crate that reads them
