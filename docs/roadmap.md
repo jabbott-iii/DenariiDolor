@@ -710,6 +710,8 @@ rules.
     emulators found the same 25 `White_Space` characters. The port follows the phones, which
     guard more cells (CS-20). Both emulators ran with `-read-only`, and both apps were
     uninstalled afterward.
+  - Note: 2026-11-25: the maintainer confirmed that the guard follows the phones' rule. The
+    alternative was the desktop Java's six ASCII characters, which v1's unit tests saw.
   - Note: 2026-11-24: `cargo test --locked -p denarii-report` passed: 53 unit tests, the 7 F8
     tests in `tests/f8.rs`, and 5 doc tests. The store gains 18 unit tests in `src/reads.rs`, and
     `core` 10 tests and a doc test. The new tests port every case of v1's

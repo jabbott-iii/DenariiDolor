@@ -134,7 +134,8 @@ The whitespace in step 2 is Unicode's `White_Space` property (`char::is_whitespa
 what Android's ICU-based `\s` matched when v1 ran on a phone. A desktop Java's `\s` is six ASCII
 characters, which is what v1's unit tests saw. Fixture F8 holds the cells escaped both ways: they
 differ only where a no-break space follows a `;` or a tab, and on API 26 and API 36 alike the
-phone guarded those cells. The port follows the phones, which guard more cells.
+phone guarded those cells. The port follows the phones, which guard more cells: the maintainer
+chose it on 2026-11-25 over the desktop Java's six characters.
 
 ## The search
 
