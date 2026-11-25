@@ -600,6 +600,10 @@ moment of its first day to one millisecond before the next month starts
 - Quoting follows RFC 4180. Any cell that a spreadsheet would run as a formula, at its start, after leading whitespace, or after
   a `;` or tab inside it, gets an apostrophe in front, unless it reads as a number (CS-20)
   (`shared:domain/report/ReportCsvFormatter.kt:16-21`, `:45-62`).
+- The whitespace allowed between a `;` or tab and the formula is what `\s` matches in the regular expression `INNER_FORMULA`.
+  On a phone, whose `java.util.regex` runs on ICU, that is Unicode's `White_Space` property: the same 25 characters of the
+  Basic Multilingual Plane on API 26 and API 36, a no-break space among them. On a desktop Java, where v1's unit tests ran,
+  it is six ASCII characters. Fixture F8 holds both (M2.7).
 - The period and generated-at labels come from `shared/src/androidMain/kotlin/com/denariidolor/util/PlatformFormat.android.kt:39-45`.
 
 **PDF:** US Letter pages (612 × 792 points) with 36-point margins, the same six columns under translated headings, translated
@@ -633,6 +637,9 @@ reads real data.
 2. **`\s` on Android.** Answer normalization ran Android's ICU-based `java.util.regex`, whose `\s` may match a different set
    (for example, other Unicode separators, or not the vertical tab) than the desktop JDK the unit tests use. Most Unicode
    spaces become U+0020 under NFKC first, but U+2028, U+2029, U+1680, and U+000B need checking. Fixture F7 settles it.
+   M2.7 found that `\s` in the regular expression of v1's CSV formula guard matched Unicode's `White_Space` on API 26 and
+   API 36, U+000B and U+0085 included (`rust/crates/report/tests/fixtures/README.md`), which suggests that answer
+   normalization's `\s` did the same.
 3. **Unicode versions.** NFKC and lowercase mapping came from each phone's ICU version (API 26 is the oldest). A Rust
    normalization library may implement a newer Unicode version. Answers that contain characters whose mapping changed
    between versions could stop matching. Fixture F7 covers the oldest and newest API levels.
@@ -707,5 +714,5 @@ appears in this document.
 | F5 | An in-place upgrade on a device: install the `6d57526` build, set up a profile, add data, turn on biometric sign-in, fail the PIN a few times, then install the new build over it with the same signing key and sign in with the PIN, the answer, and a fingerprint | A manual or UiAutomator run on API 26 and API 36 emulators | Invariants 2–4, 6, 7 |
 | F6 | A `ui_prefs.xml` with every key set, and one with none | Copy from the F5 device | Invariant 18 |
 | F7 | Answer normalization vectors computed on the device: NBSP, U+3000, U+2028, U+2029, U+1680, U+000B, tabs, Turkish dotted and dotless I, a word-final Greek sigma, fullwidth letters, and combining accents | An instrumented test at `6d57526` on API 26 and API 36 that records `normalizeAnswer` output | Invariant 5 and open questions 2–3 |
-| F8 | A CSV export with a transfer, a formula-like description, and a right-to-left locale | Extend `shared/src/commonTest/kotlin/com/denariidolor/domain/report/ReportFormattingTest.kt:56` to write golden output | Invariant 15 |
+| F8 | A CSV export with a transfer, a formula-like description, and a right-to-left locale | Extend `shared/src/commonTest/kotlin/com/denariidolor/domain/report/ReportFormattingTest.kt:56` to write golden output. Made in M2.7 through v1's `GenerateReportUseCase` and `ReportCsvFormatter`, with the formatter's cells also escaped on API 26 and API 36: `rust/crates/report/tests/fixtures/` | Invariant 15 |
 | F9 | A v1.0.x install with `secure_prefs` and `db_key_prefs` | A build of commit `9f967c6^` on an emulator, then the F5 steps | Section 4, if the v1.0.x path is kept |

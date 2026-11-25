@@ -9,9 +9,11 @@
 //! v1 modeled the three kinds as subclasses of an abstract `Transaction`, each overriding
 //! `balanceImpact()` and `accountImpacts()`, so that no total or balance branched on the type.
 //! Here [`TransactionKind`] is an enum, and [`Transaction::balance_impact`],
-//! [`Transaction::account_impacts`], and [`Transaction::budgeted_amount`] are the only places
-//! that match on it to compute money. Only a transfer carries
-//! a destination account, so a transfer without one, or an expense with one, can't be built.
+//! [`Transaction::account_impacts`], [`Transaction::budgeted_amount`], and
+//! [`totals`](crate::totals) are the only places that match on it to compute money. Only a
+//! transfer carries a destination account, so a transfer without one, or an expense with one,
+//! can't be built. A stored row that breaks that rule is still a [`StoredTransaction`], which
+//! reports and searches list as v1 listed it.
 
 use std::collections::BTreeMap;
 use std::fmt;
@@ -209,6 +211,51 @@ impl Transaction {
             }
         }
         Ok(impacts)
+    }
+}
+
+/// A row of the `transactions` table, as reports and searches read it.
+///
+/// Unlike a [`Transaction`], it can hold a malformed transfer, one with no destination: validation
+/// never writes one, but the schema allows it, and v1's monthly report and search still listed
+/// such a row (BUG-06). Its `transfer_account_id` is the stored column as it is, which v1's
+/// monthly report read even on an expense or income, to show where the money went.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct StoredTransaction {
+    /// The row's ID.
+    pub id: TransactionId,
+    /// The stored `type` column.
+    pub transaction_type: TransactionType,
+    /// What the transaction was for.
+    pub description: String,
+    /// The stored amount.
+    pub amount: Cents,
+    /// The category it belongs to.
+    pub category_id: CategoryId,
+    /// The account it is paid from, received into, or moved from.
+    pub account_id: AccountId,
+    /// The stored `transferAccountId` column: a transfer's destination, or `None`.
+    pub transfer_account_id: Option<AccountId>,
+    /// When it happened.
+    pub date: EpochMillis,
+}
+
+impl StoredTransaction {
+    /// The transaction the row stands for, with its kind from
+    /// [`TransactionKind::from_stored`], or `None` for a malformed transfer, which has no balance
+    /// impact (BUG-06).
+    #[must_use]
+    pub fn transaction(&self) -> Option<Transaction> {
+        let kind = TransactionKind::from_stored(self.transaction_type, self.transfer_account_id)?;
+        Some(Transaction {
+            id: Some(self.id),
+            description: self.description.clone(),
+            amount: self.amount,
+            category_id: self.category_id,
+            account_id: self.account_id,
+            date: self.date,
+            kind,
+        })
     }
 }
 

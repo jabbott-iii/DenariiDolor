@@ -53,7 +53,9 @@ branches".
   for each kind of input its **Untrusted input** lists: money text in
   `rust/crates/core/tests/money.rs`, the same text as it crosses the bridge from Dart in
   `rust/crates/bridge/tests/money.rs`, and v1's database file in `rust/crates/store/tests/`.
-  Backup files get theirs with the `backup` crate (M5.1)
+  Backup files get theirs with the `backup` crate (M5.1). The CSV formula guard (CS-20) is
+  checked against 2,121 cells that v1 escaped on Android, and every character of the Basic
+  Multilingual Plane, in `rust/crates/report/tests/f8.rs`
 - **CI:** `.github/workflows/ci.yml` runs on every push and pull request to `main`, with the jobs
   "Rust checks", "Flutter checks" (which ends by building a debug app bundle), and "Generated code
   is current", next to the **Security checks**. "Rust checks" and "Flutter checks" each run their

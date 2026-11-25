@@ -16,13 +16,17 @@
 //!
 //! - Money: [`Cents`] holds every amount; [`parse_cents`] reads what a user typed, with the
 //!   locale's [`NumberSymbols`]; [`Cents::to_plain`] and [`Cents::to_input`] write the plain forms.
-//! - Transactions: [`Transaction`], its [`TransactionKind`], and the stored [`TransactionType`].
-//! - Balances: [`balance_deltas`] gives the change to each account's stored balance when a
-//!   transaction is added, edited, or deleted.
+//! - Transactions: [`Transaction`], its [`TransactionKind`], and the stored [`TransactionType`];
+//!   [`StoredTransaction`] is a row as reports and searches read it, a malformed transfer
+//!   included.
+//! - Balances and totals: [`balance_deltas`] gives the change to each account's stored balance
+//!   when a transaction is added, edited, or deleted; [`totals`] adds up the [`Totals`] of a
+//!   month's report.
 //! - Validation: [`validate_transaction`] turns a [`TransactionDraft`] into a [`Transaction`];
 //!   [`budget_overage`] does the budget check's arithmetic; [`validate_name`] trims and checks a
 //!   category or account name; the `is_valid_*` functions check names, percentages, and search
-//!   ranges, and [`is_blank`] applies Kotlin's idea of blank text.
+//!   ranges, and [`is_blank`] and [`is_whitespace`] apply Kotlin's idea of blank text and of
+//!   whitespace.
 //! - Reference data: [`Account`], [`Category`], [`Budget`], and the seeded rows in [`defaults`].
 //! - IDs: [`AccountId`], [`CategoryId`], [`TransactionId`], [`BudgetId`], and [`EpochMillis`].
 //! - Months: [`MonthBounds`], the moments a calendar month in the user's time zone starts and
@@ -88,16 +92,18 @@ pub mod defaults;
 
 pub use error::{ArithmeticOverflow, BudgetOverage, DomainError};
 pub use ids::{AccountId, BudgetId, CategoryId, EpochMillis, TransactionId};
-pub use ledger::balance_deltas;
+pub use ledger::{Totals, balance_deltas, totals};
 pub use money::{
     Cents, MAX_WHOLE_DIGITS, MoneyParseError, NumberSymbols, normalize_digits, parse_cents,
 };
 pub use month::{InvalidMonthBounds, MonthBounds};
 pub use reference::{Account, Budget, Category};
 pub use search::SearchFilters;
-pub use transaction::{Transaction, TransactionKind, TransactionType, UnknownTransactionType};
+pub use transaction::{
+    StoredTransaction, Transaction, TransactionKind, TransactionType, UnknownTransactionType,
+};
 pub use validation::{
     MAX_DESCRIPTION_UNITS, MAX_NAME_UNITS, MAX_PERCENT, TransactionDraft, budget_overage, is_blank,
     is_valid_amount, is_valid_date, is_valid_description, is_valid_name, is_valid_percent,
-    is_valid_search_range, validate_name, validate_transaction,
+    is_valid_search_range, is_whitespace, validate_name, validate_transaction,
 };

@@ -38,11 +38,11 @@ flowchart TB
     end
     subgraph Rust["Rust workspace (rust/)"]
         BR["bridge: the API Dart calls"]
-        ST["store: the SQLCipher database, its schema, the seeded defaults,<br/>and writes of transactions, categories, accounts, and budgets"]
+        ST["store: the SQLCipher database, its schema, the seeded defaults,<br/>writes of transactions, categories, accounts, and budgets,<br/>and the reads a report and a search take"]
         VA["vault — M3"]
         BK["backup — M5.1"]
-        RP["report — M2.7"]
-        CO["core: money, transactions,<br/>balance changes, validation"]
+        RP["report: the monthly report, its CSV,<br/>and the search filters"]
+        CO["core: money, transactions,<br/>balance changes, totals, validation"]
     end
     UI --> BR
     UI --> KT
@@ -59,8 +59,8 @@ flowchart TB
 
     classDef built stroke-width:2px
     classDef planned stroke-dasharray: 5 5
-    class CO,UI,BR,ST built
-    class KT,SW,VA,BK,RP planned
+    class CO,UI,BR,ST,RP built
+    class KT,SW,VA,BK planned
 ```
 
 Solid boxes are built; dashed boxes are planned, labeled with the task that builds them.
@@ -117,8 +117,9 @@ to the vault.
 | `rust/Cargo.toml` | The workspace, shared package fields, and lints | M0.4 |
 | `rust/crates/core` | `denarii-core`; its design is in `docs/specs/core.md` | M0.4–M0.7 |
 | `rust/crates/bridge` | `denarii-bridge`, the API Dart calls, with its generated glue; its design is in `docs/specs/bridge.md` | M1.2 |
-| `rust/crates/store` | `denarii-store`, which opens the SQLCipher database, brings its schema to version 2, seeds the default accounts and categories, and adds, edits, and deletes transactions, categories, accounts, and budgets; its design is in `docs/specs/store.md`, and its fixtures written by v1 are in `tests/fixtures/` | M2.1–M2.6 |
-| `rust/crates/{vault,backup,report}` | The planned crates in the table above | M2.7–M5.1 |
+| `rust/crates/store` | `denarii-store`, which opens the SQLCipher database, brings its schema to version 2, seeds the default accounts and categories, adds, edits, and deletes transactions, categories, accounts, and budgets, and reads a month's transactions, a search, and every category and account; its design is in `docs/specs/store.md`, and its fixtures written by v1 are in `tests/fixtures/` | M2.1–M2.7 |
+| `rust/crates/report` | `denarii-report`, which builds the monthly report, its CSV text, and the search filters from rows the caller reads, with the first moment of each day from Dart (ADR-0021: the store runs a report's reads, and Dart passes each day's first moment); its design is in `docs/specs/report.md`, and fixture F8, which v1 wrote, is in `tests/fixtures/` | M2.7 |
+| `rust/crates/{vault,backup}` | The planned crates in the table above | M3.3, M5.1 |
 | `pubspec.yaml`, `lib/`, `test/`, `integration_test/` | The Flutter app and its tests; the bridge's generated Dart bindings are in `lib/platform/rust/` | M1.1; `integration_test/` and `lib/platform/` in M1.2 |
 | `l10n.yaml`, `lib/l10n/` | The seven language packs as ARB files, the localizations `flutter gen-l10n` generates from them, and `resolveAppLocale`, which picks a pack from the phone's language list (ADR-0015: the whole list, matched by script as Android does) | M1.4 |
 | `lib/l10n/money_format.dart`, `lib/l10n/currency_symbols.dart`, `tool/CurrencySymbols.java` | Money and month text written with `intl`, and the currency symbols that the Java tool generates from Unicode CLDR (ADR-0016: CLDR's symbols, the locale `resolveAppLocale` picked, and fixes for Arabic regions) | M1.6 |
@@ -136,7 +137,7 @@ it with `git show 6d57526:<path>`. Where v1's code now goes:
 | `app/.../data/local/db`, `data/repository`, `domain/usecase` | `store` | M2.2–M2.6 |
 | `app/.../data/local/vault`, `data/local/preferences/SecurityProfileService.kt` | `vault`, plus Kotlin for the Keystore | M3.2–M3.4 |
 | `app/.../data/backup`, `shared/.../data/backup` | `backup` | M5.1 |
-| `shared/.../domain/report`, `GenerateReportUseCase.kt`, `SearchTransactionUseCase.kt` | `report` | M2.7 |
+| `shared/.../domain/report`, `GenerateReportUseCase.kt`, `SearchTransactionUseCase.kt`, `SearchFilterParser.kt` | `report`, with their queries in `store` | M2.7 |
 | `app/.../presentation/ui/**` | `lib/features/**` | M3.5–M4.7 |
 | `app/src/main/res/values*/strings.xml` | `lib/l10n/*.arb` | M1.4 |
 | `app/.../presentation/ui/common/ThemedContent.kt`, `VizColors.kt`, and the theme in `Composables.kt` | `lib/app/theme.dart`, `lib/app/viz_colors.dart` | M1.5 |

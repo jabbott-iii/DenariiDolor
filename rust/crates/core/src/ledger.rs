@@ -16,7 +16,7 @@ use std::collections::BTreeMap;
 use crate::error::ArithmeticOverflow;
 use crate::ids::AccountId;
 use crate::money::Cents;
-use crate::transaction::{Transaction, add_to};
+use crate::transaction::{Transaction, TransactionKind, add_to};
 
 /// The change to each account's stored balance when `previous` becomes `current`.
 ///
@@ -73,4 +73,68 @@ pub fn balance_deltas(
     }
     deltas.retain(|_, delta| *delta != Cents::ZERO);
     Ok(deltas)
+}
+
+/// A set of transactions' income, expenses, and net change, as v1's monthly report added them up.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub struct Totals {
+    /// The sum of the income's amounts.
+    pub income: Cents,
+    /// The sum of the expenses' amounts.
+    pub expense: Cents,
+    /// The sum of every transaction's [`balance_impact`](Transaction::balance_impact): the income
+    /// minus the expenses, because a transfer moves money without changing the total.
+    pub net: Cents,
+}
+
+/// Adds up the income, the expenses, and the net change of `transactions`.
+///
+/// v1's `GenerateReportUseCase` added the amounts of the rows stored as `INCOME` and as
+/// `EXPENSE`, and the balance impact of every row that maps to a transaction. A malformed
+/// transfer maps to none, so the caller leaves it out, and it counts in no total, as in v1
+/// (BUG-06).
+///
+/// # Errors
+///
+/// Returns [`ArithmeticOverflow`] when a sum or a negation leaves the range of [`Cents`], which
+/// only unvalidated stored data can cause. v1's Kotlin sums wrapped around instead.
+///
+/// # Examples
+///
+/// ```
+/// use denarii_core::{
+///     AccountId, CategoryId, Cents, EpochMillis, Totals, Transaction, TransactionKind, totals,
+/// };
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let salary = Transaction {
+///     id: None,
+///     description: "Salary".to_owned(),
+///     amount: Cents(200_000),
+///     category_id: CategoryId(2),
+///     account_id: AccountId(1),
+///     date: EpochMillis(1_764_000_000_000),
+///     kind: TransactionKind::Income,
+/// };
+/// let rent = Transaction { amount: Cents(90_000), kind: TransactionKind::Expense, ..salary.clone() };
+/// let month = totals([&salary, &rent])?;
+/// assert_eq!(month, Totals { income: Cents(200_000), expense: Cents(90_000), net: Cents(110_000) });
+/// # Ok(())
+/// # }
+/// ```
+pub fn totals<'a>(
+    transactions: impl IntoIterator<Item = &'a Transaction>,
+) -> Result<Totals, ArithmeticOverflow> {
+    let mut sums = Totals::default();
+    for transaction in transactions {
+        match transaction.kind {
+            TransactionKind::Income => sums.income = sums.income.checked_add(transaction.amount)?,
+            TransactionKind::Expense => {
+                sums.expense = sums.expense.checked_add(transaction.amount)?;
+            }
+            TransactionKind::Transfer { .. } => {}
+        }
+        sums.net = sums.net.checked_add(transaction.balance_impact()?)?;
+    }
+    Ok(sums)
 }

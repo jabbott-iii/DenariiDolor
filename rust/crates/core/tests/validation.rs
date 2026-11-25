@@ -11,7 +11,7 @@ use denarii_core::{
     AccountId, BudgetOverage, CategoryId, Cents, DomainError, EpochMillis, MAX_DESCRIPTION_UNITS,
     MAX_NAME_UNITS, SearchFilters, TransactionDraft, TransactionKind, TransactionType,
     budget_overage, defaults, is_blank, is_valid_amount, is_valid_description, is_valid_name,
-    is_valid_percent, is_valid_search_range, validate_name, validate_transaction,
+    is_valid_percent, is_valid_search_range, is_whitespace, validate_name, validate_transaction,
 };
 
 fn draft() -> TransactionDraft {
@@ -387,6 +387,20 @@ fn blank_text_is_kotlins() {
     assert!(is_blank(" \t\u{3000}\u{1F}"));
     assert!(!is_blank("\u{85}"));
     assert!(!is_blank(" dining "));
+}
+
+#[test]
+fn whitespace_characters_are_kotlins() {
+    for c in [
+        ' ', '\t', '\n', '\u{B}', '\u{C}', '\r', '\u{1C}', '\u{1F}', '\u{A0}', '\u{2007}',
+        '\u{3000}',
+    ] {
+        assert!(is_whitespace(c), "{c:?}");
+    }
+    for c in ['\u{0}', '\u{1}', '\u{1B}', '\u{85}', '\u{200B}', 'a', '='] {
+        assert!(!is_whitespace(c), "{c:?}");
+    }
+    assert_eq!("\u{A0} =1\u{1F}".trim_matches(is_whitespace), "=1");
 }
 
 #[test]

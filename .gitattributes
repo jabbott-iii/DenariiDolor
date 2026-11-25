@@ -1,0 +1,3 @@
+# Fixture F8 holds CSV files that v1 wrote, with CRLF line endings and a line feed inside a cell. Git must keep
+# their bytes as they are, so it never converts their line endings.
+rust/crates/report/tests/fixtures/** -text

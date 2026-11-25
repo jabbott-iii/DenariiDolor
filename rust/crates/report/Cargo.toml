@@ -1,0 +1,15 @@
+[package]
+name = "denarii-report"
+description = "The monthly report, its CSV text, and the search filters of Denarii Dolor, built from rows the caller reads."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+# The report's rows, totals, and search filters are `core`'s types, and it is the only crate this one
+# depends on (docs/01-architecture.md).
+denarii-core.workspace = true
+
+[lints]
+workspace = true

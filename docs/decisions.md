@@ -726,7 +726,7 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
 
 ## ADR-0019 — Dart passes each month's bounds to Rust, which reads no time zone
 
-- **Status:** Accepted
+- **Status:** Accepted. ADR-0021 adds the first moment of each of a report's days.
 - **Date:** 2026-11-24
 - **Context:** v1's budget check (`ValidateTransactionUseCase` at `6d57526`) adds up a category's
   expenses in the calendar month of the transaction's date, in the phone's time zone. It reads
@@ -851,3 +851,69 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
     reaches.
 - **Revisit when:** a stable Rust release can measure branches, or a Rust or Flutter upgrade
   changes the report the script reads.
+
+## ADR-0021 — The store runs a report's reads, and Dart passes the first moment of each of its days
+
+- **Status:** Accepted
+- **Date:** 2026-11-24
+- **Context:** v1's `GenerateReportUseCase` (at `6d57526`) read a month's transactions and every
+  category and account, and its `ReportCsvFormatter` wrote each transaction's date as
+  `YYYY-MM-DD` in the phone's time zone. The CSV also holds a translated title, the month in the
+  phone's language, the time it was made with the zone's abbreviation, and, for a transfer, an
+  arrow that points the other way in a right-to-left language. v1's search screen parsed the
+  typed amounts, and its DAO ran the search. M2.7 ports them, and two rules stood in the way:
+  - Rust reads no clock and no time zone (ADR-0019: Dart passes each month's bounds, and Rust
+    reads no time zone), so Rust can't tell which day a moment falls on.
+  - The layer table in `docs/01-architecture.md` lets `report` call only `core`, while `store`
+    owns the queries, and before M2.7 the store had no read.
+
+  A day isn't always 24 hours long. In `Asia/Beirut`, October 24, 2026 lasts 25 hours, because the
+  clocks go back from midnight to 23:00; Samoa skipped December 30, 2011, when it moved across the
+  date line. Dart's `DateTime(year, month, day)` gives a day's first moment, as ADR-0019 checked
+  for `America/Asuncion`.
+- **Decision** (the maintainer chose the recommended answer to each of two questions on
+  2026-11-24):
+  - `denarii-store` runs the reads: a month's transactions, the search, and every category and
+    account. `denarii-report` depends on `denarii-core` alone, as the layer table says, and builds
+    the report, its totals, its CSV, and the search filters from what it is given. The bridge
+    joins the two (M4.3, M4.5).
+  - For a report, Dart passes the year, the month, the first moment of each of its days, and the
+    first moment of the next month, each in the phone's current time zone: `DateTime(year, month,
+    day)` for each day, and `DateTime(year, month + 1, 1)`. `report::MonthDays` refuses them unless
+    there is one moment for each day of the month in the Gregorian calendar, the first and the
+    next month's make a `core::MonthBounds`, and each day lasts 0 to 48 hours. A transaction's
+    date is the last day whose first moment is at or before the transaction's.
+  - Dart formats the CSV's title, month, and time made, and passes them with the language's text
+    direction. Rust writes everything else in the CSV.
+  - A search takes the first moment of its start date and of the day after its end date, and
+    searches to one millisecond before the latter, as v1 did.
+- **Consequences:**
+  - Good:
+    - Rust still has no time-zone data, and a zone change applies to the next report, because
+      Dart reads the zone each time.
+    - Rust writes the whole CSV in one call, so the quoting and the formula guard (CS-20) live in
+      one place, and fixture F8, which v1's own code wrote, checks every byte.
+    - The report crate's tests need no database, and the store's reads are tested against
+      fixture F3.
+  - Bad:
+    - Rust can't tell whether the day starts belong to the right zone. Starts from another zone,
+      or of another month of the same length, give wrong dates, which only Dart's tests can
+      catch.
+    - Dart computes 29 to 32 moments for each report, and the labels and the text direction
+      besides. The CSV matches v1's only if Dart writes the labels as v1 did: Java's `MMMM yyyy`
+      for the month, and `yyyy-MM-dd HH:mm z` in US English for the time.
+  - Follow-up:
+    - M4.5 writes the Dart helper for a month's day starts, beside ADR-0019's month bounds, with a
+      test under `TZ=Asia/Beirut` that expects a 25-hour October 24, 2026; formats the labels;
+      and calls `Store::transactions_in_month`, `Store::categories`, `Store::accounts`, and
+      `MonthlyReport::new` through the bridge.
+    - M4.3 passes the search's dates as first moments, and turns the search's errors into v1's
+      message.
+- **Alternatives considered:**
+  - `report` calls `store` and runs both use cases end to end, as v1's did. It changes the layer
+    table, and the report's tests would need a database.
+  - Dart formats each row's date and passes the texts back to get the CSV. It takes two calls,
+    and Rust could check only that there are as many dates as rows.
+  - A time-zone crate in Rust, which ADR-0019 turned down.
+- **Revisit when:** a user reports a date in a CSV export that disagrees with the phone's
+  calendar, or a report needs dates from more than one month, such as a yearly report.

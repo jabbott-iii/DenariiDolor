@@ -1,0 +1,19 @@
+title,Monthly Spending Report
+period,October 2026
+generated_at,2026-11-02 10:15 EET
+total_income,2505.00
+total_expense,70.23
+net,2434.77
+
+date,type,category,description,amount,payment_method
+2026-10-01,INCOME,دخل عام,راتب,2500.00,نقدًا
+2026-10-03,EXPENSE,"'@Groceries","'=HYPERLINK(""http://x"")",12.50,نقدًا
+2026-10-05,TRANSFER,تحويل,ادخار,300.00,"نقدًا → Savings, ""main"""
+2026-10-10,TRANSFER,تحويل,"تحويل
+ناقص",100.00,"Savings, ""main"""
+2026-10-12,EXPENSE,مصروفات عامة,Odd row,5.00,"نقدًا → Savings, ""main"""
+2026-10-24,EXPENSE,مصروفات عامة,"Lunch, ""team""; '@cmd",45.99,"'-Card"
+2026-10-24,EXPENSE,#99,"' +1 refund	tab-=2",0.99,نقدًا
+2026-10-25,EXPENSE,مصروفات عامة,Coffee,3.75,#7
+2026-10-31,EXPENSE,مصروفات عامة,"Refund;-5",2.00,نقدًا
+2026-10-31,INCOME,دخل عام,-5,5.00,نقدًا

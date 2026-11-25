@@ -7,7 +7,8 @@ cents, that every balance change is exact or an error, and that no input makes i
 bottom layer of ADR-0004 (Proposed: Rust owns the rules and the data) and uses only `std`. Built in
 M0.4–M0.7 as described here, with months and `Transaction::budgeted_amount` added in M2.4, and
 `validate_name`, `is_blank`, and the values that five `DomainError` variants carry added in
-M2.5; the API reference is `cargo doc -p denarii-core --open`.
+M2.5, and `StoredTransaction`, `totals`, and `is_whitespace` added in M2.7; the API reference is
+`cargo doc -p denarii-core --open`.
 
 ## Why this design
 
@@ -65,11 +66,17 @@ pub struct Transaction { pub id: Option<TransactionId>, pub description: String,
                          pub kind: TransactionKind }
 pub fn balance_deltas(previous: Option<&Transaction>, current: Option<&Transaction>)
     -> Result<BTreeMap<AccountId, Cents>, ArithmeticOverflow>;
+pub struct StoredTransaction { pub id: TransactionId, pub transaction_type: TransactionType,
+                               pub description: String, pub amount: Cents, pub category_id: CategoryId,
+                               pub account_id: AccountId, pub transfer_account_id: Option<AccountId>,
+                               pub date: EpochMillis }
+pub struct Totals { pub income: Cents, pub expense: Cents, pub net: Cents }
+pub fn totals<'a>(transactions: impl IntoIterator<Item = &'a Transaction>) -> Result<Totals, ArithmeticOverflow>;
 ```
 
-- `Transaction::balance_impact`, `Transaction::account_impacts`, and
-  `Transaction::budgeted_amount` are the only code that matches on the kind to compute money;
-  totals, balances, and the budget check call them, as v1's invariant required.
+- `Transaction::balance_impact`, `Transaction::account_impacts`,
+  `Transaction::budgeted_amount`, and `totals` are the only code that matches on the kind to
+  compute money; balances, the budget check, and reports call them, as v1's invariant required.
   `budgeted_amount` is an expense's amount, and `None` for income and transfers, which no budget
   limits.
 - `balance_deltas` subtracts the previous version's impacts, adds the current one's, and drops the
@@ -77,6 +84,15 @@ pub fn balance_deltas(previous: Option<&Transaction>, current: Option<&Transacti
   transaction as the row (`docs/specs/store.md`, "Transaction writes").
 - `TransactionKind::from_stored` maps a row's `type` and `transfer_account_id`; a transfer with no
   destination gives `None`, which the reader treats as having no balance impact (BUG-06).
+- `StoredTransaction` is a row as the storage layer reads it for reports and searches, which list
+  a malformed transfer too, with its `transfer_account_id` column as stored.
+  `StoredTransaction::transaction` gives the `Transaction` the row stands for, with its kind from
+  `from_stored`, or `None` for a malformed transfer. Added in M2.7.
+- `totals` adds up income amounts, expense amounts, and every transaction's balance impact, as
+  v1's `GenerateReportUseCase` did for its monthly report; a transfer counts in neither of the
+  first two and adds zero to the net. The caller leaves out malformed transfers, which map to no
+  transaction. A stored amount keeps its sign, as v1's sums kept it. Added in M2.7, for
+  `denarii-report` (`docs/specs/report.md`).
 - `TransactionType::stored_name` gives `EXPENSE`, `INCOME`, and `TRANSFER`, the values in the
   database and in CSV files.
 
@@ -89,6 +105,7 @@ pub fn budget_overage(category_name: &str, spent_this_month: Cents, amount: Cent
     -> Result<Option<BudgetOverage>, ArithmeticOverflow>;
 pub fn validate_name(name: &str) -> Result<&str, DomainError>;
 pub fn is_blank(text: &str) -> bool;
+pub fn is_whitespace(c: char) -> bool;
 ```
 
 - `validate_transaction` checks v1's field rules in v1's order and returns the transaction with
@@ -100,7 +117,9 @@ pub fn is_blank(text: &str) -> bool;
   `InvalidName` when it isn't 1 to `MAX_NAME_UNITS` (50) UTF-16 code units long; the storage
   layer stores the trimmed name, as v1 did. `is_blank` is Kotlin's `isBlank()`, which decides
   whether a category's icon was given (`docs/specs/store.md`, "Categories, accounts, and
-  budgets").
+  budgets"). `is_whitespace` is Kotlin's `Char.isWhitespace()`, which `trim()`, `trimStart()`,
+  and `isBlank()` used; `denarii-report` trims with it as v1's search screen and CSV formatter
+  trimmed (M2.7).
 - `DomainError` has v1's 23 variants, and `DomainError::code` returns v1's names, such as
   `BUDGET_EXCEEDED`, which name the localized messages. v1 passed a value with some of them,
   which the message shows, and the variants carry the same value: `DescriptionTooLong` and
@@ -147,7 +166,7 @@ detail no user sees.
 
 | Case | v1 | `core` |
 | :- | :- | :- |
-| Arithmetic past the range of a 64-bit number of cents | Wrapped silently | Returns `ArithmeticOverflow` |
+| Arithmetic past the range of a 64-bit number of cents, in a balance or a report's totals | Wrapped silently | Returns `ArithmeticOverflow` |
 | A transfer whose destination is its own account | `accountImpacts` gave the account `+amount`, because Kotlin's `mapOf` kept the last pair | No change, which is the correct impact; validation rejects such transfers in both |
 | Why an amount was rejected | `null` | A `MoneyParseError` variant |
 | Unicode data for digits and currency signs | The phone's Java runtime | Unicode 15.0, fixed at generation time |
@@ -170,6 +189,11 @@ detail no user sees.
 8. `denarii-core` depends on no crate outside `std`.
 9. `MonthBounds::new` accepts exactly the spans from `MIN_SPAN_MILLIS` to `MAX_SPAN_MILLIS`, and
    `contains` holds the start and not the next month's start.
+10. `totals` gives the sum of the income's amounts, the sum of the expenses' amounts, and the sum
+    of every balance impact, with a transfer in none of the first two, or `ArithmeticOverflow`
+    when any of the three leaves the range of an `i64`.
+11. `StoredTransaction::transaction` keeps every field of the row, and gives `None` exactly for a
+    transfer with no destination.
 
 ## Tests
 
@@ -182,5 +206,7 @@ detail no user sees.
 | 1, 8 | `rust/crates/core/Cargo.toml` has no `[dependencies]`; review checks for floating point |
 | 9 | `tests/month.rs`: the limits, one millisecond past each, swapped and empty bounds, a day's and a year's, spans that overflow an `i64`, and months before 1970 |
 | `budgeted_amount` | `tests/ledger.rs`: each kind |
+| 10, 11 | `tests/ledger.rs`: v1's `GenerateReportUseCaseTest` month, several of each kind, negative stored amounts, an empty set, each sum's overflow, the net's alone, and transfers of `i64::MAX`; a stored row of each type, with and without a destination |
+| `is_whitespace` | `tests/validation.rs`: Kotlin's set against U+0085, U+200B, and control characters |
 
 Run them with `cargo test --workspace --locked` from `rust/`.

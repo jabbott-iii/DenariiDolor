@@ -153,6 +153,13 @@ name = "denarii-core"
 version = "0.1.0"
 
 [[package]]
+name = "denarii-report"
+version = "0.1.0"
+dependencies = [
+ "denarii-core",
+]
+
+[[package]]
 name = "denarii-store"
 version = "0.1.0"
 dependencies = [

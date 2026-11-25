@@ -7,15 +7,16 @@ file only to bring it to schema version 2 and changes nothing when it fails, tha
 write changes the stored balances in the same database transaction as its row and changes
 nothing when it fails, that every other write keeps v1's rules for names, protected rows, and
 rows in use and changes nothing when it fails, that seeding stores the default accounts and
-categories only in an empty table, and that calls from several threads never interleave on its
-one connection. ADR-0006 (the database stays SQLCipher, opened from Rust with `rusqlite`), ADR-0017
+categories only in an empty table, that each read sees the database as one write left it, and
+that calls from several threads never interleave on its one connection. ADR-0006 (the database stays SQLCipher, opened from Rust with `rusqlite`), ADR-0017
 (SQLCipher and OpenSSL compiled from source on every target, and one connection behind a mutex),
 ADR-0018 (a new schema only in an absent or empty file, and no write to a schema the store
 doesn't know), and ADR-0019 (Dart passes each month's bounds, and Rust reads no time zone) shaped
 it. Sections 5 and 6 of `docs/specs/android-v1-formats.md` describe the file it must read.
 Opening and closing were built in M2.1, the schema and its migration in M2.2, the transaction
-writes in M2.4, the category, account, and budget writes in M2.5, and the seeding of the default
-accounts and categories in M2.6, as described here. The API reference is
+writes in M2.4, the category, account, and budget writes in M2.5, the seeding of the default
+accounts and categories in M2.6, and the reads that the monthly report and the search take in
+M2.7, as described here. The API reference is
 `cargo doc -p denarii-store --open`, run from `rust/`.
 
 ## Why this design
@@ -462,6 +463,51 @@ different from each other.
 | A name with whitespace around it | Stored as it was | Stored trimmed, as every other name is |
 | Two accounts, or two categories, with one name under v1's duplicate check | `INSERT OR IGNORE` left the second row out when the two were the same exactly, so a protected default was missing, and stored both when they differed in the case of ASCII letters | The duplicate error, which carries the later name, and nothing is written |
 
+## Reading the ledger
+
+Built in M2.7 as described here, in `src/reads.rs`. Four reads port the queries of v1's
+`TransactionDao.observeByDateRange`, `TransactionDao.search`, `CategoryDao.getAll`, and
+`AccountDao.getAll` (at `6d57526`), which v1's `GenerateReportUseCase` and search screen read:
+
+```rust
+impl Store {
+    pub fn transactions_in_month(&self, month: MonthBounds) -> Result<Vec<StoredTransaction>, StoreError>;
+    pub fn search_transactions(&self, filters: &SearchFilters) -> Result<Vec<StoredTransaction>, StoreError>;
+    pub fn categories(&self) -> Result<Vec<Category>, StoreError>;
+    pub fn accounts(&self) -> Result<Vec<Account>, StoreError>;
+}
+```
+
+A read returns `core::StoredTransaction` rather than `core::Transaction`, because a report and a
+search list every stored row, a malformed transfer with no destination included (BUG-06), and a
+`Transaction` can't hold one. Its `transfer_account_id` is the stored column as it is, which v1's
+report read even on an expense. `StoredTransaction::transaction` gives the `Transaction` a row
+stands for, or `None` for a malformed transfer. Each read is one `SELECT` under the store's lock,
+so it sees the database as one write left it. A row whose `type` isn't exactly one of v1's three
+names fails the read with `StoreError::Sqlite`, as it fails a write.
+
+- **A month's transactions:** the rows dated from `month.start()`, inclusive, to
+  `month.next_start()`, exclusive, ordered by date and then by ID. Those are the rows v1 read
+  from the month's first moment to one millisecond before the next month's, then sorted by date
+  and ID. `denarii-report` builds the monthly report from them (`docs/specs/report.md`).
+- **A search:** first `core::is_valid_search_range`, whose failure is
+  `Domain(InvalidSearchRange)`, then v1's query. A filter left `None` matches every row. The
+  description must contain the filter's text, with `\`, `%`, and `_` escaped by v1's `escapeLike`,
+  so that each matches only itself; SQLite's `LIKE` ignores the case of ASCII letters only, so a
+  search for `CAFé` finds `Café`, and one for `CAFÉ` doesn't, as in v1. The amounts and the dates are inclusive bounds,
+  and the rows come newest first. `denarii-report` turns the search screen's input into the
+  filters.
+- **Categories and accounts:** every row, ordered by name as SQLite compares text by default, by
+  its UTF-8 bytes: `Zoo` before `cafés`, and `cafés` before `Épicerie`. A report takes their
+  names; an account comes with its stored balance.
+
+### Differences from v1
+
+| Case | v1 | `store` |
+| :- | :- | :- |
+| A search's rows dated at the same millisecond | `ORDER BY dateEpochMillis DESC` left their order to SQLite's query plan | Ordered by ID from the highest, which the reverse scan of the date index also gave |
+| A read while a write runs | Room's `Flow` read again after each write, and the screen showed the newest list | The caller reads again when it needs to; each read is one statement that no write interleaves with |
+
 ## The key
 
 `DatabaseKey` holds the 32 bytes. Its `Debug` output is `DatabaseKey(..)`, and dropping it
@@ -582,6 +628,16 @@ environment that Flutter's build hook or a contributor sets up. The register in
     was.
 25. Seeding from several threads and connections at once stores the defaults once, all in the
     language of one call, and every call succeeds.
+26. A month's read holds exactly the rows dated from its first moment, inclusive, to the next
+    month's, exclusive, by date and then by ID, with every stored column as it is, a malformed
+    transfer's included.
+27. A search holds exactly the rows that match every filter set, with inclusive bounds, newest
+    first and by ID from the highest at one moment. Its description matches `%`, `_`, and `\`
+    literally, and ignores the case of ASCII letters only.
+28. A search whose minimum amount is above its maximum, or whose start is after its end, fails
+    with `Domain(InvalidSearchRange)`.
+29. Categories and accounts are read in the byte order of their names, with every stored column.
+30. A row whose `type` isn't one of v1's three names fails a read with `StoreError::Sqlite`.
 
 ## Tests
 
@@ -611,11 +667,17 @@ environment that Flutter's build hook or a contributor sets up. The register in
 | 23 | `src/seed.rs`: a second seeding in French, a table that holds a row but no default, and fixture F3's bytes after seeding and closing |
 | 24 | `src/seed.rs`: each field blank, made of whitespace, and one past the limit, in a new file and in fixture F3; duplicate account and category names; names that differ only in the case of a non-ASCII letter; triggers that refuse account 2 or category 3; and missing tables, with a snapshot of every table compared before and after |
 | 25 | `src/seed.rs`: five new databases, each seeded by eight threads at once through two `Store`s, half in English and half in French |
+| 26 | `src/reads.rs`: rows given out of order and at one moment, the last moment before a month and each month's first, an empty month, a malformed transfer and an expense that names a destination read back column by column, and fixture F3's November (10 rows, row 12 malformed) and October (row 2) |
+| 27 | `src/reads.rs`: every case of v1's `TransactionDaoTest` search, its wildcard rows with a backslash added, all six filters at once, each bound alone and at its exact value, rows at one moment, `Café ☕` against `CAFé` and `CAFÉ`, and fixture F3's emoji, Arabic, category, and November searches |
+| 28 | `src/reads.rs`: a minimum 1 cent above the maximum, and a start 1 millisecond after the end |
+| 29 | `src/reads.rs`: names in upper and lower case, with and without accents, and fixture F3's six categories and four accounts with their icons and balances; an empty database |
+| 30 | `src/reads.rs`: a lower-case `expense` row, through a month's read and a search |
 | The key pragma's text | `src/key.rs`: v1's raw-key syntax for a known key, and a length equal to the capacity |
 
 Run them with `cargo test --locked -p denarii-store` from `rust/`, only the schema's with
 `cargo test --locked -p denarii-store migration`, only the transaction writes' with
 `cargo test --locked -p denarii-store transactions`, only the category, account, and budget
 writes' with `cargo test --locked -p denarii-store reference`, only the seeding's with
-`cargo test --locked -p denarii-store seed`, or those whose names mention a fixture,
+`cargo test --locked -p denarii-store seed`, only the reads' with
+`cargo test --locked -p denarii-store reads`, or those whose names mention a fixture,
 every test of F3 and F4 among them, with `cargo test --locked -p denarii-store fixture`.

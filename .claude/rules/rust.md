@@ -31,8 +31,10 @@ so they can fill them in.
   money in cents, transactions, balance changes, and validation. `crates/bridge`
   (`denarii-bridge`) is the API Dart calls through `flutter_rust_bridge` (ADR-0005), with its
   generated glue in `src/frb_generated.rs`. `crates/store` (`denarii-store`) opens the SQLCipher
-  database with `rusqlite` (ADR-0006, ADR-0017). The planned crates (`vault`, `backup`, and
-  `report`), the rest of `store`, and the tasks that build them are in `docs/01-architecture.md`
+  database with `rusqlite` (ADR-0006, ADR-0017), and runs its writes and reads. `crates/report`
+  (`denarii-report`) builds the monthly report, its CSV text, and the search filters from rows the
+  store reads (ADR-0021). The planned crates (`vault` and `backup`) and the tasks that build them
+  are in `docs/01-architecture.md`
 - **Toolchain:** edition 2024, Rust 1.100.0 pinned in `rust/rust-toolchain.toml`, and
   `rust-version = "1.100"` in `[workspace.package]`
 - **Check commands:** run from `rust/`: `cargo fmt --all --check`, `cargo clippy --workspace
@@ -65,8 +67,8 @@ so they can fill them in.
 - **Public API:** none published. The `bridge` crate's API is what Dart calls, so a change to it
   regenerates the Dart bindings in the same change
 - **Published crates:** none
-- **Design docs:** `docs/specs/<crate>.md`: `docs/specs/core.md`, `docs/specs/bridge.md`, and
-  `docs/specs/store.md`
+- **Design docs:** `docs/specs/<crate>.md`: `docs/specs/core.md`, `docs/specs/bridge.md`,
+  `docs/specs/store.md`, and `docs/specs/report.md`
 - **Test layout:** unit tests in a `#[cfg(test)] mod tests` beside the code; integration tests
   that use only the public API in each crate's `tests/`; compatibility fixtures, such as a v1
   database and one backup per `FORMAT_VERSION`, in `tests/fixtures/` of the crate that reads them

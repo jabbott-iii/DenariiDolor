@@ -334,7 +334,7 @@ fn insert(
 
 /// A `type` column's value, read the way Room's generated code for v1 read it: exactly one of
 /// the three stored names.
-struct StoredType(TransactionType);
+pub(crate) struct StoredType(pub(crate) TransactionType);
 
 impl FromSql for StoredType {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {

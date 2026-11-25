@@ -679,7 +679,52 @@ rules.
   - Accept:
     - A new database holds accounts 1–2 and categories 1–3 with v1's icons.
   - Verify: `cd rust && cargo test --locked -p denarii-store seed` (expect pass)
-- [ ] **M2.7 — report: monthly report, search, and CSV**
+- [x] **M2.7 — report: monthly report, search, and CSV**
+  - Note: 2026-11-24: the maintainer chose the recommended answer to two questions, recorded in
+    ADR-0021. `denarii-store` runs the reads, and `denarii-report` depends on `core` alone, as the
+    layer table in `docs/01-architecture.md` says. For a report, Dart passes the first moment of
+    each of the month's days, the CSV's title, month, and time made, and the text direction. The
+    alternatives were a `report` crate that calls `store`, and Dart writing each row's date for a
+    second call.
+  - Note: 2026-11-24: `denarii-store` has `Store::transactions_in_month`,
+    `Store::search_transactions`, `Store::categories`, and `Store::accounts` in `src/reads.rs`
+    (`docs/specs/store.md`, "Reading the ledger"). The new `denarii-report`
+    (`docs/specs/report.md`) has `MonthDays` and `LocalDate`, `MonthlyReport` with `ReportRow`
+    and `TextDirection`, `MonthlyReport::to_csv` with `CsvLabels`, `escape_cell`, `ReportFormat`,
+    `parse_search_input` with `SearchInput`, and `ReportError`. `denarii-core` gains
+    `StoredTransaction`, which can hold a malformed transfer, `Totals` and `totals`, and a public
+    `is_whitespace`. `Cargo.lock` gains only the new crate's entry, and a new `.gitattributes`
+    keeps fixture F8's bytes from line-ending conversion.
+  - Note: 2026-11-24: fixture F8 is in `rust/crates/report/tests/fixtures/`, whose `README.md`
+    has every row, both writers' source, and the steps. A throwaway unit test in a scratch copy of
+    v1 ran v1's own `GenerateReportUseCase` and `ReportCsvFormatter` on Temurin 17.0.20.1, for
+    October 2026 in `Asia/Beirut`, where October 24 lasts 25 hours. It wrote the export in Arabic
+    and in English: 12 rows, two of them outside the month, with a malformed transfer, an expense
+    that names a destination, formulas, quotes, a line feed, and a missing category and account.
+    It also escaped 2,121 cells, 2,000 of them random. Both exports match byte for byte.
+  - Note: 2026-11-24: one finding changed the code. A throwaway instrumented test escaped the same
+    cells on `Denarii_API_26` and `Denarii_API_36`, and 5 came out differently from the desktop
+    Java's, each with a no-break space after a `;` or a tab. Android's `java.util.regex` runs on
+    ICU, whose `\s` is Unicode's `White_Space`; a desktop Java's is six ASCII characters, and
+    v1's unit tests ran there. A scan of every character of the Basic Multilingual Plane on both
+    emulators found the same 25 `White_Space` characters. The port follows the phones, which
+    guard more cells (CS-20). Both emulators ran with `-read-only`, and both apps were
+    uninstalled afterward.
+  - Note: 2026-11-24: `cargo test --locked -p denarii-report` passed: 53 unit tests, the 7 F8
+    tests in `tests/f8.rs`, and 5 doc tests. The store gains 18 unit tests in `src/reads.rs`, and
+    `core` 10 tests and a doc test. The new tests port every case of v1's
+    `GenerateReportUseCaseTest`, of `ReportFormattingTest` for `escape`, file names, and the CSV,
+    of `SearchFilterParserTest` but the two that parse a category or a date from text, and of
+    `TransactionDaoTest`'s searches. Each of 13 deliberate breakages failed a test: the guard's
+    whitespace as Java's six characters, no `f` or `d` suffix on a number, Rust's leading
+    whitespace for Kotlin's, a day that starts after its first moment, rows sorted by ID alone, a
+    payment method from the kind rather than the stored column, a search that ends at the day
+    after's first moment, a month's read that holds the next month's first moment, search text
+    not escaped for `LIKE`, ties by the lowest ID, no range check before a search, income added
+    as its balance impact, and a stored expense with a destination read as a transfer. The report
+    and core tests passed 30 runs in a row. `cargo test --workspace --locked` takes 7.0 s with
+    nothing to rebuild. Rust coverage rose to 97.01% of lines and 94.90% of regions, so
+    `tool/coverage.sh` raises its Rust floors to 97 and 94.
   - Note (from M2.4): take a report's month as `core::MonthBounds`, which Dart computes
     (ADR-0019), and select its rows from `start` inclusive to `next_start` exclusive, as the
     budget check in `rust/crates/store/src/transactions.rs` does. v1's search turned a typed
@@ -867,15 +912,36 @@ over it keeps the data, and the same PIN, answer, and fingerprint sign in.
     - The skill names only commands and files that exist.
   - Verify: run the skill's commands once (expect success)
 - [ ] **M4.3 — search: filters and results**
+  - Note (from M2.7): build the filters with `report::parse_search_input`, passing the picker's
+    category ID, the amounts as typed with `moneyParsingSymbols`, and the date picker's dates as
+    the first moment of the start date and of the day after the end date, `DateTime(y, m, d)`
+    and `DateTime(y, m, d + 1)`. Then call `Store::search_transactions`, which lists the newest
+    first. v1's screen showed `invalid_search_filters_message` for every refused input, the
+    inverted ranges included, and an empty list when the search itself failed. A read returns a
+    snapshot, where v1's Room `Flow` read again after each write, so read again after an edit.
   - Depends: M2.7, M3.5
 - [ ] **M4.4 — category: manage categories, accounts, and budgets**
   - Note (from M2.5): the store writes categories, accounts, and budgets but doesn't list them
     yet. v1's DAOs listed categories and accounts with `ORDER BY name ASC`, which sorts by
     SQLite's binary collation, so `Zoo` comes before `apple`, and listed budgets in no order.
+  - Note (from M2.7): `Store::categories` and `Store::accounts` now list them in that order, with
+    their icons and stored balances. Budgets still have no read.
     v1's use cases took default arguments that the caller now passes: the default icon, an
     opening balance of 0, and an 80 percent warning threshold.
   - Depends: M2.5, M3.5
 - [ ] **M4.5 — report: monthly report, CSV and PDF export, and sharing**
+  - Note (from M2.7): ADR-0021 leaves Dart three jobs. Compute the month's day starts with one
+    helper beside ADR-0019's month bounds, `DateTime(year, month, d)` for each day and
+    `DateTime(year, month + 1, 1)`, tested under `TZ=Asia/Beirut`, where October 24, 2026 must last
+    25 hours. Format the CSV's labels as v1 did: the title from `reportTitle`, the month with
+    `MMMM yyyy` in the app's language, and the time made with `yyyy-MM-dd HH:mm z` in US English
+    in the phone's zone. Dart's `DateTime.timeZoneName` gives the zone's abbreviation; check on a
+    phone that it matches Java's, such as `EET`, or record the difference. And pass the text
+    direction: v1 pointed a transfer's arrow left when `Locale.getDefault()`'s language was one of
+    `ar`, `ckb`, `dv`, `fa`, `he`, `iw`, `ps`, `sd`, `ug`, `ur`, and `yi`. Then call
+    `Store::transactions_in_month` with `MonthDays::bounds`, `Store::categories`,
+    `Store::accounts`, and `MonthlyReport::new`, and write `to_csv`'s text as UTF-8 with no byte
+    order mark, under `MonthlyReport::file_name`.
   - Depends: M2.7, M3.5
   - Decide first: how PDFs are rendered.
 - [ ] **M4.6 — settings: currency, theme, and biometric sign-in**
