@@ -1,18 +1,42 @@
-# Keeps GitHub Actions, Rust crates and Dart packages patched; each update runs through ci.yml and security.yml.
+# Keeps GitHub Actions, the Rust toolchain, Rust crates and Dart packages patched; each update runs through ci.yml and security.yml.
 # Gradle joins for android/ when it has dependencies of its own.
+# Every entry waits 7 days after a release before proposing it, so a broken or malicious release has time to be pulled;
+# security updates don't wait. Commit prefixes follow .claude/rules/commits.md: build(deps) for manifests and lock files,
+# ci(deps) for workflows.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci
+      include: scope
     groups:
       actions:
         patterns: ["*"]
+  # Proposes new Rust releases for rust/rust-toolchain.toml. The same pull request must also move `rust-version` in
+  # rust/Cargo.toml, which Dependabot leaves alone (the dependency-upgrade skill).
+  - package-ecosystem: rust-toolchain
+    directory: /rust
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: build
+      include: scope
   - package-ecosystem: cargo
     directory: /rust
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: build
+      include: scope
     open-pull-requests-limit: 5
   # flutter_rust_bridge's two Dart packages come in one pull request and its crate in a Cargo one. Both stay red in CI
   # until the crate, the packages, the codegen in ci.yml and the bindings move together (ADR-0014).
@@ -20,6 +44,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: build
+      include: scope
     open-pull-requests-limit: 5
     groups:
       flutter-rust-bridge:
