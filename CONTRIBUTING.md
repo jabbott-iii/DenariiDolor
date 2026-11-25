@@ -2,7 +2,7 @@
 
 Thank you for helping. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). The architecture and maintainability rules in [`CLAUDE.md`](CLAUDE.md), [`.claude/rules/`](.claude/rules/) and [`docs/`](docs/) are authoritative. Claude Code reads them automatically, and they apply to every contributor. This guide summarizes what a contributor needs from them.
 
-Security vulnerabilities are the exception: report them through a private security advisory on the repository, not a public issue.
+Security vulnerabilities are the exception: report them privately, as the [security policy](SECURITY.md) describes, never in a public issue.
 
 Denarii Dolor is proprietary software owned by Joseph Anthony Abbott III (see [LICENSE](LICENSE)). A contribution can be accepted only after its author signs a written agreement that assigns their rights in it to him.
 
@@ -99,6 +99,37 @@ The security workflow also runs CodeQL, gitleaks and, on pull requests, dependen
     security finding takes the next free `CS-NN` ID. Earlier findings are in the git history:
     `git show aba0b55:intel/cybersec.md`.
 
+## Commits
+
+Write each message in the [Conventional Commits](https://www.conventionalcommits.org/) format, as
+[`.claude/rules/commits.md`](.claude/rules/commits.md) sets out, with its text following
+[`.claude/rules/writing.md`](.claude/rules/writing.md):
+
+```text
+feat(store): add, edit, and delete transactions with v1's checks (M2.4)
+
+<What changed and why, wrapped at 72 characters.>
+
+Tests: <each check you ran and its result, and each you couldn't run>
+Refs: <the roadmap task, decision records, and CS-NN or BUG-NN IDs>
+```
+
+- **Type:** `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `style`, `build`, `ci`, `chore`, or
+  `revert`, as the table in `commits.md` defines them.
+- **Scope:** the area changed: a crate (`core`, `store`, `bridge`, and later `vault`, `backup`, and
+  `report`), an area of the app (`auth`, `session`, `dashboard`, `search`, `transaction`, `budget`,
+  `category`, `account`, `settings`, `legal`, `i18n`, `ui`), a native folder (`android`, `ios`), or
+  `deps`, `build`, `ci`, `docs`, or `claude`. Leave it out when a change spans several areas.
+- **Summary:** imperative and lowercase, with no period, 72 characters at most, and the roadmap
+  task's ID in parentheses when the commit finishes or advances one.
+- **One change per commit.** A dependency upgrade or a toolchain bump gets a commit of its own.
+  Keep together what must travel together: a task's code, tests, and status updates; a schema
+  change with its migration, fixture, and test; and a new `DomainError` with its message in all
+  seven languages.
+- **Breaking changes:** a change that installed copies can't go back from, such as a new schema
+  version or backup `FORMAT_VERSION`, adds a `BREAKING CHANGE:` line that names its decision
+  record.
+
 ## Documentation
 
 Update the documents a change affects in the same pull request:
@@ -113,14 +144,22 @@ Update the documents a change affects in the same pull request:
 | The currency symbols' generator (`tool/CurrencySymbols.java`) | `lib/l10n/currency_symbols.dart`, regenerated with Java 25 (`java tool/CurrencySymbols.java > lib/l10n/currency_symbols.dart`, then `dart format lib/l10n/currency_symbols.dart`) and committed with the change (ADR-0016) |
 | User-visible behavior | The user guide in `README.md` |
 | What the app stores, exports or shares, or its permissions | `PRIVACY.md`, and tell the maintainer about the Play Data safety form |
-| The workflow or the checks | This file |
+| The workflow or the checks | This file, and the pull request template in `.github/pull_request_template.md` |
 
 Write prose by [`.claude/rules/writing.md`](.claude/rules/writing.md), and plans and specs by [`.claude/rules/roadmap-and-docs.md`](.claude/rules/roadmap-and-docs.md).
 
 ## Pull request expectations
 
+The pull request template asks for each of these; fill in every section.
+
 - Link the approved issue and the roadmap task, and describe what changed and why.
 - List the validation commands you ran and their results. Say which checks you didn't run (for example, integration tests without an emulator, or biometric checks without a phone).
 - Keep the change small and focused, and preserve v1's behavior unless the task and a decision record change it.
 - Point out any security-sensitive change so that it gets a careful review.
-- CI and the security workflow must pass before merge.
+- CI and the security workflow must pass before merge, and the code owner must approve it.
+
+## Reporting a problem
+
+- **A bug or an idea:** open an issue with the **Bug report** or **Feature request** form.
+- **A vulnerability:** report it privately, as [`SECURITY.md`](SECURITY.md) describes. Never in an
+  issue.
