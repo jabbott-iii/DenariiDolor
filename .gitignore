@@ -65,3 +65,28 @@ local.properties
 *.aab
 *.ipa
 *.dm
+
+# The rest of what `flutter create` (Flutter 3.50.1) ignores at the root: the
+# iOS build's last build ID, `dart doc` output, Swift Package Manager's folders,
+# which Flutter's iOS build uses (M7), and Python bytecode from the tools
+**/ios/Flutter/.last_build_id
+**/doc/api/
+.buildlog/
+.build/
+.swiftpm/
+*.pyc
+
+# iOS signing material must never be committed either (M7): certificates with
+# their private keys, provisioning profiles, and App Store Connect API keys
+*.p12
+*.mobileprovision
+*.p8
+
+# Environment files can hold secrets; only the example is shared
+.env
+.env.*
+!.env.example
+
+# Claude Code's personal settings and instructions, which stay on one machine
+.claude/settings.local.json
+CLAUDE.local.md
