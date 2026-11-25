@@ -1025,7 +1025,8 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
       return, with the crate it chooses for wiping memory.
     - M3.6: the biometric key, its ciphers, and the prompt, in `VaultKeystore` and the
       `keystore` crate.
-    - M3.2's remaining check: opening a profile that v1 wrote, with v1's storage key, on a phone.
+    - M3.5: opening a profile that v1 wrote, with v1's storage key, on a phone, a check that the
+      maintainer moved there from M3.2 on 2026-11-25.
 - **Alternatives considered:**
   - `jni-sys` in the `bridge` crate, as in the spike. `JNI_OnLoad` would sit in the library the
     runtime loads, but the vault would need a trait that the bridge implements, and until M3.3

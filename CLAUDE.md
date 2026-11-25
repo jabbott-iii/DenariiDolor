@@ -11,9 +11,9 @@ files with `git show 6d57526:<path>`. The new app must open what v1 left on user
 
 ## Status
 
-As of 2026-11-25, all of M0's tasks, M1.1, M1.2, M1.4, M1.5, M1.6, all of M2's tasks, M3.1, and M3.8 are done, and M1.3's Flutter jobs are in `ci.yml`
-but haven't run on a pull request yet. M3.2's Keystore code is built and passes on both emulators, but its check against
-the profile v1 wrote on a phone hasn't run, so it isn't ticked. M0's exit criteria are the maintainer's to check, and they
+As of 2026-11-25, all of M0's tasks, M1.1, M1.2, M1.4, M1.5, M1.6, all of M2's tasks, M3.1, M3.2, and M3.8 are done, and M1.3's Flutter jobs are in
+`ci.yml` but haven't run on a pull request yet. M3.2's check against the profile v1 wrote on a phone moved to M3.5.
+M0's exit criteria are the maintainer's to check, and they
 include deciding ADR-0004, which is still Proposed; the maintainer accepted ADR-0005 in M1.2, ADR-0006 in M2.1, and
 ADR-0007 in M3.1, after a throwaway spike in which Rust reached the Android Keystore through Kotlin, and decided
 ADR-0018 in M2.2, ADR-0019 in M2.4, ADR-0020, the coverage floors, on 2026-11-24, ADR-0021 in M2.7, and ADR-0022 in
@@ -65,7 +65,7 @@ details.
 | Anything | `docs/00-overview.md`, `docs/01-architecture.md`, and the task in `docs/roadmap.md` |
 | `rust/` | `.claude/rules/rust.md`, and the crate's spec in `docs/specs/` (`core.md`, `bridge.md`, `store.md`, `report.md` and `keystore.md` today) |
 | `lib/`, `test/`, `pubspec.yaml`, ARB files (from M1.1) | `.claude/rules/flutter.md` |
-| Kotlin, Gradle files, manifests or resources in `android/` | `.claude/rules/kotlin.md` and `.claude/rules/android.md` |
+| Kotlin, Gradle files, manifests or resources in `android/` | `.claude/rules/android.md` |
 | A test, a test fixture or a CI check | `.claude/rules/testing.md` |
 | Stored data, keys, sign-in, the session, backups, exports, `android/`, `ios/`, `.github/` | `.claude/rules/security.md` and `docs/specs/android-v1-formats.md` |
 | `docs/`, `README.md`, `CONTRIBUTING.md`, `SECURITY.md` | `.claude/rules/roadmap-and-docs.md` and `.claude/rules/writing.md` |
@@ -237,8 +237,7 @@ Rules in `.claude/rules/` load automatically when you work on matching files:
 | `pair-programming.md` | Every task, so it loads every time: reading first, the plan, the decisions to ask about, pushing back, small checked steps, the report |
 | `rust.md` | The Rust workspace: types, errors, untrusted input, `unsafe`, docs, tests, lints |
 | `flutter.md` | Dart and Flutter: widgets, state, navigation, localization, platform code, tests, release |
-| `kotlin.md` | Kotlin and the Gradle files in `android/`: types, errors, coroutines, untrusted input, tests, builds |
-| `android.md` | The Android host app: manifests, resources, permissions, exported components, security, release |
+| `android.md` | Everything in `android/`: the Kotlin Keystore code, Gradle files, manifests, permissions, exported components, security, release |
 | `testing.md` | All tests: never weakening one to make it pass, coverage, strict tests, performance, hostile input, CI |
 | `security.md` | Keys, sign-in, the session, exports, backups, manifests, workflows: controls that must stay |
 | `legal-docs.md` | `PRIVACY.md`, `THIRD_PARTY_NOTICES.md`, `licenses/`, `LICENSE` |
@@ -246,8 +245,9 @@ Rules in `.claude/rules/` load automatically when you work on matching files:
 | `writing.md` | All prose: docs, comments, error messages, commit messages |
 | `commits.md` | Commit messages, splitting work into commits, how much Git you may run, pull requests |
 
-`flutter.md` also refers to `swift.md` for the Swift in `ios/`, which doesn't exist yet; M7.1 adds it. `kotlin.md` and
-`android.md` came from Doctrina in M3.1.
+`flutter.md` also refers to `swift.md` for the Swift in `ios/`, which doesn't exist yet; M7.1 adds it. `android.md`
+merges Doctrina's `kotlin.md` and `android.md`, which came in M3.1, trimmed on 2026-11-25 to what the Android host app
+uses.
 
 Skills in `.claude/skills/`:
 

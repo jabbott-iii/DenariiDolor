@@ -15,7 +15,7 @@ paths:
 These rules cover Dart code and Flutter apps for Android and iOS in this repository: widgets, state,
 navigation, localization, platform integration, data, tests, and release builds. They describe how a
 senior mobile developer builds cross-platform apps with Flutter. Native code follows its own rules
-in this folder: Kotlin in `android/` follows `kotlin.md` and `android.md`, and Swift in `ios/`
+in this folder: Kotlin and the rest of `android/` follow `android.md`, and Swift in `ios/`
 follows `swift.md`. Text follows `writing.md`.
 
 Apply them to code you write or edit. Don't rewrite existing code only to make it conform; fix a
@@ -287,8 +287,8 @@ Stop and ask the user before you:
 - Follow the **Platform channels** setup. Prefer a well-maintained plugin to writing native code.
   When the app needs its own native code, generate type-safe channels with Pigeon instead of
   hand-written `MethodChannel` strings.
-- Write the native side under the rules for its language: `android.md` and `kotlin.md` for
-  `android/`, and `swift.md` for `ios/`.
+- Write the native side under the rules for its language: `android.md` for `android/`, and
+  `swift.md` for `ios/`.
 - Handle `PlatformException` and `MissingPluginException` from every channel call. A plugin may
   not implement a method on every platform.
 - Use platform views (`AndroidView`, `UiKitView`) only where a native view is required, such as

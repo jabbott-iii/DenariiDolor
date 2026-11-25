@@ -1,19 +1,22 @@
 ---
 paths:
-  - "**/*.kt"
-  - "**/AndroidManifest.xml"
-  - "**/src/*/res/**"
-  - "**/proguard-rules.pro"
-  - "**/consumer-rules.pro"
-  - "**/schemas/**"
+  - "android/**"
 ---
 
-# Android and Jetpack Compose standards
+# Android host app and Kotlin standards
 
-These rules cover Android apps and their Jetpack Compose UI in this repository: screens, ViewModels,
-the manifest, resources, persistence, background work, and release builds. They describe how a
-senior mobile developer builds for Android. Kotlin itself follows `kotlin.md` in this folder, and
-strings and other text follow `writing.md`.
+These rules cover everything in `android/`: the Kotlin, the Gradle files, the manifests, the
+resources, and the keep rules for R8, Android's code shrinker, of Flutter's Android host app. Flutter draws every screen, and
+Kotlin holds only what needs the Android runtime, so one rule covers the Kotlin and the Android
+app together. KDoc, error messages, and other text follow `writing.md` in this folder, and
+`security.md`, which also loads for `android/`, lists the controls that must stay.
+
+This rule merges and trims `kotlin.md` and `android.md` from Doctrina commit `dc6eb2d`. It leaves
+out what this app doesn't have: Android screens and Jetpack Compose, ViewModels and repositories,
+Android navigation, text in Android resources, Room and DataStore, coroutines and Flow, background
+work, Kotlin Multiplatform, and published libraries. Adding any of them is the user's decision
+(see "Decisions that are the user's"); bring the matching section back from Doctrina in the same
+change.
 
 Apply them to code you write or edit. Don't rewrite existing code only to make it conform; fix a
 passage when you are already changing it, and mention anything else you notice.
@@ -25,31 +28,78 @@ each value by its bold name. If a value still reads `[FILL IN: …]`, the rule i
 yet. Work out that value from the repository itself, and tell the user which values are missing
 so they can fill them in.
 
-- **Modules:** `:app` in `android/app/`, Flutter's Android host app (the **Modules** in `kotlin.md`)
-- **SDK levels:** minSdk 26, targetSdk 36, and compileSdk 37, set in `android/app/build.gradle.kts`,
-  the same as v1 (`docs/specs/android-v1-formats.md`, section 1)
+- **Modules:** one Gradle module, `:app` in `android/app/`, Flutter's Android host app. Its
+  Kotlin is in `android/app/src/main/kotlin/com/denariidolor/`: `MainActivity`, `VaultKeystore`
+  (M3.2), which Rust calls for the Keystore, and the `BiometricPrompt` code from M3.6. Flutter
+  writes `android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java`, which is
+  never edited by hand
 - **Architecture:** no Android UI: Flutter draws every screen inside one `FlutterActivity`,
-  `MainActivity`, and the screens follow `flutter.md`. Kotlin holds only Keystore keys and the
-  biometric prompt, which Rust calls through JNI (ADR-0007, accepted in M3.1; ADR-0022: the
-  `keystore` crate calls `VaultKeystore`, and R8 keeps it by name in `proguard-rules.pro`). No
-  dependency injection library. This rule's Compose sections apply only if a task adds an Android
-  screen, which needs a decision record
-- **Navigation:** none in Kotlin: Flutter's `Navigator` (ADR-0011)
-- **Design system:** none in Kotlin: Flutter's Material 3 theme (the **Design system** in
-  `flutter.md`). `LaunchTheme` and `NormalTheme` in `res/values*/styles.xml` come from Flutter's
-  template and show only while Flutter starts
+  `MainActivity`, and the screens follow `flutter.md`, with Flutter's `Navigator` (ADR-0011) and
+  Material 3 theme. `LaunchTheme` and `NormalTheme` in `res/values*/styles.xml` come from
+  Flutter's template and show only while Flutter starts. Kotlin holds only what needs the Android
+  runtime: the Android Keystore and `BiometricPrompt`, which Rust calls through the Java Native
+  Interface (JNI) (ADR-0007, accepted in M3.1: hardware-key operations stay in platform code, and
+  Rust calls them directly through JNI). Logic that doesn't need them belongs in Rust
+  (`CLAUDE.md`, "Architecture", rule 6; ADR-0004, Proposed: Rust owns the rules and the data). No
+  dependency injection library
 - **Platform boundary:** Android APIs are called only from Kotlin in
-  `android/app/src/main/kotlin/com/denariidolor/`: `MainActivity`, `VaultKeystore` (M3.2), and
-  from M3.6 the biometric code. Dart reaches them only through the **Platform channels** in
-  `flutter.md`
-- **Languages:** the app's seven languages live in the ARB files (the **Localization** in
-  `flutter.md`), not in Android resources. `res/values/strings.xml` holds only the launcher
-  label, `app_name`, which isn't translated
+  `android/app/src/main/kotlin/com/denariidolor/`. Rust reaches `VaultKeystore` through JNI from
+  the `denarii-keystore` crate (ADR-0022), and Dart reaches the rest only through the **Platform
+  channels** in `flutter.md`
+- **Public API:** none outside the app, but Rust looks up the `@JvmStatic` methods of
+  `VaultKeystore` and the `code` field of `KeystoreException` by name and signature in
+  `rust/crates/keystore/src/jni.rs`, and `android/app/proguard-rules.pro` keeps them from R8.
+  Renaming one, or changing its signature, still compiles and then fails at run time, so change
+  the Kotlin, the Rust, and the keep rules together
+- **SDK levels:** minSdk 26, targetSdk 36, and compileSdk 37, set in
+  `android/app/build.gradle.kts`, the same as v1 (`docs/specs/android-v1-formats.md`, section 1)
+- **Toolchain:** Kotlin 2.4.20 (the Kotlin Android Gradle plugin) and the Android Gradle plugin
+  9.3.1, pinned in `android/settings.gradle.kts`; Gradle 9.5.0, pinned by the wrapper in
+  `android/gradle/wrapper/gradle-wrapper.properties`; and Java 17 for `sourceCompatibility`,
+  `targetCompatibility`, and `jvmTarget` in `android/app/build.gradle.kts`. The Flutter Gradle
+  plugin comes from the pinned Flutter SDK (the **Toolchain** in `flutter.md`). Change any of
+  them with the `dependency-upgrade` skill
+- **Check commands:** the **Check commands** in `flutter.md`, then `flutter build appbundle --debug`
+  from the repository root, which CI runs (M1.3) and which compiles the Kotlin; read its Kotlin
+  warnings. When a change touches `android/`, the `ci-gates` skill also builds the release APK,
+  where R8 runs, and lists the permissions it asks for. Kotlin has no check of its own: no ktlint,
+  detekt, Android lint, or Gradle test task runs, and adding one is the maintainer's decision,
+  under `docs/02-dependency-policy.md`
+- **Style and lint configuration:** the `[*.{kt,kts}]` section of `.editorconfig`, kept from v1:
+  ktlint's `android_studio` code style, 4-space indents, lines of at most 140 characters, and no
+  wildcard imports. Nothing runs ktlint since v1's Gradle build left the working tree
+  (ADR-0003), so format by hand to that style
+- **Dependency policy:** ask first, and record each decision in `docs/02-dependency-policy.md`. The
+  app's Gradle build has no library of its own yet; the Flutter Gradle plugin adds the
+  embedding's. No mocking library
+- **Errors:** for the calls that come from Rust, catch the Keystore's and storage's exceptions
+  where they are thrown, as v1's `keystoreCall` did (`KeystoreSecrets.kt` at 6d57526), and throw
+  a `KeystoreException` carrying a `KeystoreFailure` code, which Rust reads through JNI and maps
+  to `KeystoreError` (M3.2, ADR-0022, `docs/specs/keystore.md`). Anything else Kotlin throws
+  reaches Rust as `Unexpected`. Show no exception text to users
+- **Concurrency:** none: no coroutines, and no thread of Kotlin's own. Each call runs on its
+  caller's thread, never Android's main thread, because Keystore operations block. Code that
+  creates a Keystore key is `@Synchronized`, as v1's `SecurityProfileService` was, so two
+  callers can't both create it
+- **Time:** Kotlin reads no wall clock. The lockout and the session timeout run on
+  `SystemClock.elapsedRealtime()`, the lockout also on `Settings.Global.BOOT_COUNT` (CS-01,
+  CS-13); M3.3 and M3.7 decide which layer reads them
+- **Logging:** none. Shipped code has no `Log`, no `println`, and no logging library (`CLAUDE.md`,
+  "Security posture")
+- **Languages:** Kotlin shows no text except the `BiometricPrompt` dialog (M3.6). Users see the
+  app's text in seven languages from the ARB files in `lib/l10n/` (the **Localization** in
+  `flutter.md`), not from Android resources, and Kotlin returns codes, never sentences.
+  `res/values/strings.xml` holds only the launcher label, `app_name`, which isn't translated. A
+  native speaker reviews every string you translate
 - **Persistence:** none in Kotlin besides the Keystore. Rust opens v1's SQLCipher database
   (ADR-0006), and the vault keeps reading `shared_prefs/vault_profile.xml` and the `ui_prefs`
   file as `docs/specs/android-v1-formats.md` describes them (M3.3, M4.6). No Room and no
   DataStore
-- **Background work:** none: no services, WorkManager, alarms, or broadcast receivers of the app's own
+- **Background work:** none: no services, WorkManager, alarms, or broadcast receivers of the
+  app's own
+- **Untrusted input:** the profile blob in `shared_prefs/vault_profile.xml` and the two v1.0.x
+  files (M3.4), which may be damaged, and every value that Rust or Dart passes in. Their formats
+  and limits are in sections 2–4 of `docs/specs/android-v1-formats.md`
 - **Permissions:** the release manifest requests one, `HIDE_OVERLAY_WINDOWS`, for the overlay guard
   (CS-11), as v1's did, besides AndroidX's own `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`; never
   `INTERNET` (ADR-0008). The debug and profile manifests keep Flutter's `INTERNET` (ADR-0013). Each
@@ -64,13 +114,15 @@ so they can fill them in.
 - **Security controls:** `.claude/rules/security.md`, with the `CS-NN` controls and the accepted
   risks (no `FLAG_SECURE`, CS-A4), and `docs/specs/android-v1-formats.md` for the keys and
   formats on phones today
-- **Check commands:** the **Check commands** in `flutter.md`, then `flutter build appbundle --debug`
-  from the repository root, which CI runs (M1.3). No Gradle lint or test task runs: the Keystore
-  code is tested through `integration_test/keystore_test.dart` on an emulator (ADR-0022)
-- **Test layout:** no Android tests of their own (ADR-0022). Flutter's `integration_test/` runs
-  on the `Denarii_API_26` and `Denarii_API_36` emulators, and `keystore_test.dart` there checks
-  the Keystore code with test-only aliases. Biometric flows need a manual check on a phone with an
-  enrolled fingerprint
+- **Design docs:** `docs/01-architecture.md`, ADR-0007 and ADR-0022 in `docs/decisions.md`, and
+  `docs/specs/keystore.md`; what v1 left on phones is in `docs/specs/android-v1-formats.md`
+- **Test layout:** no Kotlin or Android tests of their own, and no test library for them: the
+  maintainer chose on 2026-11-25 to test the Keystore code through Dart instead (ADR-0022).
+  `integration_test/keystore_test.dart` runs Dart → bridge → Rust → JNI → Kotlin on the
+  `Denarii_API_26` and `Denarii_API_36` emulators, with test-only aliases that start with
+  `denarii_test_` (the **Test layout** in `flutter.md`). A test never touches the app's real
+  `denarii_vault_` aliases, profile, or database (`security.md`). Biometric flows need a manual
+  check on a phone with an enrolled fingerprint
 - **Release:** none yet. M6.1 builds a signed `flutter build appbundle` in CD, as the **Release**
   in `flutter.md` says; until then the release build type signs with the debug keys
   (`android/app/build.gradle.kts`)
@@ -79,201 +131,84 @@ so they can fill them in.
 
 Stop and ask the user before you:
 
+- add a library, an SDK, or a Gradle plugin, especially analytics, ads, or crash reporting;
 - add a permission, export a component, or add an intent filter;
-- add a library or SDK, especially analytics, ads, or crash reporting;
-- change the **SDK levels**;
-- change a database schema or another stored format;
-- change a **Security controls** item, the backup rules, or the network security config;
-- add a `WebView`, a foreground service, or a new activity;
-- change the design (theme, colors, type, or spacing) beyond what was asked;
+- change the Kotlin, JDK, Gradle, or Android Gradle plugin version, or the **SDK levels**;
+- change the **Public API**, a stored or serialized format, or a **Security controls** item, the
+  backup rules among them;
+- add an Android screen, which also needs a decision record, a `WebView`, a service, a new
+  activity, or anything else this rule leaves out;
+- opt in to an experimental API (`@OptIn`) or add a `-X` compiler flag;
 - change anything the store shows, such as the app name, icon, or Data safety answers;
-- or weaken a lint check, a test, or another check.
+- or weaken a lint, a test, or another check.
 
 ## Making a change
 
-- **Read first.** Read the screen's route and composables, its ViewModel, and the components the
-  **Design system** already has, and reuse them. Check the **Modules** to find where new code
-  belongs.
-- **Check each step on a device.** After a UI change, install the app on an emulator or a device and
-  use the changed screen. A preview isn't the app: it skips the activity, the real theme, insets,
-  and the data.
-- **Fix the cause, not the symptom.** If state is lost on rotation, fix how the state is saved;
-  don't lock the orientation or add `android:configChanges` to avoid re-creating the activity. If a
-  test is flaky, wait for the real condition; don't add a sleep.
-- **Don't paper over problems.** Never add `@SuppressLint`, `tools:ignore`, a lint baseline entry,
-  or an `@OptIn` only to make a warning go away. Work out what it is telling you, then fix that.
+- **Read first.** Read the Kotlin around the change, the Rust in `rust/crates/keystore/` that
+  calls it, and `integration_test/keystore_test.dart`, which tests it. Check the **Modules** to
+  find where new code belongs.
+- **Check each step.** Build with the **Check commands** after each step, and read the Kotlin
+  warnings. Run the integration tests on an emulator after a change that Rust or Dart can reach.
+- **Fix the cause, not the symptom.** For a bug, first write a test that fails, then fix the bug
+  and show the test passing. Don't add a `?.` or `?: return` that quietly skips a null that
+  should never be there; find out why it is null.
+- **Don't silence the compiler.** Never add `!!`, an unchecked cast, a `@Suppress`,
+  `@SuppressLint`, `tools:ignore`, a `lateinit`, or `runBlocking` only to make an error or a
+  warning go away. Work out what it is telling you, then fix the types or the design.
 
-## App architecture
+## Kotlin
 
-- Follow the **Architecture**. Split the app into a UI layer (composables and ViewModels), an
-  optional domain layer (use cases in pure Kotlin), and a data layer (repositories and their data
-  sources). Dependencies point inward: the domain layer imports no `android.*` types.
-- Keep one source of truth for each piece of data, and let data flow one way: state goes down to
-  the UI, and events come back up as function calls.
-- ViewModels:
-  - Expose screen state as a `StateFlow` of one immutable `UiState`, or a few flows, and send
-    one-time events through a `Channel`, as `kotlin.md` describes.
-  - Never hold an `Activity`, a `View`, or a `Context` other than the application's. A ViewModel
-    outlives the activity that created it, so holding one leaks it.
-  - Read navigation arguments from `SavedStateHandle`.
-  - Ignore a repeated action while the previous one runs, and expose that state (`isSaving`) so
-    the button shows it.
-- Repositories expose a `Flow` for data that changes and `suspend` functions for one-time
-  operations, and are main-safe.
-- Get dependencies through constructor injection, never from a service locator inside a
-  composable.
+### Types and null safety
 
-## Compose
+- Model closed sets with an `enum class` or a `sealed interface`, as `KeystoreFailure` does, and
+  match them with a `when` that has no `else` branch. Then adding a case makes the compiler list
+  every place that must handle it.
+- Prefer `val` to `var`, and read-only `List`, `Set`, and `Map` to their mutable versions in
+  signatures.
+- Classes are final by default; keep them that way. Give declarations explicit return types and
+  the smallest visibility that works: `private`, then `internal`, then public.
+- Don't use `!!`. Use `?:`, an early return, or `checkNotNull(x) { "why" }` and
+  `requireNotNull(x) { "why" }`, which fail with a message that says what went wrong.
+- Use `lateinit` only for fields a framework injects.
+- Android's APIs are Java, and Java code returns platform types, whose nullability Kotlin doesn't
+  know. Give them an explicit Kotlin type where they enter, so a null can't travel far before it
+  fails.
+- Use `as?` instead of `as` when a value might have another type, and never make an unchecked
+  cast on data from outside the program.
 
-### Screen structure
+### Errors
 
-- Split each destination in two. A route composable gets the ViewModel, collects its state with
-  `collectAsStateWithLifecycle()`, and handles navigation and events. A screen composable takes
-  the state and event lambdas, and nothing else: no ViewModel, `NavController`, or repository.
-  The screen can then be previewed and tested on its own.
-- Keep Android calls (`Context`, `Intent`, `Toast`, activity result launchers) inside the
-  **Platform boundary**, behind small interfaces that screens receive or `remember`.
-- Hoist state to the lowest composable that every reader shares. A reusable component takes a
-  value and an `onValueChange` lambda instead of keeping its own copy.
-- Give every reusable composable a `modifier: Modifier = Modifier` parameter, the first one with
-  a default value, and apply it once, to the root.
-- Name composables that emit UI as nouns in `PascalCase` (`AccountRow`). Name composables that
-  return a value in `camelCase`, starting with `remember` when they remember it
-  (`rememberSearchState`).
+- Follow the **Errors** pattern. Across JNI, a failure the caller should handle is a
+  `KeystoreException`. Use `require` for bad arguments, `check` for bad state, and `error("…")`
+  for code that should be unreachable.
+- Kotlin has no checked exceptions, so document every exception a function can throw with KDoc's
+  `@throws`.
+- Catch `Exception` or `Throwable` only at a boundary that reports the failure. Never swallow an
+  exception silently.
+- Close every `Closeable` with `use { }`, which also closes it when an exception is thrown.
+- Say in each error message what failed, with the identifying context (the alias, the file), and
+  never a secret.
 
-### State and side effects
+### Time and numbers
 
-- Use `rememberSaveable` for what the user entered or chose, which must survive rotation and the
-  system killing the process. Use `remember` for state that may reset, such as whether a menu is
-  open.
-- Run side effects only in effect handlers:
-  - `LaunchedEffect`, keyed on every value the effect reads, so it restarts when one changes.
-  - `DisposableEffect`, with the cleanup in `onDispose`.
-  - `rememberUpdatedState` for a callback that a long-running effect calls, so it uses the
-    latest one.
-  - `rememberCoroutineScope` for coroutines that start from an event, such as a click.
-- Do no work in composition: no I/O, sorting, or heavy formatting. Composition can run often and
-  in any order, so map data in the ViewModel or in pure functions.
-- Read strings with `stringResource` and `pluralStringResource` during composition, and pass the
-  value to any effect that needs it. Read the locale and configuration through
-  CompositionLocals, so screens update when the user changes them; `Locale.getDefault()` doesn't
-  notify Compose.
+- Get the time from the source the **Time** value names, never from
+  `System.currentTimeMillis()` or `Instant.now()`.
+- Pass durations as `kotlin.time.Duration`, not as a `Long` whose unit only a comment states.
+- Integer arithmetic overflows silently: `Int.MAX_VALUE + 1` is `Int.MIN_VALUE`, with no
+  exception. Where input decides the values, use `Math.addExact` and `Math.multiplyExact`, which
+  throw on overflow, or check the bounds first.
+- Conversions lose data silently: `Long.toInt()` keeps only the low 32 bits.
 
-### Performance
+### Style
 
-- Give `LazyColumn` and `LazyRow` items a stable `key` (`items(rows, key = { it.id })`), and a
-  `contentType` when the list mixes kinds of rows.
-- The Compose compiler skips unchanged composables by default (strong skipping, on since Kotlin
-  2.0.20). Don't add `@Stable`, `@Immutable`, or `remember` around lambdas speculatively; measure
-  recompositions with Layout Inspector first.
-- Use `derivedStateOf` only when the result changes less often than its inputs, such as whether
-  a list has scrolled past its first item.
-- Pass a lambda for a value that changes every frame, as `Modifier.offset { }` and
-  `graphicsLayer { }` take, so only layout or drawing runs again instead of composition.
-- Never write to state you have already read in the same composition; that causes an endless
-  loop of recompositions.
-- Measure performance only on a release build with R8, never a debug build, which runs Compose
-  far more slowly. Use Macrobenchmark, and ship Baseline Profiles for startup and scrolling.
-
-### Previews
-
-- Give every screen `@Preview`s with sample state, in light and dark themes and at a large font
-  scale (`@PreviewLightDark`, `@PreviewFontScale`), and right to left if the app ships a
-  right-to-left language.
-- Previews never create a ViewModel or read real data. The route and screen split makes that
-  possible.
-
-## Layout, theming, and accessibility
-
-- Use the **Design system** components and the `MaterialTheme` color scheme, typography, and
-  shapes. Don't hard-code colors, text sizes, or one-off spacing in screens.
-- Draw edge to edge, which Android 15 enforces for apps that target API 35 or later. Apply the
-  `Scaffold`'s `innerPadding` or `WindowInsets.safeDrawing`, use `imePadding()` for the
-  keyboard, and never assume the height of a system bar.
-- Build layouts that adapt to the window, not to the device: phones, foldables, tablets,
-  multi-window, and desktop windows. Use window size classes, and don't lock the orientation;
-  Android 16 ignores orientation and resizability limits on large screens for apps that target
-  API 36.
-- Size text in `sp`, and make every layout work at 200% font scale, which Android 14 and later
-  allow.
-- Support right to left: use `start` and `end`, never `left` and `right`, and
-  `Icons.AutoMirrored` for icons that point a direction. Turn on pseudolocales in debug builds
-  (`isPseudoLocalesEnabled = true`) and check layouts in `ar-XB`, which mirrors them, and
-  `en-XA`, which lengthens the text.
-- Accessibility:
-  - Give every actionable icon a `contentDescription` from strings, and decorative ones `null`.
-  - Keep touch targets at 48 dp or more; Material 3 components enforce this by default.
-  - Merge a row's children into one element for TalkBack (`semantics(mergeDescendants = true)`,
-    which `clickable` does), and describe state with `stateDescription`, `selected`, or
-    `toggleableState`, and the element's `role`.
-  - Mark section titles with `semantics { heading() }`, so TalkBack users can move between
-    them.
-  - Announce status messages with `liveRegion = LiveRegionMode.Polite`.
-  - Keep contrast of at least 4.5:1 for text and 3:1 for icons and large text, and never use
-    color alone to show state.
-  - Make every control reachable with a keyboard or switch, in a logical order.
-
-## Strings, languages, and resources
-
-- Put every user-facing string in `strings.xml`, in every language the **Languages** value
-  lists. Mark a string that must not be translated with `translatable="false"`.
-- Keep format arguments identical in every translation, use positional arguments (`%1$s`) when
-  there is more than one, and escape `'` and `"` as `\'` and `\"`.
-- Use `<plurals>` for any count, with every quantity the language needs (Arabic needs all six:
-  `zero`, `one`, `two`, `few`, `many`, and `other`), and read them with
-  `pluralStringResource(id, count, count)`.
-- Never build a sentence from separately translated fragments. Use one string with arguments.
-- Format numbers, dates, and currency for the user's locale (`NumberFormat`,
-  `DateTimeFormatter.ofLocalizedDate`), and never write a currency symbol into a string.
-- Turn on per-app language settings with `androidResources { generateLocaleConfig = true }` and a
-  `resources.properties` file naming the default locale.
-- Treat translations you write as drafts, and list their keys in your report for a native
-  speaker to review.
-- Use vector drawables for icons, and adaptive icons for the launcher.
-
-## Lifecycle and navigation
-
-- Follow the **Navigation** setup. Pass IDs between destinations, never whole objects; the
-  destination loads what it needs. Arguments travel in a `Bundle`, which has a size limit.
-- Handle Back with `BackHandler` or `PredictiveBackHandler`. Never override `onBackPressed()` or
-  intercept `KEYCODE_BACK`: for apps that target API 36, Android 16 calls neither, because
-  predictive back is on.
-- Treat deep link arguments as input from outside the app, and validate them.
-- Expect the system to kill the app's process while it is in the background. Restore what the
-  user was doing from `SavedStateHandle`, `rememberSaveable`, and stored data.
-- Prefer one activity with Compose navigation. Add an activity only for a separate entry point.
-
-## Background work
-
-- Follow the **Background work** setup. Use WorkManager for work that must finish even if the
-  user leaves or the device restarts, with constraints such as network or charging. Keep
-  coroutines in `viewModelScope` for work that belongs to a screen.
-- Use a foreground service only for ongoing work the user notices, and declare its
-  `foregroundServiceType` with the matching permission, which apps that target API 34 or later
-  need.
-- Use exact alarms only for a clock or calendar feature; Android 14 denies
-  `SCHEDULE_EXACT_ALARM` to most new installs by default.
-- Ask for `POST_NOTIFICATIONS` (Android 13 and later) when the user turns on a feature that
-  notifies, and give each kind of notification its own channel.
-- Never block the main thread with disk or network work. Turn on `StrictMode` in debug builds to
-  catch it.
-
-## Data and persistence
-
-- Follow the **Persistence** setup.
-- With Room:
-  - Keep `exportSchema = true`, and commit the schema files.
-  - Give every schema change a `Migration` and a test with `MigrationTestHelper`.
-  - Never call `fallbackToDestructiveMigration()` in a release build; it deletes the user's
-    data.
-  - Never edit a migration that has shipped, or a committed schema file.
-  - An enum stored by name is data: renaming a constant needs a migration.
-- Use DataStore rather than `SharedPreferences` for new settings, unless the project already
-  decided otherwise. Don't migrate existing settings unless asked.
-- Keep files in app-private directories (`filesDir`, `cacheDir`). Reach the user's files through
-  the Storage Access Framework, and shared media through `MediaStore` or the photo picker, which
-  needs no permission.
-- Check the size and format of any file the user picks before you parse it.
+- Format to the **Style and lint configuration** by hand, because nothing runs ktlint.
+- Follow the Kotlin coding conventions for names: `PascalCase` for types, `camelCase` for
+  functions and properties, and `UPPER_SNAKE_CASE` for `const val` and other deeply immutable
+  top-level values.
+- Add no new compiler warnings, and use only language features and APIs that are stable in the
+  pinned Kotlin version.
+- Don't leave `println`, `Log`, debugging code, or `TODO()` behind. `TODO()` compiles, then throws
+  `NotImplementedError` when it runs.
 
 ## Security and privacy
 
@@ -284,79 +219,63 @@ Stop and ask the user before you:
   validates every input.
 - Use explicit intents inside the app, and `PendingIntent.FLAG_IMMUTABLE` unless another app must
   fill in the intent. Validate every extra and URI an intent brings in.
-- Permissions:
-  - Add one only after it is in the **Permissions** inventory and the user agrees; each changes
-    the privacy policy and the store's data disclosures.
-  - Prefer an option that needs no permission, such as the photo picker.
-  - Ask at the moment the feature needs it, explain why first, and give the feature a fallback
-    for when the user says no.
-- Use HTTPS only. Keep the network security config free of cleartext traffic and user-added
-  certificate authorities in release builds.
+- Add a permission only after it is in the **Permissions** inventory and the user agrees; each
+  changes the privacy policy and the store's data disclosures. Prefer an option that needs no
+  permission.
 - Decide the backup rules (`allowBackup`, `dataExtractionRules`, and `fullBackupContent`) on
   purpose, and exclude secrets and tokens from every backup.
 - Keep keys in the Android Keystore. Never put a secret in `SharedPreferences`, logs, or
-  `BuildConfig`: anything inside the APK can be extracted, so an API key there is public.
-- Avoid `WebView`. If one is required, load only the app's own content, keep JavaScript off
-  unless that content needs it, and never expose an `addJavascriptInterface` object to content
-  from outside.
-- On screens that show secrets, follow the **Security controls** decisions on `FLAG_SECURE`
-  and on hiding overlay windows.
-- Never copy a secret to the clipboard. If the user copies one themselves, mark the clip with
-  `ClipDescription.EXTRA_IS_SENSITIVE`, so Android 13 and later hide its preview.
-- Never log personal data. Keep verbose logs out of release builds.
+  `BuildConfig`: anything inside the APK can be extracted.
+- Follow the **Security controls** decisions on `FLAG_SECURE` and on hiding overlay windows.
+- Treat every value in the **Untrusted input** as possibly malformed or hostile:
+  - Reject malformed input with a typed failure, as the **Errors** pattern says. Catch a
+    library's exceptions where its parser is called, and map them to that failure.
+  - Check every claimed size against a limit and against the input that remains before you
+    allocate or slice.
+  - Never use Java serialization (`ObjectInputStream`) on outside data: it can run code while it
+    reads.
+- Keep secrets in a `ByteArray` or `CharArray`, never a `String`, which can't be cleared. Zero the
+  array with `fill(0)` in a `finally` block, and compare secrets with `MessageDigest.isEqual`,
+  which takes the same time whether or not they match.
 
 ## Tests
 
-- Follow the **Test layout**. Test ViewModels and other logic in JVM unit tests with fakes, as
-  `kotlin.md` describes. Keep Android APIs out of them.
-- Test stateless screens with `createComposeRule()`. Find nodes by what users perceive (text,
-  content description, role) before a `testTag`; a test that finds a button by its label also
-  checks that the label exists.
-- A test hosted in `ComponentActivity` doesn't prove a screen works in the app's own activity,
-  which may set up the window and its owners differently. Cover each activity with at least one
-  test that launches it.
-- Never sleep in a test. Wait for the condition with `waitUntil`, or let Compose and Espresso
-  wait for idle.
-- Run instrumented tests on the minSdk and targetSdk API levels from the **SDK levels**. Limit a
-  test to some levels with `@SdkSuppress`.
-- Read a screenshot test's changed images before you accept them.
-- Run instrumented tests only when a device or emulator is attached; otherwise say that they
-  weren't run.
+- Follow the **Test layout**. Give every behavior change a test, and start every bug fix with a
+  test that fails before the fix.
+- Run the integration tests on both emulators, API 26 and API 36: the minSdk and targetSdk levels.
+- Run them only when a device or emulator is attached; otherwise say that they weren't run.
 
 ## Build and release
 
-- Set the **SDK levels** only in the version catalog and convention plugins, never in a module's
-  manifest. Raise targetSdk before Google Play's yearly deadline (August 31 in recent years), and
-  review that API level's behavior changes first.
-- Build releases with R8 (`isMinifyEnabled = true`, `isShrinkResources = true`). Keep keep rules
-  narrow (never a blanket `-keep class **`), and test the release build: R8 removes code that is
-  reached only through reflection.
+- Change the **SDK levels** only in `android/app/build.gradle.kts`, never in a manifest. Raise
+  targetSdk before Google Play's yearly deadline (August 31 in recent years), and review that API
+  level's behavior changes first. For example, Android 15 draws apps that target API 35 or later
+  edge to edge, and Android 16 ignores orientation and resizability limits on large screens for
+  apps that target API 36; `flutter.md` says how the screens handle both.
+- R8 runs on the release build and removes or renames code that is reached only through
+  reflection or JNI. Keep the keep rules narrow (never a blanket
+  `-keep class **`), and keep only what Rust looks up, as the **Public API** says.
 - Check the merged release manifest whenever a dependency changes. Libraries can add permissions
   and exported components of their own.
-- Give native libraries 16 KB page alignment; Google Play requires it for apps that target
-  Android 15 or later.
+- Keep the native libraries, the Rust ones included, aligned to 16 KB memory pages; Google Play
+  requires it for 64-bit application binary interfaces (ABIs) (`docs/specs/bridge.md`).
 - Increase `versionCode` for every upload; the store rejects one it has already seen.
+- Use no dynamic versions in Gradle (`+`, `latest.release`), and add no repositories. Don't change
+  the **Toolchain** or the Gradle wrapper as part of another task; a bump is a change of its own.
 - Follow the **Release** process. Signing happens only there: never commit a keystore,
   `local.properties`, an APK, or an AAB.
 
 ## Before finishing
 
-1. Run every **Check commands** command and read its output. Fix every lint warning instead of
-   adding it to a baseline.
-2. If you changed the UI, install the app on an emulator or device and use the changed screen:
-   1. in light and dark themes, at 200% font scale, and in the `ar-XB` pseudolocale if the app
-      ships a right-to-left language;
-   2. with TalkBack, if you changed interactive elements;
-   3. after rotating and resizing the window;
-   4. after sending the app to the background and killing it (`adb shell am kill <package>`),
-      to check that it restores what the user was doing.
-3. If you changed the manifest or a dependency, read the merged release manifest for new
-   permissions and exported components.
-4. If you changed keep rules, reflection, or serialization, build and run the release build.
-5. If you changed a schema, run its migration test.
-6. Run the instrumented tests if a device is attached, and say which API levels they ran on.
-7. If you added strings, check that every language has them, and list the drafted translations.
-8. Review your diff as a reviewer would. Look for hard-coded strings, colors, and sizes; Android
-   calls outside the **Platform boundary**; icons without a `contentDescription`; missing
-   translations; new exported components or permissions; and logs that contain personal data. Then
-   report what you checked, what you didn't, and what remains.
+1. Run every **Check commands** command and read its output. Fix every Kotlin warning, not only
+   the errors.
+2. If you changed the manifest, a resource, or a dependency, read the merged release manifest for
+   new permissions and exported components.
+3. If you changed the **Public API** or the keep rules, build and run the release build.
+4. Run the integration tests if an emulator is attached, and say which API levels they ran on.
+5. If you added text that users see, check that it comes from the ARB files in all seven
+   languages, and list the drafted translations.
+6. Review your diff as a reviewer would. Look for `!!`, `lateinit`, `runBlocking`, an unchecked
+   cast, a `@Suppress`, `println` or `Log`, `TODO()`, a clock read, a secret in a `String` or left
+   uncleared, Android calls outside the **Platform boundary**, new exported components or
+   permissions, and missing tests. Then report what you ran, what you didn't, and what remains.

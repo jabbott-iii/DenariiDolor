@@ -771,6 +771,11 @@ and fingerprint, and sees the same balances.
   - Note: 2026-11-25: `kotlin.md` and `android.md` are copied from Doctrina commit `dc6eb2d`, with
     their "Project details" filled in. Kotlin has no check command of its own yet: no ktlint,
     detekt, Android lint, or Gradle test task runs, and adding one is the maintainer's decision.
+  - Note: 2026-11-25: at the maintainer's request, `kotlin.md` and `android.md` are merged into one
+    `android.md`, trimmed to what Flutter's Android host app uses. The sections on Jetpack Compose,
+    Android screens, ViewModels, Room, coroutines, background work, and published libraries are
+    left out, because the app has none of them; a task that adds one brings its section back from
+    Doctrina commit `dc6eb2d`.
   - Depends: M1.2
   - Decide first: accept or change ADR-0007, after a spike that calls the Keystore from Rust on
     API 26.
@@ -780,13 +785,13 @@ and fingerprint, and sees the same balances.
   - Accept:
     - ADR-0007 is `Accepted` or superseded.
   - Verify: the maintainer's decision (no command)
-- [ ] **M3.2 — android: Keystore and biometric code**
-  - ⏳ needs an Android phone with v1 installed: install v1's debug build from `6d57526`, set up a
-    profile and add data, then install this build over it, signed with the same debug key, and
-    check that `Keystore::vault().read_profile()` opens v1's `vault_profile` with
-    `denarii_vault_storage`, and that `device_hmac` with v1's PIN opens the PIN slot. Nothing in
-    the app calls the vault's names before M3.3 and M3.5, and the test refuses them, so this check
-    needs that code, or a way to reach it that the maintainer approves.
+- [x] **M3.2 — android: Keystore and biometric code**
+  - Note: 2026-11-25: the maintainer moved the check on a phone with v1 installed to M3.5, the
+    user's choice, and ticked this task once the emulator tests passed. Nothing in the app calls
+    the vault's names before M3.3 and M3.5, and `keystore_self_check` refuses them, so the first
+    code that can open v1's real profile is M3.5's sign-in. That moves this task's `Accept` line
+    and the phone half of its `Verify` line; M3.5's note says what to check. The alternative was to
+    keep this task open, which left M3.3 blocked behind it.
   - Note (from M3.1): ADR-0007 is accepted, so Rust calls this code through JNI. Two choices are
     the maintainer's first: adding `jni-sys` 0.4.1 to the app (its register entry is open; M3.1
     approved it for the spike only), and a second exemption in the "Unsafe policy" of `rust.md`
@@ -908,12 +913,22 @@ and fingerprint, and sees the same balances.
     `LoginActivity` only (`LoginActivity.kt:134-136` at `6d57526`). The new app shows every screen
     in `MainActivity`, so decide whether the guard turns on only while the sign-in screens show, as
     in v1, or stays on for every screen.
+  - Note (from M3.2): 2026-11-25: M3.2's check on a phone with v1 installed moved here, the user's
+    choice, because sign-in is the first code that opens v1's real profile. Install v1's debug
+    build from `6d57526` on the phone, set up a profile, and add data. Then install this task's
+    debug build over it, signed with the same debug key, so the app keeps its Keystore keys and
+    files. Sign in with v1's PIN: the vault opens `vault_profile` with `denarii_vault_storage`
+    through `Keystore::vault().read_profile()`, and unwraps the PIN slot with
+    `denarii_vault_device` through `device_hmac` (`docs/specs/keystore.md`).
   - Depends: M3.3, M1.4
   - Do:
     - Port `LoginScreen`, `LoginViewModel`, and the overlay guard (CS-11).
   - Accept:
     - Setup, sign-in, wrong PIN with lockout, and recovery work on an emulator.
-  - Verify: `flutter test`; `flutter test integration_test` on an emulator
+    - On a phone with v1 data, the new build opens the profile with v1's storage key and signs in
+      with v1's PIN (from M3.2).
+  - Verify: `flutter test`; `flutter test integration_test` on an emulator; a manual check on a
+    phone with v1 installed
 - [ ] **M3.6 — auth: biometric sign-in through a `CryptoObject`**
   - ⏳ needs an Android phone with an enrolled fingerprint
   - Note (from M3.2): 2026-11-25: the biometric half of M3.2 moved here, the user's choice

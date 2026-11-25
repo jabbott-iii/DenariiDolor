@@ -190,5 +190,5 @@ on API 26 and later.
 | 9 | A release build: `dexdump` of `classes.dex` lists the two classes, the six methods, and the field under their names (checked in M3.2) |
 
 Not covered: a stored entry that isn't Base64 or is too short, because nothing in the API writes
-one; arm64 phones; and the profile and keys v1 wrote on a phone, which M3.2's remaining check
-covers.
+one; arm64 phones; and the profile and keys v1 wrote on a phone, which M3.5 checks when sign-in
+opens them (moved there from M3.2 on 2026-11-25).
