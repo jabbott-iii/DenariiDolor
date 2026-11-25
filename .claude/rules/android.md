@@ -47,13 +47,17 @@ so they can fill them in.
   file as `docs/specs/android-v1-formats.md` describes them (M3.3, M4.6). No Room and no
   DataStore
 - **Background work:** none: no services, WorkManager, alarms, or broadcast receivers of the app's own
-- **Permissions:** the release manifest requests none, and never `INTERNET` (ADR-0008); the debug
-  and profile manifests keep Flutter's `INTERNET` (ADR-0013). Each new permission is the
-  maintainer's decision, and changes `PRIVACY.md` and the Play Console Data safety form
-  (`security.md`)
-- **Exported components:** one: the launcher `activity-alias` `.presentation.ui.auth.LoginActivity`,
-  v1's launcher name, kept so home-screen icons survive the update; `MainActivity` isn't exported.
-  M3.8 checks the merged release manifest, including what AndroidX merges in
+- **Permissions:** the release manifest requests one, `HIDE_OVERLAY_WINDOWS`, for the overlay guard
+  (CS-11), as v1's did, besides AndroidX's own `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`; never
+  `INTERNET` (ADR-0008). The debug and profile manifests keep Flutter's `INTERNET` (ADR-0013). Each
+  new permission is the maintainer's decision, and changes `PRIVACY.md` and the Play Console Data
+  safety form (`security.md`)
+- **Exported components:** one of the app's own: the launcher `activity-alias`
+  `.presentation.ui.auth.LoginActivity`, v1's launcher name, kept so home-screen icons survive the
+  update; `MainActivity` isn't exported. AndroidX merges in two more, which v1's release had too
+  and which the maintainer chose to keep in M3.8: `androidx.startup.InitializationProvider`, which
+  isn't exported, and `androidx.profileinstaller.ProfileInstallReceiver`, which is exported but
+  takes broadcasts only from callers that hold `android.permission.DUMP` (the shell and the system)
 - **Security controls:** `.claude/rules/security.md`, with the `CS-NN` controls and the accepted
   risks (no `FLAG_SECURE`, CS-A4), and `docs/specs/android-v1-formats.md` for the keys and
   formats on phones today

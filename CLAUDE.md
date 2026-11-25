@@ -11,7 +11,7 @@ files with `git show 6d57526:<path>`. The new app must open what v1 left on user
 
 ## Status
 
-As of 2026-11-25, all of M0's tasks, M1.1, M1.2, M1.4, M1.5, M1.6, all of M2's tasks, and M3.1 are done, and M1.3's Flutter jobs are in `ci.yml`
+As of 2026-11-25, all of M0's tasks, M1.1, M1.2, M1.4, M1.5, M1.6, all of M2's tasks, M3.1, and M3.8 are done, and M1.3's Flutter jobs are in `ci.yml`
 but haven't run on a pull request yet. M0's exit criteria are the maintainer's to check, and they
 include deciding ADR-0004, which is still Proposed; the maintainer accepted ADR-0005 in M1.2, ADR-0006 in M2.1, and
 ADR-0007 in M3.1, after a throwaway spike in which Rust reached the Android Keystore through Kotlin, and decided
@@ -33,7 +33,8 @@ for names, the seeded defaults and rows in use (M2.5), and seeds the default acc
 with the names Dart passes in the user's language (M2.6), and reads a month's transactions, v1's search, and every
 category and account (M2.7), and the `denarii-report` crate (M2.7), which builds the monthly report, its CSV text and
 the search filters from those rows, with each day's first moment from Dart (ADR-0021), and matches fixture F8, which
-v1's own code wrote, byte for byte.
+v1's own code wrote, byte for byte, and the Android manifest's controls (M3.8): no backup or device-to-device transfer of
+any app data, v1's permission to hide overlays, and one exported activity.
 Planned: sign-in (M3), the screens (M4), backups (M5), the Android release (M6) and iOS (M7). Nothing from the rewrite has shipped. `docs/roadmap.md` has the
 details.
 

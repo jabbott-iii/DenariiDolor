@@ -1,8 +1,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Lets the sign-in screen hide other apps' overlays on API 31+ (tapjacking, CS-11). Install-time, no prompt.
+         v1 asked for it too, and PRIVACY.md lists it. -->
+    <uses-permission android:name="android.permission.HIDE_OVERLAY_WINDOWS"/>
+
+    <!-- No backup and no device-to-device transfer of any app data, as in v1
+         (docs/specs/android-v1-formats.md, section 1). On API 31+ allowBackup="false" alone doesn't stop a
+         device-to-device transfer, so the data-extraction rules exclude every domain too. -->
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules">
         <!-- Not exported: apps reach it only through the launcher alias below. -->
         <activity
             android:name=".MainActivity"

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and lower. Financial data and Keystore-bound encrypted preferences must never leave the device.
+     v1's three domains, plus root (which holds Flutter's app_flutter folder) and external
+     (docs/specs/android-v1-formats.md, section 1). -->
+<full-backup-content>
+    <exclude domain="database" path="." />
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="file" path="." />
+    <exclude domain="root" path="." />
+    <exclude domain="external" path="." />
+</full-backup-content>

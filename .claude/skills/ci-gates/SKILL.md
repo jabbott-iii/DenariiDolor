@@ -109,8 +109,9 @@ Then list the permissions the release APK asks for, with `aapt2`, the Android SD
 "$(sed -n 's/^sdk.dir=//p' local.properties)/build-tools/36.0.0/aapt2" dump permissions build/app/outputs/flutter-apk/app-release.apk
 ```
 
-Expect only `com.denariidolor.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`, which AndroidX adds. Any other permission is a
-failure to report, and `android.permission.INTERNET` most of all: the release build never has it (ADR-0008, the app stays
+Expect only `android.permission.HIDE_OVERLAY_WINDOWS`, which the overlay guard needs (CS-11), and
+`com.denariidolor.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`, which AndroidX adds. Any other permission is a failure to
+report, and `android.permission.INTERNET` most of all: the release build never has it (ADR-0008, the app stays
 offline; ADR-0013, only debug and profile builds keep it). The merged release manifest is at
 `build/app/intermediates/merged_manifest/release/processReleaseMainManifest/AndroidManifest.xml`.
 

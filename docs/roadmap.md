@@ -803,6 +803,10 @@ and fingerprint, and sees the same balances.
     Flutter sees the list (ADR-0015). Check with `aapt2 dump configurations` that each of the six
     pack languages has Android resources too; otherwise a phone set to Hindi then English opens in
     English.
+  - Note (from M3.8): v1's release bundle also asks for `USE_BIOMETRIC` and `USE_FINGERPRINT`,
+    which `PRIVACY.md` lists and the release manifest doesn't have yet. Once this task adds the
+    biometric code, check that the merged release manifest asks for both, and add them to the
+    permissions the `ci-gates` skill expects.
   - Depends: M3.1
   - Do:
     - Use the aliases and parameters in section 2 of the format spec, never re-creating a key while
@@ -855,6 +859,11 @@ and fingerprint, and sees the same balances.
     vault; wrap `SignedInTree` in the session scope (ADR-0010); and push the sign-in screens on a
     `Navigator` inside the sign-in flow, not the app's root `Navigator`, so unlocking removes them.
     The sign-in placeholder is `lib/features/auth/ui/sign_in_placeholder_screen.dart`.
+  - Note (from M3.8): the release manifest already asks for `HIDE_OVERLAY_WINDOWS`. v1 called
+    `setHideOverlayWindows(true)`, and `filterTouchesWhenObscured` below API 31, in
+    `LoginActivity` only (`LoginActivity.kt:134-136` at `6d57526`). The new app shows every screen
+    in `MainActivity`, so decide whether the guard turns on only while the sign-in screens show, as
+    in v1, or stays on for every screen.
   - Depends: M3.3, M1.4
   - Do:
     - Port `LoginScreen`, `LoginViewModel`, and the overlay guard (CS-11).
@@ -882,13 +891,40 @@ and fingerprint, and sees the same balances.
     - The session ends after 5 minutes on the monotonic clock; wipe leaves what invariant 16 of the
       format spec says.
   - Verify: unit tests over a fake clock; an instrumented test of wipe
-- [ ] **M3.8 — android: manifest controls**
+- [x] **M3.8 — android: manifest controls**
   - Note (from M1.1): the release manifest already exports only the launcher `activity-alias`
     among activities, and has no `INTERNET` permission (ADR-0013 keeps it in debug and profile
     builds). `allowBackup`, the backup and data-extraction rules, and `HIDE_OVERLAY_WINDOWS` aren't
     set yet. AndroidX merges in `androidx.startup.InitializationProvider` (not exported) and
     `androidx.profileinstaller.ProfileInstallReceiver` (exported, but only to callers that hold
     `android.permission.DUMP`); decide whether to keep them.
+  - Note: 2026-11-25: the maintainer chose the recommended answer to three questions:
+    - The release manifest asks for `HIDE_OVERLAY_WINDOWS` now, as v1's did and as `PRIVACY.md`
+      says, though the code that uses it, the overlay guard (CS-11), comes in M3.5. The
+      alternative was to add it with that code.
+    - AndroidX's `InitializationProvider` and `ProfileInstallReceiver` stay, as in v1's last
+      release bundle (`app/release/`). Android delivers to the exported receiver only from callers
+      that hold `android.permission.DUMP`, which only the shell and the system have. The
+      alternative was to remove the receiver with `tools:node="remove"`.
+    - The backup and data-extraction rules exclude v1's three domains (`database`, `sharedpref`,
+      and `file`), and also `root` and `external`. On Android 12 and later, `allowBackup="false"`
+      doesn't stop device-to-device transfer, and Flutter's `app_flutter` folder lies in the `root`
+      domain (the top of the app's data folder). The alternative was v1's rules exactly.
+  - Note: 2026-11-25: `android/app/src/main/AndroidManifest.xml` sets `allowBackup="false"`,
+    `dataExtractionRules`, and `fullBackupContent`, with both rule files in
+    `android/app/src/main/res/xml/`, and asks for `HIDE_OVERLAY_WINDOWS`. The merged release
+    manifest and the release APK's compiled manifest (`aapt2 dump xmltree`) show each control:
+    `allowBackup` false, both rule files with all five exclusions, `taskAffinity=""` on
+    `MainActivity`, the launcher alias as the only exported activity, and no `INTERNET`.
+    `aapt2 dump permissions` lists only `HIDE_OVERLAY_WINDOWS` and AndroidX's
+    `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`, and the `ci-gates` skill now expects both.
+  - Note: 2026-11-25: on `Denarii_API_36`, run with `-read-only`, the installed release APK has no
+    `ALLOW_BACKUP` flag in `dumpsys package`, `HIDE_OVERLAY_WINDOWS` is granted at install, and
+    `bmgr backupnow` answers "Backup is not allowed". The app's first start creates `app_flutter`
+    at the top of its data folder. A device-to-device transfer couldn't be tested: with the local
+    transport set to report one (`is_device_transfer=true`), `bmgr backupnow` refused the backup in
+    the same way, with test files in all five domains, so only the rule files in the APK show what
+    a transfer leaves out.
   - Depends: M1.1
   - Do:
     - Keep `allowBackup="false"`, the data-extraction rules, `taskAffinity=""` (CS-21), one
