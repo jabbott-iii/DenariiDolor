@@ -223,6 +223,7 @@ Rules in `.claude/rules/` load automatically when you work on matching files:
 
 | Rule | Covers |
 |---|---|
+| `pair-programming.md` | Every task, so it loads every time: reading first, the plan, the decisions to ask about, pushing back, small checked steps, the report |
 | `rust.md` | The Rust workspace: types, errors, untrusted input, `unsafe`, docs, tests, lints |
 | `flutter.md` | Dart and Flutter: widgets, state, navigation, localization, platform code, tests, release |
 | `kotlin.md` | Kotlin and the Gradle files in `android/`: types, errors, coroutines, untrusted input, tests, builds |

@@ -12,10 +12,9 @@ paths:
 
 # Rust standards
 
-These rules cover the Rust in this repository: crates, build scripts, tests, benchmarks,
-manifests, and toolchain files. They describe how a senior engineer writes Rust, and how to work
-with the user as a pair: you write the code, and they review it and make the calls that are
-theirs. Doc comments, error messages, and other text follow `writing.md` in this folder.
+These rules cover the Rust in this repository: crates, build scripts, tests, benchmarks, manifests,
+and toolchain files. They describe how a senior engineer writes Rust. Doc comments, error messages,
+and other text follow `writing.md` in this folder.
 
 Apply them to code you write or edit. Don't rewrite existing code only to make it conform; fix a
 passage when you are already changing it, and mention anything else you notice.
@@ -74,39 +73,22 @@ so they can fill them in.
   database and one backup per `FORMAT_VERSION`, in `tests/fixtures/` of the crate that reads them
   (from M2.1 and M5.1)
 
-## Working as a pair
+## Decisions that are the user's
 
-- **Read before you write.** Read the code around a change and the tests that cover it, and
-  match the patterns already there unless they are the problem. Check the **Crates** to find
-  which crate a new piece of code belongs in.
-- **Say the plan first.** For a change bigger than a few lines, say in two or three sentences
-  what will change, where, and how you will check it. Then go ahead, unless the plan includes one
-  of the decisions in the next point.
-- **Ask before decisions that are the user's.** Stop and ask before you add a dependency, change
-  a public API or a file format, write new `unsafe`, change the toolchain or edition, weaken a
-  lint or a test, or build something different from what was asked. For anything else, choose
-  the conventional option and say what you chose.
-- **Push back with reasons.** If a requested approach is unsound, slow, or fights the codebase,
-  say so before you implement it, with the reason and a concrete alternative. Once the user
-  decides, follow their decision.
-- **Work in small steps.** Make each step compile, and run `cargo check` after it; it is much
-  faster than a full build. Run all the **Check commands** before you report done.
-- **Fix the cause, not the symptom.** For a bug, first write a test that fails, then fix the bug
-  and show the test passing. Don't add a bounds check that hides an index computed wrong
-  upstream.
+Stop and ask the user before you add a dependency, change a public API or a file format, write new
+`unsafe`, change the toolchain or edition, or weaken a lint or a test.
+
+## Making a change
+
+- **Read first.** Read the code around a change and the tests that cover it. Check the **Crates** to
+  find which crate a new piece of code belongs in.
+- **Check each step.** Make each step compile, and run `cargo check` after it; it is much faster
+  than a full build.
+- **Fix the cause, not the symptom.** For a bug, first write a test that fails, then fix the bug and
+  show the test passing. Don't add a bounds check that hides an index computed wrong upstream.
 - **Don't silence the compiler.** Never add `.clone()`, `'static`, `unsafe`, an `#[allow]`, or
-  `Rc<RefCell<_>>` only to make an error go away. Work out what the compiler is saying, then fix
-  the ownership or the design. If a clone is the right fix, say why.
-- **Explain the Rust that isn't obvious.** In your reply, say why a lifetime is needed, why a
-  type must be `Send`, or why you chose `Arc` over cloning. Write for the audience in
-  `writing.md`, and cover only what this change needs.
-- **Keep the change focused.** No unrelated refactors, renames, or reformatting. Mention problems
-  you notice outside the task instead of fixing them.
-- **Review your own diff** before you report, as a reviewer would. Look for `unwrap`, unchecked
-  arithmetic, missing docs or tests, and leftover `dbg!`, `todo!`, or commented-out code.
-- **Report honestly.** Say what changed and why, each command you ran with its real result, what
-  you didn't run and why, your assumptions, and the risks that remain. Never say a check passed
-  unless you ran it in this session and saw it pass.
+  `Rc<RefCell<_>>` only to make an error go away. Work out what the compiler is saying, then fix the
+  ownership or the design. If a clone is the right fix, say why.
 
 ## Design with types
 
@@ -434,5 +416,6 @@ For each of the **Published crates**:
    `cargo package --list -p <crate>`. Check that the README and license files are listed, and
    that nothing private or generated is.
 4. If you changed `unsafe` code, run the tests under Miri where it supports the code.
-5. Review your diff as described in "Working as a pair", then report what you ran, what you
+5. Review your diff as a reviewer would. Look for `unwrap`, unchecked arithmetic, missing docs or
+   tests, and leftover `dbg!`, `todo!`, or commented-out code. Then report what you ran, what you
    didn't, and what remains.

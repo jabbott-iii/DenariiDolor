@@ -29,8 +29,9 @@ Bold names are values from the "Project details" of the adopted rules:
 - the **Decision log** from `roadmap-and-docs.md`, where it is adopted.
 
 Where a value doesn't exist because a rule isn't adopted, work from what the repository has, and
-say so in the report. Work with the user as the "Working as a pair" sections of the language
-rules describe. The language rules' own security sections are part of this sweep:
+say so in the report. Ask before each change that a rule's "Decisions that are the user's"
+section lists, and where `pair-programming.md` is adopted, work with the user as it describes.
+The language rules' own security sections are part of this sweep:
 
 | Rule | Sections to check the code against |
 | --- | --- |

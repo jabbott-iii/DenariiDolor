@@ -12,11 +12,10 @@ paths:
 
 # Kotlin standards
 
-These rules cover the Kotlin in this repository: source sets, tests, build scripts, and the
-Gradle files around them. They describe how a senior engineer writes Kotlin, and how to work with
-the user as a pair: you write the code, and they review it and make the calls that are theirs.
-KDoc, error messages, and other text follow `writing.md` in this folder. Android UI and Compose
-code follow this rule too, but it covers only what they share with all Kotlin.
+These rules cover the Kotlin in this repository: source sets, tests, build scripts, and the Gradle
+files around them. They describe how a senior engineer writes Kotlin. KDoc, error messages, and
+other text follow `writing.md` in this folder. Android UI and Compose code follow this rule too, but
+it covers only what they share with all Kotlin.
 
 Apply them to code you write or edit. Don't rewrite existing code only to make it conform; fix a
 passage when you are already changing it, and mention anything else you notice.
@@ -87,47 +86,28 @@ so they can fill them in.
   on an emulator (the **Test layout** in `flutter.md`). A test never touches the app's real
   `denarii_vault_` aliases, profile, or database (`security.md`)
 
-## Working as a pair
+## Decisions that are the user's
 
-- **Read before you write.** Read the code around a change and the tests that cover it, and
-  match the patterns already there unless they are the problem. Check the **Modules** to find
-  which module a new piece of code belongs in.
-- **Say the plan first.** For a change bigger than a few lines, say in two or three sentences
-  what will change, where, and how you will check it. Then go ahead, unless the plan includes one
-  of the decisions in the next point.
-- **Ask before decisions that are the user's.** Stop and ask before you:
-  - add a library or a Gradle plugin;
-  - change a public API, a serialized format, or a database schema;
-  - opt in to an experimental API (`@OptIn`) or add a `-X` compiler flag;
-  - change the Kotlin, JDK, Gradle, or AGP version;
-  - add a platform import to a module that the **Platform** keeps pure;
-  - weaken a lint, a detekt rule, a test, or a check;
-  - or build something different from what was asked.
+Stop and ask the user before you:
 
-  For anything else, choose the conventional option and say what you chose.
-- **Push back with reasons.** If a requested approach is unsound, slow, or fights the codebase,
-  say so before you implement it, with the reason and a concrete alternative. Once the user
-  decides, follow their decision.
-- **Work in small steps.** Compile the module after each step; that is much faster than a full
-  build. Run all the **Check commands** before you report done.
-- **Fix the cause, not the symptom.** For a bug, first write a test that fails, then fix the bug
-  and show the test passing. Don't add a `?.` or `?: return` that quietly skips a null that
-  should never be there; find out why it is null.
-- **Don't silence the compiler.** Never add `!!`, an unchecked cast, a `@Suppress`, a
-  `lateinit`, or `runBlocking` only to make an error or a warning go away. Work out what the
-  compiler is saying, then fix the types or the design.
-- **Explain the Kotlin that isn't obvious.** In your reply, say why you chose a coroutine scope
-  or dispatcher, a Flow operator, `inline` with `reified`, or variance (`out`, `in`). Write for
-  the audience in `writing.md`, and cover only what this change needs.
-- **Keep the change focused.** No unrelated refactors, renames, or reformatting. When the
-  formatter changes files you didn't otherwise touch, revert those changes. Mention problems you
-  notice outside the task instead of fixing them.
-- **Review your own diff** before you report, as a reviewer would. Look for `!!`, `GlobalScope`,
-  `runBlocking`, a swallowed `CancellationException`, a hard-coded dispatcher or clock,
-  `println`, `TODO()`, and missing docs or tests.
-- **Report honestly.** Say what changed and why, each command you ran with its real result, what
-  you didn't run and why, your assumptions, and the risks that remain. Never say a check passed
-  unless you ran it in this session and saw it pass.
+- add a library or a Gradle plugin;
+- change a public API, a serialized format, or a database schema;
+- opt in to an experimental API (`@OptIn`) or add a `-X` compiler flag;
+- change the Kotlin, JDK, Gradle, or AGP version;
+- add a platform import to a module that the **Platform** keeps pure;
+- or weaken a lint, a detekt rule, a test, or a check.
+
+## Making a change
+
+- **Read first.** Read the code around a change and the tests that cover it. Check the **Modules**
+  to find which module a new piece of code belongs in.
+- **Check each step.** Compile the module after each step; that is much faster than a full build.
+- **Fix the cause, not the symptom.** For a bug, first write a test that fails, then fix the bug and
+  show the test passing. Don't add a `?.` or `?: return` that quietly skips a null that should never
+  be there; find out why it is null.
+- **Don't silence the compiler.** Never add `!!`, an unchecked cast, a `@Suppress`, a `lateinit`, or
+  `runBlocking` only to make an error or a warning go away. Work out what the compiler is saying,
+  then fix the types or the design.
 
 ## Design with types
 
@@ -482,5 +462,6 @@ convention plugin rather than repeating them in each module.
    (`./gradlew publishToMavenLocal`) and check its POM, sources JAR, and Javadoc JAR.
 5. Run Android instrumented tests only when a device or emulator is attached; otherwise say that
    they weren't run.
-6. Review your diff as described in "Working as a pair", then report what you ran, what you
-   didn't, and what remains.
+6. Review your diff as a reviewer would. Look for `!!`, `GlobalScope`, `runBlocking`, a swallowed
+   `CancellationException`, a hard-coded dispatcher or clock, `println`, `TODO()`, and missing docs
+   or tests. Then report what you ran, what you didn't, and what remains.

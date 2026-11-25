@@ -30,6 +30,11 @@ domain rules to Rust with their tests.
     decision.
   - Note: 2026-11-24: the coverage values in `testing.md` now name `tool/coverage.sh` and its
     floors (ADR-0020). Mutation testing and fuzzing still have no tool.
+  - Note: 2026-11-25: at the maintainer's request, `pair-programming.md` is copied from Doctrina
+    commit `ee06f59` with its "Project details" filled in, and the "Working as a pair" sections
+    leave `rust.md`, `flutter.md`, `kotlin.md`, and `android.md`, as that commit moved them. Each
+    of the four keeps its own "Decisions that are the user's" and "Making a change" sections. The
+    `sweep-code`, `simplify-code`, and `security-sweep` skills point to the new rule.
   - Do:
     - Add `commits.md`, `flutter.md`, `roadmap-and-docs.md`, `rust.md`, and `writing.md` to
       `.claude/rules/`, and point `security.md` and `legal-docs.md` at the new layout.

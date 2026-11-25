@@ -10,11 +10,10 @@ paths:
 
 # Android and Jetpack Compose standards
 
-These rules cover Android apps and their Jetpack Compose UI in this repository: screens,
-ViewModels, the manifest, resources, persistence, background work, and release builds. They
-describe how a senior mobile developer builds for Android, and how to work with the user as a
-pair: you write the code, and they review it and make the calls that are theirs. Kotlin itself
-follows `kotlin.md` in this folder, and strings and other text follow `writing.md`.
+These rules cover Android apps and their Jetpack Compose UI in this repository: screens, ViewModels,
+the manifest, resources, persistence, background work, and release builds. They describe how a
+senior mobile developer builds for Android. Kotlin itself follows `kotlin.md` in this folder, and
+strings and other text follow `writing.md`.
 
 Apply them to code you write or edit. Don't rewrite existing code only to make it conform; fix a
 passage when you are already changing it, and mention anything else you notice.
@@ -69,52 +68,33 @@ so they can fill them in.
   in `flutter.md` says; until then the release build type signs with the debug keys
   (`android/app/build.gradle.kts`)
 
-## Working as a pair
+## Decisions that are the user's
 
-- **Read before you write.** Read the screen's route and composables, its ViewModel, and the
-  components the **Design system** already has, and reuse them. Check the **Modules** to find
-  where new code belongs, and match the patterns already there unless they are the problem.
-- **Say the plan first.** For a change bigger than a few lines, say in two or three sentences
-  what will change, where, and how you will check it. Then go ahead, unless the plan includes one
-  of the decisions in the next point.
-- **Ask before decisions that are the user's.** Stop and ask before you:
-  - add a permission, export a component, or add an intent filter;
-  - add a library or SDK, especially analytics, ads, or crash reporting;
-  - change the **SDK levels**;
-  - change a database schema or another stored format;
-  - change a **Security controls** item, the backup rules, or the network security config;
-  - add a `WebView`, a foreground service, or a new activity;
-  - change the design (theme, colors, type, or spacing) beyond what was asked;
-  - change anything the store shows, such as the app name, icon, or Data safety answers;
-  - weaken a lint check, a test, or another check;
-  - or build something different from what was asked.
+Stop and ask the user before you:
 
-  For anything else, choose the conventional option and say what you chose.
-- **Push back with reasons.** If a requested approach blocks the main thread, loses user data,
-  leaks memory, or breaks accessibility, say so before you implement it, with the reason and a
-  concrete alternative. Once the user decides, follow their decision.
-- **Work in small steps, and look at each one.** After a UI change, install the app on an
-  emulator or a device and use the changed screen. A preview isn't the app: it skips the
-  activity, the real theme, insets, and the data.
+- add a permission, export a component, or add an intent filter;
+- add a library or SDK, especially analytics, ads, or crash reporting;
+- change the **SDK levels**;
+- change a database schema or another stored format;
+- change a **Security controls** item, the backup rules, or the network security config;
+- add a `WebView`, a foreground service, or a new activity;
+- change the design (theme, colors, type, or spacing) beyond what was asked;
+- change anything the store shows, such as the app name, icon, or Data safety answers;
+- or weaken a lint check, a test, or another check.
+
+## Making a change
+
+- **Read first.** Read the screen's route and composables, its ViewModel, and the components the
+  **Design system** already has, and reuse them. Check the **Modules** to find where new code
+  belongs.
+- **Check each step on a device.** After a UI change, install the app on an emulator or a device and
+  use the changed screen. A preview isn't the app: it skips the activity, the real theme, insets,
+  and the data.
 - **Fix the cause, not the symptom.** If state is lost on rotation, fix how the state is saved;
-  don't lock the orientation or add `android:configChanges` to avoid re-creating the activity.
-  If a test is flaky, wait for the real condition; don't add a sleep.
-- **Don't paper over problems.** Never add `@SuppressLint`, `tools:ignore`, a lint baseline
-  entry, or an `@OptIn` only to make a warning go away. Work out what it is telling you, then fix
-  that.
-- **Explain what isn't obvious.** In your reply, say why you chose `rememberSaveable` over
-  `remember`, why an effect has the keys it has, or how a change behaves after the system kills
-  the process. Write for the audience in `writing.md`, and cover only what this change needs.
-- **Keep the change focused.** No unrelated refactors, renames, or reformatting. Mention problems
-  you notice outside the task instead of fixing them.
-- **Review your own diff** before you report, as a reviewer would. Look for hard-coded strings,
-  colors, and sizes; Android calls outside the **Platform boundary**; icons without a
-  `contentDescription`; missing translations; new exported components or permissions; and logs
-  that contain personal data.
-- **Report honestly.** Say what changed and why, each command you ran with its real result, which
-  devices, API levels, and settings (font scale, dark theme, right to left, TalkBack) you checked,
-  what you didn't check and why, your assumptions, and the risks that remain. Never say a check
-  passed unless you ran it in this session and saw it pass.
+  don't lock the orientation or add `android:configChanges` to avoid re-creating the activity. If a
+  test is flaky, wait for the real condition; don't add a sleep.
+- **Don't paper over problems.** Never add `@SuppressLint`, `tools:ignore`, a lint baseline entry,
+  or an `@OptIn` only to make a warning go away. Work out what it is telling you, then fix that.
 
 ## App architecture
 
@@ -369,5 +349,7 @@ so they can fill them in.
 5. If you changed a schema, run its migration test.
 6. Run the instrumented tests if a device is attached, and say which API levels they ran on.
 7. If you added strings, check that every language has them, and list the drafted translations.
-8. Review your diff as described in "Working as a pair", then report what you checked, what you
-   didn't, and what remains.
+8. Review your diff as a reviewer would. Look for hard-coded strings, colors, and sizes; Android
+   calls outside the **Platform boundary**; icons without a `contentDescription`; missing
+   translations; new exported components or permissions; and logs that contain personal data. Then
+   report what you checked, what you didn't, and what remains.

@@ -12,12 +12,11 @@ paths:
 
 # Dart and Flutter standards
 
-These rules cover Dart code and Flutter apps for Android and iOS in this repository: widgets,
-state, navigation, localization, platform integration, data, tests, and release builds. They
-describe how a senior mobile developer builds cross-platform apps with Flutter, and how to work
-with the user as a pair: you write the code, and they review it and make the calls that are
-theirs. Native code follows its own rules in this folder: Kotlin in `android/` follows
-`kotlin.md` and `android.md`, and Swift in `ios/` follows `swift.md`. Text follows `writing.md`.
+These rules cover Dart code and Flutter apps for Android and iOS in this repository: widgets, state,
+navigation, localization, platform integration, data, tests, and release builds. They describe how a
+senior mobile developer builds cross-platform apps with Flutter. Native code follows its own rules
+in this folder: Kotlin in `android/` follows `kotlin.md` and `android.md`, and Swift in `ios/`
+follows `swift.md`. Text follows `writing.md`.
 
 Apply them to code you write or edit. Don't rewrite existing code only to make it conform; fix a
 passage when you are already changing it, and mention anything else you notice.
@@ -102,53 +101,33 @@ so they can fill them in.
   upload key, keeps v1's split of the pipeline into `ci-gate`, `build`, and `publish` jobs
   (CS-19), and sets a build number above every v1 upload
 
-## Working as a pair
+## Decisions that are the user's
 
-- **Read before you write.** Read the widget you're changing, the state that drives it, the
-  shared widgets the **Design system** already has, and the tests that cover them. Check the
-  **Packages and layout** to find where new code belongs, and match the patterns already there
-  unless they are the problem.
-- **Say the plan first.** For a change bigger than a few lines, say in two or three sentences
-  what will change, where, and how you will check it on each platform. Then go ahead, unless the
-  plan includes one of the decisions in the next point.
-- **Ask before decisions that are the user's.** Stop and ask before you:
-  - add a package or plugin, especially one with native code;
-  - change the **State management** approach, or mix in a second one;
-  - change the **Platforms**, a minimum OS version, or the **Toolchain**;
-  - add a permission, a platform channel, or native code;
-  - change stored data or a database schema;
-  - change the design beyond what was asked, or anything the app stores show;
-  - weaken a lint, a test, or a check;
-  - or build something different from what was asked.
+Stop and ask the user before you:
 
-  For anything else, choose the conventional option and say what you chose.
-- **Push back with reasons.** If a requested approach blocks the UI thread, leaks resources,
-  loses user data, or breaks accessibility, say so before you implement it, with the reason and
-  a concrete alternative. Once the user decides, follow their decision.
-- **Work in small steps, and look at each one.** Run the app after each UI step. Hot reload keeps
-  the app's state and doesn't rerun `main` or `initState`, so use a hot restart or a fresh run
-  to check a change to startup or initialization.
-- **Fix the cause, not the symptom.** For a "RenderFlex overflowed" error, fix the constraints
-  (with `Expanded`, `Flexible`, or a scrolling parent where content can scroll); don't hide it
-  with a fixed size. For "setState() called after dispose()", cancel the work in `dispose`;
-  don't wrap the call in `try`. For a flaky test, wait for the real condition.
-- **Don't silence the analyzer.** Never add `!`, `late`, `dynamic`, an `as` cast, or an
-  `// ignore:` comment only to make an error or a warning go away. Work out what it is telling
-  you, then fix the types or the design.
-- **Explain what isn't obvious.** In your reply, say why a widget is stateless or stateful, why
-  it is `const`, why it needs a `Key`, or why work moved to another isolate. Write for the
-  audience in `writing.md`, and cover only what this change needs.
-- **Keep the change focused.** No unrelated refactors, renames, or reformatting. When the
-  formatter or `dart fix` changes files you didn't otherwise touch, revert those changes.
-  Mention problems you notice outside the task instead of fixing them.
-- **Review your own diff** before you report, as a reviewer would. Look for `!`, `dynamic`,
-  missing `const`, a `BuildContext` used after an `await` without a `mounted` check, controllers
-  that are never disposed, hard-coded strings, colors, and sizes, missing semantic labels, and
-  `print` calls.
-- **Report honestly.** Say what changed and why, each command you ran with its real result, which
-  devices, OS versions, and settings (text size, dark theme, right to left, TalkBack, VoiceOver)
-  you checked, what you couldn't run and why (iOS builds need a Mac), your assumptions, and the
-  risks that remain. Never say a check passed unless you ran it in this session and saw it pass.
+- add a package or plugin, especially one with native code;
+- change the **State management** approach, or mix in a second one;
+- change the **Platforms**, a minimum OS version, or the **Toolchain**;
+- add a permission, a platform channel, or native code;
+- change stored data or a database schema;
+- change the design beyond what was asked, or anything the app stores show;
+- or weaken a lint, a test, or a check.
+
+## Making a change
+
+- **Read first.** Read the widget you're changing, the state that drives it, the shared widgets the
+  **Design system** already has, and the tests that cover them. Check the **Packages and layout** to
+  find where new code belongs.
+- **Check each step in the app.** Run the app after each UI step. Hot reload keeps the app's state
+  and doesn't rerun `main` or `initState`, so use a hot restart or a fresh run to check a change to
+  startup or initialization.
+- **Fix the cause, not the symptom.** For a "RenderFlex overflowed" error, fix the constraints (with
+  `Expanded`, `Flexible`, or a scrolling parent where content can scroll); don't hide it with a
+  fixed size. For "setState() called after dispose()", cancel the work in `dispose`; don't wrap the
+  call in `try`. For a flaky test, wait for the real condition.
+- **Don't silence the analyzer.** Never add `!`, `late`, `dynamic`, an `as` cast, or an `// ignore:`
+  comment only to make an error or a warning go away. Work out what it is telling you, then fix the
+  types or the design.
 
 ## Dart
 
@@ -398,5 +377,7 @@ so they can fill them in.
    Podfile), list each change in your report, and build both platforms in release mode.
 5. Run the integration tests on a device or emulator if one is attached, and say where they
    ran. If you couldn't run the iOS checks, say so.
-6. Review your diff as described in "Working as a pair", then report what you checked, what you
-   didn't, and what remains.
+6. Review your diff as a reviewer would. Look for `!`, `dynamic`, missing `const`, a `BuildContext`
+   used after an `await` without a `mounted` check, controllers that are never disposed, hard-coded
+   strings, colors, and sizes, missing semantic labels, and `print` calls. Then report what you
+   checked, what you didn't, and what remains.
