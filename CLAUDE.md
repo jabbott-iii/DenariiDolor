@@ -11,11 +11,11 @@ files with `git show 6d57526:<path>`. The new app must open what v1 left on user
 
 ## Status
 
-As of 2026-11-24, all of M0's tasks, M1.1, M1.2, M1.4, M1.5, M1.6, and all of M2's tasks are done, and M1.3's Flutter jobs are in `ci.yml`
+As of 2026-11-25, all of M0's tasks, M1.1, M1.2, M1.4, M1.5, M1.6, all of M2's tasks, and M3.1 are done, and M1.3's Flutter jobs are in `ci.yml`
 but haven't run on a pull request yet. M0's exit criteria are the maintainer's to check, and they
-include deciding ADR-0004 and ADR-0007, which are still Proposed; the maintainer accepted ADR-0005 in M1.2 and ADR-0006
-in M2.1, and decided ADR-0018 in M2.2, ADR-0019 in M2.4, ADR-0020, the coverage floors, on 2026-11-24, and
-ADR-0021 in M2.7.
+include deciding ADR-0004, which is still Proposed; the maintainer accepted ADR-0005 in M1.2, ADR-0006 in M2.1, and
+ADR-0007 in M3.1, after a throwaway spike in which Rust reached the Android Keystore through Kotlin, and decided
+ADR-0018 in M2.2, ADR-0019 in M2.4, ADR-0020, the coverage floors, on 2026-11-24, and ADR-0021 in M2.7.
 Built: the Doctrina rules, the `ci-gates` and `dependency-upgrade` skills, the planning documents in `docs/`, the spec of
 v1's stored formats, the `denarii-core` crate (money, transactions, balance changes and validation) with its tests, the
 Flutter project (M1.1): the Android and iOS host apps, the app scope, and a root switch between placeholder sign-in and
@@ -60,6 +60,7 @@ details.
 | Anything | `docs/00-overview.md`, `docs/01-architecture.md`, and the task in `docs/roadmap.md` |
 | `rust/` | `.claude/rules/rust.md`, and the crate's spec in `docs/specs/` (`core.md`, `bridge.md`, `store.md` and `report.md` today) |
 | `lib/`, `test/`, `pubspec.yaml`, ARB files (from M1.1) | `.claude/rules/flutter.md` |
+| Kotlin, Gradle files, manifests or resources in `android/` | `.claude/rules/kotlin.md` and `.claude/rules/android.md` |
 | A test, a test fixture or a CI check | `.claude/rules/testing.md` |
 | Stored data, keys, sign-in, the session, backups, exports, `android/`, `ios/`, `.github/` | `.claude/rules/security.md` and `docs/specs/android-v1-formats.md` |
 | `docs/`, `README.md`, `CONTRIBUTING.md`, `SECURITY.md` | `.claude/rules/roadmap-and-docs.md` and `.claude/rules/writing.md` |
@@ -224,6 +225,8 @@ Rules in `.claude/rules/` load automatically when you work on matching files:
 |---|---|
 | `rust.md` | The Rust workspace: types, errors, untrusted input, `unsafe`, docs, tests, lints |
 | `flutter.md` | Dart and Flutter: widgets, state, navigation, localization, platform code, tests, release |
+| `kotlin.md` | Kotlin and the Gradle files in `android/`: types, errors, coroutines, untrusted input, tests, builds |
+| `android.md` | The Android host app: manifests, resources, permissions, exported components, security, release |
 | `testing.md` | All tests: never weakening one to make it pass, coverage, strict tests, performance, hostile input, CI |
 | `security.md` | Keys, sign-in, the session, exports, backups, manifests, workflows: controls that must stay |
 | `legal-docs.md` | `PRIVACY.md`, `THIRD_PARTY_NOTICES.md`, `licenses/`, `LICENSE` |
@@ -231,8 +234,8 @@ Rules in `.claude/rules/` load automatically when you work on matching files:
 | `writing.md` | All prose: docs, comments, error messages, commit messages |
 | `commits.md` | Commit messages, splitting work into commits, how much Git you may run, pull requests |
 
-`flutter.md` refers to `kotlin.md`, `android.md` and `swift.md` for native code. They don't exist yet; M3.1 and M7.1 add
-them.
+`flutter.md` also refers to `swift.md` for the Swift in `ios/`, which doesn't exist yet; M7.1 adds it. `kotlin.md` and
+`android.md` came from Doctrina in M3.1.
 
 Skills in `.claude/skills/`:
 

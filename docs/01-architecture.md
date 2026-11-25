@@ -19,8 +19,8 @@ names the task that builds each planned part.
 3. **Screens hold no business rules.** Dart shows state, collects input, and calls the core. It
    formats money and dates for the user's locale, because that is presentation.
 4. **Secrets stay out of Dart.** A PIN leaves Dart once, on its way to the vault. Keys never enter
-   Dart, because the Dart runtime can't wipe memory it has freed (ADR-0007, Proposed: hardware-key
-   operations stay in platform code).
+   Dart, because the Dart runtime can't wipe memory it has freed (ADR-0007, accepted in M3.1:
+   hardware-key operations stay in platform code, and Rust calls them directly).
 5. **The app is offline.** No layer opens a network connection (ADR-0008, the app stays offline).
 6. **Money is a whole number of cents** (`i64` in Rust, `int` in Dart) from input to storage.
    Floating point is used only to draw charts.
@@ -52,6 +52,7 @@ flowchart TB
     BR --> BK
     BR --> RP
     BR --> CO
+    VA -.->|"JNI — M3.2"| KT
     ST --> CO
     VA --> CO
     BK --> CO
@@ -71,7 +72,7 @@ Solid boxes are built; dashed boxes are planned, labeled with the task that buil
 | Platform code | `android/`, `ios/` | Hardware-backed keys, the biometric prompt, file pickers, the share sheet | The operating system only |
 | `bridge` | `rust/crates/bridge` | The API Dart calls; turning errors into stable codes | `store`, `vault`, `backup`, `report`, `core` |
 | `store` | `rust/crates/store` | The SQLCipher database, schema and migrations, queries, and the transaction, category, account, and budget use cases | `core`, approved crates |
-| `vault` | `rust/crates/vault` | The profile, key wrapping, PIN and answer rules, the lockout, and the session | `core`, approved crates |
+| `vault` | `rust/crates/vault` | The profile, key wrapping, PIN and answer rules, the lockout, and the session | `core`, approved crates, and the Keystore code in `android/` through JNI (ADR-0007) |
 | `backup` | `rust/crates/backup` | Writing and reading backup files of every format version | `core`, approved crates |
 | `report` | `rust/crates/report` | Monthly totals, search, and CSV text | `core` |
 | `core` | `rust/crates/core` | Money, transactions, balance changes, validation, the seeded defaults | `std` only |
@@ -147,8 +148,8 @@ it with `git show 6d57526:<path>`. Where v1's code now goes:
 
 1. **Start.** The root widget shows the sign-in flow inside the app scope. Nothing reads the
    database yet.
-2. **Sign in.** The screen sends the PIN to the vault. With ADR-0007's proposed split, Rust
-   stretches the PIN with PBKDF2, the Kotlin code mixes the result with the Keystore device key,
+2. **Sign in.** The screen sends the PIN to the vault. Under ADR-0007's split, Rust stretches
+   the PIN with PBKDF2, the Kotlin code mixes the result with the Keystore device key,
    and Rust unwraps the database key. The biometric path unwraps it in Kotlin through a
    `CryptoObject` instead.
 3. **Open.** `store` opens the SQLCipher database with that key and checks its `user_version`,

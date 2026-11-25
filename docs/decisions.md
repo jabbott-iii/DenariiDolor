@@ -151,7 +151,7 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
 
 ## ADR-0007 — Hardware-key operations stay in platform code
 
-- **Status:** Proposed
+- **Status:** Accepted by the maintainer on 2026-11-25, in M3.1, after the spike in its context.
 - **Date:** 2026-11-23
 - **Context:** v1 wraps the database key under keys derived from the PIN and the security answer:
   `HMAC-SHA256(device key, context || PBKDF2-HMAC-SHA256(secret, salt, iterations))`, where the
@@ -160,6 +160,47 @@ new record that supersedes it. `Proposed` records wait for the maintainer.
   through a `CryptoObject` that `BiometricPrompt` authorizes (CS-07). Only code running in the
   app's Java runtime can use these keys and that prompt. Every option below keeps them, so
   ADR-0002 holds; they differ in what passes through Dart.
+  - **M3.1's spike.** On 2026-11-25 the maintainer chose to build the spike in a throwaway clone
+    of commit `78871b5`, outside the repository, with `jni-sys` 0.4.1 (MIT OR Apache-2.0: raw
+    Rust declarations of the Java Native Interface header, `jni.h`) for the calls; none of it is
+    merged. `jni` 0.22.4, the safe wrapper from the same project, was the other crate offered,
+    and it depends on the `log` crate, which can't be turned off. A Kotlin object made a device
+    key (HMAC-SHA256) and a storage key (AES-256-GCM) with `KeystoreSecrets.kt`'s parameters,
+    under test-only aliases. Rust in the bridge called it, and a Dart integration test called the
+    bridge, in a debug build on the `Denarii_API_26` (Android 8.0) and `Denarii_API_36`
+    (Android 16) x86_64 emulators. The Android runtime's JNI checks (CheckJNI) were on, and both
+    runs passed.
+  - **Reaching the Java runtime.** Dart opens `libdenarii_bridge.so` itself, and that doesn't run
+    the library's `JNI_OnLoad`. When `MainActivity` loads the library first, with
+    `System.loadLibrary`, the runtime calls `JNI_OnLoad`, which keeps the `JavaVM` handle. Dart's
+    later open reaches the same loaded library, so Rust found the handle on both API levels.
+  - **The class loader.** The bridge's worker threads start in native code, so when Rust attaches
+    one to the runtime, it looks classes up with the system class loader: `FindClass` for the
+    app's class threw `ClassNotFoundException` there on both levels. Looking the class and its
+    methods up once in `JNI_OnLoad`, which uses the app's class loader, and keeping a global
+    reference to the class worked from every thread.
+  - **The operations.** From a worker thread, the device-key HMAC returned 32 bytes, the same for
+    the same input and different for another. Sealing 32 bytes returned 60: a 12-byte IV that
+    the Keystore chose, new each time, then the ciphertext and the 16-byte tag. Opening returned
+    the plaintext. Wrong associated data made Kotlin throw `javax.crypto.AEADBadTagException`, and
+    a 3-byte blob `java.lang.IllegalArgumentException`. Rust cleared each exception and returned
+    its class name as an error, and the next call succeeded. Rust overwrote each Java `byte[]` it
+    passed or received with zeros after the call, as v1 did with `fill(0)`; the Keystore still
+    receives each HMAC input, as it did in v1.
+  - **Threads and cost.** Each call attached its worker thread and detached it at the end, and
+    eight calls at once, on the bridge's worker threads, all passed. Averaged over 1,000 calls on one
+    thread, attaching and detaching took 47 µs on API 26 and 23 µs on API 36, a device-key HMAC
+    585 µs and 1,015 µs, and a seal with an open 1,336 µs and 2,789 µs. With eight calls at once,
+    an HMAC took 1.4–2.9 ms on API 26 and 2.4–5.7 ms on API 36. A PIN sign-in needs one HMAC,
+    one open of the profile, and perhaps a seal of it, a few milliseconds beside PBKDF2's hundreds.
+  - **The release build.** R8, the release build's code shrinker, removed the Kotlin class,
+    because only native code calls it, so `JNI_OnLoad` couldn't have found it there; the real code
+    needs a narrow keep rule. With the spike, the release `x86_64` library grew from 694,632 to
+    720,240 bytes, almost all of it the spike's own code, because `jni-sys` holds only
+    declarations. The spike's JNI module had about 40 `unsafe` blocks in 515 lines, behind two
+    safe functions.
+  - **Not covered.** The biometric `CryptoObject` path (M3.6), calls from Kotlin into Rust, v1's
+    real `denarii_vault_` keys on a phone with v1 data (M3.2), arm64 phones, and iOS (M7.1).
 - **Decision:** proposed, for the maintainer to choose in M3.1 after a spike: Rust runs PBKDF2,
   AES-GCM, the profile rules, and the lockout; Kotlin offers only the operations that need a
   Keystore key (the device-key HMAC, sealing and opening the profile, and the biometric cipher).

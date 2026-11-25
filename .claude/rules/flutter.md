@@ -80,8 +80,10 @@ so they can fill them in.
 - **Platform channels:** the Rust core through `flutter_rust_bridge` (ADR-0005), whose bindings
   live in `lib/platform/rust/` and which view models reach through hand-written interfaces in
   `lib/platform/`, such as `MoneyParser`; and
-  Pigeon for the Kotlin and Swift code that holds hardware-backed keys and shows the biometric
-  prompt (ADR-0007, Proposed: hardware-key operations stay in platform code)
+  the Kotlin and Swift code that holds hardware-backed keys, which Rust calls directly, through
+  the Java Native Interface (JNI) on Android, so no key passes through Dart (ADR-0007,
+  accepted in M3.1: hardware-key operations stay in platform code). How Dart starts the
+  biometric prompt is settled in M3.6
 - **Data layer:** no network client, because the app is offline. Every record, the vault profile,
   and every backup goes through the Rust core (ADR-0006, Proposed: SQLCipher opened from Rust).
   v1's formats are in `docs/specs/android-v1-formats.md`, and the new app must keep reading them

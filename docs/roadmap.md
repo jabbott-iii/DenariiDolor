@@ -751,7 +751,21 @@ reject each invalid write with v1's error.
 **Goal:** A phone with v1.x data updates to the new build and signs in with the same PIN, answer,
 and fingerprint, and sees the same balances.
 
-- [ ] **M3.1 — vault: decide where hardware-key work runs**
+- [x] **M3.1 — vault: decide where hardware-key work runs**
+  - Note: 2026-11-25: the maintainer chose to build the spike in a throwaway clone outside the
+    repository, with `jni-sys` 0.4.1 for its Java Native Interface (JNI) calls, approved for the
+    spike only. The alternatives were the spike in the working tree as a first cut of M3.2, and
+    `jni` 0.22.4, which depends on the `log` crate, or no crate. Nothing of the spike is merged;
+    its diff and both runs' output are in `build/` on the maintainer's machine, which Git ignores.
+  - Note: 2026-11-25: the spike passed in a debug build on `Denarii_API_26` and `Denarii_API_36`,
+    with the runtime's JNI checks on. Both emulators ran with `-read-only`, and `flutter test`
+    uninstalled the app after each run. ADR-0007's context has the findings and the timings.
+  - Note: 2026-11-25: after the spike, the maintainer accepted ADR-0007 as proposed: Rust calls the
+    Kotlin Keystore code directly through JNI, so no key passes through Dart. The alternatives
+    were Pigeon calls from Dart for each Keystore operation, and v1's whole vault in Kotlin.
+  - Note: 2026-11-25: `kotlin.md` and `android.md` are copied from Doctrina commit `dc6eb2d`, with
+    their "Project details" filled in. Kotlin has no check command of its own yet: no ktlint,
+    detekt, Android lint, or Gradle test task runs, and adding one is the maintainer's decision.
   - Depends: M1.2
   - Decide first: accept or change ADR-0007, after a spike that calls the Keystore from Rust on
     API 26.
@@ -763,6 +777,22 @@ and fingerprint, and sees the same balances.
   - Verify: the maintainer's decision (no command)
 - [ ] **M3.2 — android: Keystore and biometric code**
   - ⏳ needs an Android phone with v1 installed
+  - Note (from M3.1): ADR-0007 is accepted, so Rust calls this code through JNI. Two choices are
+    the maintainer's first: adding `jni-sys` 0.4.1 to the app (its register entry is open; M3.1
+    approved it for the spike only), and a second exemption in the "Unsafe policy" of `rust.md`
+    for the module that holds the JNI calls.
+  - Note (from M3.1): the spike showed what the JNI code needs. `MainActivity` calls
+    `System.loadLibrary("denarii_bridge")` before Dart's `RustLib.init()`, so the runtime runs the
+    library's `JNI_OnLoad`, which keeps the `JavaVM`. `JNI_OnLoad` looks up each class and method
+    ID and keeps a global reference to the class, because `FindClass` on a bridge worker thread
+    throws `ClassNotFoundException`. Each call attaches its worker thread and detaches it after,
+    checks for a Java exception and clears it, and overwrites every `byte[]` it passed or received
+    with zeros. Code that creates a key is `@Synchronized`. R8 removes a class that only native
+    code calls, so it needs a narrow keep rule. The spike didn't call Rust from Kotlin, or
+    exercise the biometric key.
+  - Note (from M3.1), not checked by the spike: `androidx.biometric`'s `BiometricPrompt` takes a
+    `FragmentActivity` or a `Fragment`, and `FlutterActivity` is neither, so `MainActivity` would
+    have to extend `FlutterFragmentActivity` to show it.
   - Note (from M1.4): once the APK carries translated Android resources (`androidx.biometric` has
     some), Android moves the first phone language that they or English match to the front before
     Flutter sees the list (ADR-0015). Check with `aapt2 dump configurations` that each of the six
@@ -1049,6 +1079,10 @@ restores in the new app on another phone.
     - Rewrite `THIRD_PARTY_NOTICES.md` and `licenses/` for the new dependencies; review
       `PRIVACY.md`; tell the maintainer what the Play Data safety form needs.
 - [ ] **M6.3 — build: obfuscation and size**
+  - Note (from M3.1): R8 removed the spike's Kotlin class from a release build, because only native
+    code called it; check that the keep rule for the JNI classes (M3.2) survives `--obfuscate`.
+    The spike's JNI code made the release `x86_64` library 25,608 bytes larger (694,632 to
+    720,240), and `classes.dex` 64 bytes larger.
   - Note (from M2.1): a scratch library holding only `rusqlite` with SQLCipher and OpenSSL was
     6.2 MB stripped for `arm64-v8a`, against 2.1 MB for v1's `libsqlcipher.so` (ADR-0017).
   - Note (from M1.2): `libdenarii_bridge.so` is 661 KB (`arm64-v8a`), 444 KB (`armeabi-v7a`), and

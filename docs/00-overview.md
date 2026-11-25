@@ -85,7 +85,7 @@ XL is more than six weeks.
 | :- | :- |
 | A v1 install doesn't open after the update, and its user loses access to their records | Specify every stored format before writing code that reads it (`docs/specs/android-v1-formats.md`); test against fixtures that the v1 app itself wrote; upgrade a real phone in M3 and M6.4; roll out in stages |
 | Rust's SQLCipher build uses different settings than `sqlcipher-android` | M2.1 opens a v1 fixture database before any other storage work starts |
-| Secrets pass through Dart memory, which the app can't zero | ADR-0007 (Proposed) keeps hardware-key work in Kotlin and Swift; M3.1 settles it with a spike |
+| Secrets pass through Dart memory, which the app can't zero | ADR-0007, accepted after M3.1's spike, keeps hardware-key work in Kotlin and Swift, which Rust calls directly, so no key or stretched secret passes through Dart; the typed PIN leaves Dart once, on its way to the vault |
 | The rewrite takes months and v1 needs a fix meanwhile | A hotfix branch from `6d57526` (backlog item with its trigger) |
 | Dart code is written before it can be built | M1.1 installs and pins the Flutter SDK before any Dart is written |
 | Machine-drafted translations reach users unreviewed | A native speaker reviews each language pack before the M6 release |
