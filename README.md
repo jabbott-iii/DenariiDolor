@@ -219,7 +219,7 @@ No release can be built from `main` until the new app reaches parity with v1 (mi
 - **Backups:** AES-256-GCM with a key derived from your passphrase (PBKDF2-HMAC-SHA256, 600 000 iterations, a random salt per file). Files are saved and opened only through the system file picker, and a restore checks the whole backup before it replaces anything, in a single database transaction.
 - **Privacy:** the app collects nothing and has no network access. See [PRIVACY.md](PRIVACY.md), also in the app under **Settings → Privacy policy**.
 
-To report a vulnerability, open a private security advisory on this repository rather than a public issue.
+To report a vulnerability, follow the [security policy](SECURITY.md): report it privately through GitHub, never in a public issue.
 
 ## License
 

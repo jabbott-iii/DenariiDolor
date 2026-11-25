@@ -56,7 +56,7 @@ details.
 | `lib/`, `test/`, `pubspec.yaml`, ARB files (from M1.1) | `.claude/rules/flutter.md` |
 | A test, a test fixture or a CI check | `.claude/rules/testing.md` |
 | Stored data, keys, sign-in, the session, backups, exports, `android/`, `ios/`, `.github/` | `.claude/rules/security.md` and `docs/specs/android-v1-formats.md` |
-| `docs/`, `README.md`, `CONTRIBUTING.md` | `.claude/rules/roadmap-and-docs.md` and `.claude/rules/writing.md` |
+| `docs/`, `README.md`, `CONTRIBUTING.md`, `SECURITY.md` | `.claude/rules/roadmap-and-docs.md` and `.claude/rules/writing.md` |
 | A dependency, a plugin or a GitHub Action | `docs/02-dependency-policy.md`, and the `dependency-upgrade` skill |
 | A significant or hard-to-reverse choice | `docs/decisions.md` |
 | `PRIVACY.md`, `THIRD_PARTY_NOTICES.md`, `licenses/`, `LICENSE` | `.claude/rules/legal-docs.md` |
