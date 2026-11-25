@@ -12,9 +12,9 @@
 //! at sign-in. This crate opens that file as it is, with `rusqlite` and the SQLCipher and OpenSSL
 //! builds it compiles in (ADR-0006, ADR-0017). Today it opens the database, brings its schema to
 //! version 2 as v1 did (ADR-0018), adds, edits, and deletes transactions with v1's checks and
-//! balance changes, and categories, accounts, and budgets with v1's rules, and closes the
-//! database; seeding the default accounts and categories at setup lands in M2.6. The bridge
-//! reaches it only after the vault has unlocked the key (M3). Its design is in
+//! balance changes, and categories, accounts, and budgets with v1's rules, seeds the default
+//! accounts and categories, and closes the database. The bridge reaches it only after the vault
+//! has unlocked the key (M3). Its design is in
 //! `docs/specs/store.md`, and the file it reads is in sections 5 and 6 of
 //! `docs/specs/android-v1-formats.md`.
 //!
@@ -28,6 +28,7 @@
 //! - Categories, accounts, and budgets: [`Store::add_category`], [`Store::update_category`],
 //!   [`Store::delete_category`], [`Store::add_account`], [`Store::rename_account`],
 //!   [`Store::delete_account`], [`Store::set_budget`], and [`Store::delete_budget`].
+//! - The defaults: [`Store::seed_defaults`], with their [`DefaultNames`] in the user's language.
 //! - [`DatabaseKey`]: the key, which no `Debug` output shows and which is wiped when dropped.
 //! - [`StoreError`]: why an operation failed, such as [`StoreError::KeyRejected`].
 //!
@@ -70,6 +71,9 @@
 //!   differ only in the case of ASCII letters, as v1 compared them. The seeded rows in
 //!   [`defaults`](denarii_core::defaults) can't be deleted, nor can a category or account that a
 //!   transaction uses; deleting a category deletes its budget.
+//! - Seeding writes the defaults only into an empty `accounts` or `categories` table, so it can
+//!   run after every sign-in, as v1 ran it. It checks the names the caller passes as it checks
+//!   every other name.
 //! - [`Store`] is `Send` and `Sync`. Its operations take turns on one connection, so a slow one
 //!   makes the next wait.
 //! - The first [`Store::open`] in a process sets SQLCipher up and turns its log off, once, under a
@@ -83,10 +87,12 @@ mod key;
 mod migration;
 mod reference;
 mod schema;
+mod seed;
 mod store;
 mod transactions;
 
 pub use error::StoreError;
 pub use key::DatabaseKey;
+pub use seed::DefaultNames;
 pub use store::Store;
 pub use transactions::OverBudget;

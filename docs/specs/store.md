@@ -6,15 +6,16 @@ and write on it. It guarantees that the file opens only with its key, that openi
 file only to bring it to schema version 2 and changes nothing when it fails, that a transaction
 write changes the stored balances in the same database transaction as its row and changes
 nothing when it fails, that every other write keeps v1's rules for names, protected rows, and
-rows in use and changes nothing when it fails, and that calls from several threads never
-interleave on its one connection. ADR-0006 (the database stays SQLCipher, opened from Rust with `rusqlite`), ADR-0017
+rows in use and changes nothing when it fails, that seeding stores the default accounts and
+categories only in an empty table, and that calls from several threads never interleave on its
+one connection. ADR-0006 (the database stays SQLCipher, opened from Rust with `rusqlite`), ADR-0017
 (SQLCipher and OpenSSL compiled from source on every target, and one connection behind a mutex),
 ADR-0018 (a new schema only in an absent or empty file, and no write to a schema the store
 doesn't know), and ADR-0019 (Dart passes each month's bounds, and Rust reads no time zone) shaped
 it. Sections 5 and 6 of `docs/specs/android-v1-formats.md` describe the file it must read.
 Opening and closing were built in M2.1, the schema and its migration in M2.2, the transaction
-writes in M2.4, and the category, account, and budget writes in M2.5, as described here; seeding
-the default accounts and categories at setup lands in M2.6. The API reference is
+writes in M2.4, the category, account, and budget writes in M2.5, and the seeding of the default
+accounts and categories in M2.6, as described here. The API reference is
 `cargo doc -p denarii-store --open`, run from `rust/`.
 
 ## Why this design
@@ -394,6 +395,73 @@ outside any transaction:
 | Two adds of one name at the same moment | Both checks could pass, and the second insert failed on the unique index, shown as the generic error | The second add fails with the duplicate error |
 | When the checks ran | Before the write, outside any database transaction | Inside it, under the store's lock |
 
+## Seeding the defaults
+
+Built in M2.6 as described here, in `src/seed.rs`. One operation ports v1's
+`DefaultDataInitializer` (at `6d57526`):
+
+```rust
+pub struct DefaultNames {
+    pub cash_account: String,
+    pub savings_account: String,
+    pub expense_category: String,
+    pub income_category: String,
+    pub transfer_category: String,
+}
+
+impl Store {
+    pub fn seed_defaults(&self, names: &DefaultNames) -> Result<(), StoreError>;
+}
+```
+
+Every install starts with two accounts and three categories, which can't be deleted (section 6
+of the format spec). `core::defaults` holds their IDs and icon keys. Their names are in the
+user's language, and Rust holds no text that users read, so Dart passes the five names. They
+come from the language pack that `resolveAppLocale` picks: the messages `defaultAccountCash`,
+`defaultAccountSavings`, `defaultCategoryExpense`, `defaultCategoryIncome`, and
+`defaultCategoryTransfer`. Once stored, the names are ordinary data that the user can change.
+
+`seed_defaults` runs these steps:
+
+1. Each of the five names goes through `core::validate_name`, in the fields' order. This happens
+   whatever the tables hold, so a bad name fails on every install, not only a new one.
+2. In one `BEGIN IMMEDIATE` transaction, under the store's lock, it counts the rows of `accounts`
+   with v1's `SELECT COUNT(*) FROM accounts`. If there are none, account 1 gets the cash name
+   and account 2 the savings name, each with a balance of 0 cents.
+3. In the same transaction, if `categories` holds no row, categories 1–3 get their names and the
+   icon keys `ic_category_default`, `income`, and `transfer`.
+4. The transaction commits. Any failure drops it, which rolls back every row it wrote.
+
+Before each insert, v1's duplicate check runs against the rows already in the table, as for a
+category or account the user adds (see [Names](#names)). The table was empty, so the check finds
+only a default seeded a moment before, and the plain `INSERT` that follows can't meet a taken ID
+or name.
+
+A table that holds any row is left as it is, even when it lacks a default. So the user's names
+for the defaults survive a sign-in in another language, and seeding again changes nothing. A
+database whose tables both hold rows, such as fixture F3, isn't written at all: closing it
+leaves every byte as it was.
+
+Each default gets its ID from `core::defaults`, whatever ID SQLite would hand out next. SQLite
+keeps a table's `AUTOINCREMENT` counter at the highest ID the table has held, so the next row
+the user adds gets the ID after the counter: account 3 and category 4 in a new database.
+
+When the app seeds is for sign-in to decide (M3.5). v1's `Vault.unlock` seeded after every
+sign-in, once the database was open. So a database that was new, or that sign-in had just
+replaced, got its defaults before the first screen read it.
+
+### Differences from v1
+
+Each of these differences affects only names that v1's language packs never held. In the
+seven languages the app ships, the five names are trimmed, 2 to 18 UTF-16 code units long, and
+different from each other.
+
+| Case | v1 | `store` |
+| :- | :- | :- |
+| A blank name, or one longer than 50 UTF-16 code units | Stored as it was | `InvalidName`, as for every other name, and nothing is written |
+| A name with whitespace around it | Stored as it was | Stored trimmed, as every other name is |
+| Two accounts, or two categories, with one name under v1's duplicate check | `INSERT OR IGNORE` left the second row out when the two were the same exactly, so a protected default was missing, and stored both when they differed in the case of ASCII letters | The duplicate error, which carries the later name, and nothing is written |
+
 ## The key
 
 `DatabaseKey` holds the 32 bytes. Its `Debug` output is `DatabaseKey(..)`, and dropping it
@@ -504,6 +572,16 @@ environment that Flutter's build hook or a contributor sets up. The register in
     replaces it under the same ID. A deleted row's ID isn't handed out again.
 21. A name added from several threads at once is stored once, and every other add fails with the
     duplicate error.
+22. Seeding gives an empty `accounts` table accounts 1–2 with a balance of 0 cents, and an empty
+    `categories` table categories 1–3 with v1's icon keys, under the IDs in `core::defaults` and
+    the caller's names, stored trimmed. In English, these are the rows v1 seeded in fixture F3.
+23. Seeding leaves a table that holds any row as it was, so a second seeding changes nothing, and
+    seeding a database whose tables both hold rows changes no byte of its file.
+24. Seeding refuses an invalid name whatever the tables hold, and two defaults whose names are
+    duplicates under v1's check. A seeding that fails, for any reason, leaves every table as it
+    was.
+25. Seeding from several threads and connections at once stores the defaults once, all in the
+    language of one call, and every call succeeds.
 
 ## Tests
 
@@ -529,11 +607,15 @@ environment that Flutter's build hook or a contributor sets up. The register in
 | 19 | `src/reference.rs`: the order of every check, with a snapshot of every table compared before and after each refused write |
 | 20 | `src/reference.rs`: a category deleted with its budget in a new file and in fixture F3, a budget set twice, and the IDs after deletes, F3's deleted account 5 included |
 | 21 | `src/reference.rs`: eight threads, started together, each adding the same 50 category and account names |
+| 22 | `src/seed.rs`: a new database's rows, `AUTOINCREMENT` counters, and next IDs; the English names against fixture F3's accounts 1–2 and categories 1–3; an emptied table whose counter is past the defaults' IDs; and names trimmed with Kotlin's whitespace, at 1 and at 50 UTF-16 code units |
+| 23 | `src/seed.rs`: a second seeding in French, a table that holds a row but no default, and fixture F3's bytes after seeding and closing |
+| 24 | `src/seed.rs`: each field blank, made of whitespace, and one past the limit, in a new file and in fixture F3; duplicate account and category names; names that differ only in the case of a non-ASCII letter; triggers that refuse account 2 or category 3; and missing tables, with a snapshot of every table compared before and after |
+| 25 | `src/seed.rs`: five new databases, each seeded by eight threads at once through two `Store`s, half in English and half in French |
 | The key pragma's text | `src/key.rs`: v1's raw-key syntax for a known key, and a length equal to the capacity |
 
 Run them with `cargo test --locked -p denarii-store` from `rust/`, only the schema's with
 `cargo test --locked -p denarii-store migration`, only the transaction writes' with
 `cargo test --locked -p denarii-store transactions`, only the category, account, and budget
-writes' with `cargo test --locked -p denarii-store reference`, or those whose names mention a
-fixture,
+writes' with `cargo test --locked -p denarii-store reference`, only the seeding's with
+`cargo test --locked -p denarii-store seed`, or those whose names mention a fixture,
 every test of F3 and F4 among them, with `cargo test --locked -p denarii-store fixture`.

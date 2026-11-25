@@ -369,11 +369,11 @@ impl Store {
 }
 
 /// The ID v1 excluded from an add's duplicate check: no stored row has it.
-const NO_ROW: i64 = 0;
+pub(crate) const NO_ROW: i64 = 0;
 
 /// A table whose rows must have different names.
 #[derive(Debug, Clone, Copy)]
-enum NamedTable {
+pub(crate) enum NamedTable {
     Categories,
     Accounts,
 }
@@ -402,7 +402,7 @@ impl NamedTable {
 
 /// Fails with the table's duplicate-name error if a row other than `exclude` has `name`, with
 /// ASCII letters compared without regard to case.
-fn require_unique_name(
+pub(crate) fn require_unique_name(
     connection: &Connection,
     table: NamedTable,
     name: &str,

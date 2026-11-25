@@ -6,9 +6,9 @@
 
 //! The accounts and categories every install starts with, which can't be deleted.
 //!
-//! Setup stores them with these IDs and their names in the user's language (M2.6); after that
-//! the names are ordinary data the user can change. The IDs and icons are v1's (`Constants.kt`
-//! in v1).
+//! `denarii-store`'s `Store::seed_defaults` stores them in an empty table with these IDs and the
+//! names the caller passes in the user's language; after that the names are ordinary data the
+//! user can change. The IDs and icons are v1's (`Constants.kt` in v1).
 
 use crate::ids::{AccountId, CategoryId};
 
@@ -30,10 +30,10 @@ pub const TRANSFER_CATEGORY: CategoryId = CategoryId(3);
 /// The icon a category gets when none is chosen, and the expense category's icon.
 pub const DEFAULT_CATEGORY_ICON: &str = "ic_category_default";
 
-/// The seeded accounts, in the order setup stores them.
+/// The seeded accounts, in the order seeding stores them.
 pub const ACCOUNTS: [AccountId; 2] = [CASH_ACCOUNT, SAVINGS_ACCOUNT];
 
-/// The seeded categories and their icon keys, in the order setup stores them.
+/// The seeded categories and their icon keys, in the order seeding stores them.
 pub const CATEGORIES: [(CategoryId, &str); 3] = [
     (EXPENSE_CATEGORY, DEFAULT_CATEGORY_ICON),
     (INCOME_CATEGORY, "income"),

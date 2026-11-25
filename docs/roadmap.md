@@ -636,7 +636,35 @@ rules.
   - Accept:
     - Each `DomainError` those use cases raised in v1 is raised in the same case.
   - Verify: `cd rust && cargo test --locked -p denarii-store` (expect pass)
-- [ ] **M2.6 — store: seed the defaults at setup**
+- [x] **M2.6 — store: seed the defaults at setup**
+  - Note: 2026-11-24: `denarii-store` has `Store::seed_defaults` and `DefaultNames` in
+    `src/seed.rs` (`docs/specs/store.md`, "Seeding the defaults"). In one `BEGIN IMMEDIATE`
+    transaction, it stores accounts 1–2 in an empty `accounts` table and categories 1–3 in an
+    empty `categories` table, with the IDs and icons in `core::defaults` and plain `INSERT`s. A
+    table that holds any row stays as it is, as in v1. Dart passes the five names, through no
+    bridge call yet: the bridge offers no storage call before sign-in (M3.5). The duplicate check
+    in `src/reference.rs` becomes `pub(crate)` for the seeding. No error variant is new, and
+    `Cargo.lock` doesn't change.
+  - Note: 2026-11-24: two differences from v1, which affect only names that v1's language packs
+    never held. The names go through `core::validate_name`, so a blank name or one past 50 UTF-16
+    code units fails with `InvalidName` and nothing is written, where v1 stored any resource
+    string. And two defaults with one name under v1's duplicate check fail with the duplicate
+    error, where v1's `INSERT OR IGNORE` left out an exact duplicate, a protected default with it.
+    In all seven ARB files, the five names are trimmed, 2 to 18 UTF-16 code units long, and
+    different from each other. Seeding fixture F3, whose tables hold rows, leaves every byte of
+    the file as v1 wrote it.
+  - Note: 2026-11-24: `cargo test --locked -p denarii-store seed` passed: 14 unit tests in
+    `src/seed.rs` and the doc test of `seed_defaults`. In English, the seeding stores the rows v1
+    seeded in fixture F3. Each of nine deliberate breakages failed a test in 5 of 5 runs: no
+    check that `categories` is empty, the check of `accounts` made under a lock of its own before
+    the write, v1's `INSERT OR IGNORE` without the duplicate check, the accounts committed apart
+    from the categories, icons paired with the wrong IDs, an untrimmed name, a name left
+    unchecked, IDs picked by SQLite, and a balance other than 0. The first version of the thread
+    test, with eight threads on one `Store`, missed the separate lock in all of 200 rounds:
+    Rust's mutex lets the thread that releases it take it back before a waiting thread wakes. Two
+    `Store`s on one file caught it in 20 of 20 single rounds, and the test runs five. The seed
+    tests passed 30 runs in a row. Rust coverage rose to 95.27% of lines and 92.70% of regions,
+    so `tool/coverage.sh` raises its Rust floors to 95 and 92.
   - Depends: M2.5
   - Do:
     - Port `DefaultDataInitializer`, taking the default names in the user's language from Dart.
@@ -731,6 +759,11 @@ and fingerprint, and sees the same balances.
     `InvalidName`, `DuplicateCategoryName`, `DuplicateAccountName`, `CategoryInUse`, and
     `AccountInUse` carry fill the placeholders of their messages, the last two in plural
     messages.
+  - Note (from M2.6): v1's `Vault.unlock` seeded the defaults after every sign-in, once the
+    database was open, so call `Store::seed_defaults` there too, with `DefaultNames` from
+    `lookupAppLocalizations`, as the M1.4 note on M2.6 says. It changes nothing once both tables
+    hold rows. An `InvalidName` or duplicate error from it means a language pack is broken, not
+    that the user did something wrong.
   - Note (from M1.2): the sign-in placeholder now has a route (`SignInPlaceholderRoute`) and a view
     model with M1.2's amount field. Remove the field with the placeholder, and point
     `integration_test/bridge_test.dart`'s screen check at a screen that still calls the bridge.
