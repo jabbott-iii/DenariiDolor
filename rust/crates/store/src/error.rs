@@ -8,7 +8,7 @@
 
 use std::fmt;
 
-use denarii_core::{AccountId, DomainError, EpochMillis, MonthBounds, TransactionId};
+use denarii_core::{AccountId, CategoryId, DomainError, EpochMillis, MonthBounds, TransactionId};
 
 /// Why the store couldn't open the database or run an operation on it.
 ///
@@ -50,6 +50,25 @@ pub enum StoreError {
     TransactionNotFound {
         /// The ID the request named.
         id: TransactionId,
+    },
+    /// The category to edit or delete has no row. v1 showed its "item not found" message, unlike
+    /// [`DomainError::CategoryNotFound`], which names a missing category that a transaction or a
+    /// budget would refer to.
+    CategoryNotFound {
+        /// The ID the request named.
+        id: CategoryId,
+    },
+    /// The account to rename or delete has no row. v1 showed its "item not found" message,
+    /// unlike [`DomainError::AccountNotFound`], which names a missing account that a transaction
+    /// would use.
+    AccountNotFound {
+        /// The ID the request named.
+        id: AccountId,
+    },
+    /// The category has no budget to delete. v1 showed its "item not found" message.
+    BudgetNotFound {
+        /// The category the request named.
+        category: CategoryId,
     },
     /// The transaction's date isn't in the month the caller passed, so the caller worked out the
     /// bounds of another month (ADR-0019). This is the caller's bug, never the user's.
@@ -102,6 +121,11 @@ impl fmt::Display for StoreError {
                 write!(f, "the request breaks a business rule ({})", error.code())
             }
             Self::TransactionNotFound { id } => write!(f, "no transaction has the ID {}", id.0),
+            Self::CategoryNotFound { id } => write!(f, "no category has the ID {}", id.0),
+            Self::AccountNotFound { id } => write!(f, "no account has the ID {}", id.0),
+            Self::BudgetNotFound { category } => {
+                write!(f, "category {} has no budget", category.0)
+            }
             Self::DateOutsideMonth { .. } => {
                 f.write_str("the transaction's date isn't in the month the caller passed")
             }
@@ -129,6 +153,9 @@ impl std::error::Error for StoreError {
             | Self::UnrecognizedSchema { .. }
             | Self::Poisoned
             | Self::TransactionNotFound { .. }
+            | Self::CategoryNotFound { .. }
+            | Self::AccountNotFound { .. }
+            | Self::BudgetNotFound { .. }
             | Self::DateOutsideMonth { .. }
             | Self::Overflow
             | Self::MissingAccount { .. } => None,
@@ -139,4 +166,39 @@ impl std::error::Error for StoreError {
 /// Wraps an error from SQLite with what the store was doing when it happened.
 pub(crate) fn sqlite(operation: &'static str, source: rusqlite::Error) -> StoreError {
     StoreError::Sqlite { operation, source }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::error::Error;
+
+    use denarii_core::{AccountId, CategoryId};
+
+    use super::StoreError;
+
+    /// The `Display` text is for tests and debugging, never for users, and names the row the
+    /// request named. None of these errors has a source.
+    #[test]
+    fn a_missing_category_account_or_budget_displays_the_id() {
+        let cases = [
+            (
+                StoreError::CategoryNotFound { id: CategoryId(9) },
+                "no category has the ID 9",
+            ),
+            (
+                StoreError::AccountNotFound { id: AccountId(7) },
+                "no account has the ID 7",
+            ),
+            (
+                StoreError::BudgetNotFound {
+                    category: CategoryId(4),
+                },
+                "category 4 has no budget",
+            ),
+        ];
+        for (error, text) in cases {
+            assert_eq!(error.to_string(), text);
+            assert!(error.source().is_none(), "{error:?}");
+        }
+    }
 }

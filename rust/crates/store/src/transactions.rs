@@ -193,14 +193,14 @@ fn validated(draft: &TransactionDraft, month: MonthBounds) -> Result<Transaction
 }
 
 /// Starts a write that holds the database's write lock before it reads anything.
-fn begin(connection: &mut Connection) -> Result<rusqlite::Transaction<'_>, StoreError> {
+pub(crate) fn begin(connection: &mut Connection) -> Result<rusqlite::Transaction<'_>, StoreError> {
     connection
         .transaction_with_behavior(TransactionBehavior::Immediate)
         .map_err(|source| sqlite("start the write", source))
 }
 
 /// Commits a write. A write dropped without this rolls back.
-fn commit(write: rusqlite::Transaction<'_>) -> Result<(), StoreError> {
+pub(crate) fn commit(write: rusqlite::Transaction<'_>) -> Result<(), StoreError> {
     write
         .commit()
         .map_err(|source| sqlite("commit the write", source))

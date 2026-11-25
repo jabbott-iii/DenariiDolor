@@ -5,15 +5,17 @@ Kotlin app, left on users' phones, with the key the vault unwraps at sign-in, an
 and write on it. It guarantees that the file opens only with its key, that opening writes to a
 file only to bring it to schema version 2 and changes nothing when it fails, that a transaction
 write changes the stored balances in the same database transaction as its row and changes
-nothing when it fails, and that calls from several threads never interleave on its one
-connection. ADR-0006 (the database stays SQLCipher, opened from Rust with `rusqlite`), ADR-0017
+nothing when it fails, that every other write keeps v1's rules for names, protected rows, and
+rows in use and changes nothing when it fails, and that calls from several threads never
+interleave on its one connection. ADR-0006 (the database stays SQLCipher, opened from Rust with `rusqlite`), ADR-0017
 (SQLCipher and OpenSSL compiled from source on every target, and one connection behind a mutex),
 ADR-0018 (a new schema only in an absent or empty file, and no write to a schema the store
 doesn't know), and ADR-0019 (Dart passes each month's bounds, and Rust reads no time zone) shaped
 it. Sections 5 and 6 of `docs/specs/android-v1-formats.md` describe the file it must read.
-Opening and closing were built in M2.1, the schema and its migration in M2.2, and the
-transaction writes in M2.4, as described here; the category, account, and budget use cases land
-in M2.5 and M2.6. The API reference is `cargo doc -p denarii-store --open`, run from `rust/`.
+Opening and closing were built in M2.1, the schema and its migration in M2.2, the transaction
+writes in M2.4, and the category, account, and budget writes in M2.5, as described here; seeding
+the default accounts and categories at setup lands in M2.6. The API reference is
+`cargo doc -p denarii-store --open`, run from `rust/`.
 
 ## Why this design
 
@@ -302,6 +304,96 @@ v1's checks never left. The last two change where the work happens, and not what
 | When the checks ran | Before the database transaction | Inside it, under the store's lock |
 | Where the budget's month comes from | The injected clock's time zone, read in Kotlin | The bounds the caller passes (ADR-0019) |
 
+## Categories, accounts, and budgets
+
+Built in M2.5 as described here, in `src/reference.rs`. Eight operations port v1's
+`CategoryUseCases`, `AccountUseCases`, and `BudgetUseCases`, with the SQL of Room's generated code
+for `CategoryDao`, `AccountDao`, and `BudgetDao` (all at `6d57526`):
+
+```rust
+impl Store {
+    pub fn add_category(&self, name: &str, icon_name: &str) -> Result<CategoryId, StoreError>;
+    pub fn update_category(&self, id: CategoryId, name: &str, icon_name: Option<&str>)
+        -> Result<(), StoreError>;
+    pub fn delete_category(&self, id: CategoryId) -> Result<(), StoreError>;
+    pub fn add_account(&self, name: &str, opening_balance: Cents) -> Result<AccountId, StoreError>;
+    pub fn rename_account(&self, id: AccountId, name: &str) -> Result<(), StoreError>;
+    pub fn delete_account(&self, id: AccountId) -> Result<(), StoreError>;
+    pub fn set_budget(&self, category: CategoryId, monthly_limit: Cents,
+                      warning_threshold_percent: i32) -> Result<BudgetId, StoreError>;
+    pub fn delete_budget(&self, category: CategoryId) -> Result<(), StoreError>;
+}
+```
+
+v1's Kotlin functions had default arguments, which the caller now passes:
+`core::defaults::DEFAULT_CATEGORY_ICON` for a new category, `Cents(0)` for a new account's
+opening balance, and `Budget::DEFAULT_WARNING_PERCENT`, 80, for a new budget.
+
+### Names
+
+A category or account name goes through `core::validate_name`, which trims it with Kotlin's
+whitespace and requires 1 to 50 UTF-16 code units, and is stored trimmed. Then v1's duplicate
+check runs: `LOWER(name) = LOWER(?) AND id != ?`, which leaves out ID 0 for an add and the row's
+own ID for an edit, so a rename may change only the name's case.
+
+SQLite's `LOWER` folds only the 26 ASCII letters unless SQLite is built with International
+Components for Unicode (ICU), a library of Unicode's case rules. So `Groceries` and `groceries` are the same name, but `Épicerie` and `épicerie` aren't,
+and `CRÉDIT` and `Crédit` aren't either: `LOWER` turns them into `crÉdit` and `crédit`. v1's
+`sqlcipher-android` 4.19.1 had no ICU (the compile options in its `libsqlcipher.so` name no
+`ENABLE_ICU`), and this build's SQLCipher has none either, so the two compare names alike. The
+unique indexes on `name` compare exactly, so they never refuse a name the check let through.
+
+A duplicate error carries the trimmed name from the request, which v1's message shows.
+
+### The checks, in v1's order
+
+Each operation reports the first rule the request breaks:
+
+| Operation | Checks, in order |
+| :- | :- |
+| `add_category`, `add_account` | `InvalidName`; `DuplicateCategoryName` or `DuplicateAccountName` |
+| `update_category` | `IdRequired` unless the ID is more than zero; `StoreError::CategoryNotFound`; `InvalidName`; `DuplicateCategoryName` |
+| `rename_account` | `IdRequired` unless the ID is more than zero; `InvalidName`; `DuplicateAccountName`; `StoreError::AccountNotFound` |
+| `delete_category` | `DefaultCategory` for categories 1–3; `CategoryInUse`; `StoreError::CategoryNotFound` |
+| `delete_account` | `DefaultAccount` for accounts 1–2; `AccountInUse`; `StoreError::AccountNotFound` |
+| `set_budget` | `InvalidBudgetLimit` unless the limit is more than zero; `InvalidWarningPercent` unless the threshold is from 1 to 100; `CategoryNotFound` |
+| `delete_budget` | `StoreError::BudgetNotFound` |
+
+The names without `StoreError::` are `DomainError` variants, returned as `StoreError::Domain`.
+The rest of v1's rules:
+
+- **Rows in use.** `CategoryInUse` counts the transactions in the category, and `AccountInUse`
+  the transactions whose account or transfer destination is the account; each error carries the
+  count, which v1's message shows. `transferAccountId` has no foreign key, so only this count
+  keeps a transfer from losing its destination. A budget doesn't count as a use: deleting a
+  category deletes its budget, through the `ON DELETE CASCADE` foreign key on
+  `budgets.categoryId`.
+- **IDs on delete.** v1 didn't check a delete's ID, so the ID 0 or below isn't found, unlike a
+  transaction's delete, which gets `IdRequired`.
+- **Missing rows.** v1 threw `NoSuchElementException` for a category, account, or budget the
+  request named but no row held, and showed "This item no longer exists." `StoreError`'s
+  `CategoryNotFound`, `AccountNotFound`, and `BudgetNotFound` stand for that. They differ from
+  `DomainError::CategoryNotFound`, which `set_budget` returns for a missing category, as v1's
+  `BudgetUseCases` did, and which v1 showed as "That category no longer exists. Choose another."
+- **Icons.** A new category with a blank icon gets the default icon, and an edit with no icon or
+  a blank one keeps the stored icon. Any other text is stored as it is: v1 didn't check icon
+  keys, and its screens show the default icon for a key they don't know.
+- **Balances.** A new account's opening balance may be any number of cents, a negative one
+  included, and an account no transaction uses can be deleted whatever its balance.
+- **One budget per category.** `set_budget` replaces the category's budget and keeps its ID, as
+  v1's `INSERT OR REPLACE` with the stored ID did; a new budget gets the next ID.
+
+### The write
+
+Each operation runs its checks of stored rows and its write in one `BEGIN IMMEDIATE`
+transaction, under the store's lock, so a failure leaves every table as it was. v1 ran the checks
+outside any transaction:
+
+| Case | v1 | `store` |
+| :- | :- | :- |
+| Two adds of one name at the same moment | Both checks could pass, and the second insert failed on the unique index, shown as the generic error | The second add fails with the duplicate error |
+| When the checks ran | Before the write, outside any database transaction | Inside it, under the store's lock |
+
 ## The key
 
 `DatabaseKey` holds the 32 bytes. Its `Debug` output is `DatabaseKey(..)`, and dropping it
@@ -317,7 +409,7 @@ closes.
 
 ## Errors
 
-`StoreError` has 11 variants. None carries the key. A write that fails with any of them leaves
+`StoreError` has 14 variants. None carries the key. A write that fails with any of them leaves
 the file as it was.
 
 | Variant | When |
@@ -329,6 +421,9 @@ the file as it was.
 | `Poisoned` | An earlier call panicked while it held the connection, so its state is unknown |
 | `Domain(DomainError)` | The request breaks a business rule, such as `BUDGET_EXCEEDED`; the user sees the message `DomainError::code` names |
 | `TransactionNotFound { id }` | The transaction to edit or delete has no row; v1 showed its "item not found" message |
+| `CategoryNotFound { id }` | The category to edit or delete has no row; v1 showed its "item not found" message |
+| `AccountNotFound { id }` | The account to rename or delete has no row; v1 showed its "item not found" message |
+| `BudgetNotFound { category }` | The category has no budget to delete; v1 showed its "item not found" message |
 | `DateOutsideMonth { date, month }` | The caller's month bounds don't hold the transaction's date: a bug in the caller (ADR-0019) |
 | `Overflow` | A balance, or a month's expenses in a category, would go past the range of a 64-bit number of cents: only a damaged file causes it |
 | `MissingAccount { id }` | A balance change names an account with no row: only a damaged file causes it |
@@ -397,6 +492,18 @@ environment that Flutter's build hook or a contributor sets up. The register in
 15. The budget counts an expense dated at the month's first moment and not one dated at the next
     month's first moment, and a write whose date isn't in the caller's month is refused.
 16. Writes from several threads at once lose no row and no balance change.
+17. A category or account name is stored trimmed with Kotlin's whitespace, at 1 to 50 UTF-16
+    code units, and an add or a rename fails with the duplicate error exactly when another row's
+    name is the same under SQLite's `LOWER`, which folds only ASCII letters.
+18. Categories 1–3 and accounts 1–2 can't be deleted. Nor can a category that a transaction is
+    in, or an account that a transaction uses or transfers into, and the error carries how many
+    transactions those are.
+19. A category, account, or budget write reports the first rule the request breaks, in v1's
+    order, and a write that fails leaves every table as it was.
+20. Deleting a category deletes its budget. A category has at most one budget, and `set_budget`
+    replaces it under the same ID. A deleted row's ID isn't handed out again.
+21. A name added from several threads at once is stored once, and every other add fails with the
+    duplicate error.
 
 ## Tests
 
@@ -417,9 +524,16 @@ environment that Flutter's build hook or a contributor sets up. The register in
 | 14 | `src/transactions.rs`: the cases of v1's `ValidateTransactionUseCaseTest`, and F3's groceries budget in November (42,345 of 40,000 cents spent) and October (35,000) |
 | 15 | `src/transactions.rs`: expenses one millisecond before November, at its first moment, and at December's first moment; Los Angeles's September against October in UTC, as v1's `budgetMonthFollowsTheClockZone`; and a date outside the bounds for each type |
 | 16 | `src/transactions.rs`: eight threads adding 400 transactions to one `Store` |
+| 17 | `src/reference.rs`: the name cases of v1's `ManageReferenceDataUseCaseTest`, `Épicerie` against `ÉPICERIE` and `épicerie`, Kotlin's whitespace, and 25 emoji against 25 and a letter; fixture F3's names with non-ASCII letters and emoji |
+| 18 | `src/reference.rs`: v1's delete cases, a transfer into an account, used defaults, and each used category and account of fixture F3 with its count |
+| 19 | `src/reference.rs`: the order of every check, with a snapshot of every table compared before and after each refused write |
+| 20 | `src/reference.rs`: a category deleted with its budget in a new file and in fixture F3, a budget set twice, and the IDs after deletes, F3's deleted account 5 included |
+| 21 | `src/reference.rs`: eight threads, started together, each adding the same 50 category and account names |
 | The key pragma's text | `src/key.rs`: v1's raw-key syntax for a known key, and a length equal to the capacity |
 
 Run them with `cargo test --locked -p denarii-store` from `rust/`, only the schema's with
 `cargo test --locked -p denarii-store migration`, only the transaction writes' with
-`cargo test --locked -p denarii-store transactions`, or those whose names mention a fixture,
+`cargo test --locked -p denarii-store transactions`, only the category, account, and budget
+writes' with `cargo test --locked -p denarii-store reference`, or those whose names mention a
+fixture,
 every test of F3 and F4 among them, with `cargo test --locked -p denarii-store fixture`.

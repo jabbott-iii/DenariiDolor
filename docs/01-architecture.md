@@ -38,7 +38,7 @@ flowchart TB
     end
     subgraph Rust["Rust workspace (rust/)"]
         BR["bridge: the API Dart calls"]
-        ST["store: the SQLCipher database, its schema, and transaction writes<br/>(other use cases: M2.5–M2.6)"]
+        ST["store: the SQLCipher database, its schema, and writes of<br/>transactions, categories, accounts, and budgets<br/>(seeding the defaults: M2.6)"]
         VA["vault — M3"]
         BK["backup — M5.1"]
         RP["report — M2.7"]
@@ -117,7 +117,7 @@ to the vault.
 | `rust/Cargo.toml` | The workspace, shared package fields, and lints | M0.4 |
 | `rust/crates/core` | `denarii-core`; its design is in `docs/specs/core.md` | M0.4–M0.7 |
 | `rust/crates/bridge` | `denarii-bridge`, the API Dart calls, with its generated glue; its design is in `docs/specs/bridge.md` | M1.2 |
-| `rust/crates/store` | `denarii-store`, which opens the SQLCipher database, brings its schema to version 2, and adds, edits, and deletes transactions; its design is in `docs/specs/store.md`, and its fixtures written by v1 are in `tests/fixtures/` | M2.1–M2.4; the other use cases in M2.5–M2.6 |
+| `rust/crates/store` | `denarii-store`, which opens the SQLCipher database, brings its schema to version 2, and adds, edits, and deletes transactions, categories, accounts, and budgets; its design is in `docs/specs/store.md`, and its fixtures written by v1 are in `tests/fixtures/` | M2.1–M2.5; seeding the defaults in M2.6 |
 | `rust/crates/{vault,backup,report}` | The planned crates in the table above | M2.7–M5.1 |
 | `pubspec.yaml`, `lib/`, `test/`, `integration_test/` | The Flutter app and its tests; the bridge's generated Dart bindings are in `lib/platform/rust/` | M1.1; `integration_test/` and `lib/platform/` in M1.2 |
 | `l10n.yaml`, `lib/l10n/` | The seven language packs as ARB files, the localizations `flutter gen-l10n` generates from them, and `resolveAppLocale`, which picks a pack from the phone's language list (ADR-0015: the whole list, matched by script as Android does) | M1.4 |

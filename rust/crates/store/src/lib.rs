@@ -12,8 +12,9 @@
 //! at sign-in. This crate opens that file as it is, with `rusqlite` and the SQLCipher and OpenSSL
 //! builds it compiles in (ADR-0006, ADR-0017). Today it opens the database, brings its schema to
 //! version 2 as v1 did (ADR-0018), adds, edits, and deletes transactions with v1's checks and
-//! balance changes, and closes the database; the category, account, and budget use cases land in
-//! M2.5 and M2.6. The bridge reaches it only after the vault has unlocked the key (M3). Its design is in
+//! balance changes, and categories, accounts, and budgets with v1's rules, and closes the
+//! database; seeding the default accounts and categories at setup lands in M2.6. The bridge
+//! reaches it only after the vault has unlocked the key (M3). Its design is in
 //! `docs/specs/store.md`, and the file it reads is in sections 5 and 6 of
 //! `docs/specs/android-v1-formats.md`.
 //!
@@ -24,6 +25,9 @@
 //! - Transaction writes: [`Store::add_transaction`], [`Store::update_transaction`], and
 //!   [`Store::delete_transaction`], with [`OverBudget`] for an expense the user has confirmed.
 //!   The caller passes each month as a [`MonthBounds`](denarii_core::MonthBounds) (ADR-0019).
+//! - Categories, accounts, and budgets: [`Store::add_category`], [`Store::update_category`],
+//!   [`Store::delete_category`], [`Store::add_account`], [`Store::rename_account`],
+//!   [`Store::delete_account`], [`Store::set_budget`], and [`Store::delete_budget`].
 //! - [`DatabaseKey`]: the key, which no `Debug` output shows and which is wiped when dropped.
 //! - [`StoreError`]: why an operation failed, such as [`StoreError::KeyRejected`].
 //!
@@ -61,6 +65,11 @@
 //! - A transaction write checks the request in v1's order, then writes the row and its balance
 //!   changes in one database transaction. A write that fails, for any reason, leaves the file as
 //!   it was.
+//! - Every other write also checks the request in v1's order inside one database transaction.
+//!   Category and account names are stored trimmed, and two names are duplicates when they
+//!   differ only in the case of ASCII letters, as v1 compared them. The seeded rows in
+//!   [`defaults`](denarii_core::defaults) can't be deleted, nor can a category or account that a
+//!   transaction uses; deleting a category deletes its budget.
 //! - [`Store`] is `Send` and `Sync`. Its operations take turns on one connection, so a slow one
 //!   makes the next wait.
 //! - The first [`Store::open`] in a process sets SQLCipher up and turns its log off, once, under a
@@ -72,6 +81,7 @@
 mod error;
 mod key;
 mod migration;
+mod reference;
 mod schema;
 mod store;
 mod transactions;

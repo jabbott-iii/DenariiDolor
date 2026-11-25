@@ -7,7 +7,8 @@
 //! The reference data transactions point to: accounts, categories, and monthly budgets.
 //!
 //! Their rules (names, duplicates, the protected defaults in [`defaults`](crate::defaults), and
-//! rows still in use) need stored data, so they run in the storage layer (M2.5).
+//! rows still in use) need stored data, so they run in the storage layer, `denarii-store`, which
+//! trims and checks each name with [`validate_name`](crate::validate_name).
 
 use crate::defaults::DEFAULT_CATEGORY_ICON;
 use crate::ids::{AccountId, BudgetId, CategoryId};

@@ -78,20 +78,40 @@ pub enum DomainError {
     /// The expense would take its category past the monthly budget, and the user hasn't
     /// confirmed it.
     BudgetExceeded(BudgetOverage),
-    /// A category or account name is empty, or too long once trimmed.
-    InvalidName,
-    /// Another category already has this name.
-    DuplicateCategoryName,
-    /// Another account already has this name.
-    DuplicateAccountName,
+    /// A category or account name is empty, or longer than `max_units` UTF-16 code units once
+    /// trimmed.
+    InvalidName {
+        /// The limit, which the message shows.
+        max_units: usize,
+    },
+    /// Another category already has this name, compared as v1 compared it: SQLite's `LOWER`,
+    /// which folds only the ASCII letters.
+    DuplicateCategoryName {
+        /// The trimmed name the request gave, which the message shows.
+        name: String,
+    },
+    /// Another account already has this name, compared as for
+    /// [`DuplicateCategoryName`](Self::DuplicateCategoryName).
+    DuplicateAccountName {
+        /// The trimmed name the request gave, which the message shows.
+        name: String,
+    },
     /// The category is one of the seeded defaults, which can't be deleted.
     DefaultCategory,
     /// The account is one of the seeded defaults, which can't be deleted.
     DefaultAccount,
-    /// A transaction or budget still refers to the category.
-    CategoryInUse,
-    /// A transaction still refers to the account.
-    AccountInUse,
+    /// Transactions still refer to the category. A budget doesn't count: deleting the category
+    /// deletes its budget too.
+    CategoryInUse {
+        /// How many transactions refer to it, which the message shows.
+        transactions: u32,
+    },
+    /// Transactions still refer to the account, as the account they use or as a transfer's
+    /// destination.
+    AccountInUse {
+        /// How many transactions refer to it, which the message shows.
+        transactions: u32,
+    },
     /// A budget's monthly limit isn't more than zero.
     InvalidBudgetLimit,
     /// A budget's warning threshold isn't between 1 and 100 percent.
@@ -118,13 +138,13 @@ impl DomainError {
             Self::AccountNotFound => "ACCOUNT_NOT_FOUND",
             Self::TransferDestinationNotFound => "TRANSFER_DESTINATION_NOT_FOUND",
             Self::BudgetExceeded(_) => "BUDGET_EXCEEDED",
-            Self::InvalidName => "INVALID_NAME",
-            Self::DuplicateCategoryName => "DUPLICATE_CATEGORY_NAME",
-            Self::DuplicateAccountName => "DUPLICATE_ACCOUNT_NAME",
+            Self::InvalidName { .. } => "INVALID_NAME",
+            Self::DuplicateCategoryName { .. } => "DUPLICATE_CATEGORY_NAME",
+            Self::DuplicateAccountName { .. } => "DUPLICATE_ACCOUNT_NAME",
             Self::DefaultCategory => "DEFAULT_CATEGORY",
             Self::DefaultAccount => "DEFAULT_ACCOUNT",
-            Self::CategoryInUse => "CATEGORY_IN_USE",
-            Self::AccountInUse => "ACCOUNT_IN_USE",
+            Self::CategoryInUse { .. } => "CATEGORY_IN_USE",
+            Self::AccountInUse { .. } => "ACCOUNT_IN_USE",
             Self::InvalidBudgetLimit => "INVALID_BUDGET_LIMIT",
             Self::InvalidWarningPercent => "INVALID_WARNING_PERCENT",
             Self::InvalidSearchRange => "INVALID_SEARCH_RANGE",
@@ -158,13 +178,21 @@ impl fmt::Display for DomainError {
                 "the expense goes {} cents past the monthly budget of {}",
                 overage.over_by.0, overage.category_name
             ),
-            Self::InvalidName => f.write_str("the name is empty or too long"),
-            Self::DuplicateCategoryName => f.write_str("another category has this name"),
-            Self::DuplicateAccountName => f.write_str("another account has this name"),
+            Self::InvalidName { max_units } => {
+                write!(f, "the name is empty or longer than {max_units} characters")
+            }
+            Self::DuplicateCategoryName { name } => {
+                write!(f, "another category is named \"{name}\"")
+            }
+            Self::DuplicateAccountName { name } => write!(f, "another account is named \"{name}\""),
             Self::DefaultCategory => f.write_str("a default category can't be deleted"),
             Self::DefaultAccount => f.write_str("a default account can't be deleted"),
-            Self::CategoryInUse => f.write_str("the category is still in use"),
-            Self::AccountInUse => f.write_str("the account is still in use"),
+            Self::CategoryInUse { transactions } => {
+                write!(f, "{transactions} transactions still use the category")
+            }
+            Self::AccountInUse { transactions } => {
+                write!(f, "{transactions} transactions still use the account")
+            }
             Self::InvalidBudgetLimit => f.write_str("the monthly limit must be more than zero"),
             Self::InvalidWarningPercent => {
                 f.write_str("the warning threshold must be from 1 to 100 percent")

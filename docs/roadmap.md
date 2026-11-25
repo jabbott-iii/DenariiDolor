@@ -592,7 +592,43 @@ rules.
     - A failed write changes nothing; an expense over budget fails with `BUDGET_EXCEEDED` unless
       the caller allows it.
   - Verify: `cd rust && cargo test --locked -p denarii-store` (expect pass)
-- [ ] **M2.5 — store: categories, accounts, and budgets**
+- [x] **M2.5 — store: categories, accounts, and budgets**
+  - Note: 2026-11-24: `denarii-store` has `Store::add_category`, `update_category`,
+    `delete_category`, `add_account`, `rename_account`, `delete_account`, `set_budget`, and
+    `delete_budget` in `src/reference.rs` (`docs/specs/store.md`, "Categories, accounts, and
+    budgets"), with the SQL of Room's generated code for v1's three DAOs. Each runs its checks
+    and its write in one `BEGIN IMMEDIATE` transaction; `begin` and `commit` in
+    `src/transactions.rs` become `pub(crate)` for it. `StoreError` gains `CategoryNotFound`,
+    `AccountNotFound`, and `BudgetNotFound`, which stand for v1's `NoSuchElementException`
+    ("This item no longer exists"). `denarii-core` gains `validate_name` and `is_blank`, and five
+    `DomainError` variants now carry the value that v1 passed with them and its message shows:
+    `InvalidName { max_units }`, `DuplicateCategoryName { name }`,
+    `DuplicateAccountName { name }`, `CategoryInUse { transactions }`, and
+    `AccountInUse { transactions }`. Their codes are unchanged.
+  - Note: 2026-11-24: three findings. Names are compared with SQLite's `LOWER`, as v1's DAOs
+    compared them, and it folds only ASCII letters: the compile options in v1's
+    `libsqlcipher.so` (`sqlcipher-android` 4.19.1, from the maintainer's Gradle cache) name no
+    `ENABLE_ICU`. v1's own unit tests used fakes that compared with Kotlin's
+    `equals(ignoreCase = true)`, which folds every letter, so they disagreed with the app on
+    names such as `Épicerie` and `épicerie`; the port follows the DAOs. v1's category delete
+    counts only transactions, and the category's budget goes with it through `ON DELETE CASCADE`,
+    so `CategoryInUse` no longer says that a budget counts. And v1's deletes didn't check the ID,
+    so a category or account delete of the ID 0 or below isn't found, where a transaction's
+    delete gets `IdRequired` (M2.4).
+  - Note: 2026-11-24: `cargo test --locked -p denarii-store` passed: 82 unit tests, 25 of them new
+    (24 in `src/reference.rs` and 1 in `src/error.rs`), 13 integration tests in two files, and
+    1 doc test. They port every case of v1's `ManageReferenceDataUseCaseTest` with the exact
+    error, and add the order of every check, names at the limits, ASCII-only case folding, a
+    transfer's destination counted as a use, used defaults, budget IDs, a damaged file, fixture
+    F3's counts, names, and IDs, and eight threads adding the same 50 names. Each of six
+    deliberate breakages failed a test: names compared exactly, no check for a default category,
+    a transfer's destination not counted, a budget inserted rather than replaced, a use count
+    off by one, and the duplicate check run under a lock of its own before the insert. That
+    last one failed 5 of 5 runs only after the threads were made to start together with a
+    barrier; the first version of the test passed it 5 of 5 times. The 24 tests in
+    `src/reference.rs` passed 30 runs in a row. Rust coverage rose to 94.76% of lines and 91.91%
+    of regions, so
+    `tool/coverage.sh` raises its Rust floors to 94 and 91.
   - Depends: M2.4
   - Do:
     - Port `CategoryUseCases`, `AccountUseCases`, and `BudgetUseCases`: name rules, duplicates, the
@@ -604,6 +640,10 @@ rules.
   - Depends: M2.5
   - Do:
     - Port `DefaultDataInitializer`, taking the default names in the user's language from Dart.
+  - Note (from M2.5): `Store::add_account` and `Store::add_category` let SQLite pick the ID and
+    refuse a duplicate name, so the seeding needs statements of its own: v1 inserted accounts 1–2
+    and categories 1–3 with their IDs, ignoring conflicts, and only into an empty table
+    (section 6 of `docs/specs/android-v1-formats.md`). The icons are in `core::defaults`.
   - Note (from M1.4): the names are `defaultAccountCash`, `defaultAccountSavings`, and the three
     `defaultCategory…` messages. Outside a widget, get them with
     `lookupAppLocalizations(resolveAppLocale(PlatformDispatcher.instance.locales, AppLocalizations.supportedLocales))`,
@@ -685,6 +725,12 @@ and fingerprint, and sees the same balances.
     then, and map each `StoreError` variant to a code for the screens.
   - Note (from M2.2): `Store::open` can also return `NewerSchema` and `UnrecognizedSchema`
     (ADR-0018). Both leave the file as it was, and neither may lead the app to delete it.
+  - Note (from M2.5): v1's `UiMessage.fromError` showed `errorItemNotFound` for every row that
+    wasn't found, which `StoreError`'s `TransactionNotFound`, `CategoryNotFound`,
+    `AccountNotFound`, and `BudgetNotFound` stand for. The values that `DomainError`'s
+    `InvalidName`, `DuplicateCategoryName`, `DuplicateAccountName`, `CategoryInUse`, and
+    `AccountInUse` carry fill the placeholders of their messages, the last two in plural
+    messages.
   - Note (from M1.2): the sign-in placeholder now has a route (`SignInPlaceholderRoute`) and a view
     model with M1.2's amount field. Remove the field with the placeholder, and point
     `integration_test/bridge_test.dart`'s screen check at a screen that still calls the bridge.
@@ -790,6 +836,11 @@ over it keeps the data, and the same PIN, answer, and fingerprint sign in.
 - [ ] **M4.3 — search: filters and results**
   - Depends: M2.7, M3.5
 - [ ] **M4.4 — category: manage categories, accounts, and budgets**
+  - Note (from M2.5): the store writes categories, accounts, and budgets but doesn't list them
+    yet. v1's DAOs listed categories and accounts with `ORDER BY name ASC`, which sorts by
+    SQLite's binary collation, so `Zoo` comes before `apple`, and listed budgets in no order.
+    v1's use cases took default arguments that the caller now passes: the default icon, an
+    opening balance of 0, and an 80 percent warning threshold.
   - Depends: M2.5, M3.5
 - [ ] **M4.5 — report: monthly report, CSV and PDF export, and sharing**
   - Depends: M2.7, M3.5

@@ -20,8 +20,9 @@
 //! - Balances: [`balance_deltas`] gives the change to each account's stored balance when a
 //!   transaction is added, edited, or deleted.
 //! - Validation: [`validate_transaction`] turns a [`TransactionDraft`] into a [`Transaction`];
-//!   [`budget_overage`] does the budget check's arithmetic; the `is_valid_*` functions check names,
-//!   percentages, and search ranges.
+//!   [`budget_overage`] does the budget check's arithmetic; [`validate_name`] trims and checks a
+//!   category or account name; the `is_valid_*` functions check names, percentages, and search
+//!   ranges, and [`is_blank`] applies Kotlin's idea of blank text.
 //! - Reference data: [`Account`], [`Category`], [`Budget`], and the seeded rows in [`defaults`].
 //! - IDs: [`AccountId`], [`CategoryId`], [`TransactionId`], [`BudgetId`], and [`EpochMillis`].
 //! - Months: [`MonthBounds`], the moments a calendar month in the user's time zone starts and
@@ -96,7 +97,7 @@ pub use reference::{Account, Budget, Category};
 pub use search::SearchFilters;
 pub use transaction::{Transaction, TransactionKind, TransactionType, UnknownTransactionType};
 pub use validation::{
-    MAX_DESCRIPTION_UNITS, MAX_NAME_UNITS, MAX_PERCENT, TransactionDraft, budget_overage,
+    MAX_DESCRIPTION_UNITS, MAX_NAME_UNITS, MAX_PERCENT, TransactionDraft, budget_overage, is_blank,
     is_valid_amount, is_valid_date, is_valid_description, is_valid_name, is_valid_percent,
-    is_valid_search_range, validate_transaction,
+    is_valid_search_range, validate_name, validate_transaction,
 };

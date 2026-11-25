@@ -183,6 +183,48 @@ pub fn is_valid_name(name: &str) -> bool {
     (1..=MAX_NAME_UNITS).contains(&text::utf16_len(text::trim(name)))
 }
 
+/// Checks a category or account name and returns it trimmed, which is how v1 stored it and
+/// compared it with the other names.
+///
+/// v1's `CategoryUseCases` and `AccountUseCases` trimmed with Kotlin's whitespace, then applied
+/// [`is_valid_name`].
+///
+/// # Errors
+///
+/// Returns [`DomainError::InvalidName`], carrying [`MAX_NAME_UNITS`], when the trimmed name is
+/// empty or longer than that many UTF-16 code units.
+///
+/// # Examples
+///
+/// ```
+/// use denarii_core::{DomainError, MAX_NAME_UNITS, validate_name};
+///
+/// assert_eq!(validate_name("  Dining\u{A0}"), Ok("Dining"));
+/// assert_eq!(
+///     validate_name("   "),
+///     Err(DomainError::InvalidName { max_units: MAX_NAME_UNITS })
+/// );
+/// ```
+pub fn validate_name(name: &str) -> Result<&str, DomainError> {
+    let trimmed = text::trim(name);
+    if is_valid_name(trimmed) {
+        Ok(trimmed)
+    } else {
+        Err(DomainError::InvalidName {
+            max_units: MAX_NAME_UNITS,
+        })
+    }
+}
+
+/// Whether `text` is empty or holds only whitespace, as Kotlin's `isBlank()` decides.
+///
+/// v1 treated a blank category icon as no icon: a new category got the default icon, and an
+/// edited one kept its stored icon.
+#[must_use]
+pub fn is_blank(text: &str) -> bool {
+    text::is_blank(text)
+}
+
 /// Whether a budget warning threshold is from 1 to [`MAX_PERCENT`] percent.
 #[must_use]
 pub fn is_valid_percent(percent: i32) -> bool {

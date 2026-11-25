@@ -10,8 +10,8 @@
 use denarii_core::{
     AccountId, BudgetOverage, CategoryId, Cents, DomainError, EpochMillis, MAX_DESCRIPTION_UNITS,
     MAX_NAME_UNITS, SearchFilters, TransactionDraft, TransactionKind, TransactionType,
-    budget_overage, defaults, is_valid_amount, is_valid_description, is_valid_name,
-    is_valid_percent, is_valid_search_range, validate_transaction,
+    budget_overage, defaults, is_blank, is_valid_amount, is_valid_description, is_valid_name,
+    is_valid_percent, is_valid_search_range, validate_name, validate_transaction,
 };
 
 fn draft() -> TransactionDraft {
@@ -285,6 +285,108 @@ fn error_codes_are_v1s_names() {
         DomainError::InvalidSearchRange.code(),
         "INVALID_SEARCH_RANGE"
     );
+    // The reference data's errors carry what v1's messages show, under v1's names.
+    let name = || "Dining".to_owned();
+    let cases = [
+        (DomainError::InvalidName { max_units: 50 }, "INVALID_NAME"),
+        (
+            DomainError::DuplicateCategoryName { name: name() },
+            "DUPLICATE_CATEGORY_NAME",
+        ),
+        (
+            DomainError::DuplicateAccountName { name: name() },
+            "DUPLICATE_ACCOUNT_NAME",
+        ),
+        (DomainError::DefaultCategory, "DEFAULT_CATEGORY"),
+        (DomainError::DefaultAccount, "DEFAULT_ACCOUNT"),
+        (
+            DomainError::CategoryInUse { transactions: 2 },
+            "CATEGORY_IN_USE",
+        ),
+        (
+            DomainError::AccountInUse { transactions: 2 },
+            "ACCOUNT_IN_USE",
+        ),
+        (DomainError::InvalidBudgetLimit, "INVALID_BUDGET_LIMIT"),
+        (
+            DomainError::InvalidWarningPercent,
+            "INVALID_WARNING_PERCENT",
+        ),
+    ];
+    for (error, code) in cases {
+        assert_eq!(error.code(), code, "{error:?}");
+    }
+}
+
+/// The `Display` text is for tests and debugging, never for users, and names the value each
+/// error carries.
+#[test]
+fn the_reference_data_errors_display_the_value_they_carry() {
+    let cases = [
+        (
+            DomainError::InvalidName { max_units: 50 },
+            "the name is empty or longer than 50 characters",
+        ),
+        (
+            DomainError::DuplicateCategoryName {
+                name: "Dining".to_owned(),
+            },
+            "another category is named \"Dining\"",
+        ),
+        (
+            DomainError::DuplicateAccountName {
+                name: "Cash".to_owned(),
+            },
+            "another account is named \"Cash\"",
+        ),
+        (
+            DomainError::CategoryInUse { transactions: 3 },
+            "3 transactions still use the category",
+        ),
+        (
+            DomainError::AccountInUse { transactions: 6 },
+            "6 transactions still use the account",
+        ),
+    ];
+    for (error, text) in cases {
+        assert_eq!(error.to_string(), text);
+    }
+}
+
+#[test]
+fn a_valid_name_comes_back_trimmed_with_kotlins_whitespace() {
+    assert_eq!(validate_name("Groceries"), Ok("Groceries"));
+    assert_eq!(validate_name("  Dining  "), Ok("Dining"));
+    assert_eq!(
+        validate_name("\u{1F}\u{A0}Caf\u{e9}\u{3000}"),
+        Ok("Caf\u{e9}")
+    );
+    // Kotlin doesn't count U+0085 as whitespace, so it stays, and the name is valid.
+    assert_eq!(validate_name("\u{85}"), Ok("\u{85}"));
+    let longest = "x".repeat(MAX_NAME_UNITS);
+    assert_eq!(validate_name(&format!(" {longest} ")), Ok(longest.as_str()));
+}
+
+#[test]
+fn an_empty_blank_or_long_name_is_invalid_with_the_limit() {
+    let invalid = Err(DomainError::InvalidName {
+        max_units: MAX_NAME_UNITS,
+    });
+    assert_eq!(validate_name(""), invalid);
+    assert_eq!(validate_name(" \t\u{A0}\u{1F}"), invalid);
+    assert_eq!(validate_name(&"x".repeat(MAX_NAME_UNITS + 1)), invalid);
+    // 25 coin emoji are 50 UTF-16 code units; one more letter goes past the limit.
+    let coins = "\u{1f4b0}".repeat(25);
+    assert_eq!(validate_name(&coins), Ok(coins.as_str()));
+    assert_eq!(validate_name(&format!("{coins}x")), invalid);
+}
+
+#[test]
+fn blank_text_is_kotlins() {
+    assert!(is_blank(""));
+    assert!(is_blank(" \t\u{3000}\u{1F}"));
+    assert!(!is_blank("\u{85}"));
+    assert!(!is_blank(" dining "));
 }
 
 #[test]

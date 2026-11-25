@@ -5,8 +5,9 @@ three kinds of transaction, the change each write makes to stored account balanc
 field checks every write passes. It guarantees that text v1 accepted as an amount gives the same
 cents, that every balance change is exact or an error, and that no input makes it panic. It is the
 bottom layer of ADR-0004 (Proposed: Rust owns the rules and the data) and uses only `std`. Built in
-M0.4–M0.7 as described here, with months and `Transaction::budgeted_amount` added in M2.4; the
-API reference is `cargo doc -p denarii-core --open`.
+M0.4–M0.7 as described here, with months and `Transaction::budgeted_amount` added in M2.4, and
+`validate_name`, `is_blank`, and the values that five `DomainError` variants carry added in
+M2.5; the API reference is `cargo doc -p denarii-core --open`.
 
 ## Why this design
 
@@ -86,6 +87,8 @@ pub struct TransactionDraft { /* the form's fields, with transaction_type and tr
 pub fn validate_transaction(draft: &TransactionDraft) -> Result<Transaction, DomainError>;
 pub fn budget_overage(category_name: &str, spent_this_month: Cents, amount: Cents, monthly_limit: Cents)
     -> Result<Option<BudgetOverage>, ArithmeticOverflow>;
+pub fn validate_name(name: &str) -> Result<&str, DomainError>;
+pub fn is_blank(text: &str) -> bool;
 ```
 
 - `validate_transaction` checks v1's field rules in v1's order and returns the transaction with
@@ -93,8 +96,17 @@ pub fn budget_overage(category_name: &str, spent_this_month: Cents, amount: Cent
 - The checks that need stored rows (category and accounts exist, and the monthly budget) run in
   the storage layer (`docs/specs/store.md`, "Transaction writes"). `budget_overage` is the
   budget's arithmetic: what was spent this month, plus the amount, minus the limit.
+- `validate_name` trims a category or account name with Kotlin's whitespace and returns it, or
+  `InvalidName` when it isn't 1 to `MAX_NAME_UNITS` (50) UTF-16 code units long; the storage
+  layer stores the trimmed name, as v1 did. `is_blank` is Kotlin's `isBlank()`, which decides
+  whether a category's icon was given (`docs/specs/store.md`, "Categories, accounts, and
+  budgets").
 - `DomainError` has v1's 23 variants, and `DomainError::code` returns v1's names, such as
-  `BUDGET_EXCEEDED`, which name the localized messages.
+  `BUDGET_EXCEEDED`, which name the localized messages. v1 passed a value with some of them,
+  which the message shows, and the variants carry the same value: `DescriptionTooLong` and
+  `InvalidName` the limit, `BudgetExceeded` the overage, `DuplicateCategoryName` and
+  `DuplicateAccountName` the trimmed name, and `CategoryInUse` and `AccountInUse` how many
+  transactions use the row.
 - `defaults` holds the seeded account IDs 1–2 and category IDs 1–3, which can't be deleted, and
   the categories' icon keys.
 
@@ -165,7 +177,7 @@ detail no user sees.
 | :- | :- |
 | 2, 3 | `tests/money.rs`, which ports every case of v1's `MoneyTest.kt` and adds the limit and round-trip cases |
 | 4, 5 | `tests/ledger.rs`, which ports v1's `LedgerTest.kt` and `TransactionModelTest.kt` and adds the overflow cases |
-| 6, 7 | `tests/validation.rs`, which ports v1's `ValidatorsTest.kt` and checks the order of errors |
+| 6, 7 | `tests/validation.rs`, which ports v1's `ValidatorsTest.kt` and checks the order of errors, `validate_name` and `is_blank` with Kotlin's whitespace and UTF-16 lengths, and the codes of the reference data's errors |
 | Kotlin text rules | Unit tests in `src/text.rs` |
 | 1, 8 | `rust/crates/core/Cargo.toml` has no `[dependencies]`; review checks for floating point |
 | 9 | `tests/month.rs`: the limits, one millisecond past each, swapped and empty bounds, a day's and a year's, spans that overflow an `i64`, and months before 1970 |
